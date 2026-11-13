@@ -22,19 +22,19 @@ export function QuestionReply({ approval, onDone }) {
   const dismiss = () => act(async () => { await post(`/approvals/${approval.id}/dismiss`, { revision: approval.revision }); onDone?.(); });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-      <form className="c-ring" onSubmit={send} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 16px", borderRadius: "999px", background: "#F6F6F3" }}>
+      <form className="c-ring" onSubmit={send} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 16px", borderRadius: "var(--r-pill)", background: "#F6F6F3" }}>
         <label style={{ flex: "1", minWidth: 0, display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder con tus palabras"}</span>
           <input className="c-bare" value={text} onChange={(e) => setText(e.target.value)} placeholder="O responde con tus palabras…" maxLength={4000}
             style={{ flex: "1", minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "var(--t-body)", fontFamily: "inherit", color: "#12131A" }} />
         </label>
         <button type="submit" disabled={busy || !text.trim()} aria-label="Enviar la respuesta" className="rm-focus"
-          style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: text.trim() ? "pointer" : "default", transition: "background .2s ease" }}>
+          style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: text.trim() ? "pointer" : "default", transition: "background .2s ease" }}>
           <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </form>
       <button type="button" className="rm-focus" disabled={busy} onClick={dismiss} title="Se cierra sin respuesta; el bot sigue con la opción más prudente y te lo dice"
-        style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 10px", border: 0, borderRadius: "999px", background: "transparent", color: "#5C606C", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+        style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 10px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "#5C606C", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
         <X size={14} strokeWidth={2.4} aria-hidden="true" />{"Descartar la pregunta"}
       </button>
       {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: 600 }}>{error}</span> : null}
@@ -58,7 +58,7 @@ export function ClosedChip({ approval, options }) {
   const tone = TONES[closed.state] || TONES.cancelled;
   const Icon = tone.icon;
   return (
-    <span data-closed={closed.state} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "4px 12px 4px 10px", background: tone.bg, borderRadius: "15px", fontSize: "var(--t-meta)", fontWeight: 600, color: tone.fg }}>
+    <span data-closed={closed.state} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", minHeight: "30px", padding: "4px 12px 4px 10px", background: tone.bg, borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", fontWeight: 600, color: tone.fg }}>
       <Icon size={14} strokeWidth={2.6} aria-hidden="true" />
       {closed.label}
       {approval.decidedAt ? ` · ${time(approval.decidedAt)}` : ""}

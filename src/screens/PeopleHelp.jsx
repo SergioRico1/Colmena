@@ -114,16 +114,16 @@ export default function PeopleHelp() {
           <h1 style={{ margin: 0, font: "600 var(--t-display-m)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>{"Cómo funciona"}</h1>
           <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: 1.55, color: "#3D404A" }}>{"Colmena es un chat de equipo para personas y para los bots de cada una. Cada persona usa su Colmena en su ordenador, con sus bots; el equipo comparte la conversación, no los datos."}</p>
         </header>
-        <ol style={{ margin: 0, padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "26px", background: "#FFFFFF" }}>
+        <ol style={{ margin: 0, padding: "22px", listStyle: "none", display: "flex", flexDirection: "column", gap: "16px", borderRadius: "var(--r-2xl)", background: "#FFFFFF" }}>
           {INTRO_STEPS.map(([Icon, title, text]) => (
             <li key={title} style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
-              <span aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "12px", background: "#F2F2EE" }}><Icon size={18} strokeWidth={2} /></span>
+              <span aria-hidden="true" style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F2F2EE" }}><Icon size={18} strokeWidth={2} /></span>
               <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}><strong style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{title}</strong><span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: "#5C606C" }}>{text}</span></span>
             </li>
           ))}
         </ol>
         <nav aria-label="En esta página" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {ALL.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>{title}</a>)}
+          {ALL.map(([id, , title]) => <a key={id} href={"#" + id} onClick={(e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: scrollBehavior(), block: "start" }); }} style={{ height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>{title}</a>)}
         </nav>
         {ALL.map(([id, Icon, title, paragraphs]) => (
           <section key={id} id={id} aria-labelledby={id + "-t"} style={{ display: "flex", flexDirection: "column", gap: "12px", scrollMarginTop: "24px" }}>

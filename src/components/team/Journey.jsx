@@ -18,7 +18,7 @@ const STATE_PILL = {
   olvidado: { background: "#F4F4F0", color: "#5C606C" }, deshecho: { background: "#F4F4F0", color: "#5C606C" },
   desactivada: { background: "#F4F4F0", color: "#5C606C" }, archivada: { background: "#F4F4F0", color: "#5C606C" },
 };
-const iconButton = { width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "9px", cursor: "pointer", color: "#6B6F7A" };
+const iconButton = { width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", color: "#6B6F7A" };
 
 function TimelineRow({ item, first, onOpenSkill }) {
   const { act, busy, error } = useAction();
@@ -35,12 +35,12 @@ function TimelineRow({ item, first, onOpenSkill }) {
   };
   return (
     <li style={{ display: "grid", gridTemplateColumns: "32px 1fr auto", gap: "12px", alignItems: "start", padding: "12px 0", borderTop: first ? "0" : "1px solid rgba(18,19,26,.06)" }}>
-      <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "9px", color: "#5C606C" }}><Icon size={16} strokeWidth={2.1} /></span>
+      <span aria-hidden="true" style={{ width: "32px", height: "32px", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "var(--r-sm)", color: "#5C606C" }}><Icon size={16} strokeWidth={2.1} /></span>
       <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
         {editing ? (
           <form onSubmit={save} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <input autoFocus value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Escape" && (setText(item.title), setEditing(false))} aria-label="Corregir el recuerdo"
-              style={{ flex: "1", minWidth: 0, height: "38px", padding: "0 10px", border: "1.5px solid #12131A", borderRadius: "999px", fontSize: "var(--t-body)" }} />
+              style={{ flex: "1", minWidth: 0, height: "38px", padding: "0 10px", border: "1.5px solid #12131A", borderRadius: "var(--r-pill)", fontSize: "var(--t-body)" }} />
             <button type="submit" disabled={busy} aria-label="Guardar" style={{ ...iconButton, color: "#0B8A5F" }}><Check size={17} strokeWidth={2.4} aria-hidden="true" /></button>
             <button type="button" onClick={() => { setText(item.title); setEditing(false); }} aria-label="Cancelar" style={iconButton}><X size={17} strokeWidth={2.2} aria-hidden="true" /></button>
           </form>
@@ -53,7 +53,7 @@ function TimelineRow({ item, first, onOpenSkill }) {
           {item.at ? <span>{shortDate(item.at)}</span> : null}
           {item.detail ? <span>{"· " + item.detail}</span> : null}
           {room ? <a href={roomUrl(room)} style={{ color: "#1F4FD1", fontWeight: "600" }}>{"#" + item.room}</a> : null}
-          {pill ? <span style={{ padding: "2px 7px", borderRadius: "5px", fontWeight: "600", ...pill }}>{item.state}</span> : null}
+          {pill ? <span style={{ padding: "2px 7px", borderRadius: "var(--r-xs)", fontWeight: "600", ...pill }}>{item.state}</span> : null}
         </span>
         {error ? <span role="alert" style={{ fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: "600" }}>{error}</span> : null}
       </div>
@@ -100,10 +100,10 @@ export function TeachDialog({ bot, onClose }) {
       setBusy(false);
     }
   };
-  const field = { width: "100%", minHeight: "44px", padding: "0 12px", background: "#FFFFFF", border: "0", borderRadius: "10px", fontSize: "var(--t-body)", color: "#12131A" };
+  const field = { width: "100%", minHeight: "44px", padding: "0 12px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", color: "#12131A" };
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "rgba(18, 19, 26, 0.55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "80px 16px 16px", overflowY: "auto" }}>
-      <form ref={box} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="ensena-t" style={{ width: "min(560px, 100%)", background: "#FFFFFF", color: "#12131A", border: "0", borderRadius: "20px", display: "flex", flexDirection: "column" }}>
+      <form ref={box} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="ensena-t" style={{ width: "min(560px, 100%)", background: "#FFFFFF", color: "#12131A", border: "0", borderRadius: "var(--r-xl)", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "14px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <h2 id="ensena-t" style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{`Enséñale algo a ${bot.name}`}</h2>
@@ -121,7 +121,7 @@ export function TeachDialog({ bot, onClose }) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "8px" }}>
               {SOURCES.map(({ id, label, Icon }) => (
                 <button key={id} type="button" aria-pressed={type === id ? "true" : "false"} onClick={() => { setType(id); setValue(""); }}
-                  style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "44px", padding: "0 12px", background: type === id ? "#12131A" : "#FFFFFF", color: type === id ? "#FFFFFF" : "#12131A", border: type === id ? "0" : "1px solid rgba(18,19,26,.1)", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: type === id ? "600" : "400" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "8px", minHeight: "44px", padding: "0 12px", background: type === id ? "#12131A" : "#FFFFFF", color: type === id ? "#FFFFFF" : "#12131A", border: type === id ? "0" : "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: type === id ? "600" : "400" }}>
                   <Icon size={16} strokeWidth={2} aria-hidden="true" />{label}
                 </button>
               ))}
@@ -140,8 +140,8 @@ export function TeachDialog({ bot, onClose }) {
           {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: "600" }}>{error}</p> : null}
         </div>
         <div style={{ padding: "14px 22px 18px", borderTop: "1px solid rgba(18,19,26,.06)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)" }}>Cancelar</button>
-          <button type="submit" disabled={busy || !ready} style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: 0, borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: busy || !ready ? 0.6 : 1 }}>
+          <button type="button" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)" }}>Cancelar</button>
+          <button type="submit" disabled={busy || !ready} style={{ display: "flex", alignItems: "center", gap: "8px", height: "44px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: busy || !ready ? 0.6 : 1 }}>
             <GraduationCap size={16} strokeWidth={2.2} aria-hidden="true" />{busy ? "Preparando…" : "Empezar la lección"}
           </button>
         </div>

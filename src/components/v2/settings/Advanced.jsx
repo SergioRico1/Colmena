@@ -14,7 +14,7 @@ import { Alert, Card, INK, LINE, MUTED, Panel, Row, UNDO_MS, btn, field, mono, s
 // and where Colmena keeps its data and listens.
 
 const FAMILIES = [["astra", "Astra", "Coordina el equipo y lo más difícil"], ["sol", "Sol", "Programa, analiza e investiga"], ["luna", "Luna", "Redacta y ayuda en el día a día"]];
-const value = { padding: "8px 12px", borderRadius: "10px", background: "#F6F6F3", font: `400 var(--t-meta)/1.2 ${mono}`, color: INK, overflowWrap: "anywhere", maxWidth: "100%" };
+const value = { padding: "8px 12px", borderRadius: "var(--r-md)", background: "#F6F6F3", font: `400 var(--t-meta)/1.2 ${mono}`, color: INK, overflowWrap: "anywhere", maxWidth: "100%" };
 const input = { ...field, width: "auto", flex: "1 1 220px", fontFamily: mono, fontSize: "var(--t-ui)" };
 
 function McpServers() {

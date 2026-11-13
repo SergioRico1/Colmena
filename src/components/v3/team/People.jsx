@@ -48,13 +48,13 @@ const STATUS = [
 
 function Avatar({ ini, dot, dashed = false }) {
   return (
-    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: "38px", height: "38px", display: "grid", placeItems: "center", borderRadius: "50%", boxSizing: "border-box", background: "#E6E7EC", fontSize: "var(--t-caption)", fontWeight: "600", border: dashed ? "1.5px dashed #8C8F99" : "0" }}>
+    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: "38px", height: "38px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxSizing: "border-box", background: "#E6E7EC", fontSize: "var(--t-caption)", fontWeight: "600", border: dashed ? "1.5px dashed #8C8F99" : "0" }}>
       {ini}
-      <span style={{ position: "absolute", right: "-1px", bottom: "-1px", width: "11px", height: "11px", borderRadius: "50%", background: dot, boxShadow: dot === "transparent" ? "none" : "0 0 0 2px #FFFFFF" }} />
+      <span style={{ position: "absolute", right: "-1px", bottom: "-1px", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: dot, boxShadow: dot === "transparent" ? "none" : "0 0 0 2px #FFFFFF" }} />
     </span>
   );
 }
-const ctaStyle = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" };
+const ctaStyle = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" };
 
 export default function EquipoPeople({ peers }) {
   const act = useAction();
@@ -77,14 +77,14 @@ export default function EquipoPeople({ peers }) {
         <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Gente con su propia Colmena. Chateáis cifrado y vuestros bots pueden colaborar."}</span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", alignItems: "flex-start" }}>
-        <div style={{ flex: "999 1 480px", minWidth: "0", display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF", overflow: "hidden" }}>
+        <div style={{ flex: "999 1 480px", minWidth: "0", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF", overflow: "hidden" }}>
           {!peers?.me ? <div style={{ ...row, borderTop: "0", color: "#5C606C", fontSize: "var(--t-ui)" }}>{"Preparando «Personas»: Colmena está creando las claves de este ordenador…"}</div> : null}
           {peers?.me && !contacts.length && !invites.length ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px" }}>
               <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{"Aún no hablas con nadie desde Colmena"}</span>
               {INTRO_STEPS.map(([Icon, title, text]) => (
                 <span key={title} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                  <span aria-hidden="true" style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", borderRadius: "10px", background: "#F1F1EC" }}><Icon size={15} strokeWidth={2} /></span>
+                  <span aria-hidden="true" style={{ width: "32px", height: "32px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F1F1EC" }}><Icon size={15} strokeWidth={2} /></span>
                   <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{title}</span><span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" }}>{text}</span></span>
                 </span>
               ))}
@@ -113,7 +113,7 @@ export default function EquipoPeople({ peers }) {
                 {isOpen ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 18px 20px 70px", animation: "rise .2s ease-out" }}>
                     {c.words?.length ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "16px", background: "#F6F6F3" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
                         <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{`Vuestras palabras de seguridad. ${first(c.name)} tiene que ver las mismas:`}</span>
                         <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{c.words.join(" · ")}</strong>
                         <button type="button" disabled={act.busy} onClick={() => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { verified: !c.verifiedAt }))} style={{ ...ctaStyle, alignSelf: "flex-start", background: c.verifiedAt ? "#FFFFFF" : "#12131A", color: c.verifiedAt ? "#12131A" : "#FFFFFF", border: c.verifiedAt ? ctaStyle.border : "0", fontWeight: "600" }}>{c.verifiedAt ? "Comprobadas · deshacer" : "Las hemos comprobado"}</button>
@@ -175,14 +175,14 @@ function InviteCard({ disabled, onAccept }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(made.text); setCopied(true); } catch { setError("No se pudo copiar. Selecciona el código y cópialo tú."); }
   };
-  const white = { height: "40px", border: "0", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
+  const white = { height: "40px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "18px 20px", borderRadius: "20px", background: "#12131A", color: "#FFFFFF" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "18px 20px", borderRadius: "var(--r-xl)", background: "#12131A", color: "#FFFFFF" }}>
       <h3 style={{ margin: "0", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Invitar con un código"}</h3>
       <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#C9CBD3" }}>{"Le mandas un código de un solo uso. Al aceptarlo, los dos veréis las mismas cuatro palabras: así sabéis que sois vosotros."}</p>
       {made ? (
         <>
-          <span style={{ padding: "10px 12px", borderRadius: "12px", background: "rgba(255,255,255,.08)", font: "500 var(--t-ui)/1.3 'Geist Mono', monospace", letterSpacing: ".04em", userSelect: "all", overflowWrap: "anywhere" }}>{made.code}</span>
+          <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", font: "500 var(--t-ui)/1.3 'Geist Mono', monospace", letterSpacing: ".04em", userSelect: "all", overflowWrap: "anywhere" }}>{made.code}</span>
           <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{`Para ${made.name || name}. Caduca en 24 horas.`}</span>
           <button type="button" onClick={copy} style={white}>{copied ? "Copiada ✓" : "Copiar invitación"}</button>
           <button type="button" onClick={() => { setMade(null); setName(""); }} style={{ height: "30px", border: "0", background: "transparent", color: "#C9CBD3", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Invitar a otra persona"}</button>
@@ -191,7 +191,7 @@ function InviteCard({ disabled, onAccept }) {
         <>
           <label style={{ display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la persona"}</span>
-            <input className="c-quiet" type="text" value={name} maxLength={80} disabled={disabled} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: "1", minWidth: "0", height: "40px", padding: "0 12px", border: "0", borderRadius: "12px", background: "rgba(255,255,255,.08)", color: "#FFFFFF", fontSize: "var(--t-ui)" }} />
+            <input className="c-quiet" type="text" value={name} maxLength={80} disabled={disabled} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") make(); }} placeholder="¿Cómo se llama?" style={{ flex: "1", minWidth: "0", height: "40px", padding: "0 12px", border: "0", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", color: "#FFFFFF", fontSize: "var(--t-ui)" }} />
           </label>
           <button type="button" disabled={disabled || !name.trim() || busy} onClick={make} style={{ ...white, opacity: disabled || !name.trim() ? 0.6 : 1 }}>{busy ? "Creando…" : "Crear la invitación"}</button>
         </>
@@ -206,9 +206,9 @@ function StatusCard({ status, act }) {
   const mode = status?.mode || "available";
   const current = mode === "available" ? "available" : "now";
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>
+    <label style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>
       {"Tu estado para los demás"}
-      <Select label="Tu estado para los demás" value={current} disabled={act.busy} onChange={(e) => { const s = STATUS.find((x) => x[0] === e.target.value); if (s) act.act(() => patch("/peers/status", s[2]())); }} style={{ height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "400" }} options={[...(mode !== "available" ? [["now", statusText(status)]] : []), ...STATUS]} />
+      <Select label="Tu estado para los demás" value={current} disabled={act.busy} onChange={(e) => { const s = STATUS.find((x) => x[0] === e.target.value); if (s) act.act(() => patch("/peers/status", s[2]())); }} style={{ height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "400" }} options={[...(mode !== "available" ? [["now", statusText(status)]] : []), ...STATUS]} />
       <span style={{ fontSize: "var(--t-meta)", fontWeight: "400", color: "#5C606C" }}>{mode === "available" ? "Lo ven las personas con las que hablas." : "Mientras tanto no te salta ni te suena ningún aviso."}</span>
     </label>
   );

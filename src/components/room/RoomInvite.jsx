@@ -11,8 +11,8 @@ import { PersonAvatar } from "./Author.jsx";
 // already talk to, one click each; someone new gets a code. It always says the truth about what
 // they will see. Whoever did not make the room asks its owner (`POST /api/rooms/:id/people`
 // answers 202: nothing has changed yet).
-const row = { display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "4px 6px 4px 8px", borderRadius: "14px" };
-const smallBtn = { flex: "none", minHeight: "34px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" };
+const row = { display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "4px 6px 4px 8px", borderRadius: "var(--r-lg)" };
+const smallBtn = { flex: "none", minHeight: "34px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" };
 
 export default function RoomInvite({ view, onClose, onChanged = null }) {
   const { peers } = useStore();
@@ -65,7 +65,7 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
   }
   return (
     <Sheet id="room-inv" title={title} sub={<>{truth.line + " "}<a href="/personas/como-funciona#quien-entra" onClick={onClose} style={{ color: "#1F4FD1", fontWeight: 600 }}>{"Cómo funciona"}</a></>} onClose={onClose} width={560}>
-      {truth.asks ? <p role="note" style={{ margin: 0, padding: "12px 16px", borderRadius: "14px", background: "#F4F4F0", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>{`${truth.ask}: la sala es suya y solo ${firstName(truth.owner)} puede añadir personas.`}</p> : null}
+      {truth.asks ? <p role="note" style={{ margin: 0, padding: "12px 16px", borderRadius: "var(--r-lg)", background: "#F4F4F0", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>{`${truth.ask}: la sala es suya y solo ${firstName(truth.owner)} puede añadir personas.`}</p> : null}
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {all.length > 5 || query ? (
           <label style={{ ...fieldBox, padding: "0 14px" }}>
@@ -105,8 +105,8 @@ export default function RoomInvite({ view, onClose, onChanged = null }) {
         {truth.asks ? (
           <p style={note}>{`Para alguien que aún no usa Colmena contigo, pídele a ${firstName(truth.owner)} que le invite con un código.`}</p>
         ) : made ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "18px", background: "#F4F4F0" }}>
-            <code style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "12px", background: "#FFFFFF", font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{made.code}</code>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "var(--r-xl)", background: "#F4F4F0" }}>
+            <code style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "500 var(--t-body)/1 'Geist Mono', monospace", letterSpacing: "0.04em", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.08)", userSelect: "all" }}>{made.code}</code>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
               <button type="button" onClick={copy} style={darkBtn()}><Copy size={15} strokeWidth={2.2} aria-hidden="true" />{copied ? "Copiada" : "Copiar invitación"}</button>
               <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"24 h, un solo uso. Envíasela tú: Colmena no la manda."}</span>

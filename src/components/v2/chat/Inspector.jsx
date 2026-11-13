@@ -66,11 +66,11 @@ export default function Inspector({ bot, mission, messages = [], steps = [], app
         <h2 style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{"Inspector"}</h2>
         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#A9ACB6" }}>{"Ctrl I"}</span>
-          <button type="button" aria-label="Cerrar el inspector" onClick={onClose} style={{ width: "28px", height: "28px", padding: 0, border: 0, borderRadius: "8px", background: "transparent", color: "#C9CBD3", cursor: "pointer", fontSize: "var(--t-read)" }}>{"×"}</button>
+          <button type="button" aria-label="Cerrar el inspector" onClick={onClose} style={{ width: "28px", height: "28px", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "#C9CBD3", cursor: "pointer", fontSize: "var(--t-read)" }}>{"×"}</button>
         </span>
       </div>
-      <div role="tablist" aria-label="Inspector" style={{ display: "flex", padding: "3px", gap: "2px", borderRadius: "999px", background: "rgba(255,255,255,.08)" }}>
-        {tabs.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id ? "true" : "false"} onClick={() => setTab(id)} style={{ flex: "1", height: "30px", border: 0, borderRadius: "999px", background: tab === id ? "#FFFFFF" : "transparent", color: tab === id ? "#12131A" : "#C9CBD3", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" }}>{label}</button>)}
+      <div role="tablist" aria-label="Inspector" style={{ display: "flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.08)" }}>
+        {tabs.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id ? "true" : "false"} onClick={() => setTab(id)} style={{ flex: "1", height: "30px", border: 0, borderRadius: "var(--r-pill)", background: tab === id ? "#FFFFFF" : "transparent", color: tab === id ? "#12131A" : "#C9CBD3", fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer" }}>{label}</button>)}
       </div>
 
       {tab === "ctx" ? (
@@ -80,12 +80,12 @@ export default function Inspector({ bot, mission, messages = [], steps = [], app
             <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{"estimado"}</span>
           </div>
           <div aria-hidden="true" style={{ display: "grid", gridTemplateColumns: "repeat(32, minmax(0, 1fr))", gap: "3px" }}>
-            {cells.map((c, i) => <span key={i} style={{ aspectRatio: "1", borderRadius: "3px", background: c }} />)}
+            {cells.map((c, i) => <span key={i} style={{ aspectRatio: "1", borderRadius: "var(--r-xs)", background: c }} />)}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {PARTS.map((p) => (
               <div key={p.key} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-meta)" }}>
-                <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "3px", background: p.color }} />
+                <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "var(--r-xs)", background: p.color }} />
                 <span style={{ flex: "1", color: "#E6E7EC" }}>{p.label}</span>
                 <span style={{ font: "400 var(--t-caption)/1 'Geist Mono', monospace", color: "#A9ACB6" }}>{kTokens(parts[p.key])}</span>
               </div>
@@ -102,7 +102,7 @@ export default function Inspector({ bot, mission, messages = [], steps = [], app
             return (
               <div key={key} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", fontSize: "var(--t-meta)" }}>
                 <span style={{ flex: "1", font: "400 var(--t-meta)/1 'Geist Mono', monospace", color: "#E6E7EC" }}>{key}<span style={{ fontFamily: "'Geist', sans-serif", color: "#A9ACB6" }}>{TOOL_NAMES[key] ? " · " + TOOL_NAMES[key] : ""}</span></span>
-                <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: bg, color: ink, fontSize: "var(--t-caption)", fontWeight: 600 }}>{label}</span>
+                <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: bg, color: ink, fontSize: "var(--t-caption)", fontWeight: 600 }}>{label}</span>
               </div>
             );
           }) : <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{"Este bot no tiene permisos propios: usa los de tu equipo."}</span>}
@@ -112,11 +112,11 @@ export default function Inspector({ bot, mission, messages = [], steps = [], app
       ) : null}
 
       {tab === "log" ? (
-        <pre aria-label="Registro" style={{ margin: 0, padding: "12px", borderRadius: "12px", background: "rgba(255,255,255,.06)", font: "400 var(--t-caption)/1.7 'Geist Mono', monospace", color: "#C9CBD3", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{log || "Aún no ha pasado nada en esta conversación."}</pre>
+        <pre aria-label="Registro" style={{ margin: 0, padding: "12px", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.06)", font: "400 var(--t-caption)/1.7 'Geist Mono', monospace", color: "#C9CBD3", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{log || "Aún no ha pasado nada en esta conversación."}</pre>
       ) : null}
 
       <span style={{ flex: "1" }} />
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px", borderRadius: "14px", background: "rgba(255,255,255,.06)", fontSize: "var(--t-meta)", color: "#C9CBD3" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,.06)", fontSize: "var(--t-meta)", color: "#C9CBD3" }}>
         <span style={{ fontWeight: 600, color: "#FFFFFF" }}>{"Recibos de esta conversación"}</span>
         <span>{`${done} ${done === 1 ? "aprobado" : "aprobados"} · ${waiting} esperando · ${refused} ${refused === 1 ? "denegado" : "denegados"}`}</span>
         <span>{mission?.incognito ? "De incógnito: no aprende nada de aquí." : "Ninguna acción se repite sola tras un cierre."}</span>

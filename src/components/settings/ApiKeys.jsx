@@ -18,7 +18,7 @@ function KeyRow({ s, first }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 0", borderTop: first ? "0" : "1px solid rgba(18,19,26,.06)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
-        <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "9px", color: "#5C606C" }}><KeyRound size={16} strokeWidth={2.1} /></span>
+        <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "var(--r-sm)", color: "#5C606C" }}><KeyRound size={16} strokeWidth={2.1} /></span>
         <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
           <strong style={{ ...field.mono, fontSize: "var(--t-meta)", color: "#12131A" }}>{s.name}</strong>
           <span style={{ fontSize: "var(--t-caption)", color: "#5C606C", overflowWrap: "anywhere" }}>{"Solo en " + s.allowedHosts.join(", ")}</span>
@@ -62,7 +62,7 @@ export default function ApiKeysCard() {
       {list.length ? (
         <div style={{ display: "flex", flexDirection: "column" }}>{list.map((s, i) => <KeyRow key={s.name} s={s} first={i === 0} />)}</div>
       ) : (
-        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has dado ninguna clave. Aparecerán aquí cuando un bot te pida una y la guardes."}</p>
+        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has dado ninguna clave. Aparecerán aquí cuando un bot te pida una y la guardes."}</p>
       )}
     </Card>
   );

@@ -22,7 +22,7 @@ const CSS = `
 .colmena-live-btn:focus-visible{outline:3px solid #2F6BFF;outline-offset:2px}
 `;
 
-const buttonBase = { height: "40px", padding: "0 14px", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" };
+const buttonBase = { height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "8px" };
 const BUTTON_DARK = { ...buttonBase, background: "#12131A", color: "#FFFFFF", border: 0 };
 const BUTTON_HONEY = { ...buttonBase, background: "#FFC93C", color: "#12131A", border: "2px solid #12131A" };
 const BUTTON_LIGHT = { ...buttonBase, background: "#FFFFFF", color: "#12131A", border: "1px solid #DCE0E8", fontWeight: 500 };
@@ -83,9 +83,9 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   if (!frame) {
     const desktopOnly = available === false;
     return (
-      <article aria-label={"Vista en vivo del navegador de " + name} style={{ margin: "6px 0", border: "1px dashed #A9AEBB", borderRadius: "18px", background: "#FFFFFF", padding: "18px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+      <article aria-label={"Vista en vivo del navegador de " + name} style={{ margin: "6px 0", border: "1px dashed #A9AEBB", borderRadius: "var(--r-xl)", background: "#FFFFFF", padding: "18px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
         <style>{CSS}</style>
-        <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#EEF0F4", borderRadius: "12px", color: "#4A4F5C" }}>
+        <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#EEF0F4", borderRadius: "var(--r-md)", color: "#4A4F5C" }}>
           <GlobeIcon />
         </span>
         <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
@@ -110,19 +110,19 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   return (
     <article
       aria-label={"Vista en vivo del navegador de " + name}
-      style={{ margin: "6px 0", border: "2px solid " + color, borderRadius: "18px", overflow: "hidden", background: "#FFFFFF", boxShadow: takeover ? "8px 8px 0 #FFC93C" : "none", transition: "box-shadow .2s ease" }}
+      style={{ margin: "6px 0", border: "2px solid " + color, borderRadius: "var(--r-xl)", overflow: "hidden", background: "#FFFFFF", boxShadow: takeover ? "8px 8px 0 #FFC93C" : "none", transition: "box-shadow .2s ease" }}
     >
       <style>{CSS}</style>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 16px", borderBottom: "1px solid #E6E8EE" }}>
         <Avatar bot={bot} />
         <strong style={{ fontSize: "var(--t-body)" }}>{name}</strong>
-        <span style={{ display: "flex", alignItems: "center", gap: "8px", height: "28px", padding: "0 10px", background: "#EEF0F4", borderRadius: "14px", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: "8px", height: "28px", padding: "0 10px", background: "#EEF0F4", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
           <GlobeIcon />
           {takeover ? "Te ha dado el control" : label}
         </span>
         <span style={{ flex: 1 }} />
         <span style={{ display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>
-          <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#3DDC97", animation: "colmena-live 1.4s ease-out infinite" }} />
+          <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#3DDC97", animation: "colmena-live 1.4s ease-out infinite" }} />
           Vista en vivo
         </span>
       </div>

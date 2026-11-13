@@ -85,13 +85,13 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
 
         {list.loading && !goals.length ? <SkeletonList rows={3} /> : null}
         {!list.loading && !goals.length ? (
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "20px", padding: "26px 28px", background: "#FFFFFF", borderRadius: "26px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "20px", padding: "26px 28px", background: "#FFFFFF", borderRadius: "var(--r-2xl)" }}>
             <BotPresence bot={owner || { shape: "hex", color: "#12131A" }} size={44} />
             <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "6px" }}>
               <strong style={{ font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif" }}>Aún no tienes objetivos</strong>
               <span style={{ fontSize: "var(--t-body)", lineHeight: 1.5, color: "#4A4D57" }}>{`Escribe algo que quieras conseguir en semanas, como «Lanzar la tienda online en marzo». ${owner?.name || "Atlas"} te propondrá los hitos.`}</span>
             </div>
-            <button type="button" onClick={() => setCreating(true)} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer" }}>Nuevo objetivo</button>
+            <button type="button" onClick={() => setCreating(true)} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer" }}>Nuevo objetivo</button>
           </div>
         ) : null}
 
@@ -103,9 +103,9 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                 const p = x.status === "done" ? 100 : x.progress?.percent ?? 0;
                 const [meta, ink] = metaOf(x);
                 return (
-                  <button key={x.id} type="button" role="option" aria-selected={on} onClick={() => pick1(x.id)} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px", border: `2px solid ${on ? "#12131A" : "transparent"}`, borderRadius: "20px", background: "#FFFFFF", textAlign: "left", cursor: "pointer", opacity: x.status === "paused" ? 0.7 : 1 }}>
-                    <span aria-hidden="true" style={{ flex: "none", width: "52px", height: "52px", display: "grid", placeItems: "center", borderRadius: "50%", background: `conic-gradient(${x.status === "done" ? "#0B6B4A" : "#12131A"} ${p * 3.6}deg, #EEEEEA 0)` }}>
-                      <span style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 600 }}>{p + "%"}</span>
+                  <button key={x.id} type="button" role="option" aria-selected={on} onClick={() => pick1(x.id)} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px", border: `2px solid ${on ? "#12131A" : "transparent"}`, borderRadius: "var(--r-xl)", background: "#FFFFFF", textAlign: "left", cursor: "pointer", opacity: x.status === "paused" ? 0.7 : 1 }}>
+                    <span aria-hidden="true" style={{ flex: "none", width: "52px", height: "52px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: `conic-gradient(${x.status === "done" ? "#0B6B4A" : "#12131A"} ${p * 3.6}deg, #EEEEEA 0)` }}>
+                      <span style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 600 }}>{p + "%"}</span>
                     </span>
                     <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
                       <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{x.title}</span>
@@ -116,7 +116,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
               })}
             </div>
 
-            <section aria-label="Detalle del objetivo" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "26px", background: "#FFFFFF", animation: "fade .3s ease-out" }}>
+            <section aria-label="Detalle del objetivo" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "fade .3s ease-out" }}>
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", fontSize: "var(--t-ui)", color: "#5C606C" }}>
                 {owner ? <BotDot bot={owner} size={16} /> : null}
                 {`Coordina ${owner?.name || "Atlas"} · ${longDate(g.dueAt)}`}
@@ -125,8 +125,8 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
               <h2 style={{ margin: 0, font: "600 var(--t-display-s)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em", overflowWrap: "anywhere" }}>{g.title}</h2>
               {g.why ? <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, color: "#4A4D57" }}><strong style={{ color: "#12131A", fontWeight: 600 }}>Por qué:</strong> {g.why}</p> : null}
               <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                <span title={budget.tokens ? `${budget.percent ?? 0} % del presupuesto` : undefined} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", color: "#12131A", fontWeight: budget.limited ? 600 : 400, fontSize: "var(--t-ui)" }}>{"Gasto: " + spent}</span>
-                <span style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", fontSize: "var(--t-ui)" }}>{tasksChip}</span>
+                <span title={budget.tokens ? `${budget.percent ?? 0} % del presupuesto` : undefined} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", color: "#12131A", fontWeight: budget.limited ? 600 : 400, fontSize: "var(--t-ui)" }}>{"Gasto: " + spent}</span>
+                <span style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", fontSize: "var(--t-ui)" }}>{tasksChip}</span>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -136,9 +136,9 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                   const who = work ? findBot(bots, work.botIds?.[0])?.name : null;
                   const now = !m.done && g.next?.id === m.id;
                   return (
-                    <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "52px", padding: "8px 14px", borderRadius: "14px", background: "#F6F6F3", animation: "fade .3s ease-out" }}>
+                    <div key={m.id} style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "52px", padding: "8px 14px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "fade .3s ease-out" }}>
                       <button type="button" role="checkbox" aria-checked={m.done} aria-label={(m.done ? "Desmarcar: " : "Marcar como hecho: ") + m.title} disabled={busy} onClick={() => run(() => patch(`/goals/${g.id}/milestones/${m.id}`, { done: !m.done }))}
-                        style={{ flex: "none", width: "22px", height: "22px", padding: 0, display: "grid", placeItems: "center", borderRadius: "50%", border: `2px solid ${m.done ? "#0B6B4A" : now ? "#1F4FD1" : "rgba(18,19,26,.25)"}`, background: m.done ? "#0B6B4A" : "transparent", color: "#FFFFFF", fontSize: "var(--t-micro)", fontWeight: 700, cursor: busy ? "wait" : "pointer" }}>{m.done ? "✓" : ""}</button>
+                        style={{ flex: "none", width: "22px", height: "22px", padding: 0, display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", border: `2px solid ${m.done ? "#0B6B4A" : now ? "#1F4FD1" : "rgba(18,19,26,.25)"}`, background: m.done ? "#0B6B4A" : "transparent", color: "#FFFFFF", fontSize: "var(--t-micro)", fontWeight: 700, cursor: busy ? "wait" : "pointer" }}>{m.done ? "✓" : ""}</button>
                       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
                         <span style={{ fontSize: "var(--t-body)", fontWeight: 500 }}>{m.title}</span>
                         <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{work ? <a href={`/encargo/${work.id}`} onClick={go(`/encargo/${work.id}`)} style={{ color: "#5C606C" }}>{`${who ? who + " · " : ""}${work.title}`}</a> : (m.automations || [])[0] ? `Rutina: ${(m.automations || [])[0].name}` : "Sin tarea todavía"}</span>
@@ -147,12 +147,12 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                     </div>
                   );
                 })}
-                <form className="c-ring" onSubmit={(e) => { e.preventDefault(); const t = newMs.trim(); if (t) run(() => post(`/goals/${g.id}/milestones`, { title: t })).then((r) => r && setNewMs("")); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "14px", border: "1px solid rgba(18,19,26,.1)" }}>
+                <form className="c-ring" onSubmit={(e) => { e.preventDefault(); const t = newMs.trim(); if (t) run(() => post(`/goals/${g.id}/milestones`, { title: t })).then((r) => r && setNewMs("")); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "var(--r-lg)", border: "1px solid rgba(18,19,26,.1)" }}>
                   <label style={{ flex: 1, display: "flex" }}>
                     <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Nuevo hito</span>
                     <input className="c-bare" type="text" value={newMs} onChange={(e) => setNewMs(e.target.value)} maxLength={200} placeholder="Añade un hito, por ejemplo «Elegir la plataforma»" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
                   </label>
-                  <button type="submit" disabled={busy || !newMs.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: newMs.trim() ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: newMs.trim() ? "#12131A" : "rgba(18,19,26,.08)", color: newMs.trim() ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
+                  <button type="submit" disabled={busy || !newMs.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", cursor: newMs.trim() ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: newMs.trim() ? "#12131A" : "rgba(18,19,26,.08)", color: newMs.trim() ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
                 </form>
                 {!draft.length && g.status !== "done" ? (
                   <button type="button" disabled={busy} onClick={() => run(() => post(`/goals/${g.id}/plan`, {}))} style={{ alignSelf: "flex-start", padding: 0, border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: "#1F4FD1" }}>{busy ? `${owner?.name || "Atlas"} está pensando los hitos…` : `Pedir a ${owner?.name || "Atlas"} que proponga hitos`}</button>
@@ -160,7 +160,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
               </div>
 
               {draft.length ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "18px", border: "1.5px dashed rgba(18,19,26,.18)", animation: "rise .35s ease-out" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-xl)", border: "1.5px dashed rgba(18,19,26,.18)", animation: "rise .35s ease-out" }}>
                   <span style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{`${owner?.name || "Atlas"} propone ${draft.length === 1 ? "un hito más. ¿Se queda?" : (draft.length === 2 ? "dos" : draft.length) + " hitos más. ¿Se quedan?"}`}</span>
                   {draft.map((p, i) => (
                     <label key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px", fontSize: "var(--t-ui)", lineHeight: 1.45, cursor: "pointer" }}>
@@ -169,7 +169,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                     </label>
                   ))}
                   <div style={{ display: "flex", gap: "8px" }}>
-                    <button type="button" disabled={busy || !nPick} onClick={() => run(() => post(`/goals/${g.id}/plan/accept`, { indexes: chosen.map((v, i) => (v ? i : -1)).filter((i) => i >= 0) }))} style={{ height: "38px", padding: "0 16px", border: 0, borderRadius: "999px", background: nPick ? "#12131A" : "rgba(18,19,26,.08)", color: nPick ? "#FFFFFF" : "#8A8D96", fontSize: "var(--t-ui)", fontWeight: 600, cursor: nPick ? "pointer" : "default" }}>Añadir los marcados</button>
+                    <button type="button" disabled={busy || !nPick} onClick={() => run(() => post(`/goals/${g.id}/plan/accept`, { indexes: chosen.map((v, i) => (v ? i : -1)).filter((i) => i >= 0) }))} style={{ height: "38px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: nPick ? "#12131A" : "rgba(18,19,26,.08)", color: nPick ? "#FFFFFF" : "#8A8D96", fontSize: "var(--t-ui)", fontWeight: 600, cursor: nPick ? "pointer" : "default" }}>Añadir los marcados</button>
                     <button type="button" disabled={busy} onClick={() => later({ id: "goalplan:" + g.id, keys: ["goalplan:" + g.id], text: "Propuesta descartada", error: "No se pudo descartar", run: () => run(() => del(`/goals/${g.id}/plan`)) })} style={{ height: "38px", padding: "0 12px", border: 0, background: "transparent", fontSize: "var(--t-ui)", color: "#4A4D57", cursor: "pointer" }}>Ninguno</button>
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
                     const team = (x.botIds || []).map((b) => findBot(bots, b)).filter(Boolean).slice(0, 4);
                     const running = x.status === "running";
                     return (
-                      <a key={m.id} href={`/encargo/${m.id}`} onClick={go(`/encargo/${m.id}`)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "6px 14px", borderRadius: "12px", background: "#F6F6F3", color: "#12131A" }}>
+                      <a key={m.id} href={`/encargo/${m.id}`} onClick={go(`/encargo/${m.id}`)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "6px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", color: "#12131A" }}>
                         <span style={{ display: "flex", gap: "4px" }}>{(team.length ? team : [owner]).filter(Boolean).map((b) => <BotDot key={b.id} bot={b} size={14} work={running} />)}</span>
                         <span style={{ flex: 1, minWidth: 0, fontSize: "var(--t-ui)", fontWeight: 500 }}>{m.title}</span>
                         <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{MISSION_DONE.has(x.status) ? "hecha" : running ? "en marcha" : (x.statusLabel || "").toLowerCase()}</span>
@@ -197,10 +197,10 @@ export default function ObjetivosV2({ params = {}, query = {} }) {
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", paddingTop: "6px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
                 <span style={{ flex: "1 1 240px", paddingTop: "8px", fontSize: "var(--t-meta)", color: "#5C606C" }}>{`${owner?.name || "Atlas"} te avisa si un hito vence o si pasan 7 días sin avance.`}</span>
                 {g.status === "done" ? null : (
-                  <button type="button" disabled={busy} onClick={() => run(() => patch(`/goals/${g.id}`, { status: g.status === "paused" ? "active" : "paused" }))} style={{ marginTop: "8px", height: "40px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{g.status === "paused" ? "Reanudar" : "Pausar"}</button>
+                  <button type="button" disabled={busy} onClick={() => run(() => patch(`/goals/${g.id}`, { status: g.status === "paused" ? "active" : "paused" }))} style={{ marginTop: "8px", height: "40px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{g.status === "paused" ? "Reanudar" : "Pausar"}</button>
                 )}
                 <button type="button" disabled={busy} onClick={() => run(() => patch(`/goals/${g.id}`, { status: g.status === "done" ? "active" : "done" }))}
-                  style={{ marginTop: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer", ...(g.status === "done" ? { background: "#E3F4EC", color: "#0B6B4A" } : { background: "#12131A", color: "#FFFFFF" }) }}>
+                  style={{ marginTop: "8px", height: "40px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer", ...(g.status === "done" ? { background: "#E3F4EC", color: "#0B6B4A" } : { background: "#12131A", color: "#FFFFFF" }) }}>
                   {g.status === "done" ? "Conseguido ✓ · reabrir" : allDone ? "Todos los hitos hechos · marcar como conseguido" : "Marcar como conseguido"}
                 </button>
               </div>
@@ -229,10 +229,10 @@ function NewGoal({ onClose, onCreated, initialTitle = "", ownerName = "Atlas" })
     try { onCreated(await run(() => post("/goals", { title: title.trim(), why: why.trim(), ...(due ? { dueAt: new Date(due + "T18:00:00").toISOString() } : {}) }))); }
     catch (err) { setError(err.message); setBusy(false); }
   };
-  const field = { width: "100%", height: "46px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)", boxSizing: "border-box" };
+  const field = { width: "100%", height: "46px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", boxSizing: "border-box" };
   return (
     <div onClick={(e) => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, zIndex: 70, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
-      <form ref={box} onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="ng-t" style={{ width: "min(560px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "26px 28px", background: "#FFFFFF", borderRadius: "26px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+      <form ref={box} onSubmit={save} role="dialog" aria-modal="true" aria-labelledby="ng-t" style={{ width: "min(560px, 100%)", display: "flex", flexDirection: "column", gap: "14px", padding: "26px 28px", background: "#FFFFFF", borderRadius: "var(--r-2xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <h2 id="ng-t" style={{ margin: 0, font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>Nuevo objetivo</h2>
         <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#4A4D57" }}>{`Algo que quieres conseguir en semanas o meses. ${ownerName} lo partirá en hitos.`}</p>
         <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", fontWeight: 500, color: "#4A4D57" }}>Qué quieres conseguir<input className="c-quiet" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} placeholder="Lanzar la tienda online en marzo" style={field} /></label>
@@ -240,8 +240,8 @@ function NewGoal({ onClose, onCreated, initialTitle = "", ownerName = "Atlas" })
         <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", fontWeight: 500, color: "#4A4D57" }}>Para cuándo (opcional)<input className="c-quiet" type="date" value={due} onChange={(e) => setDue(e.target.value)} style={field} /></label>
         {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", paddingTop: "4px" }}>
-          <button type="button" onClick={onClose} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)" }}>Cancelar</button>
-          <button type="submit" disabled={busy} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: 600 }}>{busy ? "Creando…" : `Crear y pedir hitos a ${ownerName}`}</button>
+          <button type="button" onClick={onClose} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)" }}>Cancelar</button>
+          <button type="submit" disabled={busy} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: 600 }}>{busy ? "Creando…" : `Crear y pedir hitos a ${ownerName}`}</button>
         </div>
       </form>
     </div>

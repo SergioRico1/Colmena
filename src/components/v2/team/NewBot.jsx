@@ -37,7 +37,7 @@ const checksOf = (d, files) => {
   ];
 };
 const label = { display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)", fontWeight: "600", color: "#3D404A" };
-const input = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "12px", fontSize: "var(--t-body)", fontWeight: "400", color: "#12131A", background: "#FFFFFF" };
+const input = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", fontWeight: "400", color: "#12131A", background: "#FFFFFF" };
 const sr = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 
 export default function NewBot({ onClose, onHired }) {
@@ -132,13 +132,13 @@ export default function NewBot({ onClose, onHired }) {
       </nav>
       <header style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
         <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"Un compañero nuevo"}</h1>
-        <ol aria-label="Pasos" style={{ margin: "0", padding: "4px", listStyle: "none", display: "inline-flex", gap: "2px", borderRadius: "999px", background: "#EBEBE6" }}>
+        <ol aria-label="Pasos" style={{ margin: "0", padding: "4px", listStyle: "none", display: "inline-flex", gap: "2px", borderRadius: "var(--r-pill)", background: "#EBEBE6" }}>
           {STEPS.map((l, i) => {
             const cur = i === step;
             const ok = reach(i);
             return (
               <li key={l}>
-                <button type="button" aria-current={cur ? "step" : undefined} disabled={!ok || !!busy} onClick={() => { setError(null); setStep(i); }} style={{ height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: cur ? "#FFFFFF" : "transparent", boxShadow: cur ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: cur ? "600" : "500", color: ok ? "#12131A" : "#8C8F99", cursor: ok ? "pointer" : "default" }}>
+                <button type="button" aria-current={cur ? "step" : undefined} disabled={!ok || !!busy} onClick={() => { setError(null); setStep(i); }} style={{ height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-pill)", background: cur ? "#FFFFFF" : "transparent", boxShadow: cur ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: cur ? "600" : "500", color: ok ? "#12131A" : "#8C8F99", cursor: ok ? "pointer" : "default" }}>
                   <span style={{ fontSize: "var(--t-caption)", color: "#5C606C" }}>{i < step ? "✓" : String(i + 1)}</span>{l}
                 </button>
               </li>
@@ -147,7 +147,7 @@ export default function NewBot({ onClose, onHired }) {
         </ol>
       </header>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "22px", alignItems: "flex-start" }}>
-        <section aria-label="Formulario" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "20px", padding: "26px 28px", borderRadius: "26px", background: "#FFFFFF" }}>
+        <section aria-label="Formulario" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "20px", padding: "26px 28px", borderRadius: "var(--r-2xl)", background: "#FFFFFF" }}>
           {step === 0 ? (
             <>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -157,13 +157,13 @@ export default function NewBot({ onClose, onHired }) {
                 </label>
                 <div style={{ position: "relative" }}>
                   <textarea className="c-quiet" id="nb-desc" rows="4" value={desc} onChange={(e) => { setDesc(e.target.value); setError(null); }} placeholder="Ej.: Lee las facturas de proveedores que llegan al correo, apúntalas en la hoja de gastos y avísame si alguna pasa de 500 €."
-                    style={{ width: "100%", padding: "14px 60px 14px 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "16px", background: "#FFFFFF", fontSize: "var(--t-read)", lineHeight: "1.5", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
+                    style={{ width: "100%", padding: "14px 60px 14px 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-read)", lineHeight: "1.5", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
                   <span style={{ position: "absolute", right: "10px", bottom: "12px", display: "flex" }}><MicButton onText={appendDictation(setDesc)} size={38} style={{ background: "#F6F6F3" }} /></span>
                 </div>
                 <div role="list" aria-label="Atlas lo va revisando" style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
                   {checksOf(desc, files).map(([l, ok]) => (
                     <span key={l} role="listitem" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: ok ? "#0B6B4A" : "#5C606C", transition: "color .25s ease" }}>
-                      <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: ok ? "#0B8A5F" : "transparent", boxShadow: ok ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)", transition: "all .25s ease" }}>
+                      <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: ok ? "#0B8A5F" : "transparent", boxShadow: ok ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)", transition: "all .25s ease" }}>
                         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: ok ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
                       </span>
                       {l}
@@ -174,14 +174,14 @@ export default function NewBot({ onClose, onHired }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{"O empieza con un ejemplo"}</span>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  {EXAMPLES.map(([l, t]) => <button key={l} type="button" onClick={() => { setDesc(t); setError(null); }} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: desc === t ? "#F1F1EC" : "#FFFFFF", fontSize: "var(--t-ui)", color: "#3D404A", cursor: "pointer" }}>{l}</button>)}
+                  {EXAMPLES.map(([l, t]) => <button key={l} type="button" onClick={() => { setDesc(t); setError(null); }} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: desc === t ? "#F1F1EC" : "#FFFFFF", fontSize: "var(--t-ui)", color: "#3D404A", cursor: "pointer" }}>{l}</button>)}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Para quién trabaja"}</span>
                 <div role="radiogroup" aria-label="Para quién" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "8px" }}>
                   {AUDIENCE.map(([v, l, t]) => (
-                    <button key={v} type="button" role="radio" aria-checked={audience === v ? "true" : "false"} onClick={() => setAudience(v)} style={{ padding: "12px 14px", border: `2px solid ${audience === v ? "#12131A" : "rgba(18,19,26,.1)"}`, borderRadius: "14px", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
+                    <button key={v} type="button" role="radio" aria-checked={audience === v ? "true" : "false"} onClick={() => setAudience(v)} style={{ padding: "12px 14px", border: `2px solid ${audience === v ? "#12131A" : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
                       <span style={{ display: "block", fontSize: "var(--t-body)", fontWeight: "600" }}>{l}</span>
                       <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{t}</span>
                     </button>
@@ -190,23 +190,23 @@ export default function NewBot({ onClose, onHired }) {
               </div>
               <button type="button" onClick={async () => { try { const picked = await pickTextFiles(); setFiles((f) => [...f, ...picked].slice(0, 5)); } catch (e) { setError(e.message); } }}
                 onDragOver={(e) => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={(e) => { e.preventDefault(); setDrag(false); addFiles(e.dataTransfer.files); }}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", padding: "22px", borderRadius: "18px", border: `1.5px dashed ${drag ? "#12131A" : "rgba(18,19,26,.2)"}`, background: drag ? "#F6F6F3" : "#FFFFFF", textAlign: "center", cursor: "pointer" }}>
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", padding: "22px", borderRadius: "var(--r-xl)", border: `1.5px dashed ${drag ? "#12131A" : "rgba(18,19,26,.2)"}`, background: drag ? "#F6F6F3" : "#FFFFFF", textAlign: "center", cursor: "pointer" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{"Dale ejemplos de su trabajo (opcional)"}</span>
                 <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Arrastra facturas, correos o una hoja. Máximo cinco."}</span>
               </button>
               {files.length ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "-8px" }}>
                   {files.map((f, i) => (
-                    <span key={f.name + i} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 6px 0 12px", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-meta)", animation: "pop .3s ease-out" }}>
+                    <span key={f.name + i} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 6px 0 12px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-meta)", animation: "pop .3s ease-out" }}>
                       {f.name}
-                      <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label={"Quitar " + f.name} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>{"×"}</button>
+                      <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} aria-label={"Quitar " + f.name} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>{"×"}</button>
                     </span>
                   ))}
                 </div>
               ) : null}
               {busy === "prepare" ? (
-                <div role="status" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 16px", borderRadius: "16px", background: "#F6F6F3", animation: "rise .3s ease-out" }}>
-                  <span aria-hidden="true" style={{ width: "16px", height: "16px", borderRadius: "50%", border: "2px solid rgba(18,19,26,.15)", borderTopColor: "#12131A", animation: "spin .8s linear infinite" }} />
+                <div role="status" style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "rise .3s ease-out" }}>
+                  <span aria-hidden="true" style={{ width: "16px", height: "16px", borderRadius: "var(--r-circle)", border: "2px solid rgba(18,19,26,.15)", borderTopColor: "#12131A", animation: "spin .8s linear infinite" }} />
                   <span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{"Colmena está preparando nombre, instrucciones, habilidades y permisos…"}</span>
                 </div>
               ) : null}
@@ -225,7 +225,7 @@ export default function NewBot({ onClose, onHired }) {
                   {SHAPE_LIST.map(([id, l]) => {
                     const on = d.shape === id;
                     return (
-                      <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ shape: id })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", border: `2px solid ${on ? "#12131A" : "rgba(18,19,26,.1)"}`, borderRadius: "14px", background: "#FFFFFF", cursor: "pointer" }}>
+                      <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ shape: id })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", border: `2px solid ${on ? "#12131A" : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", cursor: "pointer" }}>
                         <span style={{ width: "26px", height: "26px", background: d.color, clipPath: SHAPES[id].clip, borderRadius: SHAPES[id].radius }} />
                       </button>
                     );
@@ -237,26 +237,26 @@ export default function NewBot({ onClose, onHired }) {
                 <div role="radiogroup" aria-label="Color" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {COLORS.map(([hex, l]) => {
                     const on = d.color.toUpperCase() === hex;
-                    return <button key={hex} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ color: hex })} style={{ width: "38px", height: "38px", padding: "0", border: `3px solid ${on ? "#12131A" : "#FFFFFF"}`, borderRadius: "50%", background: hex, cursor: "pointer" }} />;
+                    return <button key={hex} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ color: hex })} style={{ width: "38px", height: "38px", padding: "0", border: `3px solid ${on ? "#12131A" : "#FFFFFF"}`, borderRadius: "var(--r-circle)", background: hex, cursor: "pointer" }} />;
                   })}
                 </div>
               </div>
               <label style={label}>
                 {"Instrucciones · Colmena las ha preparado"}
-                <textarea className="c-quiet" rows="5" value={d.instructions} onChange={(e) => set({ instructions: e.target.value })} style={{ padding: "12px 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "14px", fontSize: "var(--t-body)", fontWeight: "400", lineHeight: "1.55", color: "#12131A", fontFamily: "inherit", resize: "vertical" }} />
+                <textarea className="c-quiet" rows="5" value={d.instructions} onChange={(e) => set({ instructions: e.target.value })} style={{ padding: "12px 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-lg)", fontSize: "var(--t-body)", fontWeight: "400", lineHeight: "1.55", color: "#12131A", fontFamily: "inherit", resize: "vertical" }} />
               </label>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#3D404A" }}>{"Habilidades preparadas"}</span>
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
                   {d.skills.map((k, i) => (
-                    <span key={k.name + i} style={{ height: "40px", padding: "0 6px 0 14px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-ui)", animation: "pop .3s ease-out" }}>
+                    <span key={k.name + i} style={{ height: "40px", padding: "0 6px 0 14px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-ui)", animation: "pop .3s ease-out" }}>
                       {k.name}
-                      <button type="button" onClick={() => set({ skills: d.skills.filter((_, j) => j !== i) })} aria-label={"Quitar " + k.name} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>{"×"}</button>
+                      <button type="button" onClick={() => set({ skills: d.skills.filter((_, j) => j !== i) })} aria-label={"Quitar " + k.name} style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>{"×"}</button>
                     </span>
                   ))}
-                  <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (skillIn.trim()) { set({ skills: [...d.skills, { name: skillIn.trim(), description: "" }].slice(0, 8) }); setSkillIn(""); } }} style={{ height: "40px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px 0 14px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px" }}>
+                  <form className="c-ring" onSubmit={(e) => { e.preventDefault(); if (skillIn.trim()) { set({ skills: [...d.skills, { name: skillIn.trim(), description: "" }].slice(0, 8) }); setSkillIn(""); } }} style={{ height: "40px", display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px 0 14px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)" }}>
                     <label style={{ display: "flex" }}><span style={sr}>{"Nombre de la habilidad"}</span><input className="c-bare" type="text" value={skillIn} onChange={(e) => setSkillIn(e.target.value)} placeholder="Otra: resumir contratos…" style={{ width: "170px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} /></label>
-                    <button type="submit" style={{ height: "30px", padding: "0 12px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Añadir"}</button>
+                    <button type="submit" style={{ height: "30px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Añadir"}</button>
                   </form>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function NewBot({ onClose, onHired }) {
                       const v = d.tools[k] || "none";
                       const on = v !== "none";
                       return (
-                        <label key={k} style={{ height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-ui)", cursor: "pointer" }}>
+                        <label key={k} style={{ height: "40px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-ui)", cursor: "pointer" }}>
                           <input type="checkbox" checked={on} onChange={() => set({ tools: { ...d.tools, [k]: on ? "none" : "lee" } })} style={{ accentColor: "#12131A" }} />
                           {(TOOL_LABEL[k] || k) + (on ? ` (${LEVEL[v] || v})` : "")}
                         </label>
@@ -296,24 +296,24 @@ export default function NewBot({ onClose, onHired }) {
                 <span style={{ fontSize: "var(--t-lead)", fontWeight: "600" }}>{"Hazle una pregunta de prueba"}</span>
                 <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{"Responde con las instrucciones que acabas de escribir. Nada se guarda ni se envía."}</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px", minHeight: "140px", maxHeight: "380px", overflowY: "auto", padding: "18px", borderRadius: "18px", background: "#F6F6F3" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "14px", minHeight: "140px", maxHeight: "380px", overflowY: "auto", padding: "18px", borderRadius: "var(--r-xl)", background: "#F6F6F3" }}>
                 {chat.map((m, i) => (m.who === "user"
-                  ? <div key={i} style={{ alignSelf: "flex-end", maxWidth: "80%", padding: "12px 16px", borderRadius: "18px 18px 6px 18px", background: "#EBEBE6", fontSize: "var(--t-body)" }}>{m.text}</div>
+                  ? <div key={i} style={{ alignSelf: "flex-end", maxWidth: "80%", padding: "12px 16px", borderRadius: "var(--r-xl) var(--r-xl) var(--r-sm) var(--r-xl)", background: "#EBEBE6", fontSize: "var(--t-body)" }}>{m.text}</div>
                   : <div key={i} style={{ display: "flex", gap: "10px" }}><span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", background: color, clipPath: shape.clip, borderRadius: shape.radius }} /><span style={{ fontSize: "var(--t-body)", lineHeight: "1.55", whiteSpace: "pre-wrap" }}>{m.text}</span></div>))}
                 {busy === "ask" ? <div role="status" style={{ display: "flex", gap: "10px", alignItems: "center" }}><span aria-hidden="true" style={{ flex: "none", width: "22px", height: "22px", background: color, clipPath: shape.clip, borderRadius: shape.radius, animation: "breathe 1.4s ease-in-out infinite" }} /><span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{`${d.name || "Tu bot"} está pensando…`}</span></div> : null}
                 {!chat.length && busy !== "ask" ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {[`¿Qué puedes hacer por mí${d.role ? ` como ${d.role.toLowerCase()}` : ""}?`, "Preséntate en dos frases"].map((t) => <button key={t} type="button" onClick={() => ask(t)} style={{ height: "34px", padding: "0 12px", border: "0", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)" }}>{t}</button>)}
+                    {[`¿Qué puedes hacer por mí${d.role ? ` como ${d.role.toLowerCase()}` : ""}?`, "Preséntate en dos frases"].map((t) => <button key={t} type="button" onClick={() => ask(t)} style={{ height: "34px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)" }}>{t}</button>)}
                   </div>
                 ) : null}
                 <span ref={chatEnd} />
               </div>
-              <form className="c-ring" onSubmit={(e) => { e.preventDefault(); ask(); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 8px 8px 16px", borderRadius: "16px", border: "1px solid rgba(18,19,26,.14)" }}>
+              <form className="c-ring" onSubmit={(e) => { e.preventDefault(); ask(); }} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 8px 8px 16px", borderRadius: "var(--r-lg)", border: "1px solid rgba(18,19,26,.14)" }}>
                 <label style={{ flex: "1", display: "flex" }}>
                   <span style={sr}>{"Otra pregunta de prueba"}</span>
                   <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chat.length ? "Otra pregunta de prueba…" : `Pregúntale algo a ${d.name || "tu bot"}…`} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", fontSize: "var(--t-body)", background: "transparent" }} />
                 </label>
-                <button type="submit" aria-label="Preguntar" disabled={busy === "ask" || !q.trim()} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: q.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: "pointer" }}>{"↑"}</button>
+                <button type="submit" aria-label="Preguntar" disabled={busy === "ask" || !q.trim()} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: q.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", cursor: "pointer" }}>{"↑"}</button>
               </form>
             </>
           ) : null}
@@ -324,12 +324,12 @@ export default function NewBot({ onClose, onHired }) {
               ? <button type="button" onClick={() => { setError(null); setStep(step - 1); }} style={{ height: "46px", padding: "0 16px", border: "0", background: "transparent", fontSize: "var(--t-body)", color: "#4A4D57", cursor: "pointer" }}>{"Atrás"}</button>
               : <button type="button" onClick={onClose} style={{ height: "46px", padding: "0 16px", border: "0", background: "transparent", fontSize: "var(--t-body)", color: "#4A4D57", cursor: "pointer" }}>{"Ahora no"}</button>}
             <span style={{ flex: "1" }} />
-            <button type="button" disabled={!!busy} onClick={next} style={{ height: "46px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: busy ? "wait" : "pointer" }}>
+            <button type="button" disabled={!!busy} onClick={next} style={{ height: "46px", padding: "0 22px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: busy ? "wait" : "pointer" }}>
               {step === 0 ? (busy === "prepare" ? "Preparando…" : "Preparar el bot") : step === 1 ? "Probarlo" : busy === "hire" ? "Contratando…" : `Contratar a ${d?.name?.trim() || "este bot"}`}
             </button>
           </div>
         </section>
-        <aside aria-label="Así se verá" style={{ flex: "1 1 280px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "16px", padding: "24px", borderRadius: "26px", background: "#12131A", color: "#FFFFFF" }}>
+        <aside aria-label="Así se verá" style={{ flex: "1 1 280px", minWidth: "0", position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "16px", padding: "24px", borderRadius: "var(--r-2xl)", background: "#12131A", color: "#FFFFFF" }}>
           <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{"Así se verá"}</span>
           <span aria-hidden="true" style={{ width: "72px", height: "72px", background: color, clipPath: shape.clip, borderRadius: shape.radius, animation: "breathe 2.8s ease-in-out infinite", transition: "background .4s ease" }} />
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>

@@ -14,12 +14,12 @@ const pageUrl = (id, n) => `/api/artifacts/${enc(id)}/thumbs/${n}`;
 const docPageUrl = (id) => `/api/artifacts/${enc(id)}/document`;
 const chartUrl = (id, n) => `/api/artifacts/${enc(id)}/charts/${n}`;
 
-const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
+const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
 const dark = { ...pill, background: "#12131A", color: "#FFFFFF" };
 const soft = { ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" };
 const kicker = { font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" };
 const cardTitle = { font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" };
-const card = { display: "flex", flexDirection: "column", gap: "16px", padding: "14px 14px 20px", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" };
+const card = { display: "flex", flexDirection: "column", gap: "16px", padding: "14px 14px 20px", background: "#FFFFFF", borderRadius: "var(--r-3xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" };
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 // ---------- Word ----------
@@ -36,8 +36,8 @@ function PagePeek({ artifact, height = 220 }) {
     return () => ro.disconnect();
   }, [picture]);
   return (
-    <div ref={box} style={{ position: "relative", height: height + "px", overflow: "hidden", borderRadius: "18px", background: "#EDEBE5", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.06)" }}>
-      <div style={{ position: "absolute", left: "8%", right: "8%", top: "18px", bottom: 0, background: "#FFFFFF", borderRadius: "6px 6px 0 0", overflow: "hidden", boxShadow: "0 8px 30px -12px rgba(18,19,26,.35)" }}>
+    <div ref={box} style={{ position: "relative", height: height + "px", overflow: "hidden", borderRadius: "var(--r-xl)", background: "#EDEBE5", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.06)" }}>
+      <div style={{ position: "absolute", left: "8%", right: "8%", top: "18px", bottom: 0, background: "#FFFFFF", borderRadius: "var(--r-sm) var(--r-sm) 0 0", overflow: "hidden", boxShadow: "0 8px 30px -12px rgba(18,19,26,.35)" }}>
         {picture ? (
           <img src={pageUrl(artifact.id, 1)} alt="Primera página" decoding="async" style={{ display: "block", width: "100%", height: "auto" }} />
         ) : width ? (
@@ -54,7 +54,7 @@ export function DocCard({ artifact, onOpen }) {
   const pages = Number(artifact?.pages) || 0;
   return (
     <article style={card}>
-      <button type="button" onClick={onOpen} aria-label={`Abrir «${artifact?.title || "documento"}»`} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "18px", textAlign: "left" }}>
+      <button type="button" onClick={onOpen} aria-label={`Abrir «${artifact?.title || "documento"}»`} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "var(--r-xl)", textAlign: "left" }}>
         <PagePeek artifact={artifact} />
       </button>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 10px" }}>
@@ -83,15 +83,15 @@ export function DocViewer({ artifact }) {
         {artifact?.pdf ? <a href={pdfUrl(artifact.id)} download style={soft}><FileText size={16} strokeWidth={2.2} aria-hidden="true" />{"PDF"}</a> : null}
       </div>
       {count ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "14px", background: "#EDEBE5", borderRadius: "16px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "14px", background: "#EDEBE5", borderRadius: "var(--r-lg)" }}>
           {Array.from({ length: count }, (_, i) => (
             <img key={i} data-lightbox="" data-name={`${artifact?.title || "Documento"} · página ${i + 1}`} src={pageUrl(artifact.id, i + 1)} alt={`Página ${i + 1} de ${pages}`} loading={i < 2 ? "eager" : "lazy"} decoding="async"
-              style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", aspectRatio: "210 / 297", background: "#FFFFFF", borderRadius: "4px", boxShadow: "0 1px 3px rgba(18,19,26,.08), 0 18px 36px -24px rgba(18,19,26,.3)" }} />
+              style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", aspectRatio: "210 / 297", background: "#FFFFFF", borderRadius: "var(--r-xs)", boxShadow: "0 1px 3px rgba(18,19,26,.08), 0 18px 36px -24px rgba(18,19,26,.3)" }} />
           ))}
           {pages > count ? <p style={{ margin: 0, fontSize: "var(--t-meta)", color: "#555A68" }}>{`Se muestran ${count} de ${pages} páginas; descarga el PDF o el Word para verlas todas.`}</p> : null}
         </div>
       ) : (
-        <iframe title={artifact?.title || "Documento"} src={docPageUrl(artifact.id)} sandbox="" style={{ width: "100%", height: "78vh", border: 0, borderRadius: "16px", background: "#EDEBE5" }} />
+        <iframe title={artifact?.title || "Documento"} src={docPageUrl(artifact.id)} sandbox="" style={{ width: "100%", height: "78vh", border: 0, borderRadius: "var(--r-lg)", background: "#EDEBE5" }} />
       )}
     </div>
   );
@@ -132,7 +132,7 @@ function Grid({ sheet, dark: headBg = "12131A", maxHeight = "64vh", rows: limit 
   const rows = sheet.rows.slice(0, limit);
   const mono = { font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "#6B6F7A" };
   return (
-    <div style={{ overflow: "auto", maxHeight, border: "1px solid #E6E8EE", borderRadius: "14px", background: "#FFFFFF" }}>
+    <div style={{ overflow: "auto", maxHeight, border: "1px solid #E6E8EE", borderRadius: "var(--r-lg)", background: "#FFFFFF" }}>
       <table style={{ borderCollapse: "separate", borderSpacing: 0, minWidth: "100%" }}>
         <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
           <tr>
@@ -171,9 +171,9 @@ export function SheetCard({ artifact, onOpen }) {
   const first = data?.sheets?.[0];
   return (
     <article style={card}>
-      <button type="button" onClick={onOpen} aria-label={`Abrir «${artifact?.title || "hoja de cálculo"}»`} style={{ padding: 0, border: 0, background: "#EDEBE5", cursor: "pointer", borderRadius: "18px", textAlign: "left", height: "220px", overflow: "hidden", position: "relative" }}>
+      <button type="button" onClick={onOpen} aria-label={`Abrir «${artifact?.title || "hoja de cálculo"}»`} style={{ padding: 0, border: 0, background: "#EDEBE5", cursor: "pointer", borderRadius: "var(--r-xl)", textAlign: "left", height: "220px", overflow: "hidden", position: "relative" }}>
         <div style={{ position: "absolute", inset: "18px 18px 0 18px", pointerEvents: "none" }}>
-          {first ? <Grid sheet={first} dark={data.dark} rows={6} cols={5} maxHeight="none" /> : <div style={{ height: "100%", borderRadius: "14px", background: "#FFFFFF", opacity: 0.7 }} />}
+          {first ? <Grid sheet={first} dark={data.dark} rows={6} cols={5} maxHeight="none" /> : <div style={{ height: "100%", borderRadius: "var(--r-lg)", background: "#FFFFFF", opacity: 0.7 }} />}
         </div>
         <div aria-hidden="true" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "56px", background: "linear-gradient(180deg, rgba(237,235,229,0), #EDEBE5)" }} />
       </button>
@@ -194,7 +194,7 @@ export function SheetViewer({ artifact }) {
   const { data, error, loading } = useWorkbook(artifact?.id);
   const [tab, setTab] = useState(0);
   const [picked, setPicked] = useState(null);
-  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "10px", fontSize: "var(--t-ui)", color: "#8F1D22" }}>{`No se pudo abrir la vista previa: ${error}`}</p>;
+  if (error) return <p role="alert" style={{ margin: 0, padding: "10px 12px", background: "#FDECEC", border: "1px solid #F1B5B7", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#8F1D22" }}>{`No se pudo abrir la vista previa: ${error}`}</p>;
   if (loading || !data) return <p style={{ margin: 0, color: "#4A4F5C" }}>{"Abriendo…"}</p>;
   const sheet = data.sheets[Math.min(tab, data.sheets.length - 1)];
   // Charts are numbered across the workbook, sheet after sheet.
@@ -211,7 +211,7 @@ export function SheetViewer({ artifact }) {
         </div>
         <a href={fileUrl(artifact.id)} download style={dark}><Download size={16} strokeWidth={2.2} aria-hidden="true" />{"Excel"}</a>
       </div>
-      <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 12px", border: "1px solid #E6E8EE", borderRadius: "10px", background: "#FAFAF8", font: "400 var(--t-meta)/1.4 'Geist Mono', monospace", color: "#3D404A", overflow: "hidden" }}>
+      <div aria-live="polite" style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 12px", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", background: "#FAFAF8", font: "400 var(--t-meta)/1.4 'Geist Mono', monospace", color: "#3D404A", overflow: "hidden" }}>
         <span style={{ minWidth: "44px", color: "#6B6F7A" }}>{picked ? picked.col.letter + picked.n : ""}</span>
         <Sigma size={14} strokeWidth={2.2} aria-hidden="true" style={{ color: "#8A8D96", flex: "none" }} />
         <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{picked ? picked.cell.f || picked.cell.v : "Toca una celda para ver su fórmula"}</span>
@@ -223,7 +223,7 @@ export function SheetViewer({ artifact }) {
       {sheet.charts.map((name, k) => (
         <figure key={k} style={{ margin: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
           <img data-lightbox="" data-name={`${artifact?.title || "Hoja"} · ${name}`} src={chartUrl(artifact.id, before + k + 1)} alt={`Gráfico: ${name}`} loading="lazy"
-            style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", border: "1px solid #E6E8EE", borderRadius: "14px", background: "#FFFFFF" }} />
+            style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", border: "1px solid #E6E8EE", borderRadius: "var(--r-lg)", background: "#FFFFFF" }} />
         </figure>
       ))}
     </div>

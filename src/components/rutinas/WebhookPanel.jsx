@@ -12,9 +12,9 @@ const MUTED = "#4A4D57";
 const FAINT = "#5C606C";
 const sel = (on) => (on ? INK : "rgba(18,19,26,.1)");
 const label = { fontSize: "var(--t-meta)", fontWeight: 500, color: MUTED };
-const input = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK, minWidth: 0 };
-const pill = (on) => ({ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK });
-const quiet = (busy) => ({ height: "38px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 500, color: INK, cursor: busy ? "wait" : "pointer" });
+const input = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK, minWidth: 0 };
+const pill = (on) => ({ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-md)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK });
+const quiet = (busy) => ({ height: "38px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 500, color: INK, cursor: busy ? "wait" : "pointer" });
 
 /** The presets as the server gives them; these stand in until they load (same ids and settings). */
 export const HOOK_DEFAULT = { servicio: "generico", firma: "ninguna", cabeceraFirma: "", cabeceraEvento: "", eventos: "", filtros: [], asuntoRuta: "" };
@@ -83,7 +83,7 @@ export default function WebhookPanel({ hook, onChange, ruleId, onCreate, busy })
         {filtros.length < 5 ? <button type="button" onClick={() => onChange({ filtros: [...filtros, { ruta: "", op: "igual", valor: "" }] })} style={{ ...quiet(false), alignSelf: "flex-start" }}>Añadir un filtro</button> : null}
       </div>
       {ruleId ? <Address ruleId={ruleId} signed={hook.firma !== "ninguna"} steps={preset?.steps || []} /> : (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 16px", borderRadius: "14px", background: "#FFFFFF", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
           <span style={{ flex: "1 1 280px", color: MUTED }}>La dirección secreta que pegarás en esa app se crea al guardar la rutina. Se guarda en pausa hasta que la actives.</span>
           <button type="button" onClick={onCreate} disabled={busy} style={quiet(busy)}>Crear la dirección</button>
         </div>
@@ -119,7 +119,7 @@ function Address({ ruleId, signed, steps }) {
   const revoked = view.state === "revocada";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "16px", borderRadius: "14px", background: "#FFFFFF" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "16px", borderRadius: "var(--r-lg)", background: "#FFFFFF" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={label}>Dirección para pegar en esa app</span>
         {view.url ? (
@@ -179,7 +179,7 @@ function Address({ ruleId, signed, steps }) {
           return (
             <div key={d.at + i} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", minHeight: "40px", padding: "4px 0", borderTop: i ? "1px solid rgba(18,19,26,.06)" : 0, fontSize: "var(--t-ui)" }}>
               <span style={{ flex: "none", width: "92px", color: FAINT }}>{ago(d.at)}</span>
-              <span style={{ flex: "none", height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: bg, color: fg, fontSize: "var(--t-meta)", fontWeight: 600 }}>{text}{d.count > 1 ? ` · ${d.count}` : ""}</span>
+              <span style={{ flex: "none", height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: bg, color: fg, fontSize: "var(--t-meta)", fontWeight: 600 }}>{text}{d.count > 1 ? ` · ${d.count}` : ""}</span>
               <span style={{ flex: "1 1 200px", minWidth: 0, color: MUTED }}>{[d.event, d.detail].filter(Boolean).join(" · ")}</span>
             </div>
           );

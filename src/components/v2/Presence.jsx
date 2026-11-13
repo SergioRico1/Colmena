@@ -64,7 +64,7 @@ const tintOf = (name) => PEOPLE[[...String(name || "")].reduce((n, c) => n + c.c
 /** A person: a neutral circle with initials. `me` is you («TÚ» in ink). */
 export function PersonPresence({ name, size = 32, me = false, style = null }) {
   return (
-    <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: me ? "#12131A" : tintOf(name), color: me ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em", ...style }}>
+    <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: me ? "#12131A" : tintOf(name), color: me ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em", ...style }}>
       {fitInitials(me ? "TÚ" : initials(name), size)}
     </span>
   );

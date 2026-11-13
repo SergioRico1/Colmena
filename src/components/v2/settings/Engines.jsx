@@ -14,22 +14,22 @@ const FAINT = "#6B6F7A";
 const LINE = "1px solid rgba(18,19,26,.06)";
 const GREEN = "#0B6B4A";
 
-export const pill = (dark) => ({ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
+export const pill = (dark) => ({ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
 
 function Command({ text }) {
   const [done, setDone] = useState(false);
   const copy = async () => { try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1600); } catch {} };
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 4px 0 12px", borderRadius: "10px", background: "#F4F4F0", font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: INK, verticalAlign: "middle" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 4px 0 12px", borderRadius: "var(--r-md)", background: "#F4F4F0", font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: INK, verticalAlign: "middle" }}>
       {text}
-      <button type="button" onClick={copy} aria-label={done ? "Copiado" : "Copiar " + text} title={done ? "Copiado" : "Copiar"} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: 0, borderRadius: "8px", background: "transparent", cursor: "pointer", color: done ? GREEN : FAINT }}>
+      <button type="button" onClick={copy} aria-label={done ? "Copiado" : "Copiar " + text} title={done ? "Copiado" : "Copiar"} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", color: done ? GREEN : FAINT }}>
         {done ? <Check size={14} strokeWidth={2.4} aria-hidden="true" /> : <Copy size={14} strokeWidth={2.2} aria-hidden="true" />}
       </button>
     </span>
   );
 }
 
-const field = { flex: "1 1 260px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "14px", background: "#FFFFFF", font: "500 var(--t-ui)/1 'Geist Mono', monospace", color: INK };
+const field = { flex: "1 1 260px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-lg)", background: "#FFFFFF", font: "500 var(--t-ui)/1 'Geist Mono', monospace", color: INK };
 
 // Pasting often brings a trailing space, a line break or an invisible character.
 const clean = (v) => String(v).replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, "").replace(/^[\s\u00A0]+|[\s\u00A0]+$/g, "");
@@ -60,16 +60,16 @@ export function ClaudePanel({ onDone, style = null }) {
   const connect = (body) => act.act(() => post("/auth/anthropic", body)).then((r) => { if (r?.ok) onDone(); return !!r?.ok; });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 20px 20px 76px", borderBottom: LINE, animation: "rise .25s ease-out", ...style }}>
-      <div role="radiogroup" aria-label="Cómo conectar Claude" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "18px", background: "#F4F4F0" }}>
+      <div role="radiogroup" aria-label="Cómo conectar Claude" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "var(--r-xl)", background: "#F4F4F0" }}>
         {CLAUDE_WAYS.map((w) => {
           const on = way === w.id;
           return (
-            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => { act.setError(null); setWay(w.id); }} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 14px", border: 0, borderRadius: "14px", cursor: "pointer", textAlign: "left", color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", transition: "background .2s ease" }}>
+            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => { act.setError(null); setWay(w.id); }} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 14px", border: 0, borderRadius: "var(--r-lg)", cursor: "pointer", textAlign: "left", color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", transition: "background .2s ease" }}>
               <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                 <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{w.title}</strong>
                 <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{w.sub}</span>
               </span>
-              <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? INK : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
+              <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? INK : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
                 <Check size={11} strokeWidth={3.4} color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
               </span>
             </button>

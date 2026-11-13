@@ -43,14 +43,14 @@ function CheckinCard() {
           <span style={{ color: "#5C606C", marginRight: "4px" }}>Cada</span>
           {EVERY.map((h) => {
             const on = state.everyHours === h;
-            return <button key={h} type="button" aria-pressed={on ? "true" : "false"} disabled={busy || !state.enabled} onClick={() => save({ everyHours: h })} style={{ height: "34px", padding: "0 12px", borderRadius: "17px", cursor: "pointer", fontSize: "var(--t-meta)", ...(on ? { background: "#12131A", color: "#FFFFFF", border: "0", fontWeight: "600" } : { background: "rgba(18,19,26,.06)", border: "0" }) }}>{h === 1 ? "1 h" : h + " h"}</button>;
+            return <button key={h} type="button" aria-pressed={on ? "true" : "false"} disabled={busy || !state.enabled} onClick={() => save({ everyHours: h })} style={{ height: "34px", padding: "0 12px", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", ...(on ? { background: "#12131A", color: "#FFFFFF", border: "0", fontWeight: "600" } : { background: "rgba(18,19,26,.06)", border: "0" }) }}>{h === 1 ? "1 h" : h + " h"}</button>;
           })}
         </span>
         <span role="group" aria-label="En qué horario" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
           <span style={{ color: "#5C606C" }}>de</span>
-          <Select aria-label="Desde" disabled={busy || !state.enabled} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h, String(h).padStart(2, "0") + ":00"])} />
+          <Select aria-label="Desde" disabled={busy || !state.enabled} value={state.from ?? 9} onChange={(e) => save({ from: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h, String(h).padStart(2, "0") + ":00"])} />
           <span style={{ color: "#5C606C" }}>a</span>
-          <Select aria-label="Hasta" disabled={busy || !state.enabled} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h + 1, String(h + 1).padStart(2, "0") + ":00"])} />
+          <Select aria-label="Hasta" disabled={busy || !state.enabled} value={state.to ?? 20} onChange={(e) => save({ to: Number(e.target.value) })} style={{ height: "34px", padding: "0 8px", border: "0", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={Array.from({ length: 24 }, (_, h) => [h + 1, String(h + 1).padStart(2, "0") + ":00"])} />
           <label style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginLeft: "6px", color: "#5C606C" }}>
             <input type="checkbox" disabled={busy || !state.enabled} checked={!!state.weekends} onChange={(e) => save({ weekends: e.target.checked })} />
             {"también fines de semana"}
@@ -90,7 +90,7 @@ export default function Espacio() {
       <PageHeader title="Espacio">El equipo o departamento que trabaja aquí: su nombre, quién eres tú y cómo aprenden los bots.</PageHeader>
       <Notice>{error}</Notice>
 
-      <form onSubmit={save} aria-labelledby="nombres" style={{ background: "#FFFFFF", border: "0", borderRadius: "26px", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={save} aria-labelledby="nombres" style={{ background: "#FFFFFF", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
         <h2 id="nombres" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Nombre y cuenta</h2>
         <label style={field.label}>
           Nombre del espacio
@@ -109,7 +109,7 @@ export default function Espacio() {
         </div>
         <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>Tu nombre firma lo que apruebas en el registro y aparece abajo en la barra lateral.</span>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-          <button type="submit" disabled={busy || !dirty} style={{ ...btn.dark, height: "44px", borderRadius: "999px", opacity: dirty ? 1 : 0.55 }}>Guardar cambios</button>
+          <button type="submit" disabled={busy || !dirty} style={{ ...btn.dark, height: "44px", borderRadius: "var(--r-pill)", opacity: dirty ? 1 : 0.55 }}>Guardar cambios</button>
           {saved && !dirty ? <span role="status" style={{ fontSize: "var(--t-meta)", color: "#0B6B4A", fontWeight: "600" }}>Guardado</span> : null}
         </div>
       </form>
@@ -151,8 +151,8 @@ export default function Espacio() {
       <CheckinCard />
 
       <section aria-labelledby="pausa" style={paused
-        ? { background: "#FFFFFF", border: "0", borderRadius: "18px", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }
-        : { background: "#FFFFFF", border: "0", borderRadius: "18px", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }}>
+        ? { background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }
+        : { background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", padding: "22px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px" }}>
         <span style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "6px" }}>
           <h2 id="pausa" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{paused ? "El equipo está en pausa" : "Pausar a todo el equipo"}</h2>
           <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{paused
@@ -160,7 +160,7 @@ export default function Espacio() {
             : "Detiene a todos los bots y automatizaciones al momento. El trabajo hecho se conserva."}</span>
         </span>
         {paused
-          ? <button type="button" disabled={busy} onClick={() => act(() => post("/control", { action: "resume-all" }))} style={{ ...btn.dark, height: "48px", padding: "0 20px", borderRadius: "999px", fontSize: "var(--t-body)" }}>Reanudar el equipo</button>
+          ? <button type="button" disabled={busy} onClick={() => act(() => post("/control", { action: "resume-all" }))} style={{ ...btn.dark, height: "48px", padding: "0 20px", borderRadius: "var(--r-pill)", fontSize: "var(--t-body)" }}>Reanudar el equipo</button>
           : <button type="button" disabled={busy} onClick={() => act(() => post("/control", { action: "pause-all" }))} style={{ ...btn.honey, height: "48px", padding: "0 20px", fontSize: "var(--t-body)" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>
             Pausar a todo el equipo

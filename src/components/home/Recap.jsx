@@ -27,7 +27,7 @@ export default function Recap({ m, lines = 2, retry = false, style = null }) {
       {retry && !writing && (r.status === "failed" || error) ? (
         <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-caption)", color: "#555A68" }}>
           {error || (r.text ? "No se pudo actualizar el resumen." : "No se pudo escribir el resumen.")}
-          <button type="button" className="rm-focus" onClick={again} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 9px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "7px", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>
+          <button type="button" className="rm-focus" onClick={again} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 9px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>
             <RotateCcw size={12} strokeWidth={2.4} aria-hidden="true" />{"Reintentar resumen"}
           </button>
         </span>

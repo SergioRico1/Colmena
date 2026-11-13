@@ -45,12 +45,12 @@ function LogEntry({ entry }) {
     <>
       <button type="button" onClick={() => canOpen && setOpen(!open)} aria-expanded={canOpen ? open : undefined} title={details[0] || undefined}
         style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", minHeight: "20px", padding: 0, border: 0, background: "transparent", cursor: canOpen ? "pointer" : "default", textAlign: "left", font: `400 var(--t-caption)/1.5 ${MONO}`, color: denied ? C.faint : failed ? C.red : running ? C.ink : C.muted }}>
-        {running ? <span aria-hidden="true" style={{ flex: "none", width: "9px", height: "9px", borderRadius: "50%", border: "1.5px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}
+        {running ? <span aria-hidden="true" style={{ flex: "none", width: "9px", height: "9px", borderRadius: "var(--r-circle)", border: "1.5px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}
         <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textDecoration: denied ? "line-through" : "none" }}>{entryLine(entry)}</span>
         {meta ? <span style={{ flex: "none", color: running ? C.bruno : failed ? C.red : C.quiet }}>{meta}</span> : null}
       </button>
       {open ? (
-        <div style={{ margin: "4px 0 6px", padding: "12px 14px", borderRadius: "12px", background: C.ink, display: "flex", flexDirection: "column", gap: "3px", font: `400 var(--t-caption)/1.6 ${MONO}`, color: "#C9CBD1", animation: "rise .25s ease-out", maxHeight: "300px", overflow: "auto" }}>
+        <div style={{ margin: "4px 0 6px", padding: "12px 14px", borderRadius: "var(--r-md)", background: C.ink, display: "flex", flexDirection: "column", gap: "3px", font: `400 var(--t-caption)/1.6 ${MONO}`, color: "#C9CBD1", animation: "rise .25s ease-out", maxHeight: "300px", overflow: "auto" }}>
           {details.map((d, k) => <span key={k} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", color: items[0].verb === "run" ? "#8A8D96" : "#C9CBD1" }}>{items[0].verb === "run" ? "> " + d : d}</span>)}
           {output ? <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", color: items[0].status === "error" ? "#FF8A80" : "#E6E7EC" }}>{output}</span> : null}
         </div>
@@ -72,7 +72,7 @@ function WorkLog({ row }) {
     const now = running ? entryLine(row.entries.at(-1)) : null;
     return (
       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        <button type="button" onClick={() => setOpen(true)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "transparent", fontSize: "var(--t-meta)", color: C.text2, cursor: "pointer" }}>{n === 1 ? "Ver el paso" : "Ver los " + n + " pasos"}</button>
+        <button type="button" onClick={() => setOpen(true)} style={{ height: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-meta)", color: C.text2, cursor: "pointer" }}>{n === 1 ? "Ver el paso" : "Ver los " + n + " pasos"}</button>
         {now ? <span style={{ minWidth: 0, fontSize: "var(--t-meta)", color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{now}…</span> : null}
       </span>
     );
@@ -88,7 +88,7 @@ function WorkLog({ row }) {
 function TurnCard({ item, total, busy, onDiff, onRestore }) {
   const files = item.files || [];
   return (
-    <div data-message-id={item.id} className="code-turn" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 10px 10px 14px", borderRadius: "14px", background: C.white, boxShadow: CARD }}>
+    <div data-message-id={item.id} className="code-turn" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 10px 10px 14px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: CARD }}>
       <span style={{ flex: "1 1 150px", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
         <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{files.length === 1 ? "1 archivo cambiado" : files.length + " archivos cambiados"}</strong>
         <span style={{ display: "flex", gap: "6px", alignItems: "center", font: `500 var(--t-caption)/1 ${MONO}` }}><Stat add={item.add} del={item.del} /><span style={{ color: C.quiet }}>· punto {item.n} de {total}</span></span>
@@ -105,14 +105,14 @@ function TurnCard({ item, total, busy, onDiff, onRestore }) {
 
 // Cards that need you wear the honey ring (design/V3CodigoTarea.dc.html); the answered ones are plain.
 const RING = "0 0 0 2px #FFC93C";
-const PENDING_DOT = <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: C.honey, animation: "halo 1.8s ease-out infinite" }} />;
+const PENDING_DOT = <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: C.honey, animation: "halo 1.8s ease-out infinite" }} />;
 
 function AskCard({ item, onAnswer }) {
   const [picked, setPicked] = useState({});
   const pending = item.status === "pending";
   const red = item.ask === "redline";
-  const box = { display: "flex", flexDirection: "column", gap: "12px", padding: pending ? "16px" : "12px 16px", borderRadius: "16px", background: C.white, boxShadow: pending ? RING : CARD, animation: pending ? "sheet .45s cubic-bezier(.2,.8,.2,1)" : "none" };
-  const choice = (on) => ({ minHeight: "36px", padding: "7px 14px", border: on ? "1px solid " + C.ink : "1px solid rgba(18,19,26,.16)", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: 500, textAlign: "left", background: on ? C.ink : C.white, color: on ? C.white : C.ink });
+  const box = { display: "flex", flexDirection: "column", gap: "12px", padding: pending ? "16px" : "12px 16px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: pending ? RING : CARD, animation: pending ? "sheet .45s cubic-bezier(.2,.8,.2,1)" : "none" };
+  const choice = (on) => ({ minHeight: "36px", padding: "7px 14px", border: on ? "1px solid " + C.ink : "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: 500, textAlign: "left", background: on ? C.ink : C.white, color: on ? C.white : C.ink });
   if (item.ask === "question") {
     const qs = item.questions || [];
     const ready = qs.every((q) => picked[q.question]);
@@ -144,7 +144,7 @@ function AskCard({ item, onAnswer }) {
         {pending ? PENDING_DOT : null}{pending ? (red ? "Línea roja · necesita tu OK" : "Necesita tu OK") : status}
       </span>
       <h2 style={{ margin: 0, font: `600 ${pending ? 17 : 15}px/1.25 ${HEAD}`, letterSpacing: "-0.015em" }}>{item.title}</h2>
-      {item.command ? <code style={{ padding: "8px 12px", borderRadius: "10px", background: C.card, font: `400 var(--t-meta)/1.45 ${MONO}`, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: "160px", overflow: "auto" }}>{item.command}</code> : null}
+      {item.command ? <code style={{ padding: "8px 12px", borderRadius: "var(--r-md)", background: C.card, font: `400 var(--t-meta)/1.45 ${MONO}`, whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: "160px", overflow: "auto" }}>{item.command}</code> : null}
       {pending && item.reason ? <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2 }}>{item.reason}{red ? " Lo demás (editar, probar, instalar dentro del proyecto) lo hace sin preguntarte." : ""}</p> : null}
       {pending ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
@@ -174,7 +174,7 @@ function ReviewCard({ item, onFinding, current, pr = null, onPublish = null }) {
   const who = item.by ? String(item.by).split(" ")[0] : "Tu bot";
   const needs = current && findings.length > 0;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "16px", background: C.white, boxShadow: needs ? RING : CARD, animation: "rise .3s ease-out" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: needs ? RING : CARD, animation: "rise .3s ease-out" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", fontWeight: 600, color: findings.length ? C.ink : C.greenText }}>
         {findings.length ? null : <ShieldCheck size={15} strokeWidth={2.2} aria-hidden="true" />}
         {who} revisó los cambios{findings.length ? "" : item.verdict === "approve" ? " · lo aprueba" : " · sin problemas"}
@@ -184,12 +184,12 @@ function ReviewCard({ item, onFinding, current, pr = null, onPublish = null }) {
         const s = SEVERITY[f.severity] || SEVERITY.P2;
         return (
           <div key={k} className="code-turn" style={{ position: "relative", display: "flex", gap: "10px", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
-            <span title={s.text} style={{ flex: "none", height: "20px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "6px", background: s.bg, color: s.fg, font: `600 var(--t-micro)/1 ${MONO}` }}>{f.severity}</span>
+            <span title={s.text} style={{ flex: "none", height: "20px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-sm)", background: s.bg, color: s.fg, font: `600 var(--t-micro)/1 ${MONO}` }}>{f.severity}</span>
             <span style={{ flex: 1, minWidth: 0 }} title={f.detail || undefined}>
               {f.title}{f.file ? <> <span style={{ font: `400 var(--t-caption)/1 ${MONO}`, color: C.muted }}>{f.file.split("/").pop()}{f.line ? ":" + f.line : ""}</span></> : null}
               {f.detail && expert ? <span style={{ display: "block", marginTop: "2px", fontSize: "var(--t-meta)", color: C.muted }}>{f.detail}</span> : null}
             </span>
-            <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ position: "absolute", right: 0, top: "-2px", height: "24px", padding: "0 9px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: C.white, boxShadow: "0 4px 12px -4px rgba(18,19,26,.25)", cursor: "pointer", fontSize: "var(--t-caption)", whiteSpace: "nowrap" }}>Pasar a Bruno</button>
+            <button type="button" className="code-tools" onClick={() => onFinding(f)} title="Añádelo a tu próximo mensaje" style={{ position: "absolute", right: 0, top: "-2px", height: "24px", padding: "0 9px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: C.white, boxShadow: "0 4px 12px -4px rgba(18,19,26,.25)", cursor: "pointer", fontSize: "var(--t-caption)", whiteSpace: "nowrap" }}>Pasar a Bruno</button>
           </div>
         );
       })}
@@ -225,7 +225,7 @@ function PlanCard({ item, busy, onPlan, onShowPlan }) {
     );
   }
   return (
-    <div data-message-id={item.id} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "16px", background: C.white, boxShadow: RING, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <div data-message-id={item.id} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: RING, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.honeyText }}>{PENDING_DOT}Plan · aún no ha tocado nada</span>
       <div style={{ color: C.body }}><Markdown text={item.text} size={14} /></div>
       {item.taskId ? <PlanVotes taskId={item.taskId} item={item} /> : null}
@@ -248,22 +248,22 @@ export function TimelineRow({ row, ctx }) {
     const canEdit = !ctx.busy && !item.steer && ctx.editable.has(item.id);
     return (
       <div className="code-turn" style={{ alignSelf: "flex-end", maxWidth: "92%", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-        <div data-message-id={item.id} style={{ padding: "10px 14px", background: "#E8E8E2", borderRadius: "18px 18px 6px 18px", fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+        <div data-message-id={item.id} style={{ padding: "10px 14px", background: "#E8E8E2", borderRadius: "var(--r-xl) var(--r-xl) var(--r-sm) var(--r-xl)", fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
           {item.steer ? <span style={{ display: "block", fontSize: "var(--t-caption)", color: C.faint, marginBottom: "4px" }}>Se lo pasaste mientras trabajaba</span> : null}{item.text}
           {item.contexts?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "8px" : 0 }}>
-              {item.contexts.map((c, k) => <span key={k} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ padding: "3px 9px", borderRadius: "999px", background: "#FFF1C7", fontSize: "var(--t-caption)", color: "#5C4300" }}>{c.label}</span>)}
+              {item.contexts.map((c, k) => <span key={k} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ padding: "3px 9px", borderRadius: "var(--r-pill)", background: "#FFF1C7", fontSize: "var(--t-caption)", color: "#5C4300" }}>{c.label}</span>)}
             </span>
           ) : null}
           {item.attachments?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "8px" : 0 }}>
-              {item.attachments.map((a) => <span key={a.path} title={a.path} style={{ padding: "3px 9px", borderRadius: "999px", background: "rgba(255,255,255,.7)", fontSize: "var(--t-caption)", color: C.text }}>{a.image ? "Imagen · " : ""}{a.name}</span>)}
+              {item.attachments.map((a) => <span key={a.path} title={a.path} style={{ padding: "3px 9px", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.7)", fontSize: "var(--t-caption)", color: C.text }}>{a.image ? "Imagen · " : ""}{a.name}</span>)}
             </span>
           ) : null}
         </div>
         {canEdit ? (
           <span className="code-tools" style={{ display: "flex", gap: "4px" }}>
-            <button type="button" onClick={() => ctx.onEditFrom(item)} title="Vuelve los archivos a antes de este mensaje y te deja reescribirlo" style={{ display: "flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 500 }}>
+            <button type="button" onClick={() => ctx.onEditFrom(item)} title="Vuelve los archivos a antes de este mensaje y te deja reescribirlo" style={{ display: "flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 500 }}>
               <Pencil size={12} strokeWidth={2.2} aria-hidden="true" />Editar desde aquí
             </button>
           </span>
@@ -286,18 +286,18 @@ export function TimelineRow({ row, ctx }) {
   if (row.kind === "notice") {
     const tone = item.tone === "done" ? { bg: "#E3F4EC", fg: "#0B6B4A" } : item.tone === "warn" ? { bg: "#FFF1C7", fg: "#5C4300" } : null;
     return (
-      <span data-message-id={item.id} title={item.detail || undefined} style={{ alignSelf: "center", display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "6px 8px", padding: tone ? "6px 12px" : 0, borderRadius: "999px", background: tone ? tone.bg : "transparent", fontSize: "var(--t-meta)", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
-        {item.tone === "done" ? <Check size={13} strokeWidth={2.6} aria-hidden="true" /> : item.engineSwitch ? <EngineMark engine={item.engineSwitch.to} size={12} /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "50%", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
+      <span data-message-id={item.id} title={item.detail || undefined} style={{ alignSelf: "center", display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: "6px 8px", padding: tone ? "6px 12px" : 0, borderRadius: "var(--r-pill)", background: tone ? tone.bg : "transparent", fontSize: "var(--t-meta)", lineHeight: 1.4, color: tone ? tone.fg : C.faint, textAlign: "center" }}>
+        {item.tone === "done" ? <Check size={13} strokeWidth={2.6} aria-hidden="true" /> : item.engineSwitch ? <EngineMark engine={item.engineSwitch.to} size={12} /> : item.goal ? <Target size={13} strokeWidth={2.2} color={C.bruno} aria-hidden="true" /> : item.setup ? <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "var(--r-circle)", border: "2px solid rgba(255,122,26,.25)", borderTopColor: C.bruno, animation: "spin .8s linear infinite" }} /> : null}{item.text}
         {item.url ? <a href={item.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Abrir en GitHub</a> : null}
         {item.overlap ? <a href={"/codigo/" + item.overlap} style={{ fontWeight: 600, color: C.blue, whiteSpace: "nowrap" }}>Ver la otra tarea</a> : null}
         {item.undo && ctx.lastNotice === item.id && !ctx.busy ? (
-          <button type="button" onClick={() => ctx.onUndoRestore(item)} style={{ display: "flex", alignItems: "center", gap: "5px", height: "26px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink }}>
+          <button type="button" onClick={() => ctx.onUndoRestore(item)} style={{ display: "flex", alignItems: "center", gap: "5px", height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink }}>
             <Undo2 size={12} strokeWidth={2.4} aria-hidden="true" />Deshacer
           </button>
         ) : null}
       </span>
     );
   }
-  if (row.kind === "error") return <p data-message-id={item.id} role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "14px", background: "#FBE9EA", color: "#B4232A", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>{item.text}</p>;
+  if (row.kind === "error") return <p data-message-id={item.id} role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "var(--r-lg)", background: "#FBE9EA", color: "#B4232A", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>{item.text}</p>;
   return null;
 }

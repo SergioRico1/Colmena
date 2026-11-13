@@ -16,7 +16,7 @@ function PasswordInput({ value, onChange, label, autoFocus = false }) {
       <input className="c-quiet" type={shown ? "text" : "password"} value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} autoComplete="new-password" autoFocus={autoFocus} maxLength={1000} spellCheck={false}
         style={{ ...field.input, flex: "1", paddingRight: "44px" }} />
       <button type="button" onClick={() => setShown((v) => !v)} aria-label={shown ? "Ocultar la contraseña" : "Ver la contraseña"} title={shown ? "Ocultar" : "Ver"}
-        style={{ position: "absolute", right: "4px", top: "4px", width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "8px", cursor: "pointer", color: "#5C606C" }}>
+        style={{ position: "absolute", right: "4px", top: "4px", width: "36px", height: "36px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", color: "#5C606C" }}>
         {shown ? <EyeOff size={16} strokeWidth={2} aria-hidden="true" /> : <Eye size={16} strokeWidth={2} aria-hidden="true" />}
       </button>
     </span>
@@ -38,7 +38,7 @@ function AddForm({ onDone }) {
     });
   };
   return (
-    <form onSubmit={submit} className="c-enter" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", background: "#F6F6F3", borderRadius: "14px" }}>
+    <form onSubmit={submit} className="c-enter" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px", background: "#F6F6F3", borderRadius: "var(--r-lg)" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))", gap: "12px" }}>
         <label style={field.label}>{"Web"}<input className="c-quiet" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.ejemplo.com" inputMode="url" autoFocus style={field.input} /></label>
         <label style={field.label}>{"Nombre (opcional)"}<input className="c-quiet" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Banco de la empresa" maxLength={80} style={field.input} /></label>
@@ -62,7 +62,7 @@ function EntryRow({ e, first }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 0", borderTop: first ? "0" : "1px solid rgba(18,19,26,.06)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
-        <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "9px", color: "#5C606C" }}><KeyRound size={16} strokeWidth={2.1} /></span>
+        <span aria-hidden="true" style={{ width: "34px", height: "34px", flex: "none", display: "grid", placeItems: "center", background: "#F6F6F3", border: "1px solid rgba(18,19,26,.06)", borderRadius: "var(--r-sm)", color: "#5C606C" }}><KeyRound size={16} strokeWidth={2.1} /></span>
         <span style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
           <strong style={{ fontSize: "var(--t-ui)" }}>{e.label}</strong>
           <span style={{ ...field.mono, fontSize: "var(--t-caption)", color: "#5C606C", overflowWrap: "anywhere" }}>{[e.domain, e.username, e.uses ? `usada ${e.uses} ${e.uses === 1 ? "vez" : "veces"}` : "sin usar", e.lastUsedAt ? "última " + dateTime(e.lastUsedAt) : null].filter(Boolean).join(" · ")}</span>
@@ -107,7 +107,7 @@ export default function VaultCard() {
       {entries.length ? (
         <div style={{ display: "flex", flexDirection: "column" }}>{entries.map((e, i) => <EntryRow key={e.id} e={e} first={i === 0} />)}</div>
       ) : !adding ? (
-        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has guardado ninguna cuenta."}</p>
+        <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{loading ? "Cargando…" : "Aún no has guardado ninguna cuenta."}</p>
       ) : null}
     </Card>
   );

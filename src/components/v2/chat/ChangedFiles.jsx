@@ -74,7 +74,7 @@ export default function ChangedFiles({ cp, missionId }) {
   if (error || (data && !files.length)) return null;
   const total = files.length + (data?.more || 0);
   return (
-    <section aria-label="Archivos cambiados" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 10px 10px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 40px -32px rgba(18,19,26,.35)", animation: "fade .3s ease-out" }}>
+    <section aria-label="Archivos cambiados" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 10px 10px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 40px -32px rgba(18,19,26,.35)", animation: "fade .3s ease-out" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", padding: "0 8px 4px" }}>
         <span style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "#12131A" }}>{"Archivos cambiados"}</span>
         <span style={{ fontSize: "var(--t-meta)", color: "#6B6F7A" }}>{data ? plural(total, "archivo", "archivos") : "Mirando los cambios…"}</span>
@@ -85,7 +85,7 @@ export default function ChangedFiles({ cp, missionId }) {
         return (
           <button key={f.scope + "/" + f.path} type="button" className="rm-focus msg-row" onClick={() => setComparing(f)} title={`Ver antes y después de ${f.path}`}
             {...(f.openable ? dragOutProps(workFileUrl(missionId, f.path)) : {})}
-            style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", margin: 0, padding: "6px 8px", border: 0, borderRadius: "12px", background: "transparent", cursor: "pointer", textAlign: "left" }}>
+            style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "40px", margin: 0, padding: "6px 8px", border: 0, borderRadius: "var(--r-md)", background: "transparent", cursor: "pointer", textAlign: "left" }}>
             <Icon size={16} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: f.change === "deleted" ? "#8C91A0" : "#4A4F5C" }} />
             <span style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "baseline", gap: "8px" }}>
               <span style={{ minWidth: 0, font: `500 var(--t-meta)/1.35 ${MONO}`, color: f.change === "deleted" ? "#6B6F7A" : "#12131A", textDecoration: f.change === "deleted" ? "line-through" : "none", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.path}</span>
@@ -160,12 +160,12 @@ function VisualSide({ base, file, side }) {
     <div style={{ flex: "1 1 0", minWidth: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
       <span style={{ font: `600 var(--t-micro)/1 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>{label + (exists ? " · " + sizeLabel(file[side].size) : "")}</span>
       {!exists ? (
-        <div style={{ display: "grid", placeItems: "center", minHeight: "180px", padding: "16px", borderRadius: "12px", border: "1px dashed #A9AEBB", fontSize: "var(--t-ui)", color: "#555A68", textAlign: "center" }}>
+        <div style={{ display: "grid", placeItems: "center", minHeight: "180px", padding: "16px", borderRadius: "var(--r-md)", border: "1px dashed #A9AEBB", fontSize: "var(--t-ui)", color: "#555A68", textAlign: "center" }}>
           {side === "before" ? "No existía antes de esta respuesta." : "Esta respuesta lo borró."}
         </div>
       ) : isImage ? (
         <img src={base + "/blob" + q} alt={`${file.name} ${label.toLowerCase()}`} data-lightbox="" data-name={file.name}
-          style={{ maxWidth: "100%", height: "auto", alignSelf: "flex-start", borderRadius: "10px", border: "1px solid #E6E8EE", background: "#FFFFFF", cursor: "zoom-in" }} />
+          style={{ maxWidth: "100%", height: "auto", alignSelf: "flex-start", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#FFFFFF", cursor: "zoom-in" }} />
       ) : visual.state === "loading" ? (
         <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#555A68" }}>{file.kind === "pdf" ? "Dibujando sus páginas…" : "Preparando la vista con su formato…"}</p>
       ) : visual.state === "ready" ? (
@@ -200,11 +200,11 @@ export function CompareDialog({ missionId, cpId, file, onClose }) {
   const textual = diff && (diff.mode === "text" || diff.mode === "document");
   const showPages = diff?.mode === "visual" || (diff?.mode === "document" && diff.visual && look === "pages");
   const d = deltaLabel(file);
-  const seg = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", color: on ? "#12131A" : "#4A4F5C" });
+  const seg = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", color: on ? "#12131A" : "#4A4F5C" });
   const fileForVisual = { ...file, kind: diff?.mode === "document" ? "office" : file.kind, before: diff?.before ?? (file.before != null ? { size: file.before } : null), after: diff?.after ?? (file.after != null ? { size: file.after } : null) };
   return (
     <dialog ref={dialog} onClose={onClose} aria-labelledby={titleId} onClick={(e) => { if (e.target === e.currentTarget) dialog.current.close(); }}
-      style={{ width: "min(1120px, calc(100vw - 48px))", maxWidth: "none", height: "min(820px, calc(100vh - 48px))", maxHeight: "none", padding: 0, border: 0, borderRadius: "24px", background: "#F7F8FA", boxShadow: "0 40px 80px -30px rgba(18,19,26,.45)", overflow: "hidden" }}>
+      style={{ width: "min(1120px, calc(100vw - 48px))", maxWidth: "none", height: "min(820px, calc(100vh - 48px))", maxHeight: "none", padding: 0, border: 0, borderRadius: "var(--r-2xl)", background: "#F7F8FA", boxShadow: "0 40px 80px -30px rgba(18,19,26,.45)", overflow: "hidden" }}>
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "18px 20px 14px", background: "#FFFFFF", borderBottom: "1px solid #E6E8EE" }}>
           <span style={{ flex: "1 1 280px", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -214,25 +214,25 @@ export function CompareDialog({ missionId, cpId, file, onClose }) {
             </span>
           </span>
           {diff?.mode === "document" && diff.visual ? (
-            <span role="group" aria-label="Cómo compararlo" style={{ display: "inline-flex", padding: "3px", borderRadius: "999px", background: "rgba(18,19,26,.06)" }}>
+            <span role="group" aria-label="Cómo compararlo" style={{ display: "inline-flex", padding: "3px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)" }}>
               <button type="button" aria-pressed={look === "text" ? "true" : "false"} onClick={() => setLook("text")} style={seg(look === "text")}>{"Texto"}</button>
               <button type="button" aria-pressed={look === "pages" ? "true" : "false"} onClick={() => setLook("pages")} style={seg(look === "pages")}>{"Con formato"}</button>
             </span>
           ) : null}
           {textual && !showPages && rows.length ? (
-            <span role="group" aria-label="Vista del cambio" style={{ display: "inline-flex", padding: "3px", borderRadius: "999px", background: "rgba(18,19,26,.06)" }}>
+            <span role="group" aria-label="Vista del cambio" style={{ display: "inline-flex", padding: "3px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)" }}>
               <button type="button" aria-pressed={!split ? "true" : "false"} onClick={() => setSplit(false)} style={seg(!split)}><Rows3 size={14} strokeWidth={2.2} aria-hidden="true" />{"Seguido"}</button>
               <button type="button" aria-pressed={split ? "true" : "false"} onClick={() => setSplit(true)} style={seg(split)}><Columns2 size={14} strokeWidth={2.2} aria-hidden="true" />{"Lado a lado"}</button>
             </span>
           ) : null}
           {file.openable ? (
             <button type="button" className="rm-focus" onClick={() => { openWorkFile(missionId, file); dialog.current?.close(); }}
-              style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
               <ExternalLink size={14} strokeWidth={2.2} aria-hidden="true" />{"Abrir el archivo"}
             </button>
           ) : null}
           <button type="button" className="rm-focus" onClick={() => dialog.current?.close()} aria-label="Cerrar (Esc)" title="Cerrar (Esc)"
-            style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer", color: "#3D404A" }}>
+            style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.06)", cursor: "pointer", color: "#3D404A" }}>
             <X size={17} strokeWidth={2.2} aria-hidden="true" />
           </button>
         </header>
@@ -248,7 +248,7 @@ export function CompareDialog({ missionId, cpId, file, onClose }) {
             <>
               {diff.mode === "document" ? <p style={{ margin: "0 0 10px", fontSize: "var(--t-caption)", color: "#555A68" }}>{"Se compara su texto" + (diff.visual ? "; «Con formato» muestra sus páginas antes y después." : ".")}</p> : null}
               {diff.same ? <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "#555A68" }}>{"Su texto no cambió (cambió el formato u otra cosa del archivo)."}</p> : (
-                <div style={{ borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", overflow: "hidden", font: `400 var(--t-meta)/1.75 ${MONO}` }}>
+                <div style={{ borderRadius: "var(--r-lg)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", overflow: "hidden", font: `400 var(--t-meta)/1.75 ${MONO}` }}>
                   {split ? <Split rows={rows} /> : <Unified rows={rows} />}
                 </div>
               )}

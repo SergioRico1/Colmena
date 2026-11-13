@@ -20,7 +20,7 @@ const tokens = (n) => (n >= 1000 ? Math.round(n / 1000) + " k" : String(n));
 
 function Stat({ label, value, bg = C.card, ink = C.ink, mono = false }) {
   return (
-    <div style={{ padding: "10px 12px", borderRadius: "12px", background: bg }}>
+    <div style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: bg }}>
       <span style={{ display: "block", fontSize: "var(--t-caption)", color: C.text2 }}>{label}</span>
       <span style={mono ? { font: `600 var(--t-ui)/1.4 ${MONO}` } : { fontSize: "var(--t-ui)", fontWeight: 600, color: ink }}>{value}</span>
     </div>
@@ -89,13 +89,13 @@ export default function Compare({ group, projects = [] }) {
         <header style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <h1 style={{ margin: 0, font: `600 var(--t-display-m)/1 ${HEAD}`, letterSpacing: "-0.04em" }}>{title}</h1>
           <p style={{ margin: 0, fontSize: "var(--t-read)", color: C.text2 }}>La misma petición a {WORDS[n] || n} motores, cada uno en su copia del proyecto. Elige el que se queda; los otros se archivan, no se borran.</p>
-          <p style={{ margin: "4px 0 0", padding: "14px 18px", borderRadius: "16px", background: C.white, fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>«{asked.trim()}»</p>
+          <p style={{ margin: "4px 0 0", padding: "14px 18px", borderRadius: "var(--r-lg)", background: C.white, fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>«{asked.trim()}»</p>
         </header>
 
-        <section aria-label="Recomendación" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 22px", padding: "18px 22px", borderRadius: "22px", background: C.ink, color: C.white }}>
+        <section aria-label="Recomendación" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px 22px", padding: "18px 22px", borderRadius: "var(--r-2xl)", background: C.ink, color: C.white }}>
           <span aria-hidden="true" style={{ flex: "none", width: "28px", height: "28px", background: C.white, clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
           <p style={{ flex: "1 1 420px", margin: 0, fontSize: "var(--t-read)", lineHeight: 1.55, color: "#E6E7EC" }}>{band.strong ? <strong style={{ color: C.white, fontWeight: 600 }}>{band.strong}</strong> : null}{band.text}</p>
-          {band.button ? <button type="button" onClick={band.button[1]} disabled={!!busy} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: C.white, color: C.ink, fontSize: "var(--t-body)", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy === "tests" ? "Lanzando…" : band.button[0]}</button> : null}
+          {band.button ? <button type="button" onClick={band.button[1]} disabled={!!busy} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: C.white, color: C.ink, fontSize: "var(--t-body)", fontWeight: 600, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>{busy === "tests" ? "Lanzando…" : band.button[0]}</button> : null}
         </section>
         {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: C.red }}>{error}</p> : null}
 
@@ -107,19 +107,19 @@ export default function Compare({ group, projects = [] }) {
             const effort = EFFORT_LABEL[t.effort] ? " · esfuerzo " + EFFORT_LABEL[t.effort].toLowerCase() : "";
             const label = t.label ? t.label.split(" · ")[0] : engineOf(t);
             return (
-              <article key={t.id} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "22px", background: C.white, boxShadow: "0 0 0 2px " + (on ? C.ink : "transparent"), opacity: t.archived && !on ? 0.7 : 1 }}>
+              <article key={t.id} style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-2xl)", background: C.white, boxShadow: "0 0 0 2px " + (on ? C.ink : "transparent"), opacity: t.archived && !on ? 0.7 : 1 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
                     <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{label}</span>
                     <span style={{ font: `400 var(--t-meta)/1.3 ${MONO}`, color: C.muted }}>{t.model}{effort}</span>
                   </div>
-                  {rec?.id === t.id ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.ink, color: C.white, fontSize: "var(--t-caption)", fontWeight: 600 }}>Recomendado</span>
-                    : t.running || t.status === "working" ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#EEF0F4", color: C.blue, fontSize: "var(--t-caption)", fontWeight: 600 }}>Trabajando</span>
-                      : t.archived && !on ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: C.track, color: C.text2, fontSize: "var(--t-caption)", fontWeight: 600 }}>Archivada</span> : null}
+                  {rec?.id === t.id ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.ink, color: C.white, fontSize: "var(--t-caption)", fontWeight: 600 }}>Recomendado</span>
+                    : t.running || t.status === "working" ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#EEF0F4", color: C.blue, fontSize: "var(--t-caption)", fontWeight: 600 }}>Trabajando</span>
+                      : t.archived && !on ? <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.track, color: C.text2, fontSize: "var(--t-caption)", fontWeight: 600 }}>Archivada</span> : null}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "8px" }}>
                   <Stat label="Tests" value={test ? test[0] : "Sin probar"} bg={test ? test[1] : C.card} ink={test ? test[2] : C.text2} />
-                  <div style={{ padding: "10px 12px", borderRadius: "12px", background: C.card }}><span style={{ display: "block", fontSize: "var(--t-caption)", color: C.text2 }}>Cambios</span><span style={{ font: `600 var(--t-ui)/1.4 ${MONO}` }}>{t.add || t.del ? <><span style={{ color: C.greenText }}>+{t.add || 0}</span> <span style={{ color: C.red }}>−{t.del || 0}</span></> : "—"}</span></div>
+                  <div style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: C.card }}><span style={{ display: "block", fontSize: "var(--t-caption)", color: C.text2 }}>Cambios</span><span style={{ font: `600 var(--t-ui)/1.4 ${MONO}` }}>{t.add || t.del ? <><span style={{ color: C.greenText }}>+{t.add || 0}</span> <span style={{ color: C.red }}>−{t.del || 0}</span></> : "—"}</span></div>
                   <Stat label="Tiempo" value={durationLabel(t.workMs) || "—"} />
                   <Stat label="Contexto" value={t.usage?.used ? tokens(t.usage.used) + " tokens" : "—"} />
                 </div>
@@ -138,7 +138,7 @@ export default function Compare({ group, projects = [] }) {
                 <div style={{ display: "flex", gap: "8px" }}>
                   <a href={"/codigo/" + t.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + t.id); }} style={{ ...BTN.outline, height: "42px", padding: "0 16px", fontWeight: 500 }}>Ver cambios</a>
                   <button type="button" onClick={() => !on && choose(t)} disabled={!!busy || t.running || !files.length}
-                    style={{ flex: 1, height: "42px", border: 0, borderRadius: "999px", background: on ? "#0B6B4A" : C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy || t.running || !files.length || on ? "default" : "pointer", opacity: !on && (t.running || !files.length) ? 0.45 : 1 }}>
+                    style={{ flex: 1, height: "42px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#0B6B4A" : C.ink, color: C.white, fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy || t.running || !files.length || on ? "default" : "pointer", opacity: !on && (t.running || !files.length) ? 0.45 : 1 }}>
                     {busy === "pick:" + t.id ? "Eligiendo…" : on ? "Elegido ✓" : "Elegir este"}
                   </button>
                 </div>
@@ -147,7 +147,7 @@ export default function Compare({ group, projects = [] }) {
           })}
         </div>
 
-        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 18px", borderRadius: "18px", background: C.white, fontSize: "var(--t-body)" }}>
+        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: C.white, fontSize: "var(--t-body)" }}>
           <span style={{ flex: "1 1 300px", color: C.text }}>{bar}</span>
           {chosenTask ? <a href={"/codigo/" + chosenTask.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + chosenTask.id); }} style={{ fontSize: "var(--t-ui)", fontWeight: 500, color: C.blue }}>Abrir la tarea</a> : null}
           <a href="/ajustes/ia" onClick={(e) => { e.preventDefault(); navigate("/ajustes/ia"); }} style={{ fontSize: "var(--t-ui)", color: C.blue }}>Motores y modelos por defecto</a>

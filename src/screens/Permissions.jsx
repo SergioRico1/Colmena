@@ -20,14 +20,14 @@ const EXTRA = "\nbutton:focus-visible,input:focus-visible{outline:2px solid #121
 // v2 sheet: white, 30 px corners, calm shadow; a request that waits for you glows honey.
 const CALM = "0 1px 2px rgba(18,19,26,.05), 0 30px 70px -36px rgba(18,19,26,.35)";
 const HONEY = "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)";
-const dialog = { width: "min(480px, 100%)", borderRadius: "30px", background: "#FFFFFF", border: "0", display: "flex", flexDirection: "column", boxShadow: CALM, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" };
+const dialog = { width: "min(480px, 100%)", borderRadius: "var(--r-3xl)", background: "#FFFFFF", border: "0", display: "flex", flexDirection: "column", boxShadow: CALM, animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" };
 
 function Brand({ chip, tone }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
       <img src="/colmena-icon-128.png" alt="" width="24" height="24" style={{ display: "block", width: "24px", height: "24px" }} />
       <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", flexGrow: "1" }}>Colmena</span>
-      <span style={{ height: "26px", display: "flex", alignItems: "center", padding: "0 11px", borderRadius: "999px", fontSize: "var(--t-caption)", fontWeight: "600", ...(tone === "warn" ? { background: "#FBEAE7", color: "#B4372A" } : { background: "#E1F4EC", color: "#0B5A3E" }) }}>{chip}</span>
+      <span style={{ height: "26px", display: "flex", alignItems: "center", padding: "0 11px", borderRadius: "var(--r-pill)", fontSize: "var(--t-caption)", fontWeight: "600", ...(tone === "warn" ? { background: "#FBEAE7", color: "#B4372A" } : { background: "#E1F4EC", color: "#0B5A3E" }) }}>{chip}</span>
     </div>
   );
 }
@@ -150,7 +150,7 @@ export default function Permissions({ params, query = {} }) {
               <span style={{ font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Esta solicitud ya no está</span>
               <span style={{ fontSize: "var(--t-ui)", color: "#5C606C", lineHeight: "1.5" }}>Puede que ya la decidieras, que caducara o que se borrara su sala. No se ha hecho nada en tu cuenta. Lo que siga pendiente está en Hoy.</span>
             </div>
-            <button type="button" onClick={() => navigate("/bandeja")} style={{ height: "46px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>Ir a Hoy</button>
+            <button type="button" onClick={() => navigate("/bandeja")} style={{ height: "46px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>Ir a Hoy</button>
           </div>
         ) : null}
 
@@ -159,7 +159,7 @@ export default function Permissions({ params, query = {} }) {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", textAlign: "center" }}>
               <span style={{ position: "relative", display: "flex" }}>
                 <AppLogo id={account?.toolkit} name={app} size={56} />
-                <span style={{ position: "absolute", right: "-6px", bottom: "-6px", width: "24px", height: "24px", borderRadius: "50%", background: "#0B8A5F", border: "3px solid #FFFFFF", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ position: "absolute", right: "-6px", bottom: "-6px", width: "24px", height: "24px", borderRadius: "var(--r-circle)", background: "#0B8A5F", border: "3px solid #FFFFFF", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
                 </span>
               </span>
@@ -170,8 +170,8 @@ export default function Permissions({ params, query = {} }) {
               {NAMES.map((n) => {
                 const on = customName === null && n.label === name;
                 return (
-                  <button key={n.label} type="button" role="radio" aria-checked={on} onClick={() => { setName(n.label); setCustomName(null); }} style={{ height: "40px", border: "0", padding: "0 16px", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: "500", display: "flex", alignItems: "center", gap: "8px", background: on ? "#12131A" : "rgba(18,19,26,.05)", color: on ? "#FFFFFF" : "#12131A" }}>
-                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: n.dot }} />
+                  <button key={n.label} type="button" role="radio" aria-checked={on} onClick={() => { setName(n.label); setCustomName(null); }} style={{ height: "40px", border: "0", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "500", display: "flex", alignItems: "center", gap: "8px", background: on ? "#12131A" : "rgba(18,19,26,.05)", color: on ? "#FFFFFF" : "#12131A" }}>
+                    <span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: n.dot }} />
                     {n.label}
                   </button>
                 );
@@ -179,12 +179,12 @@ export default function Permissions({ params, query = {} }) {
             </div>
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontSize: "var(--t-caption)", color: "#5C606C" }}>O escribe otro nombre</span>
-              <input className="c-quiet" type="text" value={nameValue} maxLength={80} onChange={(e) => setCustomName(e.target.value)} style={{ height: "46px", border: "0", borderRadius: "999px", background: "#F4F4F0", padding: "0 18px", fontFamily: "inherit", fontSize: "var(--t-body)", color: "#12131A" }} />
+              <input className="c-quiet" type="text" value={nameValue} maxLength={80} onChange={(e) => setCustomName(e.target.value)} style={{ height: "46px", border: "0", borderRadius: "var(--r-pill)", background: "#F4F4F0", padding: "0 18px", fontFamily: "inherit", fontSize: "var(--t-body)", color: "#12131A" }} />
             </label>
             <button type="button" disabled={busy || !account || !nameValue.trim()} onClick={() => action(async () => {
               await post("/connections/rename", { account: account.id, alias: nameValue.trim() });
               navigate("/ajustes/conexiones");
-            })} style={{ height: "48px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500" }}>{busy ? "Guardando…" : "Listo"}</button>
+            })} style={{ height: "48px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500" }}>{busy ? "Guardando…" : "Listo"}</button>
           </div>
         ) : null}
 
@@ -196,7 +196,7 @@ export default function Permissions({ params, query = {} }) {
               <span role={error ? "alert" : undefined} style={{ fontSize: "var(--t-ui)", color: error ? "#B4372A" : "#5C606C", lineHeight: "1.5" }}>{error || "Solo se consultarán los datos indicados. No se modificará tu cuenta."}</span>
             </div>
             {p ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", borderRadius: "18px", background: "#F6F6F3" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 14px", borderRadius: "var(--r-xl)", background: "#F6F6F3" }}>
                 <AppLogo id={p.toolkit} name={app} size={36} />
                 <span style={{ flexGrow: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "1px" }}>
                   <span style={{ fontSize: "var(--t-ui)", fontWeight: "500" }}>{`${app} · ${p.account_alias || "Sin cuenta"}`}</span>
@@ -211,13 +211,13 @@ export default function Permissions({ params, query = {} }) {
               </button>
             ) : null}
             {p && open ? (
-              <div style={{ marginTop: "-10px", padding: "12px 14px", borderRadius: "16px", background: "#12131A", color: "#C9CCD6", fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-micro)", lineHeight: "1.7", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "240px", overflow: "auto" }}>
+              <div style={{ marginTop: "-10px", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#12131A", color: "#C9CCD6", fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-micro)", lineHeight: "1.7", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "240px", overflow: "auto" }}>
                 {`${p.tool}\n${JSON.stringify(p.arguments, null, 2)}\nCuenta: ${p.account}`}
               </div>
             ) : null}
             {p ? (
               <button type="button" role="checkbox" aria-checked={remember} onClick={() => setRemember(!remember)} style={{ border: "0", background: "transparent", padding: "0", textAlign: "left", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-meta)", color: "#12131A", minHeight: "32px" }}>
-                <span style={{ width: "20px", height: "20px", borderRadius: "6px", flexShrink: "0", background: remember ? "#12131A" : "#FFFFFF", boxShadow: remember ? "none" : "inset 0 0 0 1.5px #C7C7CC", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ width: "20px", height: "20px", borderRadius: "var(--r-sm)", flexShrink: "0", background: remember ? "#12131A" : "#FFFFFF", boxShadow: remember ? "none" : "inset 0 0 0 1.5px #C7C7CC", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
                 </span>
                 {`No volver a preguntar para estas lecturas en ${app}`}
@@ -225,11 +225,11 @@ export default function Permissions({ params, query = {} }) {
             ) : null}
             <div style={{ display: "flex", gap: "8px" }}>
               {review && review.status !== "pending" ? (
-                <button type="button" onClick={() => navigate("/bandeja")} style={{ flexGrow: "1", height: "46px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500" }}>Volver a Hoy</button>
+                <button type="button" onClick={() => navigate("/bandeja")} style={{ flexGrow: "1", height: "46px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500" }}>Volver a Hoy</button>
               ) : (
                 <>
-                  <button type="button" disabled={disabled} onClick={() => decide("denied")} style={{ height: "46px", border: "0", padding: "0 18px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.1)", fontSize: "var(--t-ui)", fontWeight: "500" }}>No permitir</button>
-                  <button type="button" disabled={disabled} onClick={() => decide("approved")} style={{ flexGrow: "1", height: "46px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500" }}>{busy ? "Un momento…" : "Aprobar"}</button>
+                  <button type="button" disabled={disabled} onClick={() => decide("denied")} style={{ height: "46px", border: "0", padding: "0 18px", borderRadius: "var(--r-pill)", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.1)", fontSize: "var(--t-ui)", fontWeight: "500" }}>No permitir</button>
+                  <button type="button" disabled={disabled} onClick={() => decide("approved")} style={{ flexGrow: "1", height: "46px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500" }}>{busy ? "Un momento…" : "Aprobar"}</button>
                 </>
               )}
             </div>
@@ -240,7 +240,7 @@ export default function Permissions({ params, query = {} }) {
           <div role="dialog" aria-label="Confirmar envío" style={{ ...dialog, padding: "28px", gap: "18px", boxShadow: review?.status === "pending" ? HONEY : CALM }}>
             <Brand chip="No se puede deshacer" tone="warn" />
             <span role={error ? "alert" : undefined} style={{ font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", color: error ? "#B4372A" : undefined }}>{error || `Voy a enviar este correo desde ${app} · ${p?.account_alias || ""}`}</span>
-            <div style={{ borderRadius: "16px", boxShadow: "0 0 0 1px rgba(0,0,0,0.08)", overflow: "hidden", overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
+            <div style={{ borderRadius: "var(--r-lg)", boxShadow: "0 0 0 1px rgba(0,0,0,0.08)", overflow: "hidden", overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
               <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-meta)", borderBottom: "1px solid rgba(18,19,26,.06)" }}>
                 <span><span style={{ color: "#5C606C", display: "inline-block", width: "56px" }}>Para</span>{list([].concat(args.recipient_email || [], args.extra_recipients || []))}</span>
                 {list(args.cc) ? <span><span style={{ color: "#5C606C", display: "inline-block", width: "56px" }}>Cc</span>{list(args.cc)}</span> : null}
@@ -255,12 +255,12 @@ export default function Permissions({ params, query = {} }) {
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
               {review && review.status !== "pending" ? (
-                <button type="button" onClick={() => navigate("/bandeja")} style={{ flexGrow: "1", height: "50px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500" }}>Volver a Hoy</button>
+                <button type="button" onClick={() => navigate("/bandeja")} style={{ flexGrow: "1", height: "50px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500" }}>Volver a Hoy</button>
               ) : (
                 <>
-                  <button type="button" disabled={disabled} onClick={() => navigate(`/bandeja/${encodeURIComponent(id)}/editar`)} style={{ height: "50px", border: "0", padding: "0 18px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.1)", fontSize: "var(--t-ui)", fontWeight: "500" }}>Editar</button>
+                  <button type="button" disabled={disabled} onClick={() => navigate(`/bandeja/${encodeURIComponent(id)}/editar`)} style={{ height: "50px", border: "0", padding: "0 18px", borderRadius: "var(--r-pill)", background: "#FFFFFF", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.1)", fontSize: "var(--t-ui)", fontWeight: "500" }}>Editar</button>
                   <button type="button" disabled={disabled} aria-describedby="mantener" onPointerDown={beginHold} onPointerUp={stopHold} onPointerLeave={stopHold} onPointerCancel={stopHold} onKeyDown={keyHold} onKeyUp={stopHold} onBlur={stopHold} onContextMenu={(e) => e.preventDefault()}
-                    style={{ flexGrow: "1", position: "relative", overflow: "hidden", height: "50px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", touchAction: "none", userSelect: "none" }}>
+                    style={{ flexGrow: "1", position: "relative", overflow: "hidden", height: "50px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", touchAction: "none", userSelect: "none" }}>
                     <span style={{ position: "absolute", left: "0", top: "0", bottom: "0", width: `${Math.min(100, hold * 100)}%`, background: "rgba(255,255,255,.26)" }} />
                     <span style={{ position: "relative" }}>{busy ? "Enviando…" : "Mantén para enviar"}</span>
                   </button>

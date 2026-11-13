@@ -44,6 +44,9 @@
   --t-display-l:64px;--lh-display-l:1.02;
   --t-display-xl:80px;--lh-display-xl:0.98;
 }
+/* One radius scale (lib/radius.js): seven corners on a 4 px grid, a pill and a circle.
+   Bot shapes keep their own geometry. */
+:root{--r-xs:4px;--r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;--r-2xl:24px;--r-3xl:32px;--r-pill:999px;--r-circle:50%}
 *{box-sizing:border-box}
 /* One placeholder colour for the whole app. The boards ship «::placeholder{color:#8A8D96}»
    (3.0–3.3:1) in their own style sheets, injected after this file: this selector outranks them. */
@@ -83,7 +86,7 @@ html.colmena-desktop[data-v2] #root{padding-top:0}
   .colmena-sidebar-scroll{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#2C2F3A transparent}
 }
 .colmena-sidebar-scroll::-webkit-scrollbar{width:8px}
-.colmena-sidebar-scroll::-webkit-scrollbar-thumb{background:#2C2F3A;border-radius:8px;border:2px solid #12131A}
+.colmena-sidebar-scroll::-webkit-scrollbar-thumb{background:#2C2F3A;border-radius:var(--r-sm);border:2px solid #12131A}
 .colmena-sidebar-scroll::-webkit-scrollbar-thumb:hover{background:#3A3E4B}
 .colmena-sidebar-scroll::-webkit-scrollbar-track{background:transparent}
 /* Keyboard focus everywhere (mouse clicks show nothing): blue on light, white on the dark sidebar. */
@@ -95,7 +98,7 @@ html.colmena-desktop[data-v2] #root{padding-top:0}
 /* The messages of a conversation (lib/messageKeys.js): the list is one Tab stop and the
    arrows move between messages. Both show the ring, drawn inside so nothing clips it. */
 [data-message-list]:focus-visible{outline:2px solid #2F6BFF;outline-offset:-2px}
-[data-message-list] [data-message-id][tabindex="-1"]:focus-visible{outline:2px solid #2F6BFF;outline-offset:-2px;border-radius:10px}
+[data-message-list] [data-message-id][tabindex="-1"]:focus-visible{outline:2px solid #2F6BFF;outline-offset:-2px;border-radius:var(--r-md)}
 /* Text fields that live in a box of their own. A click leaves them as they are; moving with
    the keyboard (<html data-kbd>, lib/focusModality.js) draws the same ring as everywhere:
      .c-quiet    a field with its own border or fill: the ring goes on the field
@@ -119,9 +122,9 @@ main [id]{scroll-margin-top:72px}
 html.colmena-quick,html.colmena-quick body{background:transparent!important}
 html.colmena-quick #root{padding-top:0!important}
 /* Conversation rows (Slack-style): soft hover, floating actions, time in the gutter of a continued message. */
-.msg-row{position:relative;border-radius:10px}
+.msg-row{position:relative;border-radius:var(--r-md)}
 .msg-row:hover{background:#F7F8FA}
-.msg-actions{position:absolute;top:-14px;right:12px;display:flex;gap:2px;padding:2px;background:#FFFFFF;border:1px solid #DCE0E8;border-radius:10px;box-shadow:0 6px 16px -8px rgba(18,19,26,.35);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:2}
+.msg-actions{position:absolute;top:-14px;right:12px;display:flex;gap:2px;padding:2px;background:#FFFFFF;border:1px solid #DCE0E8;border-radius:var(--r-md);box-shadow:0 6px 16px -8px rgba(18,19,26,.35);opacity:0;pointer-events:none;transition:opacity .12s ease;z-index:2}
 .msg-row:hover .msg-actions,.msg-row:focus-within .msg-actions,.msg-actions:has([aria-pressed="true"]){opacity:1;pointer-events:auto}
 .msg-gutter-time{align-self:start;padding-top:3px;font-size:var(--t-micro);color:#555A68;text-align:right;opacity:0;font-variant-numeric:tabular-nums}
 .msg-row:hover .msg-gutter-time{opacity:1}
@@ -153,7 +156,7 @@ a,img,svg{-webkit-user-drag:none}
 .c-enter{animation:c-rise 240ms var(--c-ease) both}
 .c-pop{animation:c-pop 240ms var(--c-ease) both}
 .c-band{animation:c-slide-down 180ms var(--c-ease) both}
-.c-flash{animation:c-flash 1.6s ease-out both;border-radius:8px}
+.c-flash{animation:c-flash 1.6s ease-out both;border-radius:var(--r-sm)}
 .c-bump{display:inline-block;animation:c-bump 260ms var(--c-ease)}
 .c-launch{animation:c-launch 340ms var(--c-ease)}
 .c-press{transition:transform 80ms ease}
@@ -207,7 +210,7 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 .c-resizing iframe{pointer-events:none}
 /* Working dots (OpenClaw): three dots that breathe while a bot works. */
 .c-dots{display:inline-flex;align-items:center;gap:3px;height:12px}
-.c-dots>i{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.25;animation:c-dot 1.1s infinite ease-in-out}
+.c-dots>i{width:5px;height:5px;border-radius:var(--r-circle);background:currentColor;opacity:.25;animation:c-dot 1.1s infinite ease-in-out}
 .c-dots>i:nth-child(2){animation-delay:.15s}.c-dots>i:nth-child(3){animation-delay:.3s}
 @keyframes c-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-2px)}}
 @media (prefers-reduced-motion: reduce){.c-dots>i{animation:none;opacity:.6}}
@@ -232,7 +235,7 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 @media (hover:none){.c-md-copy{opacity:1}}
 /* A message you jumped to (search, a link): highlighted for a moment (OpenClaw reply target). */
 @keyframes c-reveal{0%,20%{box-shadow:0 0 0 3px #FFC93C;background-color:#FFF4D1}100%{box-shadow:0 0 0 0 rgba(255,201,60,0);background-color:rgba(255,244,209,0)}}
-.c-reveal{animation:c-reveal 1.3s ease-out both;border-radius:12px}
+.c-reveal{animation:c-reveal 1.3s ease-out both;border-radius:var(--r-md)}
 @media (prefers-reduced-motion:reduce){.c-reveal{animation:none;box-shadow:0 0 0 3px #FFC93C}}
 
 /* Colmena 2.0 motion (design/V2*.dc.html): breathe, glow, appear; available before any screen. */

@@ -55,7 +55,7 @@ export default function GeneralSection() {
           {KEYS.map(([a, k]) => (
             <div key={a} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "34px", fontSize: "var(--t-ui)" }}>
               <span>{a}</span>
-              <kbd style={{ padding: "4px 8px", borderRadius: "7px", background: "#F1F1EC", font: "500 var(--t-caption)/1 'Geist Mono', monospace", whiteSpace: "nowrap" }}>{k}</kbd>
+              <kbd style={{ padding: "4px 8px", borderRadius: "var(--r-sm)", background: "#F1F1EC", font: "500 var(--t-caption)/1 'Geist Mono', monospace", whiteSpace: "nowrap" }}>{k}</kbd>
             </div>
           ))}
         </div>

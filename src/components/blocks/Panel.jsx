@@ -61,16 +61,16 @@ export default function Panel({ page = false }) {
               <RowBoundary key={id} label="No se ha podido mostrar este dato" resetKey={id + ":" + (block?.updatedAt || "")}>
                 {block
                   ? <BlockCard block={block} where="panel" move={moveOptions(order, id)} onMove={(direction) => move(id, direction)} />
-                  : <div aria-busy="true" style={{ minHeight: "132px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", display: "flex", flexDirection: "column", gap: "12px" }}>
+                  : <div aria-busy="true" style={{ minHeight: "132px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", display: "flex", flexDirection: "column", gap: "12px" }}>
                       <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{titles.get(id) || ""}</span>
-                      <span className="colmena-skeleton" style={{ width: "55%", height: "30px", borderRadius: "8px" }} />
+                      <span className="colmena-skeleton" style={{ width: "55%", height: "30px", borderRadius: "var(--r-sm)" }} />
                     </div>}
               </RowBoundary>
             );
           })}
         </div>
       ) : (
-        <p style={{ margin: 0, padding: "18px", background: "#FFFFFF", borderRadius: "20px", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#4A4D57" }}>{EMPTY}</p>
+        <p style={{ margin: 0, padding: "18px", background: "#FFFFFF", borderRadius: "var(--r-xl)", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#4A4D57" }}>{EMPTY}</p>
       )}
       <span role="status" aria-live="polite" style={srOnly}>{said}</span>
       {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#B4372A" }}>{error}</span> : null}

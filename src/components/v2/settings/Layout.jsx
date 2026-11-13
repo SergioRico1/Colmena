@@ -67,7 +67,7 @@ function useAnchor(ready) {
   }, [ready]);
 }
 
-const itemStyle = (on) => ({ minHeight: "40px", display: "flex", alignItems: "center", gap: "10px", padding: "0 10px", borderRadius: "11px", fontSize: "var(--t-body)", fontWeight: on ? 600 : 500, color: INK, textDecoration: "none" });
+const itemStyle = (on) => ({ minHeight: "40px", display: "flex", alignItems: "center", gap: "10px", padding: "0 10px", borderRadius: "var(--r-md)", fontSize: "var(--t-body)", fontWeight: on ? 600 : 500, color: INK, textDecoration: "none" });
 
 function Nav({ active, tags }) {
   const [expert] = useExpert();
@@ -102,13 +102,13 @@ function Nav({ active, tags }) {
   return (
     <nav className="st-nav" aria-label="Secciones de Ajustes" style={{ flex: "0 0 264px", position: "sticky", top: 0, display: "flex", flexDirection: "column", gap: "4px", minHeight: "100vh", padding: "40px 14px 24px 22px", boxSizing: "border-box" }}>
       <h1 style={{ margin: "0 0 14px 8px", font: "600 var(--t-display-s)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.03em" }}>Ajustes</h1>
-      <label style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", height: "40px", marginBottom: "10px", padding: "0 12px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
+      <label style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", height: "40px", marginBottom: "10px", padding: "0 12px", borderRadius: "var(--r-md)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
         <span style={srOnly}>Buscar un ajuste</span>
         <input className="c-bare" ref={box} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} placeholder="Buscar un ajuste" role="combobox" aria-expanded={!!q} aria-controls="st-results" aria-activedescendant={q && results[at] ? "st-r-" + at : undefined} autoComplete="off" spellCheck={false}
           style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: INK }} />
         {q ? (
-          <button type="button" aria-label="Borrar la búsqueda" onClick={() => { setQ(""); box.current?.focus(); }} style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "rgba(18,19,26,.06)", cursor: "pointer", color: MUTED }}>
+          <button type="button" aria-label="Borrar la búsqueda" onClick={() => { setQ(""); box.current?.focus(); }} style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.06)", cursor: "pointer", color: MUTED }}>
             <X size={12} strokeWidth={2.4} aria-hidden="true" />
           </button>
         ) : null}
@@ -165,11 +165,11 @@ export default function SettingsLayout({ active, open = true, back = null, tags 
         <Nav active={active} tags={tags} />
         <main className="st-body" style={{ flex: "999 1 480px", minWidth: 0, maxWidth: width + "px", padding: "40px clamp(20px, 3vw, 40px) 64px", display: "flex", flexDirection: "column", gap: "18px", boxSizing: "border-box" }}>
           {parent ? (
-            <a href={"/ajustes/" + parent.id} onClick={(e) => { e.preventDefault(); navigate("/ajustes/" + parent.id); }} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "999px", background: "rgba(18,19,26,.05)", color: INK, fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
+            <a href={"/ajustes/" + parent.id} onClick={(e) => { e.preventDefault(); navigate("/ajustes/" + parent.id); }} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", color: INK, fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />{parent.label}
             </a>
           ) : (
-            <a className="st-back" href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "999px", background: "rgba(18,19,26,.05)", color: INK, fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
+            <a className="st-back" href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", color: INK, fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />Ajustes
             </a>
           )}

@@ -86,7 +86,7 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
         className="rm-focus"
         aria-expanded={open ? "true" : "false"}
         onClick={() => setOpen(!open)}
-        style={{ ...line, cursor: "pointer", borderRadius: "6px" }}
+        style={{ ...line, cursor: "pointer", borderRadius: "var(--r-sm)" }}
       >
         {icon}
         {label}
@@ -96,7 +96,7 @@ export default function ActivityLog({ bot = null, summary, activity: allActivity
         tools.length ? (
           <ToolCards tools={tools} bots={bots} onOpenArtifact={onOpenArtifact} />
         ) : (
-          <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "var(--t-ui)", color: "#2B2D36" }}>
+          <ol style={{ margin: "0", padding: "12px 16px", listStyle: "none", display: "flex", flexDirection: "column", gap: "8px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#2B2D36" }}>
             {activity.map((a, i) => (
               <li key={i} style={{ display: "flex", gap: "10px" }}>
                 <span style={{ font: "500 var(--t-caption)/20px 'Geist Mono', monospace", color: "#555A68", width: "20px", flex: "none" }}>{i + 1}</span>

@@ -36,6 +36,16 @@ Las maquetas aprobadas están en `design/<Pantalla>.dc.html` y se convierten sin
 - `avatarStyle(bot, size)`, `initial(bot)` (`src/lib/bots.js`) — forma+color de cada bot.
 - `roomUrl(m)`, `time`, `ago`, `shortDate`, `dateTime`, `greeting`, `todayLabel`, `words` (`src/lib/format.js`).
 
+- Tamaños de letra: una sola escala, `var(--t-micro|caption|meta|ui|body|read|lead|title|heading|headline|display-s|m|l|xl)`
+  (`src/styles/base.css`; en números, `TYPE` y `stepOf(n)` de `src/lib/type.js`). Nada por debajo de 11 px ni medios píxeles.
+- Esquinas: `var(--r-xs|sm|md|lg|xl|2xl|3xl|pill|circle)` (4, 8, 12, 16, 20, 24, 32; `src/lib/radius.js`). Las formas de los bots no son esquinas.
+- `<Select label value onChange options />` (`src/components/Select.jsx`) en lugar de `<select>`; menús y paneles que se cierran
+  al pulsar fuera usan `useClickAway` (`src/lib/useClickAway.js`).
+- Conversaciones: `<Announcer text={useAnnouncer({ scope, ready, items, waiting })} />` (una sola zona `aria-live`), la lista de
+  mensajes con `messageListProps()` y `leaveComposer(e)` en el Escape del cuadro de texto (`src/lib/messageKeys.js`).
+- Un control de menos de 24 px de alto que no sea solo texto lleva `className="c-hit"`; un avatar de bot sin nombre al lado,
+  `botAlt()`/`botsAlt()` de `src/lib/alt.js`.
+
 ## Comprobación
 - `npx vite build` sin errores.
 - `node scripts/a11y-scan.mjs <url>` (servidor con datos de QA, `scripts/seed-qa.mjs`): recorre las rutas principales y avisa de

@@ -119,13 +119,13 @@ export default function Revisar({ params = {} }) {
         : `${bot?.name || "El bot"} no puede hacer esto sin ti con los permisos que le diste.`;
   const people = isSend ? d.to.length + d.cc.length + d.cco.length : 0;
   const affects = a.impact?.headline || (isSend ? `${people === 1 ? "1 persona" : people + " personas"}${d.cc.length ? `, ${d.cc.length} en copia` : ""}.` : null);
-  const card = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px", borderRadius: "20px", background: "#FFFFFF" };
+  const card = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px", borderRadius: "var(--r-xl)", background: "#FFFFFF" };
   const h2 = { margin: "0", fontSize: "var(--t-body)", fontWeight: "600" };
   const p = { margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57" };
   const chip = (field, e, i) => (
-    <span key={e + i} style={{ height: "30px", padding: "0 6px 0 12px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "999px", background: "#F1F1EC", fontSize: "var(--t-ui)" }}>
+    <span key={e + i} style={{ height: "30px", padding: "0 6px 0 12px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-pill)", background: "#F1F1EC", fontSize: "var(--t-ui)" }}>
       {e}{field === "cc" ? " (CC)" : field === "cco" ? " (CCO)" : ""}
-      <button type="button" aria-label={`Quitar ${e}`} onClick={() => set((n) => n[field].splice(i, 1))} style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "50%", background: "transparent", color: "#5C606C", cursor: "pointer" }}>{"×"}</button>
+      <button type="button" aria-label={`Quitar ${e}`} onClick={() => set((n) => n[field].splice(i, 1))} style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "var(--r-circle)", background: "transparent", color: "#5C606C", cursor: "pointer" }}>{"×"}</button>
     </span>
   );
   const adder = (field, label) => (
@@ -137,7 +137,7 @@ export default function Revisar({ params = {} }) {
   );
   const row = { display: "flex", alignItems: "center", gap: "12px", padding: "14px 22px", borderBottom: "1px solid rgba(18,19,26,.07)" };
   const label = { flex: "none", width: "64px", fontSize: "var(--t-ui)", color: "#5C606C" };
-  const pill = (dark) => ({ height: "46px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: dark ? "#12131A" : "#FFFFFF", color: dark ? "#FFFFFF" : "#12131A", fontSize: "var(--t-body)", fontWeight: dark ? "600" : "500", cursor: "pointer" });
+  const pill = (dark) => ({ height: "46px", padding: dark ? "0 22px" : "0 18px", border: dark ? "0" : "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: dark ? "#12131A" : "#FFFFFF", color: dark ? "#FFFFFF" : "#12131A", fontSize: "var(--t-body)", fontWeight: dark ? "600" : "500", cursor: "pointer" });
   const crumb = isSend && data.subject ? `Enviar «${data.subject}»` : a.title;
 
   return (
@@ -157,12 +157,12 @@ export default function Revisar({ params = {} }) {
             <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{KIND_TITLE[a.kind] || "Revisa antes de aprobar"}</h1>
             <p style={{ margin: "0", fontSize: "var(--t-read)", color: "#4A4D57" }}>{KIND_LEAD[a.kind] || "Nada cambia hasta que pulses «Aprobar»."}</p>
           </div>
-          {sent ? null : <span style={{ height: "30px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFC93C", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Te necesita"}</span>}
+          {sent ? null : <span style={{ height: "30px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#FFC93C", fontSize: "var(--t-meta)", fontWeight: "600" }}>{"Te necesita"}</span>}
         </header>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
           {isSend ? (
-            <section aria-label="Correo" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -32px rgba(18,19,26,.3)", overflow: "hidden" }}>
+            <section aria-label="Correo" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", background: "#FFFFFF", borderRadius: "var(--r-2xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -32px rgba(18,19,26,.3)", overflow: "hidden" }}>
               <div style={row}>
                 <span style={label}>{"Para"}</span>
                 <div style={{ flex: "1", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
@@ -193,10 +193,10 @@ export default function Revisar({ params = {} }) {
                     const e = extOf(f.name);
                     const [bg, fg] = EXT[e] || ["#EEF0F4", "#4A4F5C"];
                     return (
-                      <span key={f.name + i} style={{ height: "44px", padding: "0 6px 0 8px", display: "inline-flex", alignItems: "center", gap: "10px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "var(--t-ui)" }}>
-                        <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "8px", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: "700" }}>{e}</span>
+                      <span key={f.name + i} style={{ height: "44px", padding: "0 6px 0 8px", display: "inline-flex", alignItems: "center", gap: "10px", borderRadius: "var(--r-md)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "var(--t-ui)" }}>
+                        <span aria-hidden="true" style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: "700" }}>{e}</span>
                         {f.name}{f.size != null ? <span style={{ color: "#5C606C" }}>{"· " + sizeOf(f.size)}</span> : null}
-                        <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => set((n) => n.files.splice(i, 1))} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "50%", background: "transparent", color: "#5C606C", cursor: "pointer" }}>{"×"}</button>
+                        <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => set((n) => n.files.splice(i, 1))} style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", padding: "0", border: "0", borderRadius: "var(--r-circle)", background: "transparent", color: "#5C606C", cursor: "pointer" }}>{"×"}</button>
                       </span>
                     );
                   })}
@@ -204,7 +204,7 @@ export default function Revisar({ params = {} }) {
               ) : null}
             </section>
           ) : (
-            <section aria-label="Qué pide" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "24px", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -32px rgba(18,19,26,.3)" }}>
+            <section aria-label="Qué pide" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "24px", background: "#FFFFFF", borderRadius: "var(--r-2xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -32px rgba(18,19,26,.3)" }}>
               <h2 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{a.title}</h2>
               {a.summary && a.summary !== a.title ? <p style={{ margin: "0", fontSize: "var(--t-read)", lineHeight: "1.65", whiteSpace: "pre-wrap" }}>{a.summary}</p> : null}
               {a.context ? <p style={{ margin: "0", fontSize: "var(--t-ui)", color: "#5C606C" }}>{a.context}</p> : null}
@@ -233,7 +233,7 @@ export default function Revisar({ params = {} }) {
                 {(a.impact?.details || []).slice(0, 4).map((t, i) => <p key={i} style={{ ...p, fontSize: "var(--t-ui)" }}>{typeof t === "string" ? t : t.text || t.label}</p>)}
               </div>
             ) : null}
-            <details open={expert || undefined} style={{ padding: "16px 20px", borderRadius: "20px", background: "#FFFFFF", fontSize: "var(--t-ui)" }}>
+            <details open={expert || undefined} style={{ padding: "16px 20px", borderRadius: "var(--r-xl)", background: "#FFFFFF", fontSize: "var(--t-ui)" }}>
               <summary style={{ cursor: "pointer", fontWeight: "600" }}>{"Detalles técnicos"}</summary>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px", font: "400 var(--t-meta)/1.6 'Geist Mono', monospace", color: "#3D404A", overflowWrap: "anywhere" }}>
                 <span>{[a.kind, a.app, a.scopeLabel].filter(Boolean).join(" · ")}</span>
@@ -245,12 +245,12 @@ export default function Revisar({ params = {} }) {
           </aside>
         </div>
 
-        <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 12px 12px 20px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 20px 40px -20px rgba(18,19,26,.35)" }}>
+        <div style={{ position: "sticky", bottom: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 12px 12px 20px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 20px 40px -20px rgba(18,19,26,.35)" }}>
           {error ? <span role="alert" style={{ flexBasis: "100%", fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</span> : null}
           {sent ? (
             <>
               <span role="status" style={{ flex: "1", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "#0B6B4A" }}>
-                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
+                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
                 </span>
                 {sent}

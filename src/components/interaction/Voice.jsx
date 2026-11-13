@@ -108,8 +108,8 @@ export function ListenButton({ text, bot, style, label = "Escuchar", compact = f
   return (
     <button type="button" className="rm-focus" aria-pressed={on ? "true" : "false"} aria-label={on ? "Parar la lectura" : `${label}${name}`} title={on ? "Parar" : `${label} (${voice.name})`} onClick={toggle}
       style={compact
-        ? { width: "40px", height: "40px", display: "grid", placeItems: "center", background: on ? "#FFF4D1" : "transparent", border: "0", borderRadius: "8px", cursor: "pointer", color: "inherit", ...style }
-        : { display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 10px", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "1.5px solid #12131A" : "1px solid #DCE0E8", borderRadius: "9px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", ...style }}>
+        ? { width: "40px", height: "40px", display: "grid", placeItems: "center", background: on ? "#FFF4D1" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "inherit", ...style }
+        : { display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 10px", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "1.5px solid #12131A" : "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", ...style }}>
       {on ? (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
       ) : (
@@ -151,7 +151,7 @@ export function ListenArtifactButton({ artifactId, bot, title }) {
   };
   return (
     <button type="button" className="rm-focus" aria-pressed={on ? "true" : "false"} aria-busy={loading ? "true" : undefined} aria-label={on ? "Parar la lectura" : `Escuchar ${title || "el entregable"}`} title={on ? "Parar" : "Escuchar"} onClick={toggle}
-      style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "1.5px solid #12131A" : "1px solid #DCE0E8", borderRadius: "10px", cursor: loading ? "progress" : "pointer" }}>
+      style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: on ? "#FFF4D1" : "#FFFFFF", border: on ? "1.5px solid #12131A" : "1px solid #DCE0E8", borderRadius: "var(--r-md)", cursor: loading ? "progress" : "pointer" }}>
       {on ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
         : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 10v4h4l5 4V6L8 10zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></svg>}
     </button>

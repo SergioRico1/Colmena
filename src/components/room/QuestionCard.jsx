@@ -62,7 +62,7 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
   const keys = useChoiceKeys({ count: options.length, enabled: pending && !busy && !(approval?.questions?.length > 1), onChoose: (i) => answer(options[i]) });
 
   // Colmena 2.0: honey glow while it waits for you; a calm card once answered (no hard shadows).
-  const card = { maxWidth: chat ? "none" : "640px", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" };
+  const card = { maxWidth: chat ? "none" : "640px", background: "#FFFFFF", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" };
   const answered = approval && !pending;
 
   return (
@@ -85,8 +85,8 @@ function QuestionCard({ approval, text, bots, variant = "room", id }) {
             const helperBot = chat && primary ? mentioned(o.label) : null;
             // Colmena 2.0 pills: the recommended option in ink, the rest on a soft surface.
             const style = primary
-              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px 0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }
-              : { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 18px 0 12px", background: "#F6F6F3", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" };
+              ? { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 20px 0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }
+              : { display: "flex", alignItems: "center", gap: "8px", minHeight: "46px", padding: "0 18px 0 12px", background: "#F6F6F3", color: "#12131A", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" };
             return (
               <button key={o.id || i} type="button" className="rm-focus" disabled={busy || !pending} aria-busy={busy ? "true" : undefined} aria-keyshortcuts={letterOf(i) || undefined} onClick={() => answer(o)} style={style}>
                 {letterOf(i) ? <span aria-hidden="true" style={letterStyle(primary)}>{letterOf(i)}</span> : null}

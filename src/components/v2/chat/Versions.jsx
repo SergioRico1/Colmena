@@ -5,7 +5,7 @@ import { Pencil } from "lucide-react";
 // ActionBarEdit): «‹ Versión 2 de 3 ›» under a message that has other versions, and «Editar» on your
 // own messages, which sends it again as a new version from there on.
 
-const quiet = { width: "26px", height: "26px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "7px", background: "transparent", color: "#4A4D57", fontSize: "var(--t-body)" };
+const quiet = { width: "26px", height: "26px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "#4A4D57", fontSize: "var(--t-body)" };
 
 /** «‹ Versión 2 de 3 ›» (design/V3Chat.dc.html): `branch` is { index, count, ids }; `onShow(id)` shows that version. */
 export function BranchPicker({ branch, onShow, disabled = false, align = "flex-start" }) {
@@ -59,7 +59,7 @@ export function EditMessage({ text, canRestore = false, onSend, onCancel }) {
     try { await onSend(body, restore); } catch (err) { setError(err?.message || "No se pudo enviar."); setBusy(false); }
   };
   return (
-    <form className="c-ring" onSubmit={send} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "24px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 16px 40px -24px rgba(18,19,26,.3)", animation: "rise .2s ease-out" }}>
+    <form className="c-ring" onSubmit={send} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 16px 40px -24px rgba(18,19,26,.3)", animation: "rise .2s ease-out" }}>
       <label style={{ display: "flex" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Editar el mensaje"}</span>
         <textarea className="c-bare" ref={box} value={value} onChange={(e) => setValue(e.target.value)} rows={2}
@@ -74,8 +74,8 @@ export function EditMessage({ text, canRestore = false, onSend, onCancel }) {
       ) : null}
       <span style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-end" }}>
         <span style={{ flex: "1", padding: "0 8px", fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{"Se envía como otra versión; la anterior se queda en ‹ ›."}</span>
-        <button type="button" onClick={onCancel} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: "#3D404A" }}>{"Cancelar"}</button>
-        <button type="submit" disabled={busy || !value.trim()} style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: busy ? "progress" : "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{busy ? "Enviando…" : "Enviar"}</button>
+        <button type="button" onClick={onCancel} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, color: "#3D404A" }}>{"Cancelar"}</button>
+        <button type="submit" disabled={busy || !value.trim()} style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: busy ? "progress" : "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{busy ? "Enviando…" : "Enviar"}</button>
       </span>
       {error ? <span role="alert" style={{ padding: "0 8px", fontSize: "var(--t-meta)", color: "#B4372A", fontWeight: 600 }}>{error}</span> : null}
     </form>

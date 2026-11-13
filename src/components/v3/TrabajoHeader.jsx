@@ -31,7 +31,7 @@ export default function TrabajoHeader({ tab, action = null, counts = null }) {
           <p style={{ margin: 0, fontSize: "var(--t-read)", color: "#4A4D57" }}>Todo lo que hacen tus bots: una vez, cada cierto tiempo o a largo plazo.</p>
         </div>
         {action ? (
-          <button type="button" onClick={action.onClick} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>
+          <button type="button" onClick={action.onClick} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
             {action.label}
           </button>
@@ -46,7 +46,7 @@ export default function TrabajoHeader({ tab, action = null, counts = null }) {
               style={{ flex: "none", height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", ...(on ? { borderBottom: "2px solid #12131A", marginBottom: "-1px" } : {}), color: on ? "#12131A" : "#4A4D57", fontSize: "var(--t-body)", fontWeight: on ? 600 : 500 }}>
               {t.label}
               <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{t.hint}</span>
-              {n ? <span style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "10px", background: "#EBEBE6", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A", fontVariantNumeric: "tabular-nums" }}>{n}</span> : null}
+              {n ? <span style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#EBEBE6", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A", fontVariantNumeric: "tabular-nums" }}>{n}</span> : null}
             </a>
           );
         })}

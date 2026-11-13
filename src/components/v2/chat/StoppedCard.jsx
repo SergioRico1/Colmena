@@ -40,15 +40,15 @@ function StoppedCard({ stopped, botName = "El bot", onContinue, onDiscard, onRea
   const buttons = (
     <>
       <button type="button" className="rm-focus" disabled={!!busy} onClick={run("continue", () => onContinue(mine && said ? said : undefined))} aria-busy={busy === "continue" ? "true" : undefined}
-        style={{ flex: "none", height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: busy ? "progress" : "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{busy === "continue" ? "Continuando…" : "Continuar"}</button>
+        style={{ flex: "none", height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: busy ? "progress" : "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{busy === "continue" ? "Continuando…" : "Continuar"}</button>
       <button type="button" className="rm-focus" disabled={!!busy} onClick={run("discard", () => onDiscard(mine && said ? said : undefined))} title="Quita lo que quedó a medias; lo dicho y hecho se queda"
-        style={{ flex: "none", height: "34px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", cursor: busy ? "progress" : "pointer", fontSize: "var(--t-ui)" }}>{busy === "discard" ? "Descartando…" : "Descartar"}</button>
+        style={{ flex: "none", height: "34px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", cursor: busy ? "progress" : "pointer", fontSize: "var(--t-ui)" }}>{busy === "discard" ? "Descartando…" : "Descartar"}</button>
     </>
   );
   // Colmena 3 (design/V3ChatExperto.dc.html): one quiet grey line with what happened and the
   // two ways on — «Continuar» in ink, «Descartar» outlined.
   return (
-    <section role="status" aria-label="Se paró" style={{ display: "flex", flexDirection: "column", gap: mine ? "10px" : "6px", padding: "12px 14px 12px 16px", borderRadius: "14px", background: tone.bg === "rgba(18,19,26,.06)" ? "#F1F1EC" : tone.bg, animation: "rise .3s ease-out" }}>
+    <section role="status" aria-label="Se paró" style={{ display: "flex", flexDirection: "column", gap: mine ? "10px" : "6px", padding: "12px 14px 12px 16px", borderRadius: "var(--r-lg)", background: tone.bg === "rgba(18,19,26,.06)" ? "#F1F1EC" : tone.bg, animation: "rise .3s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <span style={{ flex: "1", minWidth: "200px", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#12131A" }}>
           <strong style={{ fontWeight: 600 }}>{r.title(botName) + "."}</strong>{r.hint ? " " + r.hint : ""}
@@ -59,7 +59,7 @@ function StoppedCard({ stopped, botName = "El bot", onContinue, onDiscard, onRea
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           <input className="c-quiet" type="text" value={why} maxLength={WHY_MAX} disabled={busy === "continue" || busy === "discard"} aria-label={`Dile a ${botName} por qué lo has parado (opcional)`} placeholder="Dile por qué lo has parado (opcional)"
             onChange={(e) => setWhy(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent?.isComposing) { e.preventDefault(); void keep(); } }}
-            style={{ flex: "1", minWidth: "200px", height: "34px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontFamily: "inherit" }} />
+            style={{ flex: "1", minWidth: "200px", height: "34px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontFamily: "inherit" }} />
           {buttons}
         </div>
       ) : null}

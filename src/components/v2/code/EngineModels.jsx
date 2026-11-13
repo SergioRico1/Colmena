@@ -56,11 +56,11 @@ export default function EngineModelMenu({ engines = [], current, onPick, close, 
             {e.id === current?.engine ? <span style={{ font: `500 var(--t-micro)/1 ${MONO}`, color: C.quiet }}>ahora</span> : null}
           </span>
           {!e.available ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "2px 8px 6px", padding: "10px 12px", borderRadius: "14px", background: C.soft }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "2px 8px 6px", padding: "10px 12px", borderRadius: "var(--r-lg)", background: C.soft }}>
               <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.5, color: C.text }}>{e.installing || installing ? "Instalando OpenCode para Colmena…" : e.need || "No está disponible en este ordenador."}</span>
               {e.installable ? (
                 <button type="button" disabled={installing || e.installing} onClick={install}
-                  style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: C.ink, color: C.white, cursor: installing || e.installing ? "default" : "pointer", fontSize: "var(--t-caption)", fontWeight: 600, opacity: installing || e.installing ? 0.6 : 1 }}>
+                  style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: C.ink, color: C.white, cursor: installing || e.installing ? "default" : "pointer", fontSize: "var(--t-caption)", fontWeight: 600, opacity: installing || e.installing ? 0.6 : 1 }}>
                   <Download size={12} strokeWidth={2.4} aria-hidden="true" />{installing || e.installing ? "Instalando…" : "Instalar OpenCode"}
                 </button>
               ) : null}
@@ -72,7 +72,7 @@ export default function EngineModelMenu({ engines = [], current, onPick, close, 
                 const on = multi ? multi.some((x) => x.engine === e.id && x.model === m.id) : current?.engine === e.id && current?.model === m.id;
                 return (
                   <button key={m.id} type="button" role="menuitemradio" aria-checked={on} className="code-hover" onClick={() => { onPick(e.id, m.id); if (!multi) close?.(); }}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "9px 12px", border: 0, borderRadius: "14px", background: on ? C.soft : "transparent", cursor: "pointer", textAlign: "left" }}>
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "9px 12px", border: 0, borderRadius: "var(--r-lg)", background: on ? C.soft : "transparent", cursor: "pointer", textAlign: "left" }}>
                     <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
                       <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: C.ink }}>{m.label}</strong>
                       {modelNote(m) ? <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.45, color: C.muted }}>{modelNote(m)}</span> : null}

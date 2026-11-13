@@ -63,8 +63,8 @@ export default function Seguridad() {
         <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>Estas acciones piden tu permiso en Hoy sea cual sea la autonomía del bot. No se pueden desactivar ni convertir en «Permitir siempre».</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px, 100%), 1fr))", gap: "10px" }}>
           {RED_LINES.map((r) => (
-            <div key={r.title} style={{ padding: "14px", background: "#F6F6F3", borderRadius: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
-              <span aria-hidden="true" style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: "#FFFFFF", border: "1.5px solid #E5484D", color: "#B4262B", borderRadius: "9px" }}>
+            <div key={r.title} style={{ padding: "14px", background: "#F6F6F3", borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: "8px" }}>
+              <span aria-hidden="true" style={{ width: "34px", height: "34px", display: "grid", placeItems: "center", background: "#FFFFFF", border: "1.5px solid #E5484D", color: "#B4262B", borderRadius: "var(--r-sm)" }}>
                 <r.Icon size={17} strokeWidth={2} />
               </span>
               <strong style={{ fontSize: "var(--t-body)" }}>{r.title}</strong>
@@ -92,12 +92,12 @@ export default function Seguridad() {
 
       <Card id="siempre" title="Permitido siempre" aside={<span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#5C606C" }}>{grants.length} {grants.length === 1 ? "regla" : "reglas"}</span>}>
         {grants.length === 0 ? (
-          <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>No has permitido nada para siempre. Cuando marques «Permitir siempre» al aprobar algo en Hoy, la regla aparecerá aquí y podrás revocarla.</p>
+          <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>No has permitido nada para siempre. Cuando marques «Permitir siempre» al aprobar algo en Hoy, la regla aparecerá aquí y podrás revocarla.</p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column" }}>
             {grants.map((g, i) => (
               <div key={g.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 0", borderTop: i ? "1px solid rgba(18,19,26,.06)" : "0" }}>
-                {bot(g.botId) ? <BotAvatar bot={bot(g.botId)} size={28} font={12} /> : <span aria-hidden="true" style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#F4F4F0" }} />}
+                {bot(g.botId) ? <BotAvatar bot={bot(g.botId)} size={28} font={12} /> : <span aria-hidden="true" style={{ width: "28px", height: "28px", borderRadius: "var(--r-circle)", background: "#F4F4F0" }} />}
                 <span style={{ flex: "1 1 240px", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
                   <strong style={{ fontSize: "var(--t-ui)" }}>{g.label || g.title || g.text || "Regla sin nombre"}</strong>
                   <span style={{ fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-caption)", color: "#5C606C" }}>{[bot(g.botId)?.name || (g.botId ? g.botId : "Todos los bots"), g.createdAt ? `desde ${dateTime(g.createdAt)}` : null].filter(Boolean).join(" · ")}</span>
@@ -114,7 +114,7 @@ export default function Seguridad() {
         Exportar CSV
       </button>}>
         {log.length === 0 ? (
-          <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "var(--t-ui)", color: "#5C606C" }}>Aún no se ha decidido nada. Cada aprobación, rechazo o respuesta quedará aquí con la hora, el bot y quién decidió.</p>
+          <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#5C606C" }}>Aún no se ha decidido nada. Cada aprobación, rechazo o respuesta quedará aquí con la hora, el bot y quién decidió.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", minWidth: "640px", borderCollapse: "collapse", fontSize: "var(--t-ui)" }}>
@@ -136,7 +136,7 @@ export default function Seguridad() {
                         {a.missionId ? <a href={`/misiones/${encodeURIComponent(a.missionId)}`}>{a.title || a.summary || "Acción"}</a> : a.title || a.summary || "Acción"}
                         {a.denyReason ? <span style={{ display: "block", marginTop: "2px", fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Motivo: " + a.denyReason}</span> : null}
                       </td>
-                      <td style={cellStyle(last)}><span style={{ padding: "3px 8px", borderRadius: "5px", fontSize: "var(--t-caption)", fontWeight: "600", ...d.style }}>{d.label}</span></td>
+                      <td style={cellStyle(last)}><span style={{ padding: "3px 8px", borderRadius: "var(--r-xs)", fontSize: "var(--t-caption)", fontWeight: "600", ...d.style }}>{d.label}</span></td>
                       <td style={{ ...cellStyle(last), color: a.decidedBy === "regla" ? "#8A6400" : "#12131A" }}>{who(a)}</td>
                     </tr>
                   );

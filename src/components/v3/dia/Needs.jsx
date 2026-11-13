@@ -55,7 +55,7 @@ export function scheduleApproval(a, model, always = false) {
   });
 }
 
-const card = (wide, ring) => ({ display: "flex", flexDirection: "column", gap: wide ? "14px" : "12px", padding: "20px 22px", background: "#FFFFFF", borderRadius: "20px", boxShadow: ring, transition: "box-shadow .4s ease", animation: "rise .4s ease-out" });
+const card = (wide, ring) => ({ display: "flex", flexDirection: "column", gap: wide ? "14px" : "12px", padding: "20px 22px", background: "#FFFFFF", borderRadius: "var(--r-xl)", boxShadow: ring, transition: "box-shadow .4s ease", animation: "rise .4s ease-out" });
 const title = (wide) => (wide ? { margin: "0", fontSize: "var(--t-lead)", fontWeight: "600", letterSpacing: "-0.01em", lineHeight: "1.3" } : { margin: "0", fontSize: "var(--t-read)", fontWeight: "600", lineHeight: "1.35" });
 const body = { margin: "0", fontSize: "var(--t-body)", lineHeight: "1.5", color: "#4A4D57", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" };
 const strong = { fontWeight: "600", color: "#12131A" };
@@ -78,7 +78,7 @@ function Head({ bot, where, at, label }) {
 function Settled({ text }) {
   return (
     <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "#0B6B4A", animation: "fade .3s ease-out" }}>
-      <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
+      <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
       </span>
       {text}
@@ -318,7 +318,7 @@ export function SnoozedNeeds({ items = [], bots = [] }) {
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }}><path d="m6 9 6 6 6-6" /></svg>
       </button>
       {open ? (
-        <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", animation: "fade .2s ease-out" }}>
+        <ul id="snoozed-needs" aria-label="Pospuestos" style={{ margin: "0", padding: "4px 18px", listStyle: "none", display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", animation: "fade .2s ease-out" }}>
           {items.map((a, i) => {
             const bot = bots.find((b) => b.id === a.botId) || null;
             return (
@@ -406,7 +406,7 @@ export function WatchNeed({ n, bot, wide = false }) {
           {n.sources.slice(0, 3).map((s, i) => {
             const Icon = (WHERE[s.fuente] || WHERE.Correo)[1];
             return (
-              <a key={i} href={s.url} target="_blank" rel="noreferrer" title={s.asunto} style={{ display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "28px", padding: "0 10px", borderRadius: "999px", background: "#F3F3EF", fontSize: "var(--t-meta)", color: "#3D404A" }}>
+              <a key={i} href={s.url} target="_blank" rel="noreferrer" title={s.asunto} style={{ display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "#F3F3EF", fontSize: "var(--t-meta)", color: "#3D404A" }}>
                 <Icon size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.asunto || "Ver el original"}</span>
               </a>

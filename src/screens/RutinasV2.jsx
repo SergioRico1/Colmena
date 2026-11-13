@@ -174,30 +174,30 @@ export default function RutinasV2() {
             <h2 id="act-t" style={{ margin: "0 10px 0 0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Tus rutinas</h2>
             {FILTERS.map(([id, label]) => {
               const on = filter === id;
-              return <button key={id} type="button" aria-pressed={on} onClick={() => setFilter(id)} style={{ height: "34px", padding: "0 13px", border: 0, borderRadius: "999px", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{id === "todas" ? `${label} · ${rows.length}` : label}</button>;
+              return <button key={id} type="button" aria-pressed={on} onClick={() => setFilter(id)} style={{ height: "34px", padding: "0 13px", border: 0, borderRadius: "var(--r-pill)", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{id === "todas" ? `${label} · ${rows.length}` : label}</button>;
             })}
           </div>
           {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{act.error}</p> : null}
 
           {filter === "recordatorio" ? <ReminderForm /> : null}
           {filter === "encargo" && !orderForm && !editingOrder ? (
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 18px", borderRadius: "18px", background: "#F1F1EC", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "#F1F1EC", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
               <span style={{ flex: "1 1 320px", color: MUTED }}>Una tarea fija es algo que un bot atiende siempre que haga falta, con sus límites claros, como registrar las facturas que lleguen.</span>
-              <button type="button" onClick={() => setOrderForm(true)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Nueva tarea fija</button>
+              <button type="button" onClick={() => setOrderForm(true)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Nueva tarea fija</button>
             </div>
           ) : null}
           {orderForm ? <OrderForm team={team} onClose={() => setOrderForm(false)} /> : null}
           {editingOrder ? <OrderForm key={editingOrder.id} team={team} initial={editingOrder} onClose={() => setEditing(null)} /> : null}
 
-          {loading && !list.length ? <div style={{ height: "88px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+          {loading && !list.length ? <div style={{ height: "88px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
           {!loading && !rows.length && !open ? (
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px", padding: "22px", borderRadius: "22px", background: "#FFFFFF" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px", padding: "22px", borderRadius: "var(--r-2xl)", background: "#FFFFFF" }}>
               <span style={{ flex: "1 1 300px", fontSize: "var(--t-body)", lineHeight: 1.5 }}>Aún no hay rutinas. Empieza por algo que repites cada semana.</span>
-              <button type="button" onClick={openNew} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>Nueva rutina</button>
+              <button type="button" onClick={openNew} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>Nueva rutina</button>
             </div>
           ) : null}
           {list.length ? (
-            <div style={{ display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF" }}>
+            <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF" }}>
               {list.map((r, i) => <RoutineRow key={r.key} r={r} first={i === 0} busy={act.busy} />)}
             </div>
           ) : !loading && rows.length ? <p style={{ margin: 0, padding: "16px 4px", fontSize: "var(--t-body)", color: FAINT }}>{{ hora: "Ninguna rutina por horario.", algo: "Ninguna rutina que salte cuando pasa algo.", recordatorio: "Sin recordatorios por tema.", encargo: "Sin tareas fijas." }[filter]}</p> : null}
@@ -278,23 +278,23 @@ function RoutineRow({ r, first, busy }) {
   const on = r.on;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "16px 20px", borderTop: first ? 0 : "1px solid rgba(18,19,26,.06)", animation: "fade .3s ease-out" }}>
-      <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "11px", background: "#F1F1EC", opacity: on ? 1 : 0.6, transition: "opacity .3s ease" }}>{r.bot ? <BotDot bot={r.bot} size={18} work={r.work} /> : null}</span>
+      <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F1F1EC", opacity: on ? 1 : 0.6, transition: "opacity .3s ease" }}>{r.bot ? <BotDot bot={r.bot} size={18} work={r.work} /> : null}</span>
       <span style={{ flex: "1 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
         <span style={{ fontSize: "var(--t-body)", lineHeight: 1.4, color: on ? undefined : MUTED, transition: "color .3s ease" }}>{r.text}</span>
         <span style={{ fontSize: "var(--t-meta)", color: FAINT }}>{r.meta}</span>
       </span>
-      {r.status ? <span style={{ flex: "none", height: "26px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: r.status[1], color: r.status[2], fontSize: "var(--t-meta)", fontWeight: 600 }}>{r.status[0]}</span> : null}
-      <button type="button" role="switch" aria-checked={on} aria-label={r.label} disabled={busy} onClick={r.toggle} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "12px", background: on ? INK : "#8A8D96", cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
-        <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} />
+      {r.status ? <span style={{ flex: "none", height: "26px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: r.status[1], color: r.status[2], fontSize: "var(--t-meta)", fontWeight: 600 }}>{r.status[0]}</span> : null}
+      <button type="button" role="switch" aria-checked={on} aria-label={r.label} disabled={busy} onClick={r.toggle} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: on ? INK : "#8A8D96", cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
+        <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} />
       </button>
       <span style={{ position: "relative", flex: "none" }}>
-        <button type="button" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((v) => !v)} style={{ width: "34px", height: "34px", padding: 0, border: 0, borderRadius: "10px", background: menu ? "#F1F1EC" : "transparent", color: MUTED, cursor: "pointer" }}>···</button>
+        <button type="button" aria-label="Más opciones" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((v) => !v)} style={{ width: "34px", height: "34px", padding: 0, border: 0, borderRadius: "var(--r-md)", background: menu ? "#F1F1EC" : "transparent", color: MUTED, cursor: "pointer" }}>···</button>
         {menu ? (
           <>
             <button type="button" aria-label="Cerrar el menú" onClick={() => setMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 15, border: 0, background: "transparent", cursor: "default" }} />
-            <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 22, minWidth: "220px", padding: "6px", display: "flex", flexDirection: "column", gap: "2px", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 18px 40px rgba(18,19,26,.2)", animation: "rise .2s ease-out" }}>
+            <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 22, minWidth: "220px", padding: "6px", display: "flex", flexDirection: "column", gap: "2px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 18px 40px rgba(18,19,26,.2)", animation: "rise .2s ease-out" }}>
               {r.menu.map(([label, fn]) => (
-                <button key={label} type="button" role="menuitem" onClick={() => { setMenu(false); fn(); }} style={{ minHeight: "38px", padding: "0 12px", border: 0, borderRadius: "9px", background: "transparent", textAlign: "left", fontSize: "var(--t-ui)", cursor: "pointer", color: label === "Borrar" ? "#B4232A" : INK }}>{label}</button>
+                <button key={label} type="button" role="menuitem" onClick={() => { setMenu(false); fn(); }} style={{ minHeight: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", textAlign: "left", fontSize: "var(--t-ui)", cursor: "pointer", color: label === "Borrar" ? "#B4232A" : INK }}>{label}</button>
               ))}
             </div>
           </>
@@ -312,7 +312,7 @@ function Pills({ label, items, value, onPick }) {
       <div role="radiogroup" aria-label={label} style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {items.map(([v, text]) => {
           const on = value === v;
-          return <button key={String(v)} type="button" role="radio" aria-checked={on} onClick={() => onPick(v)} style={{ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK }}>{text}</button>;
+          return <button key={String(v)} type="button" role="radio" aria-checked={on} onClick={() => onPick(v)} style={{ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-md)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK }}>{text}</button>;
         })}
       </div>
     </div>
@@ -322,7 +322,7 @@ function Field({ label, value, onChange, placeholder }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: "8px", animation: "fade .3s ease-out" }}>
       <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: MUTED }}>{label}</span>
-      <input className="c-quiet" type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)" }} />
+      <input className="c-quiet" type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)" }} />
     </label>
   );
 }
@@ -336,16 +336,16 @@ function EveryPicker({ n, unit, onPick }) {
       <div role="radiogroup" aria-label="Cada cuánto" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
         {EVERY.map(([k, u]) => {
           const on = !other && k === Number(n) && u === unit;
-          return <button key={k + u} type="button" role="radio" aria-checked={on} onClick={() => { setOther(false); onPick(k, u); }} style={{ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK }}>{everyLabel(k, u)}</button>;
+          return <button key={k + u} type="button" role="radio" aria-checked={on} onClick={() => { setOther(false); onPick(k, u); }} style={{ minWidth: "44px", height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-md)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK }}>{everyLabel(k, u)}</button>;
         })}
-        <button type="button" role="radio" aria-checked={other} onClick={() => setOther(true)} style={{ height: "38px", padding: "0 14px", border: `1.5px solid ${sel(other)}`, borderRadius: "12px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: other ? 600 : 500, color: INK }}>Otro</button>
+        <button type="button" role="radio" aria-checked={other} onClick={() => setOther(true)} style={{ height: "38px", padding: "0 14px", border: `1.5px solid ${sel(other)}`, borderRadius: "var(--r-md)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: other ? 600 : 500, color: INK }}>Otro</button>
       </div>
       {other ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-          <input className="c-quiet" type="number" aria-label="Cada cuántos" min={unit === "horas" ? 1 : MIN_EVERY} max={unit === "horas" ? 168 : 9999} value={n} onChange={(e) => onPick(Math.max(1, Math.round(Number(e.target.value) || 0)), unit)} style={{ width: "90px", height: "38px", padding: "0 12px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK }} />
+          <input className="c-quiet" type="number" aria-label="Cada cuántos" min={unit === "horas" ? 1 : MIN_EVERY} max={unit === "horas" ? 168 : 9999} value={n} onChange={(e) => onPick(Math.max(1, Math.round(Number(e.target.value) || 0)), unit)} style={{ width: "90px", height: "38px", padding: "0 12px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK }} />
           {[["minutos", "minutos"], ["horas", "horas"]].map(([u, label]) => {
             const on = unit === u;
-            return <button key={u} type="button" aria-pressed={on} onClick={() => onPick(n, u)} style={{ height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK }}>{label}</button>;
+            return <button key={u} type="button" aria-pressed={on} onClick={() => onPick(n, u)} style={{ height: "38px", padding: "0 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-md)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: INK }}>{label}</button>;
           })}
           <span style={{ fontSize: "var(--t-meta)", color: everyMinutes(n, unit) < MIN_EVERY ? "#B4232A" : FAINT }}>Como poco, cada 15 minutos.</span>
         </div>
@@ -353,8 +353,8 @@ function EveryPicker({ n, unit, onPick }) {
     </div>
   );
 }
-const choice = (on) => ({ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px", minHeight: "56px", padding: "10px 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "14px", background: "#FFFFFF", textAlign: "left", cursor: "pointer", color: INK });
-const panel = { display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "18px", background: SOFT, animation: "rise .3s ease-out" };
+const choice = (on) => ({ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px", minHeight: "56px", padding: "10px 14px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", cursor: "pointer", color: INK });
+const panel = { display: "flex", flexDirection: "column", gap: "14px", padding: "18px", borderRadius: "var(--r-xl)", background: SOFT, animation: "rise .3s ease-out" };
 
 /** One-off dates offered for «Una sola vez»: tomorrow and the next Friday and Monday. */
 function onceDates(now = new Date()) {
@@ -578,19 +578,19 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
   const homeList = b.where.startsWith("sala:") && !homes.some((m) => "sala:" + m.id === b.where) ? [...homes, ...missions.filter((m) => "sala:" + m.id === b.where)] : homes;
 
   return (
-    <section id="nueva" aria-labelledby="new-t" style={{ scrollMarginTop: "24px", display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <section id="nueva" aria-labelledby="new-t" style={{ scrollMarginTop: "24px", display: "flex", flexDirection: "column", gap: "18px", padding: "26px 28px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "10px" }}>
         <h2 id="new-t" style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{editing ? "Cambiar la rutina" : "Nueva rutina"}</h2>
         <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-ui)", color: FAINT }}>
           Se lee como una frase. Toca cada parte para cambiarla.
-          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "#F1F1EC", cursor: "pointer", color: INK }}><X size={13} aria-hidden="true" /></button>
+          <button type="button" onClick={onClose} aria-label="Cerrar" style={{ width: "28px", height: "28px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "#F1F1EC", cursor: "pointer", color: INK }}><X size={13} aria-hidden="true" /></button>
         </span>
       </div>
       <p style={{ margin: 0, font: "500 clamp(var(--t-heading), 2.6vw, var(--t-display-s))/1.45 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
         {tokens.map(([before, label, k]) => (
           <span key={k}>
             <span>{before}</span>
-            <button type="button" onClick={() => setOpen(open === k ? null : k)} aria-expanded={open === k} style={{ padding: "0 8px", margin: "0 2px", border: 0, borderRadius: "10px", background: open === k ? "#E3EBFF" : "#F1F1EC", color: INK, font: "inherit", textDecoration: "underline", textDecorationColor: "rgba(18,19,26,.3)", textUnderlineOffset: "6px", cursor: "pointer" }}>{label}</button>
+            <button type="button" onClick={() => setOpen(open === k ? null : k)} aria-expanded={open === k} style={{ padding: "0 8px", margin: "0 2px", border: 0, borderRadius: "var(--r-md)", background: open === k ? "#E3EBFF" : "#F1F1EC", color: INK, font: "inherit", textDecoration: "underline", textDecorationColor: "rgba(18,19,26,.3)", textUnderlineOffset: "6px", cursor: "pointer" }}>{label}</button>
           </span>
         ))}
         .
@@ -598,10 +598,10 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
 
       {open === "when" ? (
         <div role="group" aria-label="Cuándo" style={panel}>
-          <div role="tablist" aria-label="Tipo de rutina" style={{ display: "inline-flex", alignSelf: "flex-start", padding: "3px", gap: "2px", borderRadius: "999px", background: "#EBEBE6" }}>
+          <div role="tablist" aria-label="Tipo de rutina" style={{ display: "inline-flex", alignSelf: "flex-start", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "#EBEBE6" }}>
             {[["hora", "A una hora", "semana"], ["algo", "Cuando pase algo", "correo"]].map(([id, label, first]) => {
               const on = kind === id;
-              return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { if (!on) { setWhen({ type: first }); setMsg(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+              return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => { if (!on) { setWhen({ type: first }); setMsg(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
             })}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))", gap: "8px" }}>
@@ -649,7 +649,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
           {team.map((x) => {
             const on = x.id === b.who;
             return (
-              <button key={x.id} type="button" aria-pressed={on} onClick={() => { set({ who: x.id }, "who"); setOpen("what"); }} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "10px", border: `1.5px solid ${sel(on)}`, borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>
+              <button key={x.id} type="button" aria-pressed={on} onClick={() => { set({ who: x.id }, "who"); setOpen("what"); }} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "10px", border: `1.5px solid ${sel(on)}`, borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>
                 <BotDot bot={x} size={18} />
                 <span style={{ fontWeight: 600 }}>{x.name}</span>
                 {x.role ? <span style={{ color: FAINT }}>{x.role.toLowerCase()}</span> : null}
@@ -669,9 +669,9 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
               </button>
             ))}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 14px", borderRadius: "var(--r-lg)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.1)" }}>
             <input className="c-bare" type="text" aria-label="Otra cosa" value={b.custom} onChange={(e) => setB((x) => ({ ...x, custom: e.target.value }))} onKeyDown={(e) => { if (e.key === "Enter") applyCustom(); }} placeholder="Otra cosa: escríbelo con tus palabras" style={{ flex: 1, minWidth: 0, height: "40px", border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
-            <button type="button" onClick={applyCustom} disabled={!b.custom.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: b.custom.trim() ? INK : "rgba(18,19,26,.08)", color: b.custom.trim() ? "#FFFFFF" : "#8A8D96" }}>Usar</button>
+            <button type="button" onClick={applyCustom} disabled={!b.custom.trim()} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", cursor: b.custom.trim() ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: b.custom.trim() ? INK : "rgba(18,19,26,.08)", color: b.custom.trim() ? "#FFFFFF" : "#8A8D96" }}>Usar</button>
           </div>
         </div>
       ) : null}
@@ -704,9 +704,9 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
       ) : null}
 
       {conflict || changedElsewhere ? (
-        <div role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 16px", borderRadius: "14px", background: "#F1F1EC", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
+        <div role="alert" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "12px 16px", borderRadius: "var(--r-lg)", background: "#F1F1EC", fontSize: "var(--t-ui)", lineHeight: 1.45 }}>
           <span style={{ flex: "1 1 300px" }}>Esta rutina ha cambiado mientras la editabas. Para no pisar esos cambios, ábrela otra vez con lo último y vuelve a hacer los tuyos.</span>
-          <button type="button" onClick={onReload} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Ver lo último</button>
+          <button type="button" onClick={onReload} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>Ver lo último</button>
         </div>
       ) : null}
       <span role="status" style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: msg?.error || (act.error && !conflict) ? "#B4232A" : MUTED }}>
@@ -715,8 +715,8 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
       </span>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", paddingTop: "4px" }}>
         <span style={{ flex: "1 1 260px", fontSize: "var(--t-ui)", color: FAINT }}>Aunque la rutina diga otra cosa, enviar fuera, pagar, publicar y borrar siempre te preguntan.</span>
-        <button type="button" onClick={onTest} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 500, cursor: act.busy ? "wait" : "pointer" }}>{savedId ? "Probar otra vez" : "Probar ahora"}</button>
-        <button type="button" onClick={onActivate} disabled={act.busy || (editing && (conflict || changedElsewhere))} style={{ height: "44px", padding: "0 22px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: act.busy ? "wait" : "pointer", opacity: editing && (conflict || changedElsewhere) ? 0.5 : 1 }}>{editing ? "Guardar cambios" : "Activar"}</button>
+        <button type="button" onClick={onTest} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 500, cursor: act.busy ? "wait" : "pointer" }}>{savedId ? "Probar otra vez" : "Probar ahora"}</button>
+        <button type="button" onClick={onActivate} disabled={act.busy || (editing && (conflict || changedElsewhere))} style={{ height: "44px", padding: "0 22px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: act.busy ? "wait" : "pointer", opacity: editing && (conflict || changedElsewhere) ? 0.5 : 1 }}>{editing ? "Guardar cambios" : "Activar"}</button>
       </div>
     </section>
   );
@@ -730,7 +730,7 @@ function untilOptions(now = new Date()) {
   return [[null, "Sin fecha"], [month.toISOString(), "Fin de mes"], [year.toISOString(), "Fin de año"]];
 }
 const longDate = (iso) => { const d = new Date(iso); return `${d.getDate()} de ${MONTH[d.getMonth()]}`; };
-const inputBox = { padding: "12px 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit", color: INK };
+const inputBox = { padding: "12px 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit", color: INK };
 
 function OrderForm({ team, initial, onClose }) {
   const untils = useMemo(() => untilOptions(), []);
@@ -750,7 +750,7 @@ function OrderForm({ team, initial, onClose }) {
   });
   const label = (text) => <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: MUTED }}>{text}</span>;
   return (
-    <section aria-labelledby="of-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "24px 26px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+    <section aria-labelledby="of-t" style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "24px 26px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 56px -34px rgba(18,19,26,.4)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
       <h2 id="of-t" style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{initial ? "Cambiar la tarea fija" : "Nueva tarea fija"}</h2>
       <label style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {label("Nombre de la tarea fija")}
@@ -772,8 +772,8 @@ function OrderForm({ team, initial, onClose }) {
       <span style={{ fontSize: "var(--t-ui)", color: FAINT }}>Aunque la tarea fija diga otra cosa, enviar algo fuera, mover dinero, borrar archivos e instalar programas siempre te preguntan.</span>
       {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{act.error}</p> : null}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-        <button type="button" onClick={onClose} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: 500 }}>Cancelar</button>
-        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "42px", padding: "0 20px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "var(--t-body)", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>{initial ? "Guardar cambios" : "Guardar tarea fija"}</button>
+        <button type="button" onClick={onClose} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: 500 }}>Cancelar</button>
+        <button type="button" onClick={save} disabled={!ready || act.busy} style={{ height: "42px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", cursor: ready ? "pointer" : "default", fontSize: "var(--t-body)", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>{initial ? "Guardar cambios" : "Guardar tarea fija"}</button>
       </div>
     </section>
   );
@@ -792,9 +792,9 @@ function ReminderForm() {
     await post("/intents", { keywords, remind: what.trim() });
     setTopic(""); setWhat("");
   });
-  const input = { flex: 1, minWidth: 0, height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "12px", background: "#FFFFFF", font: "500 var(--t-read)/1 'Geist', sans-serif", color: INK };
+  const input = { flex: 1, minWidth: 0, height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "500 var(--t-read)/1 'Geist', sans-serif", color: INK };
   return (
-    <section aria-labelledby="rf-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "22px", background: SOFT }}>
+    <section aria-labelledby="rf-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "var(--r-2xl)", background: SOFT }}>
       <h3 id="rf-t" style={{ margin: 0, fontSize: "var(--t-ui)", fontWeight: 600 }}>Nuevo recordatorio <span style={{ fontWeight: 400, color: FAINT }}>· vale en cualquier sala o chat</span></h3>
       <p style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", font: "500 clamp(var(--t-title), 2vw, var(--t-heading))/1.4 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>
         Cuando se hable de
@@ -810,14 +810,14 @@ function ReminderForm() {
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <span role="status" style={{ fontSize: "var(--t-meta)", color: act.error ? "#B4232A" : touched && !ready ? INK : FAINT }}>{act.error || (touched && !ready ? "Escribe al menos una palabra o frase en cada lado." : "Palabras o frases separadas por comas.")}</span>
-        <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: ready ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
+        <button type="button" onClick={add} disabled={!ready || act.busy} style={{ height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: ready ? "pointer" : "default", fontSize: "var(--t-ui)", fontWeight: 600, background: ready ? INK : "rgba(18,19,26,.08)", color: ready ? "#FFFFFF" : "#8A8D96" }}>Añadir</button>
       </div>
     </section>
   );
 }
 function ReminderSample({ sample, atlas }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 20px", borderRadius: "20px", background: "rgba(255,255,255,.55)" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 20px", borderRadius: "var(--r-xl)", background: "rgba(255,255,255,.55)" }}>
       <span style={{ fontSize: "var(--t-meta)", fontWeight: 500, color: FAINT }}>Así aparece en una sala</span>
       <div style={{ display: "grid", gridTemplateColumns: "24px 1fr", gap: "12px", alignItems: "start" }}>
         {atlas ? <BotPresence bot={atlas} size={22} /> : <span />}

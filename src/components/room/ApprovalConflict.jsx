@@ -11,7 +11,7 @@ export default function ApprovalConflict({ error, conflict, style }) {
   if (!conflict) return <p role="alert" style={{ ...ERROR, ...style }}>{error}</p>;
   const expired = /30 minutos|caduc/i.test(error);
   return (
-    <div role="alert" style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px", background: "#FFF4D1", border: "1.5px solid #12131A", borderRadius: "12px", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#12131A", ...style }}>
+    <div role="alert" style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px 12px", background: "#FFF4D1", border: "1.5px solid #12131A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#12131A", ...style }}>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: "none", marginTop: "1px" }}>
         {expired ? <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></> : <path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5M4 4v4.5h4.5" />}
       </svg>

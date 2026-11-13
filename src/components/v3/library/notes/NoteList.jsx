@@ -88,7 +88,7 @@ export default function NoteList({ view = "notas", bots = [], onNew }) {
             <SearchBox value={text} onChange={setText} label="Buscar en las notas" placeholder="Buscar por título o por lo que dicen" />
             <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "#5C606C" }}>
               {"Orden"}
-              <Select label="Orden" className="c-quiet" value={q ? "relevance" : sort} disabled={!!q} onChange={(e) => setSort(e.target.value)} style={{ height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-ui)", color: "#12131A" }} options={[...(q ? [["relevance", "Lo que más se parece"]] : []), ...SORTS]} />
+              <Select label="Orden" className="c-quiet" value={q ? "relevance" : sort} disabled={!!q} onChange={(e) => setSort(e.target.value)} style={{ height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.08)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)", color: "#12131A" }} options={[...(q ? [["relevance", "Lo que más se parece"]] : []), ...SORTS]} />
             </label>
           </div>
           {folders.length ? (
@@ -105,7 +105,7 @@ export default function NoteList({ view = "notas", bots = [], onNew }) {
             </div>
           ) : null}
           {error ? <p role="alert" style={ERROR}>{error}</p> : null}
-          {loading && !data ? <div style={{ height: "240px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+          {loading && !data ? <div style={{ height: "240px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
           {empty ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "60px 0", textAlign: "center" }}>
               <p style={{ margin: 0, maxWidth: "520px", fontSize: "var(--t-read)", lineHeight: "1.5", color: "#5C606C" }}>
@@ -145,7 +145,7 @@ function Missing({ data, error, loading }) {
   const list = data?.missing || [];
   const create = (m) => act.act(() => createNote(m.title));
   if (error) return <p role="alert" style={ERROR}>{error}</p>;
-  if (loading && !data) return <div style={{ height: "160px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} />;
+  if (loading && !data) return <div style={{ height: "160px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} />;
   if (!list.length) return <p style={{ margin: 0, padding: "60px 0", textAlign: "center", fontSize: "var(--t-read)", color: "#5C606C" }}>{"No hay nada por crear. Cuando una nota o un chat nombre con [[corchetes]] una nota que aún no existe, saldrá aquí."}</p>;
   return (
     <div style={{ ...CARD, display: "flex", flexDirection: "column", overflow: "hidden" }}>

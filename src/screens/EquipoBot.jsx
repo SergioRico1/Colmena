@@ -133,7 +133,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
             <>
               <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{"No encontramos a este bot"}</h1>
               <p style={{ margin: "0", fontSize: "var(--t-read)", color: TEXT2 }}>{"Puede que ya no esté en tu equipo."}{loadError ? ` (${loadError})` : ""}</p>
-              <a href="/equipo" style={{ alignSelf: "flex-start", height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Volver a Equipo"}</a>
+              <a href="/equipo" style={{ alignSelf: "flex-start", height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Volver a Equipo"}</a>
             </>
           ) : <p style={{ margin: "0", fontSize: "var(--t-body)", color: TEXT3 }}>{"Cargando la ficha…"}</p>}
         </main>
@@ -174,7 +174,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
         <div style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "20px 24px" }}>
           <button type="button" onClick={() => setPortrait(true)} aria-label={portraitOf(bot) ? `Cambiar el retrato de ${bot.name}` : `Darle un retrato a ${bot.name}`} title={portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato"} style={{ position: "relative", flex: "none", padding: "0", border: "0", background: "transparent", cursor: "pointer" }}>
             <span aria-hidden="true" style={{ display: "block", width: "92px", height: "92px", background: portraitOf(bot) ? `${color} url("${portraitOf(bot)}") center / cover no-repeat` : color, clipPath: sh.clip, borderRadius: sh.radius, animation: work ? "breathe 2.8s ease-in-out infinite" : "none", boxShadow: `0 18px 40px -16px ${color}99`, opacity: bot.status === "libre" || bot.status === "pausado" ? 0.85 : 1 }} />
-            {expert ? <span aria-hidden="true" style={{ position: "absolute", right: "-4px", bottom: "-4px", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.2)" }}><ImagePlus size={13} strokeWidth={2.4} /></span> : null}
+            {expert ? <span aria-hidden="true" style={{ position: "absolute", right: "-4px", bottom: "-4px", width: "28px", height: "28px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.2)" }}><ImagePlus size={13} strokeWidth={2.4} /></span> : null}
           </button>
           <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "6px", minWidth: "0" }}>
             <h1 style={{ margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" }}>{bot.name}</h1>
@@ -183,14 +183,14 @@ export default function EquipoBot({ params = {}, query = {} }) {
             {bot.limited || bot.engineLimit ? <LimitLine limited={bot.limited || bot.engineLimit} style={{ fontSize: "var(--t-ui)" }} /> : null}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {live.length ? <button type="button" disabled={busy} onClick={pause} style={{ height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.18)", borderRadius: "999px", background: "rgba(255,255,255,.6)", fontSize: "var(--t-body)", cursor: "pointer" }}>{"Pausar"}</button> : null}
+            {live.length ? <button type="button" disabled={busy} onClick={pause} style={{ height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.18)", borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.6)", fontSize: "var(--t-body)", cursor: "pointer" }}>{"Pausar"}</button> : null}
             <More round light label={`Más opciones de ${bot.name}`} items={[
               { label: portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato", run: () => setPortrait(true) },
               { label: "Duplicar", run: duplicate, disabled: busy },
               { label: "Qué cuenta de IA usa", run: () => navigate("/ajustes/ia") },
               bot.id !== "atlas" ? { label: "Retirar del equipo", run: retire, danger: true } : null,
             ]} />
-            <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Hablar con " + bot.name}</a>
+            <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Hablar con " + bot.name}</a>
           </div>
         </div>
         <nav aria-label="Secciones de la ficha" style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: "4px" }}>
@@ -200,7 +200,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
         </nav>
       </header>
       <main style={{ maxWidth: "1080px", margin: "0 auto", padding: "32px clamp(20px, 4vw, 48px) 64px", display: "flex", flexDirection: "column", gap: "22px" }}>
-        {error || (loadError && !summary) ? <p role="alert" style={{ margin: "0", padding: "12px 16px", borderRadius: "14px", background: "#FBE9EA", color: "#B4232A", fontSize: "var(--t-ui)" }}>{error || loadError}</p> : null}
+        {error || (loadError && !summary) ? <p role="alert" style={{ margin: "0", padding: "12px 16px", borderRadius: "var(--r-lg)", background: "#FBE9EA", color: "#B4232A", fontSize: "var(--t-ui)" }}>{error || loadError}</p> : null}
         <HowItWorks bot={bot} ai={ai} bots={bots} settings={settings} expert={expert} busy={busy} change={change} />
         <StandingOrdersCard bot={bot} />
         <Apps bot={bot} connectors={connectors} learning={learning} setLearning={setLearning} expert={expert} busy={busy} change={change} />
@@ -256,7 +256,7 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
   const auto = bot.autonomy || "avisa";
   const modelEngine = bot.model?.engine || (bot.model?.slug ? engineOfModel(bot.model.slug) : null);
   const options = [{ id: null, label: "Como el equipo", sub: team ? team.label : "La cuenta que elijas en Ajustes" }, ...engines.filter((e) => e.connected).map((e) => ({ id: e.id, label: e.label, sub: e.detail || null }))];
-  const panel = { display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "16px", background: "#F6F6F3", animation: "rise .2s ease-out" };
+  const panel = { display: "flex", flexDirection: "column", gap: "12px", padding: "16px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "rise .2s ease-out" };
   return (
     <section id="como" aria-labelledby="como-t" style={card}>
       <SectionHead id="como-t" title="Cómo trabaja" note="Cuánto hace por su cuenta antes de preguntarte." />
@@ -265,16 +265,16 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
           const on = auto === id;
           return (
             <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} disabled={busy} onClick={() => !on && change({ autonomy: id }, { autonomy: auto }, `${bot.name}: ${label.toLowerCase()}`)}
-              style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "16px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "16px", background: "#FFFFFF", textAlign: "left", cursor: "pointer", transition: "border-color .2s ease" }}>
+              style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", padding: "16px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", cursor: "pointer", transition: "border-color .2s ease" }}>
               <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{label}</span>
               <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: TEXT2 }}>{desc}</span>
             </button>
           );
         })}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "14px 16px", borderRadius: "14px", background: "#F6F6F3", fontSize: "var(--t-ui)" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3", fontSize: "var(--t-ui)" }}>
         <span style={{ fontWeight: "600" }}>{"Siempre te pregunta antes de"}</span>
-        {RED_LINES.map((r) => <span key={r} style={{ height: "26px", padding: "0 10px 0 8px", display: "inline-flex", alignItems: "center", gap: "5px", borderRadius: "999px", background: "#FFFFFF" }}><Lock />{r}</span>)}
+        {RED_LINES.map((r) => <span key={r} style={{ height: "26px", padding: "0 10px 0 8px", display: "inline-flex", alignItems: "center", gap: "5px", borderRadius: "var(--r-pill)", background: "#FFFFFF" }}><Lock />{r}</span>)}
         <a href="/ajustes/permisos" style={{ marginLeft: "auto", fontSize: "var(--t-meta)", color: BLUE }}>{"Por qué"}</a>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", fontSize: "var(--t-ui)" }}>
@@ -296,7 +296,7 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
               const on = (bot.engine || null) === o.id;
               return (
                 <button key={String(o.id)} type="button" role="radio" aria-checked={on ? "true" : "false"} disabled={busy} onClick={() => !on && change({ engine: o.id }, { engine: bot.engine || null }, `${bot.name} piensa con ${o.id ? o.label : "la cuenta del equipo"}`)}
-                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "14px", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
                   {o.id ? <WithMark engine={o.id} size={14}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{o.label}</span></WithMark> : <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{o.label}</span>}
                   {o.sub ? <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{o.sub}</span> : null}
                 </button>
@@ -318,7 +318,7 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
               const next = on ? bot.helpers.filter((x) => x !== b.id) : [...(bot.helpers || []), b.id];
               return (
                 <button key={b.id} type="button" aria-pressed={on ? "true" : "false"} disabled={busy} onClick={() => change({ helpers: next }, { helpers: bot.helpers || [] })}
-                  style={{ height: "36px", padding: "0 14px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "999px", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : INK, fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
+                  style={{ height: "36px", padding: "0 14px 0 10px", display: "inline-flex", alignItems: "center", gap: "8px", border: "0", borderRadius: "var(--r-pill)", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : INK, fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
                   <Shape bot={b} size={14} style={on ? null : { opacity: 0.7 }} />{b.name}{on ? <Check size={13} strokeWidth={2.6} aria-hidden="true" /> : null}
                 </button>
               );
@@ -360,7 +360,7 @@ function Apps({ bot, connectors, learning, setLearning, expert, busy, change }) 
           const hint = v === "none" ? "Sin acceso." : APP_HINT[k]?.[v] || "";
           return (
             <div key={k} style={row}>
-              <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "10px", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "700" }}>{APP_MARK[k] || "·"}</span>
+              <span aria-hidden="true" style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "700" }}>{APP_MARK[k] || "·"}</span>
               <span style={{ flex: "1 1 180px", display: "flex", flexDirection: "column", gap: "1px" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{name}</span>
                 <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{hint}{c && !c.connected ? <>{" Sin conectar · "}<a href="/ajustes/conexiones" style={{ color: BLUE }}>{"Conectar"}</a></> : null}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · tools.${k}=${v}`}</span> : null}</span>
@@ -443,10 +443,10 @@ function Skills({ bot, store, learning, setLearning, data, expert, onOpen }) {
             <span style={{ fontSize: "var(--t-meta)", color: TEXT3 }}>{skillNote(k)}{expert ? <span style={{ fontFamily: "'Geist Mono', monospace" }}>{` · v${k.version || 1} · ${k.origin || "instalada"} · ${k.steps || 0} pasos`}</span> : null}</span>
           </button>
           {k.status === "pending" ? (
-            <button type="button" onClick={() => onOpen(k.id)} style={{ height: "28px", padding: "0 12px", border: "0", borderRadius: "999px", background: "#FFF1C7", color: "#8A5A00", fontSize: "var(--t-meta)", fontWeight: "600", cursor: "pointer" }}>{"Revisar"}</button>
+            <button type="button" onClick={() => onOpen(k.id)} style={{ height: "28px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "#FFF1C7", color: "#8A5A00", fontSize: "var(--t-meta)", fontWeight: "600", cursor: "pointer" }}>{"Revisar"}</button>
           ) : learning ? (
             <button type="button" onClick={() => pin(k)} disabled={item.busy} aria-pressed={k.pinned ? "true" : "false"} aria-label={k.pinned ? `Dejar de fijar ${k.name}` : `Fijar ${k.name}: nunca se archivará`} title={k.pinned ? "Fijada: nunca se archiva" : "Fijar: nunca se archivará por falta de uso"}
-              style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: "0", borderRadius: "9px", background: k.pinned ? INK : "transparent", color: k.pinned ? "#FFFFFF" : "#8C8F99", cursor: "pointer" }}>
+              style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-sm)", background: k.pinned ? INK : "transparent", color: k.pinned ? "#FFFFFF" : "#8C8F99", cursor: "pointer" }}>
               <Pin size={14} strokeWidth={2.2} aria-hidden="true" />
             </button>
           ) : null}
@@ -484,9 +484,9 @@ function Memory({ bot, store, learning, data, expert }) {
             if (!u) return null;
             const tone = u.percent >= 90 ? "#B4232A" : u.percent >= 70 ? "#4A4D57" : "#0B8A5F";
             return (
-              <span key={k} style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "8px 10px", borderRadius: "12px", background: "#F6F6F3" }}>
+              <span key={k} style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "8px 10px", borderRadius: "var(--r-md)", background: "#F6F6F3" }}>
                 <span style={{ display: "flex", justifyContent: "space-between", gap: "6px", fontSize: "var(--t-caption)" }}><strong style={{ fontWeight: "600" }}>{label}</strong><span style={{ font: "500 var(--t-micro)/1.4 'Geist Mono', monospace", color: TEXT3 }}>{`${u.used}/${u.limit}`}</span></span>
-                <span role="meter" aria-label={"Memoria: " + label} aria-valuemin={0} aria-valuemax={u.limit} aria-valuenow={u.used} style={{ height: "5px", borderRadius: "3px", background: "rgba(18,19,26,.07)", overflow: "hidden" }}><span style={{ display: "block", width: `${Math.min(100, u.percent)}%`, height: "100%", background: tone }} /></span>
+                <span role="meter" aria-label={"Memoria: " + label} aria-valuemin={0} aria-valuemax={u.limit} aria-valuenow={u.used} style={{ height: "5px", borderRadius: "var(--r-xs)", background: "rgba(18,19,26,.07)", overflow: "hidden" }}><span style={{ display: "block", width: `${Math.min(100, u.percent)}%`, height: "100%", background: tone }} /></span>
               </span>
             );
           })}
@@ -545,7 +545,7 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
     run: () => post(`/approvals/${encodeURIComponent(proposal.id)}`, { decision, revision: proposal.revision }),
   });
   const diff = (proposal?.diff || []).filter((d) => d.op !== " " && d.line.trim());
-  const frame = { padding: "16px 18px", borderRadius: "16px", background: "#F6F6F3", fontSize: "var(--t-body)", lineHeight: "1.6", color: "#3D404A" };
+  const frame = { padding: "16px 18px", borderRadius: "var(--r-lg)", background: "#F6F6F3", fontSize: "var(--t-body)", lineHeight: "1.6", color: "#3D404A" };
   const label = { fontSize: "var(--t-ui)", fontWeight: "600", color: "#3D404A" };
   return (
     <section id="personalidad" aria-labelledby="per-t" style={{ ...card, gap: "14px" }}>
@@ -554,7 +554,7 @@ function Personality({ bot, data, setData, approvals, versions, busy, change }) 
       </SectionHead>
       {showVersions ? <div style={{ margin: "0 -20px", animation: "rise .2s ease-out" }}><DocHistory doc="soul" botId={bot.id} empty="Su carácter no ha cambiado desde que llegó." /></div> : null}
       {proposal && soulDraft === null ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "16px", background: "#FFF6DC" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-lg)", background: "#FFF6DC" }}>
           <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{`${bot.name} propone un cambio`}{proposal.summary ? ` · ${proposal.summary}` : ""}</span>
           <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.7", whiteSpace: "pre-wrap" }}>
             {diff.length ? diff.slice(0, 12).map((d, i) => (d.op === "-"
@@ -637,14 +637,14 @@ function Usage({ bot, usage, missions, settings, expert, learning, busy, change 
   const pct = base ? Math.min(100, Math.round((mine.tokens / base) * 100)) : 0;
   const share = limit ? `de ${formatTokens(limit)} del espacio` : usage?.total ? `· el ${pct} % del equipo` : "";
   return (
-    <section id="uso" aria-labelledby="uso-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 28px", padding: "22px 26px", borderRadius: "24px", background: "#FFFFFF", scrollMarginTop: "16px" }}>
+    <section id="uso" aria-labelledby="uso-t" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "16px 28px", padding: "22px 26px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", scrollMarginTop: "16px" }}>
       <h2 id="uso-t" style={h2}>{new Date().getDate() >= 7 ? "Uso este mes" : "Uso estos 7 días"}</h2>
       <div style={{ flex: "1 1 280px", display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={{ fontSize: "var(--t-ui)" }}>
           {usage ? <><strong style={{ fontWeight: "600" }}>{`${formatTokens(mine.tokens || 0)} tokens`}</strong>{` ${share} · ${plural(tasks, "tarea", "tareas")}`}</> : "Calculando…"}
           {expert && usage ? <span style={{ font: "500 var(--t-meta)/1 'Geist Mono', monospace", color: TEXT3 }}>{` · ${mine.calls || 0} llamadas${learning?.counters ? ` · ${learning.counters.userTurns} turnos · ${learning.counters.toolCalls} herramientas` : ""}`}</span> : null}
         </span>
-        <span aria-hidden="true" style={{ position: "relative", height: "8px", borderRadius: "4px", background: "#EEEEEA", overflow: "hidden" }}>
+        <span aria-hidden="true" style={{ position: "relative", height: "8px", borderRadius: "var(--r-xs)", background: "#EEEEEA", overflow: "hidden" }}>
           <span style={{ position: "absolute", inset: "0 auto 0 0", width: `${pct}%`, background: bot.color || INK, transition: "width .6s cubic-bezier(.2,.8,.2,1)" }} />
         </span>
       </div>
@@ -658,7 +658,7 @@ function Usage({ bot, usage, missions, settings, expert, learning, busy, change 
               : `Un tope solo para ${bot.name}, aparte del límite del espacio. Al llegar, para y te lo dice.`}
           </span>
         </span>
-        <Select aria-label={`Presupuesto al mes de ${bot.name}`} disabled={busy} value={budget ?? ""} onChange={setBudget} style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", color: INK, fontSize: "var(--t-body)", boxSizing: "border-box", cursor: busy ? "wait" : "pointer" }} options={budgets.map(([v, l]) => [v ?? "", l])} />
+        <Select aria-label={`Presupuesto al mes de ${bot.name}`} disabled={busy} value={budget ?? ""} onChange={setBudget} style={{ width: "240px", maxWidth: "100%", height: "40px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", color: INK, fontSize: "var(--t-body)", boxSizing: "border-box", cursor: busy ? "wait" : "pointer" }} options={budgets.map(([v, l]) => [v ?? "", l])} />
       </label>
     </section>
   );

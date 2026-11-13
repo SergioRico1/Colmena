@@ -1,3 +1,4 @@
+import { radiusOf } from "../../lib/radius.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, Expand, FileText, Presentation } from "lucide-react";
 import { scrollBehavior } from "../../lib/motion.js";
@@ -24,7 +25,7 @@ export function SlideImage({ artifact, n, radius = 14, eager = false }) {
     return () => ro.disconnect();
   }, [pictures]);
   return (
-    <div ref={box} style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: radius + "px", background: "#EDEBE5", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.06)" }}>
+    <div ref={box} style={{ position: "relative", width: "100%", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: radiusOf(radius) + "px", background: "#EDEBE5", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.06)" }}>
       {pictures ? (
         <img src={thumbUrl(artifact.id, n)} alt={`Diapositiva ${n}`} loading={eager ? "eager" : "lazy"} decoding="async" style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }} />
       ) : width ? (
@@ -35,7 +36,7 @@ export function SlideImage({ artifact, n, radius = 14, eager = false }) {
   );
 }
 
-const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
+const pill = { display: "inline-flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none", cursor: "pointer", border: 0 };
 const dark = { ...pill, background: "#12131A", color: "#FFFFFF" };
 const soft = { ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" };
 
@@ -43,9 +44,9 @@ const soft = { ...pill, background: "rgba(18,19,26,.06)", color: "#12131A" };
 export function DeckCard({ artifact, onOpen }) {
   const n = Number(artifact?.slides) || 0;
   return (
-    <article style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "14px 14px 20px", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" }}>
-      <button type="button" onClick={onOpen} aria-label={`Abrir «${artifact?.title || "presentación"}»`} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "18px" }}>
-        <SlideImage artifact={artifact} n={1} radius={18} eager />
+    <article style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "14px 14px 20px", background: "#FFFFFF", borderRadius: "var(--r-3xl)", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 50px -28px rgba(18,19,26,.3)", animation: "rise .5s ease-out" }}>
+      <button type="button" onClick={onOpen} aria-label={`Abrir «${artifact?.title || "presentación"}»`} style={{ padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "var(--r-xl)" }}>
+        <SlideImage artifact={artifact} n={1} radius={20} eager />
       </button>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "0 10px" }}>
         <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#6B6F7A" }}>{`Presentación · ${n} ${n === 1 ? "diapositiva" : "diapositivas"}`}</span>
@@ -81,9 +82,9 @@ export function SlideViewer({ artifact }) {
   const arrow = (dir) => ({ ...soft, width: "40px", padding: 0, justifyContent: "center", opacity: (dir < 0 ? n === 1 : n === count) ? 0.35 : 1 });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      <div ref={stage} style={{ position: "relative", background: "#12131A", borderRadius: "16px", display: "grid", placeItems: "center" }}>
+      <div ref={stage} style={{ position: "relative", background: "#12131A", borderRadius: "var(--r-lg)", display: "grid", placeItems: "center" }}>
         <div style={{ width: "100%", maxWidth: "calc((100vh - 40px) * 16 / 9)" }}>
-          <SlideImage key={n} artifact={artifact} n={n} radius={14} eager />
+          <SlideImage key={n} artifact={artifact} n={n} radius={16} eager />
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -98,9 +99,9 @@ export function SlideViewer({ artifact }) {
       <div ref={strip} role="tablist" aria-label="Diapositivas" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(132px, 1fr))", gap: "10px" }}>
         {Array.from({ length: count }, (_, i) => i + 1).map((k) => (
           <button key={k} type="button" role="tab" aria-selected={k === n} data-n={k} onClick={() => go(k)} aria-label={`Diapositiva ${k}`}
-            style={{ position: "relative", padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "10px", outline: k === n ? "2px solid #7B4DFF" : "none", outlineOffset: "2px" }}>
-            <SlideImage artifact={artifact} n={k} radius={10} />
-            <span style={{ position: "absolute", left: "6px", bottom: "6px", padding: "2px 7px", borderRadius: "999px", background: "rgba(18,19,26,.72)", color: "#FFFFFF", font: "500 var(--t-micro)/1.4 'Geist Mono', monospace" }}>{k}</span>
+            style={{ position: "relative", padding: 0, border: 0, background: "transparent", cursor: "pointer", borderRadius: "var(--r-md)", outline: k === n ? "2px solid #7B4DFF" : "none", outlineOffset: "2px" }}>
+            <SlideImage artifact={artifact} n={k} radius={12} />
+            <span style={{ position: "absolute", left: "6px", bottom: "6px", padding: "2px 7px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.72)", color: "#FFFFFF", font: "500 var(--t-micro)/1.4 'Geist Mono', monospace" }}>{k}</span>
           </button>
         ))}
       </div>

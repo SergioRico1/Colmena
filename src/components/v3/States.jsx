@@ -15,7 +15,7 @@ import { aiConnected } from "../../lib/aiAccount.js";
 
 const INK = "#12131A";
 const HEX = "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)";
-const pill = { height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer", textDecoration: "none" };
+const pill = { height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer", textDecoration: "none" };
 
 export { aiConnected };
 
@@ -33,7 +33,7 @@ export function NoAccountNotice({ style = null }) {
     ? `No se pudo entrar en tu cuenta de IA (${String(authError.message || authError).replace(/\.$/, "")}). Vuelve a entrar y siguen donde lo dejaron.`
     : "Aún no has conectado tu cuenta de IA. Conéctala una vez y se ponen a trabajar.";
   return (
-    <div role="status" style={{ display: "flex", gap: "14px", padding: "18px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.1)", ...style }}>
+    <div role="status" style={{ display: "flex", gap: "14px", padding: "18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.1)", ...style }}>
       <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", background: INK, clipPath: HEX }} />
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{"Tus bots no pueden pensar ahora"}</span>
@@ -55,18 +55,18 @@ export function StuckBotCard({ bot, reason, detail = null, onRetry = null, retry
   const name = bot?.name || "El bot";
   const chat = chatHref || (bot?.id ? `/chat/${bot.id}` : null);
   return (
-    <div role="status" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "12px", padding: "28px", borderRadius: "24px", background: "#FFFFFF", ...style }}>
+    <div role="status" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "12px", padding: "28px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", ...style }}>
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "50%", boxShadow: "inset 0 0 0 2.5px #B4232A" }}>
+        <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", boxShadow: "inset 0 0 0 2.5px #B4232A" }}>
           <span style={{ width: "20px", height: "20px", background: bot?.color || "#C9CBD1", clipPath: s.clip, borderRadius: s.radius }} />
         </span>
         <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{`${name} se ha atascado`}</span>
       </div>
       {reason ? <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57" }}>{reason}</span> : null}
-      {expert && detail ? <span style={{ padding: "10px 12px", borderRadius: "12px", background: "#F6F6F3", font: "400 var(--t-caption)/1.5 'Geist Mono', monospace", color: "#3D404A", overflowWrap: "anywhere" }}>{detail}</span> : null}
+      {expert && detail ? <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: "#F6F6F3", font: "400 var(--t-caption)/1.5 'Geist Mono', monospace", color: "#3D404A", overflowWrap: "anywhere" }}>{detail}</span> : null}
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         {onRetry ? <button type="button" disabled={retrying} onClick={onRetry} style={{ ...pill, height: "42px", padding: "0 18px", cursor: retrying ? "wait" : "pointer" }}>{retrying ? "Reintentando…" : "Reintentar"}</button> : null}
-        {chat ? <a href={chat} onClick={(e) => { e.preventDefault(); navigate(chat); }} style={{ height: "42px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", color: INK, fontSize: "var(--t-ui)", fontWeight: "500", textDecoration: "none" }}>{`Hablar con ${name}`}</a> : null}
+        {chat ? <a href={chat} onClick={(e) => { e.preventDefault(); navigate(chat); }} style={{ height: "42px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", color: INK, fontSize: "var(--t-ui)", fontWeight: "500", textDecoration: "none" }}>{`Hablar con ${name}`}</a> : null}
       </div>
     </div>
   );

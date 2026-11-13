@@ -56,9 +56,9 @@ function WatchRows({ bots }) {
               const trouble = s.unavailable ? "Esta app no ofrece todavía una lectura que Colmena entienda." : s.stopped ? "Parado tras varios fallos: " + (s.error || "") : s.error;
               return (
                 <button key={s.id} type="button" role="switch" aria-checked={s.on} disabled={act.busy} title={trouble || (s.on ? "Mira aquí. Pulsa para dejar de mirar." : "No mira aquí. Pulsa para que mire.")} onClick={() => save({ sources: { [s.id]: !s.on } })}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", cursor: act.busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 500, background: s.on ? INK : "#F1F1EC", color: s.on ? "#FFFFFF" : "#3D404A" }}>
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: act.busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 500, background: s.on ? INK : "#F1F1EC", color: s.on ? "#FFFFFF" : "#3D404A" }}>
                   <Icon size={14} strokeWidth={2} aria-hidden="true" />{s.label}
-                  {s.on && trouble ? <span aria-label="Con problemas" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#E5675A" }} /> : null}
+                  {s.on && trouble ? <span aria-label="Con problemas" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#E5675A" }} /> : null}
                 </button>
               );
             })}
@@ -81,7 +81,7 @@ function WatchRows({ bots }) {
             </span>
             <textarea className="c-quiet" value={draft} maxLength={1500} rows={3} onChange={(e) => setList(e.target.value)} onBlur={keep}
               placeholder={"Avísame enseguida si escribe mi socia.\nLos pedidos de la tienda, mejor juntos en el resumen.\nNo me cuentes los boletines del banco."}
-              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", font: "400 var(--t-body)/1.5 'Geist', sans-serif", color: INK }} />
+              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", minHeight: "84px", padding: "10px 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "400 var(--t-body)/1.5 'Geist', sans-serif", color: INK }} />
           </label>
         </>
       ) : null}

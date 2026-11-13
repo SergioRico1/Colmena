@@ -45,24 +45,24 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
   const nobody = (what) => (
     <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", fontSize: "var(--t-caption)", color: "#6B6F7A" }}>
       {"Primero conéctate con quien " + what + "."}
-      <button type="button" onClick={toInvite} style={{ display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(31,79,209,.08)", color: "#1F4FD1", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}><UserPlus size={13} strokeWidth={2.4} aria-hidden="true" />{"Invitar a alguien"}</button>
+      <button type="button" onClick={toInvite} style={{ display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(31,79,209,.08)", color: "#1F4FD1", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}><UserPlus size={13} strokeWidth={2.4} aria-hidden="true" />{"Invitar a alguien"}</button>
     </span>
   );
   return (
     <div ref={box} style={{ position: "relative", flex: "none", display: "flex", alignItems: "center", gap: "8px" }}>
       {looking.length ? (
         <span title={names(looking.map((v) => v.name)) + (looking.length > 1 ? " lo están mirando" : " lo está mirando")} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", fontWeight: 600, color: "#0B6B4A", animation: "fade .3s ease-out" }}>
-          <span style={{ display: "flex" }}>{looking.slice(0, 3).map((v, i) => <span key={v.id} style={{ marginLeft: i ? "-6px" : 0, borderRadius: "50%", boxShadow: "0 0 0 2px #1E9E6A" }}><PeerAvatar person={v} size={24} /></span>)}</span>
+          <span style={{ display: "flex" }}>{looking.slice(0, 3).map((v, i) => <span key={v.id} style={{ marginLeft: i ? "-6px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px #1E9E6A" }}><PeerAvatar person={v} size={24} /></span>)}</span>
           <span className="sr-only" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{names(looking.map((v) => v.name)) + " lo está mirando"}</span>
         </span>
       ) : null}
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open ? "true" : "false"} aria-label={people.length ? "Compartida con " + names(people.map((p) => p.name)) : "Compartir con una persona"} title="Compartir con personas"
-        style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: people.length ? "0 14px 0 6px" : "0 14px 0 12px", border: 0, borderRadius: "999px", background: open ? "#12131A" : "rgba(18,19,26,.06)", color: open ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", ...(look && !open ? look : null) }}>
-        {people.length ? <span style={{ display: "flex" }}>{people.slice(0, 3).map((p, i) => <span key={p.id} style={{ marginLeft: i ? "-8px" : 0, borderRadius: "50%", boxShadow: `0 0 0 2px ${open ? "#12131A" : "#F5F5F2"}` }}><PeerAvatar person={p} size={28} /></span>)}</span> : <UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />}
+        style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: people.length ? "0 14px 0 6px" : "0 14px 0 12px", border: 0, borderRadius: "var(--r-pill)", background: open ? "#12131A" : "rgba(18,19,26,.06)", color: open ? "#FFFFFF" : "#12131A", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", ...(look && !open ? look : null) }}>
+        {people.length ? <span style={{ display: "flex" }}>{people.slice(0, 3).map((p, i) => <span key={p.id} style={{ marginLeft: i ? "-8px" : 0, borderRadius: "var(--r-circle)", boxShadow: `0 0 0 2px ${open ? "#12131A" : "#F5F5F2"}` }}><PeerAvatar person={p} size={28} /></span>)}</span> : <UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />}
         {people.length > 3 ? "+" + (people.length - 3) : people.length ? "Compartida" : "Compartir"}
       </button>
       {open ? (
-        <div role="dialog" aria-label="Compartir la tarea" style={{ position: "absolute", top: "48px", right: 0, zIndex: 40, width: "min(380px, 86vw)", maxHeight: "70vh", overflowY: "auto", padding: "18px", borderRadius: "24px", background: "rgba(255,255,255,.97)", WebkitBackdropFilter: "blur(24px)", backdropFilter: "blur(24px)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out" }}>
+        <div role="dialog" aria-label="Compartir la tarea" style={{ position: "absolute", top: "48px", right: 0, zIndex: 40, width: "min(380px, 86vw)", maxHeight: "70vh", overflowY: "auto", padding: "18px", borderRadius: "var(--r-2xl)", background: "rgba(255,255,255,.97)", WebkitBackdropFilter: "blur(24px)", backdropFilter: "blur(24px)", boxShadow: "0 30px 60px -20px rgba(18,19,26,.35)", display: "flex", flexDirection: "column", gap: "12px", animation: "rise .22s ease-out" }}>
           <span style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <strong style={{ font: "600 var(--t-lead)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{"Compartir la tarea"}</strong>
             <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#5C606C" }}>{"Verán en qué está, el plan de Bruno y la PR, y podrán aprobar el plan o pedir cambios. Nunca tu código, tus archivos ni lo que hablas con Bruno. Todo se hace en este ordenador."}</span>
@@ -71,20 +71,20 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
             {contacts.length ? contacts.map((c) => {
               const on = own.some((p) => p.id === c.id);
               return (
-                <button key={c.id} type="button" role="checkbox" aria-checked={on ? "true" : "false"} onClick={() => toggle(c.id)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: 0, borderRadius: "14px", background: on ? "rgba(31,79,209,.07)" : "transparent", cursor: "pointer", textAlign: "left" }}>
+                <button key={c.id} type="button" role="checkbox" aria-checked={on ? "true" : "false"} onClick={() => toggle(c.id)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "48px", padding: "0 10px", border: 0, borderRadius: "var(--r-lg)", background: on ? "rgba(31,79,209,.07)" : "transparent", cursor: "pointer", textAlign: "left" }}>
                   <PeerAvatar person={c} size={30} dot ring="#FFFFFF" />
                   <span style={{ flex: 1, fontSize: "var(--t-body)", fontWeight: 500 }}>{c.name}</span>
-                  <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? "#1F4FD1" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px #C9CBD1", color: "#FFFFFF" }}>{on ? <Check size={13} strokeWidth={3} /> : null}</span>
+                  <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#1F4FD1" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px #C9CBD1", color: "#FFFFFF" }}>{on ? <Check size={13} strokeWidth={3} /> : null}</span>
                 </button>
               );
             }) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "16px", background: "#F4F4F0" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "var(--r-lg)", background: "#F4F4F0" }}>
                 <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: "#3D404A" }}>{"Aún no hablas con nadie desde Colmena. Invita a quien quieras que la vea: le das un código, lo pega en su Colmena y aparece aquí."}</span>
-                <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "38px", padding: "0 16px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
+                <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "38px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button>
               </div>
             )}
             {waiting.map((i) => <span key={i.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "6px 10px", fontSize: "var(--t-meta)", color: "#6B6F7A" }}><Clock3 size={14} strokeWidth={2.2} aria-hidden="true" />{"Esperando a que " + i.name.split(" ")[0] + " acepte tu invitación"}</span>)}
-            {contacts.length ? <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "4px", height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", color: "#1F4FD1", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={14} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien más"}</button> : null}
+            {contacts.length ? <button type="button" onClick={toInvite} style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "4px", height: "30px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "#1F4FD1", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><UserPlus size={14} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien más"}</button> : null}
           </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.07)" }}>
               <span style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
@@ -94,7 +94,7 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
               {!contacts.length ? nobody("tenga que revisarla") : <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {contacts.map((c) => {
                   const pending = (view.reviews || []).find((r) => r.person.id === c.id && r.state === "asked");
-                  return <button key={c.id} type="button" disabled={!!pending} onClick={async () => { setError(null); try { await askReview(c.id); } catch (e) { setError(e.message); } }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "999px", background: pending ? "#FFF6DE" : "rgba(18,19,26,.06)", cursor: pending ? "default" : "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{pending ? c.name.split(" ")[0] + " lo está revisando" : c.name.split(" ")[0]}</button>;
+                  return <button key={c.id} type="button" disabled={!!pending} onClick={async () => { setError(null); try { await askReview(c.id); } catch (e) { setError(e.message); } }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "var(--r-pill)", background: pending ? "#FFF6DE" : "rgba(18,19,26,.06)", cursor: pending ? "default" : "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{pending ? c.name.split(" ")[0] + " lo está revisando" : c.name.split(" ")[0]}</button>;
                 })}
               </span>}
             </div>
@@ -105,12 +105,12 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
               </span>
               {!contacts.length ? nobody("vaya a seguirla") : handing?.done ? <span role="status" style={{ fontSize: "var(--t-meta)", color: "#0B6B4A" }}>{"Pasada a " + handing.name + ". Te avisamos cuando la coja."}</span> : handing ? (
                 <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-                  <button type="button" disabled={handing.busy} onClick={async () => { setError(null); setHanding({ ...handing, busy: true }); try { await post("/peers/code/tasks/" + encodeURIComponent(taskId) + "/handoff", { person: handing.person }); setHanding({ ...handing, busy: false, done: true }); } catch (e) { setError(e.message); setHanding(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{handing.busy ? "Subiendo y escribiendo el traspaso…" : "Pasársela a " + handing.name}</button>
-                  {handing.busy ? null : <button type="button" onClick={() => setHanding(null)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Cancelar"}</button>}
+                  <button type="button" disabled={handing.busy} onClick={async () => { setError(null); setHanding({ ...handing, busy: true }); try { await post("/peers/code/tasks/" + encodeURIComponent(taskId) + "/handoff", { person: handing.person }); setHanding({ ...handing, busy: false, done: true }); } catch (e) { setError(e.message); setHanding(null); } }} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{handing.busy ? "Subiendo y escribiendo el traspaso…" : "Pasársela a " + handing.name}</button>
+                  {handing.busy ? null : <button type="button" onClick={() => setHanding(null)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Cancelar"}</button>}
                 </span>
               ) : (
                 <span style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                  {contacts.map((c) => <button key={c.id} type="button" onClick={() => setHanding({ person: c.id, name: c.name.split(" ")[0] })} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{c.name.split(" ")[0]}</button>)}
+                  {contacts.map((c) => <button key={c.id} type="button" onClick={() => setHanding({ person: c.id, name: c.name.split(" ")[0] })} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px 0 4px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}><PeerAvatar person={c} size={24} />{c.name.split(" ")[0]}</button>)}
                 </span>
               )}
             </div>
@@ -125,14 +125,14 @@ export default function TaskPeople({ taskId, project = null, look = null }) {
                 return (
                   <div key={c.id} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "6px 4px" }}>
                     <button type="button" role="checkbox" aria-checked={m ? "true" : "false"} onClick={() => toggleMember(c.id)} style={{ display: "flex", alignItems: "center", gap: "10px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left" }}>
-                      <span aria-hidden="true" style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "6px", background: m ? "#1F4FD1" : "transparent", boxShadow: m ? "none" : "inset 0 0 0 1.5px #C9CBD1", color: "#FFFFFF" }}>{m ? <Check size={12} strokeWidth={3} /> : null}</span>
+                      <span aria-hidden="true" style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: m ? "#1F4FD1" : "transparent", boxShadow: m ? "none" : "inset 0 0 0 1.5px #C9CBD1", color: "#FFFFFF" }}>{m ? <Check size={12} strokeWidth={3} /> : null}</span>
                       <span style={{ flex: 1, fontSize: "var(--t-ui)", fontWeight: 500 }}>{c.name}</span>
                     </button>
                     {m ? (
                       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", marginLeft: "30px", fontSize: "var(--t-caption)", color: "#6B6F7A" }}>
                         {"Sus comentarios a Bruno:"}
-                        <span role="radiogroup" aria-label={"Comentarios de " + c.name} style={{ display: "flex", gap: "2px", padding: "2px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>
-                          {ASKS.map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={m.comments === v ? "true" : "false"} onClick={() => setAsk(c.id, v)} style={{ height: "26px", padding: "0 10px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, background: m.comments === v ? "#FFFFFF" : "transparent", boxShadow: m.comments === v ? "0 1px 2px rgba(18,19,26,.12)" : "none", color: "#12131A" }}>{label}</button>)}
+                        <span role="radiogroup" aria-label={"Comentarios de " + c.name} style={{ display: "flex", gap: "2px", padding: "2px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)" }}>
+                          {ASKS.map(([v, label]) => <button key={v} type="button" role="radio" aria-checked={m.comments === v ? "true" : "false"} onClick={() => setAsk(c.id, v)} style={{ height: "26px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, background: m.comments === v ? "#FFFFFF" : "transparent", boxShadow: m.comments === v ? "0 1px 2px rgba(18,19,26,.12)" : "none", color: "#12131A" }}>{label}</button>)}
                         </span>
                       </span>
                     ) : null}
@@ -162,7 +162,7 @@ export function PlanVotes({ taskId, item }) {
     try { await post("/peers/code/tasks/" + encodeURIComponent(taskId) + "/refine", { item: item.id, from }); } catch (e) { setError(e.message); } finally { setBusy(null); }
   };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 14px", borderRadius: "18px", background: "#F4F4F0" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 14px", borderRadius: "var(--r-xl)", background: "#F4F4F0" }}>
       {votes.map((v) => {
         const p = nameOf(v.from);
         const first = p.name.split(" ")[0];
@@ -173,7 +173,7 @@ export function PlanVotes({ taskId, item }) {
               ? <span style={{ flex: 1, minWidth: "180px" }}><strong style={{ fontWeight: 600 }}>{first}</strong>{" lo aprueba. Tú decides cuándo implementarlo."}</span>
               : <span style={{ flex: 1, minWidth: "180px", display: "flex", flexDirection: "column", gap: "2px" }}><span><strong style={{ fontWeight: 600 }}>{first}</strong>{" pide cambios:"}</span><span style={{ color: "#3D404A", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{"«" + v.text + "»"}</span></span>}
             {v.action === "changes" && item.status === "open" ? (
-              <button type="button" disabled={!!busy} onClick={() => refine(v.from)} title={"Bruno rehace el plan con lo que pide " + first + " (como sugerencia de otra persona, no como orden)"} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#FFFFFF", cursor: busy ? "default" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, boxShadow: "0 1px 2px rgba(18,19,26,.08)" }}>{busy === v.from ? "Refinando…" : "Refinar con esto"}</button>
+              <button type="button" disabled={!!busy} onClick={() => refine(v.from)} title={"Bruno rehace el plan con lo que pide " + first + " (como sugerencia de otra persona, no como orden)"} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "#FFFFFF", cursor: busy ? "default" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, boxShadow: "0 1px 2px rgba(18,19,26,.08)" }}>{busy === v.from ? "Refinando…" : "Refinar con esto"}</button>
             ) : null}
           </div>
         );
@@ -194,15 +194,15 @@ export function PeerComments({ taskId }) {
   const asked = list.filter((c) => c.state === "asked");
   const kept = list.filter((c) => c.state === "kept");
   const row = (c) => (
-    <div key={c.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 12px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05)" }}>
+    <div key={c.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 12px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05)" }}>
       <PeerAvatar person={c.person} size={26} />
       <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-ui)" }}>
         <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}><strong style={{ fontWeight: 600, color: "#12131A" }}>{c.person.name.split(" ")[0]}</strong>{c.file ? " · " : ""}{c.file ? <code style={{ fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-caption)" }}>{c.file + (c.line ? ":" + c.line : "")}</code> : null}</span>
         <span style={{ color: "#2B2E36", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{"«" + c.text + "»"}</span>
       </span>
       <span style={{ display: "flex", gap: "6px" }}>
-        <button type="button" disabled={busy === c.id} onClick={() => act(c, "forward")} title="Bruno lo recibe como la opinión de otra persona, no como una orden" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Pasárselo a Bruno"}</button>
-        <button type="button" disabled={busy === c.id} onClick={() => act(c, "drop")} style={{ height: "32px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Descartar"}</button>
+        <button type="button" disabled={busy === c.id} onClick={() => act(c, "forward")} title="Bruno lo recibe como la opinión de otra persona, no como una orden" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Pasárselo a Bruno"}</button>
+        <button type="button" disabled={busy === c.id} onClick={() => act(c, "drop")} style={{ height: "32px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Descartar"}</button>
       </span>
     </div>
   );

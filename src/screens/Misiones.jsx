@@ -91,9 +91,9 @@ function Progress({ m }) {
   if (total < 2) return null;
   const done = Math.min(m.progress?.done || 0, total);
   const segs = Array.from({ length: total }, (_, i) => {
-    if (i < done) return { height: "6px", borderRadius: "3px", background: "#12131A" };
-    if (i === done) return isWaiting(m) ? { height: "6px", borderRadius: "3px", background: "#FFC93C", outline: "1.5px solid #12131A", outlineOffset: "-1.5px" } : { height: "6px", borderRadius: "3px", background: "repeating-linear-gradient(135deg, #12131A 0 4px, #8C91A0 4px 8px)" };
-    return { height: "6px", borderRadius: "3px", background: "rgba(18,19,26,.1)" };
+    if (i < done) return { height: "6px", borderRadius: "var(--r-xs)", background: "#12131A" };
+    if (i === done) return isWaiting(m) ? { height: "6px", borderRadius: "var(--r-xs)", background: "#FFC93C", outline: "1.5px solid #12131A", outlineOffset: "-1.5px" } : { height: "6px", borderRadius: "var(--r-xs)", background: "repeating-linear-gradient(135deg, #12131A 0 4px, #8C91A0 4px 8px)" };
+    return { height: "6px", borderRadius: "var(--r-xs)", background: "rgba(18,19,26,.1)" };
   });
   return (
     <span style={{ display: "grid", gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))`, gap: "4px" }} aria-label={`${done} de ${total} pasos ${done === 1 ? "hecho" : "hechos"}`}>
@@ -104,11 +104,11 @@ function Progress({ m }) {
 
 const emptyText = { margin: "0", padding: "8px 6px", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#5C606C" };
 const chip = (on) => (on
-  ? { height: "38px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "19px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }
-  : { height: "38px", padding: "0 14px", background: "#FFFFFF", border: "0", borderRadius: "19px", cursor: "pointer", fontSize: "var(--t-ui)" });
+  ? { height: "38px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }
+  : { height: "38px", padding: "0 14px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)" });
 const viewBtn = (on) => (on
-  ? { height: "38px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "9px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }
-  : { height: "38px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "9px", cursor: "pointer", fontSize: "var(--t-ui)" });
+  ? { height: "38px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }
+  : { height: "38px", padding: "0 14px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-ui)" });
 
 const VIEWS = ["tablero", "lista", "calendario"];
 
@@ -158,10 +158,10 @@ export default function Misiones({ query = {} }) {
       <a key={m.id} href={roomUrl(m)} draggable={canDrag ? "true" : "false"}
         onDragStart={canDrag ? (e) => { e.dataTransfer.setData("text/colmena-mission", m.id); e.dataTransfer.effectAllowed = "move"; setDragging(m.id); } : (e) => e.preventDefault()}
         onDragEnd={() => { setDragging(null); setOver(false); }}
-        style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px", background: "#FFFFFF", border: "0", borderRadius: "14px", ...(canDrag ? { cursor: "grab" } : {}), ...(dragging === m.id ? { opacity: "0.5" } : {}) }}>
+        style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)", ...(canDrag ? { cursor: "grab" } : {}), ...(dragging === m.id ? { opacity: "0.5" } : {}) }}>
         <span style={{ fontSize: "var(--t-caption)", color: "#5C606C" }}>{`# ${m.room || "sin sala"} · ${MODE_LABEL[m.mode] || m.mode}`}</span>
         <strong style={{ font: "600 var(--t-lead)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{m.title}</strong>
-        <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.4", padding: "8px 10px", background: "#FFF4D1", borderRadius: "8px" }}>{waitText(m)}</span>
+        <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.4", padding: "8px 10px", background: "#FFF4D1", borderRadius: "var(--r-sm)" }}>{waitText(m)}</span>
         <Recap m={m} lines={3} />
         {m.mode !== "debate" ? <Progress m={m} /> : null}
         <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -175,15 +175,15 @@ export default function Misiones({ query = {} }) {
     const total = m.progress?.total || 0;
     const pct = total ? Math.round(((m.progress?.done || 0) / total) * 100) : 0;
     return (
-      <a key={m.id} href={roomUrl(m)} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px", background: "#FFFFFF", border: "0", borderRadius: "14px" }}>
+      <a key={m.id} href={roomUrl(m)} style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "14px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)" }}>
         <span style={{ fontSize: "var(--t-caption)", color: "#5C606C" }}>{`# ${m.room || "sin sala"} · ${MODE_LABEL[m.mode] || m.mode}`}</span>
         <strong style={{ font: "600 var(--t-lead)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{m.title}</strong>
         <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)" }}>
-          <span style={{ width: "8px", height: "8px", flex: "none", borderRadius: "50%", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />
+          <span style={{ width: "8px", height: "8px", flex: "none", borderRadius: "var(--r-circle)", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />
           {m.activityLine || m.statusLabel || "En marcha"}
         </span>
         {total ? (
-          <span style={{ height: "6px", borderRadius: "3px", background: "rgba(18,19,26,.1)", overflow: "hidden" }} role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={m.progress?.done || 0} aria-label={`${m.progress?.done || 0} de ${total} pasos`}>
+          <span style={{ height: "6px", borderRadius: "var(--r-xs)", background: "rgba(18,19,26,.1)", overflow: "hidden" }} role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={m.progress?.done || 0} aria-label={`${m.progress?.done || 0} de ${total} pasos`}>
             <span style={{ display: "block", width: pct + "%", height: "100%", background: "#12131A" }} />
           </span>
         ) : null}
@@ -197,7 +197,7 @@ export default function Misiones({ query = {} }) {
   const scheduledCard = (a) => {
     const bot = botById(bots, a.botId);
     return (
-      <a key={a.id} href={`/automatizaciones?id=${encodeURIComponent(a.id)}`} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "#FFFFFF", border: "0", borderRadius: "14px" }}>
+      <a key={a.id} href={`/automatizaciones?id=${encodeURIComponent(a.id)}`} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)" }}>
         <span style={{ fontSize: "var(--t-caption)", color: "#5C606C" }}>{`Automatización · ${TRIGGER_FREQ[a.trigger?.type] || "programada"}`}</span>
         <strong style={{ font: "600 var(--t-read)/1.25 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{a.name}</strong>
         <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -208,7 +208,7 @@ export default function Misiones({ query = {} }) {
     );
   };
   const doneCard = (m) => (
-    <a key={m.id} href={missionUrl(m)} style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 14px", background: "#FFFFFF", border: "0", borderRadius: "14px", opacity: "0.85" }}>
+    <a key={m.id} href={missionUrl(m)} style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 14px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)", opacity: "0.85" }}>
       <strong style={{ fontSize: "var(--t-body)", lineHeight: "1.3" }}>{m.title}</strong>
       <Recap m={m} lines={3} />
       <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "var(--t-caption)", color: "#5C606C" }}>
@@ -225,14 +225,14 @@ export default function Misiones({ query = {} }) {
         onDragOver={(e) => { if (dragging || e.dataTransfer.types.includes("text/colmena-mission")) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setOver(true); } }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); const id = e.dataTransfer.getData("text/colmena-mission") || dragging; setOver(false); setDragging(null); if (id) resume(id); }}
-        style={{ minHeight: "52px", background: over ? "#FFF4D1" : "transparent", border: over ? "1.5px dashed #12131A" : "1.5px dashed #A9AEBB", borderRadius: "14px", cursor: "pointer", fontSize: "var(--t-ui)", color: over ? "#12131A" : "#5C606C", fontWeight: over ? "600" : "400" }}>
+        style={{ minHeight: "52px", background: over ? "#FFF4D1" : "transparent", border: over ? "1.5px dashed #12131A" : "1.5px dashed #A9AEBB", borderRadius: "var(--r-lg)", cursor: "pointer", fontSize: "var(--t-ui)", color: over ? "#12131A" : "#5C606C", fontWeight: over ? "600" : "400" }}>
         {busy ? "Reanudando…" : over ? "Suelta para reanudar" : "Arrastra aquí para reanudar una pausada"}
       </button>
       <span id="resume-help" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Pulsa para elegir una misión en pausa y reanudarla sin arrastrar."}</span>
       {resumeMenu ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "8px", background: "#FFFFFF", border: "0", borderRadius: "14px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "8px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)" }}>
           {resumable.length === 0 ? <p style={emptyText}>{"No hay ninguna misión en pausa ni bloqueada."}</p> : resumable.map((m) => (
-            <button key={m.id} type="button" onClick={() => resume(m.id)} disabled={busy} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", minHeight: "44px", padding: "0 12px", background: "#F6F6F3", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }}>
+            <button key={m.id} type="button" onClick={() => resume(m.id)} disabled={busy} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", minHeight: "44px", padding: "0 12px", background: "#F6F6F3", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-ui)", textAlign: "left" }}>
               <span style={{ minWidth: "0" }}>{m.title}</span>
               <strong style={{ flex: "none", fontSize: "var(--t-meta)" }}>{"Reanudar"}</strong>
             </button>
@@ -248,22 +248,22 @@ export default function Misiones({ query = {} }) {
   const board = (
     <div style={{ overflowX: "auto", paddingBottom: "8px" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(260px, 1fr))", gap: "16px", minWidth: "1080px", alignItems: "start" }}>
-        <section aria-labelledby="col1" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#FFF4D1", border: "0", borderRadius: "18px" }}>
+        <section aria-labelledby="col1" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#FFF4D1", border: "0", borderRadius: "var(--r-xl)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px" }}>
-            <h2 id="col1" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}><span style={{ width: "10px", height: "10px", borderRadius: "3px", background: "#C98A00" }} />{"Te esperan"}</h2>
+            <h2 id="col1" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}><span style={{ width: "10px", height: "10px", borderRadius: "var(--r-xs)", background: "#C98A00" }} />{"Te esperan"}</h2>
             <span style={{ font: "600 var(--t-meta)/1 'Geist Mono', monospace" }}>{wait.length}</span>
           </div>
           {wait.length ? wait.map(waitCard) : (ready ? <p style={emptyText}>{"Nada te espera. Todo sigue su curso."}</p> : <SkeletonCard />)}
         </section>
-        <section aria-labelledby="col2" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#EBEBE6", borderRadius: "18px" }}>
+        <section aria-labelledby="col2" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#EBEBE6", borderRadius: "var(--r-xl)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px" }}>
-            <h2 id="col2" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}><span style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#0B8A5F" }} />{"En marcha"}</h2>
+            <h2 id="col2" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}><span style={{ width: "10px", height: "10px", borderRadius: "var(--r-circle)", background: "#0B8A5F" }} />{"En marcha"}</h2>
             <span style={{ font: "600 var(--t-meta)/1 'Geist Mono', monospace" }}>{run.length}</span>
           </div>
           {run.length ? run.map(runCard) : <p style={emptyText}>{"Ningún bot trabaja en una misión ahora mismo."}</p>}
           {dropZone}
         </section>
-        <section aria-labelledby="col3" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#EBEBE6", borderRadius: "18px" }}>
+        <section aria-labelledby="col3" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#EBEBE6", borderRadius: "var(--r-xl)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px" }}>
             <h2 id="col3" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg>
@@ -273,7 +273,7 @@ export default function Misiones({ query = {} }) {
           </div>
           {scheduled.length ? scheduled.map(scheduledCard) : <p style={emptyText}>{"No hay nada programado. "}<a href="/automatizaciones" style={{ fontWeight: "600", color: "#1F4FD1" }}>{"Crear una automatización"}</a></p>}
         </section>
-        <section aria-labelledby="col4" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#EBEBE6", borderRadius: "18px" }}>
+        <section aria-labelledby="col4" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px", background: "#EBEBE6", borderRadius: "var(--r-xl)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 6px" }}>
             <h2 id="col4" style={{ margin: "0", display: "flex", alignItems: "center", gap: "8px", font: "600 var(--t-read)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
@@ -292,13 +292,13 @@ export default function Misiones({ query = {} }) {
   // ── list view (same row language as «Últimas veces») ──
   const stateCell = (m) => {
     const c = columnOf(m);
-    if (c === "wait") return <span style={{ padding: "3px 8px", background: "#FFF4D1", borderRadius: "6px", fontWeight: "600", fontSize: "var(--t-meta)" }}>{m.statusLabel || "Te espera"}</span>;
-    if (c === "run") return <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)" }}><span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />{m.statusLabel || "En marcha"}</span>;
+    if (c === "wait") return <span style={{ padding: "3px 8px", background: "#FFF4D1", borderRadius: "var(--r-sm)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{m.statusLabel || "Te espera"}</span>;
+    if (c === "run") return <span style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)" }}><span style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#0B8A5F", boxShadow: "0 0 0 4px #D6F0E4" }} />{m.statusLabel || "En marcha"}</span>;
     return <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: m.status === "cancelled" ? "#5C606C" : "#0B6B4A", fontWeight: "600" }}>{m.status === "cancelled" ? null : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>}{m.statusLabel || (m.status === "cancelled" ? "Cancelada" : "Terminada")}</span>;
   };
   const listRows = [...wait, ...run, ...done];
   const list = (
-    <section aria-label="Lista de misiones" style={{ background: "#FFFFFF", border: "0", borderRadius: "18px", padding: "6px 20px", overflowX: "auto" }}>
+    <section aria-label="Lista de misiones" style={{ background: "#FFFFFF", border: "0", borderRadius: "var(--r-xl)", padding: "6px 20px", overflowX: "auto" }}>
       {listRows.length === 0 ? <p style={{ ...emptyText, padding: "16px 0" }}>{ready ? "Aún no hay misiones. Pide algo desde Inicio o empieza con una plantilla." : "Cargando…"}</p> : null}
       {listRows.map((m, i) => (
         <div key={m.id} style={{ display: "grid", gridTemplateColumns: "minmax(220px, 1fr) 150px 110px 90px 120px", alignItems: "center", gap: "12px", minHeight: "58px", padding: "8px 0", ...(i ? { borderTop: "1px solid rgba(18,19,26,.06)" } : {}), fontSize: "var(--t-ui)", minWidth: "760px" }}>
@@ -338,7 +338,7 @@ export default function Misiones({ query = {} }) {
     return (
       <section aria-label="Calendario de misiones" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div role="group" aria-label="Mes" style={{ display: "flex", gap: "4px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "12px" }}>
+          <div role="group" aria-label="Mes" style={{ display: "flex", gap: "4px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-md)" }}>
             <button type="button" aria-label="Mes anterior" onClick={() => setMonth(new Date(first.getFullYear(), first.getMonth() - 1, 1))} style={viewBtn(false)}>{"‹"}</button>
             <button type="button" onClick={() => { const d = new Date(); setMonth(new Date(d.getFullYear(), d.getMonth(), 1)); }} style={viewBtn(false)}>{"Hoy"}</button>
             <button type="button" aria-label="Mes siguiente" onClick={() => setMonth(new Date(first.getFullYear(), first.getMonth() + 1, 1))} style={viewBtn(false)}>{"›"}</button>
@@ -353,11 +353,11 @@ export default function Misiones({ query = {} }) {
               const isToday = sameDay(d, today);
               const dayItems = items.filter((x) => sameDay(new Date(x.at), d));
               return (
-                <div key={d.toISOString()} style={{ minHeight: "112px", padding: "8px", display: "flex", flexDirection: "column", gap: "4px", background: inMonth ? "#FFFFFF" : "#EBEBE6", border: isToday ? "2px solid #12131A" : "1px solid rgba(18,19,26,.1)", borderRadius: "12px", opacity: inMonth ? "1" : "0.7" }}>
+                <div key={d.toISOString()} style={{ minHeight: "112px", padding: "8px", display: "flex", flexDirection: "column", gap: "4px", background: inMonth ? "#FFFFFF" : "#EBEBE6", border: isToday ? "2px solid #12131A" : "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-md)", opacity: inMonth ? "1" : "0.7" }}>
                   <span style={{ font: `${isToday ? "700" : "500"} var(--t-caption)/1 'Geist Mono', monospace`, color: isToday ? "#12131A" : "#6B6F7A" }}>{d.getDate()}</span>
                   {dayItems.map((x) => (
-                    <a key={x.key} href={x.href} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 6px", borderRadius: "7px", fontSize: "var(--t-caption)", lineHeight: "1.3", ...itemStyle[x.kind] }}>
-                      {x.kind === "run" ? <span style={{ width: "6px", height: "6px", flex: "none", borderRadius: "50%", background: "#0B8A5F" }} /> : null}
+                    <a key={x.key} href={x.href} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "4px 6px", borderRadius: "var(--r-sm)", fontSize: "var(--t-caption)", lineHeight: "1.3", ...itemStyle[x.kind] }}>
+                      {x.kind === "run" ? <span style={{ width: "6px", height: "6px", flex: "none", borderRadius: "var(--r-circle)", background: "#0B8A5F" }} /> : null}
                       {x.kind === "auto" ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg> : null}
                       <span style={{ minWidth: "0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{`${time(x.at)} ${x.title}`}</span>
                     </a>
@@ -374,7 +374,7 @@ export default function Misiones({ query = {} }) {
   return (
     <Shell active="hoy" extraCss={css}>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
-        <a href="C:/Program Files/Git/" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "999px", background: "rgba(18,19,26,.05)", fontSize: "var(--t-ui)", fontWeight: "500", color: "#12131A" }}>
+        <a href="C:/Program Files/Git/" onClick={(e) => { e.preventDefault(); navigate("C:/Program Files/Git/"); }} style={{ display: "flex", alignItems: "center", gap: "6px", height: "36px", margin: "32px clamp(20px, 4vw, 48px) 0", padding: "0 14px 0 10px", alignSelf: "flex-start", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", fontSize: "var(--t-ui)", fontWeight: "500", color: "#12131A" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
           Hoy
         </a>
@@ -385,14 +385,14 @@ export default function Misiones({ query = {} }) {
               <p style={{ margin: "0", fontSize: "var(--t-body)", color: "#5C606C" }}>{"Todas las tareas de todas las salas, en un mismo sitio."}</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              <div role="group" aria-label="Vista" style={{ display: "flex", gap: "4px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "12px" }}>
+              <div role="group" aria-label="Vista" style={{ display: "flex", gap: "4px", padding: "4px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-md)" }}>
                 {[["tablero", "Tablero"], ["lista", "Lista"], ["calendario", "Calendario"]].map(([id, label]) => (
                   <button key={id} type="button" aria-pressed={view === id ? "true" : "false"} onClick={() => setView(id)} style={viewBtn(view === id)}>{label}</button>
                 ))}
                 {/* Objetivos con hitos (/objetivos) vive aquí como una vista más de Misiones. */}
                 <button type="button" aria-pressed="false" onClick={() => navigate("/trabajo/objetivos")} style={viewBtn(false)}>{"Objetivos"}</button>
               </div>
-              <button type="button" onClick={() => navigate("/?modo=equipo")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>
+              <button type="button" onClick={() => navigate("/?modo=equipo")} style={{ display: "flex", alignItems: "center", gap: "8px", height: "48px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                 {"Nueva misión"}
               </button>
@@ -411,11 +411,11 @@ export default function Misiones({ query = {} }) {
               {botMenu ? (
                 <>
                   <button type="button" aria-label="Cerrar el menú" onClick={() => setBotMenu(false)} style={{ position: "fixed", inset: "0", zIndex: "15", background: "rgba(18,19,26,0.06)", border: "0", cursor: "default" }} />
-                  <div role="listbox" aria-label="Elige un bot" style={{ position: "absolute", left: "0", top: "calc(100% + 8px)", zIndex: "22", width: "min(300px, 82vw)", background: "#FFFFFF", border: "0", borderRadius: "16px", boxShadow: "0 18px 40px rgba(18,19,26,.22)", padding: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <div role="listbox" aria-label="Elige un bot" style={{ position: "absolute", left: "0", top: "calc(100% + 8px)", zIndex: "22", width: "min(300px, 82vw)", background: "#FFFFFF", border: "0", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px rgba(18,19,26,.22)", padding: "8px", display: "flex", flexDirection: "column", gap: "2px" }}>
                     {bots.filter((b) => b.enabled !== false).map((b) => {
                       const on = filter === "bot" && botId === b.id;
                       return (
-                        <button key={b.id} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => { setBotId(b.id); setFilter("bot"); setBotMenu(false); }} style={{ width: "100%", display: "grid", gridTemplateColumns: "34px 1fr auto", gap: "10px", alignItems: "center", minHeight: "48px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "10px", background: on ? "#FFF4D1" : "#FFFFFF", cursor: "pointer" }}>
+                        <button key={b.id} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => { setBotId(b.id); setFilter("bot"); setBotMenu(false); }} style={{ width: "100%", display: "grid", gridTemplateColumns: "34px 1fr auto", gap: "10px", alignItems: "center", minHeight: "48px", padding: "6px 10px", textAlign: "left", border: "0", borderRadius: "var(--r-md)", background: on ? "#FFF4D1" : "#FFFFFF", cursor: "pointer" }}>
                           <BotPresence bot={b} size={28} />
                           <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}><strong style={{ fontSize: "var(--t-ui)" }}>{b.name}</strong><span style={{ fontSize: "var(--t-caption)", color: "#5C606C" }}>{b.role}</span></span>
                           {on ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#12131A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg> : <span />}
@@ -434,7 +434,7 @@ export default function Misiones({ query = {} }) {
             <h2 id="plantillas" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Empezar desde una plantilla"}</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", gap: "12px" }}>
               {TEMPLATES.map((tpl) => (
-                <button key={tpl.title} type="button" onClick={() => startTemplate(tpl)} style={{ padding: "16px", textAlign: "left", background: "#FFFFFF", border: "0", borderRadius: "26px", cursor: "pointer", display: "flex", flexDirection: "column", gap: "6px" }}>
+                <button key={tpl.title} type="button" onClick={() => startTemplate(tpl)} style={{ padding: "16px", textAlign: "left", background: "#FFFFFF", border: "0", borderRadius: "var(--r-2xl)", cursor: "pointer", display: "flex", flexDirection: "column", gap: "6px" }}>
                   <strong style={{ fontSize: "var(--t-body)" }}>{tpl.title}</strong>
                   <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "#5C606C" }}>{tpl.desc}</span>
                 </button>

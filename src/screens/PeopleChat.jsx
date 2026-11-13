@@ -127,7 +127,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
   const guest = share?.members?.find((m) => m.me)?.role === "guest";
   const composer = { others, mentionable: guest ? [] : mentionable, mineEnabled: guest ? [] : mineEnabled, me, disabled: gone || !share, onTyping: chat.typingNow };
   let lastDay = null;
-  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
+  const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
   return (
     <Shell active="chats" scroll={false}>
       <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
@@ -156,7 +156,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
           <Announcer text={said} />
           <div {...messageListProps("Mensajes de la conversación")} style={{ flex: "1", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
             <div style={{ width: "100%", maxWidth: "840px", margin: "0 auto", padding: "22px 26px", display: "flex", flexDirection: "column", gap: "8px", boxSizing: "border-box" }}>
-              {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "999px", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500 }}>{"Ver mensajes anteriores"}</button> : null}
+              {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid rgba(18,19,26,.1)", borderRadius: "var(--r-pill)", background: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500 }}>{"Ver mensajes anteriores"}</button> : null}
               {!chat.loading && !chat.messages.length ? (
                 <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", textAlign: "center", animation: "fade .4s ease-out" }}>
                   {share ? <PeoplePile people={share.members} size={56} /> : null}
@@ -182,17 +182,17 @@ export default function PeopleChat({ params = {}, query = {} }) {
             <p style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
               {chat.typing.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#5C606C", animation: `dots 1.2s ${d}s infinite` }} />)}</span>
+                  <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "var(--r-circle)", background: "#5C606C", animation: `dots 1.2s ${d}s infinite` }} />)}</span>
                   {names(chat.typing.map((n) => n.split(" ")[0])) + (chat.typing.length > 1 ? " están escribiendo" : " está escribiendo")}
                 </span>
               ) : null}
               {chat.thinking.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#8C8F99", animation: "breathe 1.4s ease-in-out infinite" }} />
+                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "#8C8F99", animation: "breathe 1.4s ease-in-out infinite" }} />
                   {names(chat.thinking) + (chat.thinking.length > 1 ? " están pensando" : " está pensando")}
                 </span>
               ) : null}
-              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#1F4FD1", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
+              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "#1F4FD1", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
               {error ? <span role="alert" style={{ color: "#B4232A" }}>{error}</span> : null}
             </p>
             <PeopleComposer {...composer} resetKey={id} onError={setError} onAttach={gone ? null : attach} artifacts={artifacts} onArtifact={shareArtifact}
@@ -247,11 +247,11 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
               <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{p.id === share.owner ? "creó la conversación" : p.role === "guest" ? "invitado" : p.online ? "aquí ahora" : ""}</span>
             </div>
           ))}
-          {share.mine ? <button type="button" onClick={onPeople} style={{ alignSelf: "flex-start", marginTop: "4px", height: "34px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Invitar o cambiar"}</button> : null}
+          {share.mine ? <button type="button" onClick={onPeople} style={{ alignSelf: "flex-start", marginTop: "4px", height: "34px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Invitar o cambiar"}</button> : null}
         </div>
       )}
       {contact?.words?.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "14px", background: "#F6F6F3" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
           <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{"Palabras de seguridad"}</span>
           <span style={{ font: "500 var(--t-ui)/1.4 'Geist Mono', monospace" }}>{contact.words.join(" · ")}</span>
           <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{contact.verifiedAt ? `Comprobadas: ${other.name.split(" ")[0]} ve las mismas.` : `Iguales en su Colmena: es ${other.name.split(" ")[0]}.`}</span>
@@ -262,12 +262,12 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
           <span style={head}>{"Qué pueden pedirte sus bots"}</span>
           <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "var(--t-ui)" }}>
             {"Encargos a tus bots"}
-            <Select label="Encargos a tus bots" value={asks.encargos || "pregunta"} disabled={busy} onChange={(e) => setAsk("encargos", e.target.value)} style={{ width: "100%", height: "38px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "var(--t-ui)" }} options={ENCARGOS} />
+            <Select label="Encargos a tus bots" value={asks.encargos || "pregunta"} disabled={busy} onChange={(e) => setAsk("encargos", e.target.value)} style={{ width: "100%", height: "38px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-ui)" }} options={ENCARGOS} />
           </label>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", minHeight: "40px", fontSize: "var(--t-ui)" }}>
             <span>{"Ver si estoy libre u ocupado"}</span>
-            <button type="button" role="switch" aria-checked={freeOn ? "true" : "false"} aria-label="Ver si estoy libre u ocupado" disabled={busy} onClick={() => setAsk("libre", freeOn ? "nunca" : "pregunta")} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "12px", background: freeOn ? "#12131A" : "#C9CBD1", cursor: "pointer", transition: "background .15s ease" }}>
-              <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: freeOn ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .15s ease" }} />
+            <button type="button" role="switch" aria-checked={freeOn ? "true" : "false"} aria-label="Ver si estoy libre u ocupado" disabled={busy} onClick={() => setAsk("libre", freeOn ? "nunca" : "pregunta")} style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: freeOn ? "#12131A" : "#C9CBD1", cursor: "pointer", transition: "background .15s ease" }}>
+              <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: freeOn ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .15s ease" }} />
             </button>
           </div>
         </div>
@@ -280,7 +280,7 @@ function PeopleAside({ share, other, dm, files, onPeople, onOpenFile }) {
             const [bg, fg] = extTint(ext);
             return (
               <button key={f.id || f.name} type="button" onClick={() => onOpenFile(f)} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: 0, border: 0, background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "#12131A" }}>
-                <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "7px", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 }}>{ext}</span>
+                <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 }}>{ext}</span>
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
               </button>
             );

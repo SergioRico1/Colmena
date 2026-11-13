@@ -33,17 +33,17 @@ export default function DocHistory({ doc, botId = null, limit = 4, empty = "Aún
               <span style={{ fontSize: "var(--t-body)", color: INK }}>{v.sourceLabel}{v.current ? <span style={{ marginLeft: "8px", fontSize: "var(--t-meta)", fontWeight: 600, color: "#0B5A3E" }}>En uso</span> : null}</span>
               <span style={{ fontSize: "var(--t-meta)", color: FAINT }}>{[dateTime(v.createdAt), v.reason].filter(Boolean).join(" · ")}</span>
             </span>
-            <button type="button" aria-expanded={open === v.id} onClick={() => setOpen((x) => (x === v.id ? null : v.id))} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: INK }}>
+            <button type="button" aria-expanded={open === v.id} onClick={() => setOpen((x) => (x === v.id ? null : v.id))} style={{ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: INK }}>
               {open === v.id ? "Ocultar" : "Ver"}
             </button>
             {v.current ? null : (
-              <button type="button" disabled={busy} onClick={() => restore(v)} style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              <button type="button" disabled={busy} onClick={() => restore(v)} style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 <RotateCcw size={13} strokeWidth={2.4} aria-hidden="true" />Restaurar
               </button>
             )}
           </div>
           {open === v.id ? (
-            <pre style={{ margin: 0, maxHeight: "260px", overflow: "auto", padding: "12px 14px", borderRadius: "14px", background: "#F6F6F3", fontFamily: "'Geist Mono', ui-monospace, monospace", fontSize: "var(--t-meta)", lineHeight: 1.55, color: "#3D404A", whiteSpace: "pre-wrap", overflowWrap: "anywhere", animation: "rise .25s ease-out" }}>{v.content}</pre>
+            <pre style={{ margin: 0, maxHeight: "260px", overflow: "auto", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#F6F6F3", fontFamily: "'Geist Mono', ui-monospace, monospace", fontSize: "var(--t-meta)", lineHeight: 1.55, color: "#3D404A", whiteSpace: "pre-wrap", overflowWrap: "anywhere", animation: "rise .25s ease-out" }}>{v.content}</pre>
           ) : null}
         </div>
       ))}

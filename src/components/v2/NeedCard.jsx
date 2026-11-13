@@ -34,14 +34,14 @@ export const CALM = "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,
 
 const tag = (label) => (
   <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#8A5A00" }}>
-    <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FFC93C", animation: "halo 1.8s ease-out infinite" }} />
+    <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#FFC93C", animation: "halo 1.8s ease-out infinite" }} />
     {label}
   </span>
 );
 const QUIET = { height: "50px", padding: "0 14px", border: "0", background: "transparent", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "500", color: "#5C606C" };
 // The primary action is the product's dark button: honey stays on the card's ring and its label.
-const APPROVE = { flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600", whiteSpace: "nowrap" };
-const SOFT = { height: "50px", padding: "0 22px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", color: "#12131A", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600", whiteSpace: "nowrap" };
+const APPROVE = { flex: "1", height: "50px", padding: "0 22px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600", whiteSpace: "nowrap" };
+const SOFT = { height: "50px", padding: "0 22px", border: "0", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", color: "#12131A", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600", whiteSpace: "nowrap" };
 const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 4).toUpperCase();
 const EXT_TINT = { PDF: ["#FBE7DF", "#8E2A1F"], XLSX: ["#E1F4EC", "#0B5A3E"], CSV: ["#E1F4EC", "#0B5A3E"], DOCX: ["#E3EAFB", "#1F3F99"], PPTX: ["#FBEADF", "#8A3B12"] };
 
@@ -66,9 +66,9 @@ function Countdown({ id, onUndo, text = "Se envía en" }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "10px", animation: "fade .3s ease-out" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
         <span role="status" style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{`${text} ${secs} s`}</span>
-        <button type="button" onClick={onUndo} style={{ height: "40px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Deshacer"}</button>
+        <button type="button" onClick={onUndo} style={{ height: "40px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Deshacer"}</button>
       </div>
-      <span style={{ height: "4px", borderRadius: "2px", background: "rgba(18,19,26,.08)", overflow: "hidden" }}>
+      <span style={{ height: "4px", borderRadius: "var(--r-xs)", background: "rgba(18,19,26,.08)", overflow: "hidden" }}>
         <span style={{ display: "block", height: "100%", background: "#12131A", transition: "width .25s linear", width: Math.round(fraction * 100) + "%" }} />
       </span>
     </div>
@@ -78,7 +78,7 @@ function Countdown({ id, onUndo, text = "Se envía en" }) {
 function Sent({ text }) {
   return (
     <span role="status" style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: "500", color: "#0B6B4A", animation: "fade .3s ease-out" }}>
-      <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
+      <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", animation: "pop .4s ease-out" }}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 5 5 9-10" /></svg>
       </span>
       {text}
@@ -99,7 +99,7 @@ function SnoozedLine({ items, onError }) {
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
       <span role="status" style={{ flex: "1", minWidth: "200px", fontSize: "var(--t-body)", color: "#5C606C" }}>{`${items.length > 1 ? "Pospuestas: vuelven" : "Pospuesto: vuelve"} ${snoozeWhen(items[0].snoozedUntil)}.`}</span>
-      <button type="button" disabled={busy} onClick={back} style={{ height: "40px", padding: "0 18px", border: "0", borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Traer de vuelta"}</button>
+      <button type="button" disabled={busy} onClick={back} style={{ height: "40px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Traer de vuelta"}</button>
     </div>
   );
 }
@@ -152,7 +152,7 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
 
   if (settled) {
     return (
-      <article style={{ padding: "26px", background: "#FFFFFF", borderRadius: "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: CALM }}>
+      <article style={{ padding: "26px", background: "#FFFFFF", borderRadius: "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: CALM }}>
         <Header bot={bot} mission={mission} at={a.createdAt} />
         <h3 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{a.title}</h3>
         <Sent text={settled} />
@@ -160,19 +160,19 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
     );
   }
   return (
-    <article ref={keys} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
+    <article ref={keys} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "var(--r-3xl)" : "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
       {inline ? (snoozed ? null : tag("Te necesita")) : <Header bot={bot} who={a.external ? "fuera de tu empresa" : null} mission={mission} at={a.createdAt} label={snoozed ? null : label} />}
       <h3 style={{ margin: "0", font: inline ? "600 var(--t-heading)/1.25 'Bricolage Grotesque', sans-serif" : "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{model.title}</h3>
       {isSend && email ? (
-        <div style={{ padding: "18px", background: "#F6F6F3", borderRadius: "20px", display: "flex", flexDirection: "column", gap: "10px", fontSize: "var(--t-body)", lineHeight: "1.55" }}>
+        <div style={{ padding: "18px", background: "#F6F6F3", borderRadius: "var(--r-xl)", display: "flex", flexDirection: "column", gap: "10px", fontSize: "var(--t-body)", lineHeight: "1.55" }}>
           {/* Who it goes to and what it says; the title already carries the subject. */}
           <SendWhat send={model.send} subject={!model.send.subject} size="var(--t-body)" />
           {(email.attachments || []).map((f, i) => {
             const e = ext(f.name || f);
             const [bg, fg] = EXT_TINT[e] || ["#EEF0F4", "#4A4F5C"];
             return (
-              <span key={i} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px 6px 6px", background: "#FFFFFF", borderRadius: "12px", fontSize: "var(--t-meta)" }}>
-                <span aria-hidden="true" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "8px", background: bg, color: fg, font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{e}</span>
+              <span key={i} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", padding: "6px 12px 6px 6px", background: "#FFFFFF", borderRadius: "var(--r-md)", fontSize: "var(--t-meta)" }}>
+                <span aria-hidden="true" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: bg, color: fg, font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{e}</span>
                 {f.name || f}
               </span>
             );
@@ -199,7 +199,7 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
               const on = choice === o.id;
               return (
                 <button key={o.id || i} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-keyshortcuts={letterOf(i) || undefined} disabled={waiting && !on} onClick={() => (on ? undo() : pick(o))}
-                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "56px", padding: "0 18px", textAlign: "left", borderRadius: "18px", cursor: "pointer", transition: "all .25s ease", background: on ? "#12131A" : "#F6F6F3", color: on ? "#FFFFFF" : "#12131A", border: on ? "1px solid #12131A" : "1px solid transparent" }}>
+                  style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "56px", padding: "0 18px", textAlign: "left", borderRadius: "var(--r-xl)", cursor: "pointer", transition: "all .25s ease", background: on ? "#12131A" : "#F6F6F3", color: on ? "#FFFFFF" : "#12131A", border: on ? "1px solid #12131A" : "1px solid transparent" }}>
                   {letterOf(i) ? <span aria-hidden="true" style={letterStyle(on, 24)}>{letterOf(i)}</span> : null}
                   <span style={{ flex: "1", fontSize: "var(--t-body)", fontWeight: "600" }}>{o.label}</span>
                   {i === primary && options.length > 1 ? <span style={{ fontSize: "var(--t-meta)", opacity: ".7" }}>{"Recomendada"}</span> : null}
@@ -292,7 +292,7 @@ export const NeedGroupCard = withRowBoundary(function NeedGroupCard({ group, bot
     );
   }
   return (
-    <article aria-label={heading} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "28px" : "30px", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
+    <article aria-label={heading} style={{ padding: "26px", background: "#FFFFFF", borderRadius: inline ? "var(--r-3xl)" : "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", transition: "box-shadow .5s ease", boxShadow: waiting || snoozed ? CALM : HONEY, animation: inline ? "rise .4s ease-out" : undefined }}>
       {inline ? (snoozed ? null : tag("Te necesita")) : <Header bot={bot} mission={mission} at={items[0].createdAt} label={snoozed ? null : "Aprobar"} />}
       <h3 style={{ margin: "0", font: inline ? "600 var(--t-heading)/1.25 'Bricolage Grotesque', sans-serif" : "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: inline ? "-0.02em" : "-0.025em" }}>{heading}</h3>
       <ul style={{ margin: "0", padding: "0", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -329,12 +329,12 @@ export function ChoiceCard({ m, bots }) {
   const lead = bots.find((b) => b.id === (m.botIds?.[0] || "atlas")) || bots.find((b) => b.id === "atlas");
   const isPlan = m.status === "awaiting_plan";
   return (
-    <article style={{ padding: "26px", background: "#FFFFFF", borderRadius: "30px", display: "flex", flexDirection: "column", gap: "18px", boxShadow: HONEY }}>
+    <article style={{ padding: "26px", background: "#FFFFFF", borderRadius: "var(--r-3xl)", display: "flex", flexDirection: "column", gap: "18px", boxShadow: HONEY }}>
       <Header bot={lead} mission={m} at={m.updatedAt} label={isPlan ? "Revisar" : "Elegir"} />
       <h3 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em" }}>{m.title}</h3>
       <p style={{ margin: "0", fontSize: "var(--t-body)", lineHeight: "1.55", color: "#3D404A" }}>{isPlan ? "El plan está listo. Revísalo y dale el OK para que empiecen." : m.activityLine || "Las propuestas están listas: elige una."}</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-        <a href={isPlan ? `/encargo/${m.id}` : `/debate/${m.id}`} style={{ flex: "1", display: "flex", alignItems: "center", justifyContent: "center", height: "50px", padding: "0 22px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{isPlan ? "Revisar el plan" : "Ver las propuestas"}</a>
+        <a href={isPlan ? `/encargo/${m.id}` : `/debate/${m.id}`} style={{ flex: "1", display: "flex", alignItems: "center", justifyContent: "center", height: "50px", padding: "0 22px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>{isPlan ? "Revisar el plan" : "Ver las propuestas"}</a>
       </div>
     </article>
   );

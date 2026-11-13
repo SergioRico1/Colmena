@@ -31,13 +31,13 @@ export function CatchUp({ count, mission, pending, id }) {
   const need = pending.filter((a) => a.status === "pending");
   const vote = mission?.mode === "debate" && mission?.status === "awaiting_choice";
   return (
-    <section aria-label="Mientras no estabas" style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px", padding: "18px 20px", borderRadius: "20px", background: "#12131A", color: "#FFFFFF", animation: "rise .4s ease-out" }}>
+    <section aria-label="Mientras no estabas" style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px", padding: "18px 20px", borderRadius: "var(--r-xl)", background: "#12131A", color: "#FFFFFF", animation: "rise .4s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <span aria-hidden="true" style={{ width: "18px", height: "18px", background: "#FFFFFF", clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" }} />
         <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"Mientras no estabas"}</span>
         <span style={{ fontSize: "var(--t-meta)", color: "#C9CBD3" }}>{`${count} mensajes${need.length ? ` · ${need.length} te ${need.length === 1 ? "necesita" : "necesitan"}` : ""}`}</span>
         <span style={{ flex: "1" }} />
-        {vote ? <a href={`/debate/${id}`} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>{"Ir a la votación"}</a> : null}
+        {vote ? <a href={`/debate/${id}`} style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>{"Ir a la votación"}</a> : null}
       </div>
       <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#E6E7EC" }}>
         {sentences.slice(0, 3).map((t, i) => <li key={i}>{t}</li>)}
@@ -65,7 +65,7 @@ export function RulesPanel({ mission, bots, memberIds }) {
         <span style={{ fontSize: "var(--t-meta)", fontWeight: "500", color: "#6B6F7A" }}>{`Bots en la sala · ${inRoom.length}`}</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           {inRoom.map((b) => (
-            <a key={b.id} href={`/colmena/${b.id}`} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 10px", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-ui)", fontWeight: "600" }}>
+            <a key={b.id} href={`/colmena/${b.id}`} style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", padding: "0 14px 0 10px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-ui)", fontWeight: "600" }}>
               <BotMark bot={b} size={18} />{b.name}
             </a>
           ))}
@@ -73,7 +73,7 @@ export function RulesPanel({ mission, bots, memberIds }) {
         {others.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {others.map((b) => (
-              <button key={b.id} type="button" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px 0 8px", border: 0, borderRadius: "999px", background: "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", cursor: "pointer", fontSize: "var(--t-meta)", color: "#3D404A" }}>
+              <button key={b.id} type="button" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} style={{ display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px 0 8px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.12)", cursor: "pointer", fontSize: "var(--t-meta)", color: "#3D404A" }}>
                 <BotMark bot={b} size={14} />{"+ " + b.name}
               </button>
             ))}
@@ -88,16 +88,16 @@ export function RulesPanel({ mission, bots, memberIds }) {
             <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <p style={{ margin: 0, fontSize: "var(--t-lead)", lineHeight: "1.55" }}>
                 {r.pre}
-                <button type="button" aria-expanded={open === r.id ? "true" : "false"} onClick={() => setOpen(open === r.id ? null : r.id)} style={{ padding: "0 4px", border: 0, borderRadius: "6px", background: open === r.id ? "rgba(255,201,60,.25)" : "transparent", cursor: "pointer", font: "inherit", fontWeight: 600, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "4px" }}>{current}</button>
+                <button type="button" aria-expanded={open === r.id ? "true" : "false"} onClick={() => setOpen(open === r.id ? null : r.id)} style={{ padding: "0 4px", border: 0, borderRadius: "var(--r-sm)", background: open === r.id ? "rgba(255,201,60,.25)" : "transparent", cursor: "pointer", font: "inherit", fontWeight: 600, textDecoration: "underline", textDecorationStyle: "dotted", textUnderlineOffset: "4px" }}>{current}</button>
                 {r.post}
               </p>
               {open === r.id ? (
-                <div role="listbox" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "4px", borderRadius: "16px", background: "#F2F2EE", animation: "rise .2s ease-out" }}>
+                <div role="listbox" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "4px", borderRadius: "var(--r-lg)", background: "#F2F2EE", animation: "rise .2s ease-out" }}>
                   {r.options.map(([v, label]) => {
                     const on = v === r.value;
                     return (
-                      <button key={v} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => choose(r, v)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "12px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)" }}>
-                        <span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
+                      <button key={v} type="button" role="option" aria-selected={on ? "true" : "false"} onClick={() => choose(r, v)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "44px", padding: "0 12px", border: 0, borderRadius: "var(--r-md)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)" }}>
+                        <span aria-hidden="true" style={{ width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
                           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: on ? 1 : 0 }}><path d="m5 12 5 5 9-10" /></svg>
                         </span>
                         {label.charAt(0).toUpperCase() + label.slice(1)}

@@ -46,9 +46,9 @@ export default function ArchivoV2({ params = {}, query = {} }) {
     setNote(ok !== undefined ? { text: `«${files[0].name}» importada. Revisa sus pasos antes de activarla.` } : { error: true, text: act.error || "No se pudo importar" });
   };
   const action = tab === "habilidades"
-    ? <button type="button" onClick={importSkill} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar una habilidad"}</button>
+    ? <button type="button" onClick={importSkill} disabled={act.busy} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar una habilidad"}</button>
     : tab === "memoria"
-      ? <button type="button" onClick={() => setImporting(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar de ChatGPT"}</button>
+      ? <button type="button" onClick={() => setImporting(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Importar de ChatGPT"}</button>
       : tab === "notas" && params.slug === undefined
         ? <NotesActions onNew={() => setNoteDialog("new")} onImport={() => setNoteDialog("import")} />
         : null;
@@ -69,7 +69,7 @@ export default function ArchivoV2({ params = {}, query = {} }) {
             return (
               <a key={t.id} href={`/biblioteca/${t.id}`} aria-current={on ? "page" : undefined} style={{ height: "44px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", borderBottom: on ? "2px solid #12131A" : undefined, marginBottom: on ? "-1px" : undefined, color: on ? "#12131A" : "#4A4D57", fontSize: "var(--t-body)", fontWeight: on ? "600" : "500" }}>
                 {t.label}
-                {t.id === "habilidades" && pending ? <span aria-label={`${pending} por revisar`} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "10px", background: "#FFC93C", color: "#12131A", fontSize: "var(--t-caption)", fontWeight: "600" }}>{String(pending)}</span> : null}
+                {t.id === "habilidades" && pending ? <span aria-label={`${pending} por revisar`} style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#FFC93C", color: "#12131A", fontSize: "var(--t-caption)", fontWeight: "600" }}>{String(pending)}</span> : null}
                 {t.sub ? <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{t.sub}</span> : null}
               </a>
             );

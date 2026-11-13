@@ -23,7 +23,7 @@ export default function PeopleIntro({ onInvite = null, onCode = null, compact = 
       <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: compact ? "10px" : "14px" }}>
         {INTRO_STEPS.map(([Icon, title, text]) => (
           <li key={title} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-            <span aria-hidden="true" style={{ width: compact ? "30px" : "36px", height: compact ? "30px" : "36px", flex: "none", display: "grid", placeItems: "center", borderRadius: "11px", background: "#F2F2EE" }}><Icon size={compact ? 15 : 17} strokeWidth={2} /></span>
+            <span aria-hidden="true" style={{ width: compact ? "30px" : "36px", height: compact ? "30px" : "36px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F2F2EE" }}><Icon size={compact ? 15 : 17} strokeWidth={2} /></span>
             <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
               <strong style={{ fontSize: compact ? "var(--t-ui)" : "var(--t-body)", fontWeight: 600 }}>{title}</strong>
               <span style={{ fontSize: compact ? "var(--t-meta)" : "var(--t-ui)", lineHeight: 1.45, color: "#5C606C" }}>{text}</span>
@@ -32,8 +32,8 @@ export default function PeopleIntro({ onInvite = null, onCode = null, compact = 
         ))}
       </ol>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-        {onInvite ? <button type="button" onClick={onInvite} style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button> : null}
-        {onCode ? <button type="button" onClick={onCode} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{"Tengo una invitación"}</button> : null}
+        {onInvite ? <button type="button" onClick={onInvite} style={{ display: "flex", alignItems: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}><UserPlus size={15} strokeWidth={2.2} aria-hidden="true" />{"Invitar a alguien"}</button> : null}
+        {onCode ? <button type="button" onClick={onCode} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>{"Tengo una invitación"}</button> : null}
         <a href={HELP_URL} onClick={(e) => { e.preventDefault(); navigate(HELP_URL); }} style={{ padding: "0 8px", fontSize: "var(--t-ui)", fontWeight: 600, color: "#1F4FD1", textDecoration: "none" }}>{"Cómo funciona"}</a>
       </div>
     </div>

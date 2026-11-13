@@ -41,7 +41,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
 
   if (error === NOT_FOUND && !page) return <Absent name={slug} />;
   if (error && !page) return <><Back /><p role="alert" style={ERROR}>{error}</p></>;
-  if (!page) return <><Back /><div aria-busy={loading} style={{ height: "320px", borderRadius: "22px", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /></>;
+  if (!page) return <><Back /><div aria-busy={loading} style={{ height: "320px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "shimmer 1.6s ease-in-out infinite" }} /></>;
   if (page.slug !== slug && error === NOT_FOUND) return <Absent name={slug} />;
 
   const run = (fn) => act.act(async () => { const next = await fn(); if (next?.slug) setData(next); return next; });
@@ -71,7 +71,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
             {from ? <p role="status" style={MUTED}>{`Has llegado por «${from}», su nombre de antes. Lo que la nombraba así sigue llegando aquí.`}</p> : null}
           </header>
           {page.external ? (
-            <div role="note" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "14px 16px", borderRadius: "16px", background: "#F6F6F3" }}>
+            <div role="note" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
               <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "5px" }}>
                 <span style={{ alignSelf: "flex-start", ...CHIP, background: "#FFFFFF" }}><Globe {...icon} />{"Incluye texto de fuera"}</span>
                 <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57" }}>
@@ -138,7 +138,7 @@ export default function NotePage({ slug, view = "", query = {}, bots = [], missi
             {!page.archived ? <button type="button" disabled={act.busy} onClick={archive} style={QUIET}>{"Archivar"}</button> : null}
             {page.archived ? <button type="button" onClick={() => setDialog("delete")} style={{ ...QUIET, color: "#B4232A" }}>{"Borrar para siempre"}</button> : null}
           </div>
-          {expert ? <span style={{ padding: "10px 12px", borderRadius: "12px", background: "#F6F6F3", font: "500 var(--t-caption)/1.6 'Geist Mono', monospace", color: "#4A4D57", overflowWrap: "anywhere" }}>{[page.slug, `rev ${page.revision} · ${page.size} caracteres`, page.id].map((l) => <span key={l} style={{ display: "block" }}>{l}</span>)}</span> : null}
+          {expert ? <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: "#F6F6F3", font: "500 var(--t-caption)/1.6 'Geist Mono', monospace", color: "#4A4D57", overflowWrap: "anywhere" }}>{[page.slug, `rev ${page.revision} · ${page.size} caracteres`, page.id].map((l) => <span key={l} style={{ display: "block" }}>{l}</span>)}</span> : null}
         </aside>
       </div>
       {dialog === "rename" ? <Rename page={page} onClose={() => setDialog(null)} /> : null}

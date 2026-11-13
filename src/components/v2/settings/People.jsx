@@ -67,7 +67,7 @@ export default function PeopleSettings() {
               </button>
               {isOpen ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "4px 20px 22px 76px", animation: "rise .2s ease-out" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "18px", background: "#F4F4F0" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px 16px", borderRadius: "var(--r-xl)", background: "#F4F4F0" }}>
                     <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{`Vuestras palabras de seguridad. ${c.name.split(" ")[0]} tiene que ver las mismas:`}</span>
                     <strong style={{ font: "600 var(--t-title)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{c.words.join(" · ")}</strong>
                     <button type="button" onClick={() => act.act(() => patch(`/peers/contacts/${encodeURIComponent(c.id)}`, { verified: !c.verifiedAt }))} style={{ ...pill(!c.verifiedAt), alignSelf: "flex-start", height: "36px", fontSize: "var(--t-meta)" }}>{c.verifiedAt ? "Comprobadas · deshacer" : "Las hemos comprobado"}</button>
@@ -146,7 +146,7 @@ function StatusRow({ status, act }) {
           {picking === "away" ? (
             <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: MUTED }}>
               {"Hasta el"}
-              <input type="date" value={day} min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} onChange={(e) => { setDay(e.target.value); if (e.target.value) set("away", new Date(e.target.value + "T09:00:00").toISOString()); }} style={{ height: "36px", padding: "0 10px", border: 0, borderRadius: "12px", background: "#F4F4F0", font: "inherit", fontSize: "var(--t-meta)" }} />
+              <input type="date" value={day} min={new Date(Date.now() + 864e5).toISOString().slice(0, 10)} onChange={(e) => { setDay(e.target.value); if (e.target.value) set("away", new Date(e.target.value + "T09:00:00").toISOString()); }} style={{ height: "36px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: "#F4F4F0", font: "inherit", fontSize: "var(--t-meta)" }} />
             </label>
           ) : null}
           <button type="button" onClick={() => setPicking(null)} style={{ ...pill(false), height: "36px", fontSize: "var(--t-meta)", background: "transparent", color: MUTED }}>{"Cancelar"}</button>
@@ -179,7 +179,7 @@ function RelayGroup({ relay, act }) {
   return (
     <Group id="pp-rl" title="Cómo os llegan los mensajes" anchor="buzon" note="Si alguien no está conectado, su sobre espera en el buzón hasta 7 días. Tus correos, tu calendario, tus archivos y lo que saben de ti tus bots nunca salen de aquí: solo lo que escribís y lo que tú apruebas compartir.">
       <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "18px 20px", borderBottom: LINE }}>
-        <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "50%", background: color, boxShadow: `0 0 0 4px ${color}26` }} />
+        <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "var(--r-circle)", background: color, boxShadow: `0 0 0 4px ${color}26` }} />
         <Text title={RELAY_LABEL[relay.status] || "Buzón"} sub={relay.status === "online" ? "Cada mensaje sale cerrado con llave desde este ordenador y solo lo abre el de la otra persona: el buzón guarda sobres que no puede leer." : relay.error || "Sin buzón no se puede hablar con nadie."} />
       </div>
       <FieldRow title="Dirección del buzón" sub="Todas las personas que habláis tenéis que usar el mismo." last>

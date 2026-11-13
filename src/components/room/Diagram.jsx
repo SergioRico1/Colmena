@@ -59,14 +59,14 @@ export default function Diagram({ source }) {
     return () => { alive = false; clearTimeout(timer); };
   }, [source, uid]);
   const code = (
-    <pre style={{ margin: 0, padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "12px", font: "400 var(--t-meta)/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}><code>{source}</code></pre>
+    <pre style={{ margin: 0, padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}><code>{source}</code></pre>
   );
   if (failed && !svg) return code;
   return (
     <figure style={{ margin: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
       {showCode ? code : (
         <div role="img" aria-label="Diagrama" className={svg ? "c-enter" : undefined}
-          style={{ padding: "16px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", overflowX: "auto", display: "flex", justifyContent: "center", minHeight: svg ? undefined : "72px", alignItems: "center", color: "#555A68", fontSize: "var(--t-meta)" }}
+          style={{ padding: "16px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", overflowX: "auto", display: "flex", justifyContent: "center", minHeight: svg ? undefined : "72px", alignItems: "center", color: "#555A68", fontSize: "var(--t-meta)" }}
           {...(svg ? { dangerouslySetInnerHTML: { __html: svg } } : { children: "Dibujando el diagrama…" })} />
       )}
       {svg ? (

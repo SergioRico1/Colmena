@@ -38,8 +38,8 @@ export function PageHeader({ title, children }) {
 export function Toggle({ on, onChange, label, disabled = false }) {
   return (
     <button type="button" role="switch" aria-checked={on ? "true" : "false"} aria-label={label} disabled={disabled} onClick={() => onChange(!on)}
-      style={{ width: "52px", height: "32px", flex: "none", padding: "3px", border: 0, borderRadius: "16px", cursor: disabled ? "default" : "pointer", transition: "background .25s ease", background: on ? "#0B8A5F" : "rgba(18,19,26,.14)", opacity: disabled ? 0.6 : 1 }}>
-      <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
+      style={{ width: "52px", height: "32px", flex: "none", padding: "3px", border: 0, borderRadius: "var(--r-pill)", cursor: disabled ? "default" : "pointer", transition: "background .25s ease", background: on ? "#0B8A5F" : "rgba(18,19,26,.14)", opacity: disabled ? 0.6 : 1 }}>
+      <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
     </button>
   );
 }
@@ -58,14 +58,14 @@ export function Notice({ tone = "error", children, style }) {
     ok: { background: "#E1F4EC", color: "#0B5A3E" },
   };
   return (
-    <p role={tone === "error" ? "alert" : "status"} style={{ margin: 0, padding: "12px 16px", borderRadius: "16px", fontSize: "var(--t-ui)", lineHeight: 1.45, ...tones[tone], ...style }}>{children}</p>
+    <p role={tone === "error" ? "alert" : "status"} style={{ margin: 0, padding: "12px 16px", borderRadius: "var(--r-lg)", fontSize: "var(--t-ui)", lineHeight: 1.45, ...tones[tone], ...style }}>{children}</p>
   );
 }
 
 /** White v2 card: radius 26, no border. */
 export function Card({ id, title, aside, children, style, titleSize = 22 }) {
   return (
-    <section aria-labelledby={id} style={{ background: "#FFFFFF", borderRadius: "26px", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", ...style }}>
+    <section aria-labelledby={id} style={{ background: "#FFFFFF", borderRadius: "var(--r-2xl)", padding: "24px", display: "flex", flexDirection: "column", gap: "16px", ...style }}>
       {title ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
           <h2 id={id} style={{ margin: 0, font: `600 ${stepOf(titleSize)}px/1.1 'Bricolage Grotesque', sans-serif`, letterSpacing: "-0.02em" }}>{title}</h2>
@@ -77,7 +77,7 @@ export function Card({ id, title, aside, children, style, titleSize = 22 }) {
   );
 }
 
-const pillBase = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, whiteSpace: "nowrap" };
+const pillBase = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, whiteSpace: "nowrap" };
 export const btn = {
   dark: { ...pillBase, background: INK, color: "#FFFFFF" },
   // Honey is only for «te necesitamos»; a main action elsewhere is ink.
@@ -89,7 +89,7 @@ export const btn = {
 
 export const field = {
   label: { display: "flex", flexDirection: "column", gap: "8px", fontSize: "var(--t-meta)", fontWeight: 500, color: MUTED },
-  input: { height: "48px", padding: "0 16px", background: "#F4F4F0", border: 0, borderRadius: "14px", fontSize: "var(--t-body)", color: INK, minWidth: "0" },
+  input: { height: "48px", padding: "0 16px", background: "#F4F4F0", border: 0, borderRadius: "var(--r-lg)", fontSize: "var(--t-body)", color: INK, minWidth: "0" },
   mono: { fontFamily: "'Geist Mono', monospace", fontSize: "var(--t-meta)" },
 };
 
@@ -98,9 +98,9 @@ export const formCss = "\ninput:focus-visible,select:focus-visible,textarea:focu
 
 /** Segmented Lee / Escribe selector. */
 export function AccessPills({ value, onChange, label = "Acceso" }) {
-  const seg = (on) => ({ height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" });
+  const seg = (on) => ({ height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" });
   return (
-    <span role="radiogroup" aria-label={label} style={{ display: "inline-flex", gap: "2px", padding: "3px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>
+    <span role="radiogroup" aria-label={label} style={{ display: "inline-flex", gap: "2px", padding: "3px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)" }}>
       <button type="button" role="radio" aria-checked={value === "lee"} onClick={() => onChange("lee")} style={seg(value === "lee")}>Solo leer</button>
       <button type="button" role="radio" aria-checked={value === "escribe"} onClick={() => onChange("escribe")} style={seg(value === "escribe")}>Leer y escribir</button>
     </span>
@@ -115,7 +115,7 @@ export function BotChips({ bots, selected, onToggle, label = "Bots con acceso" }
         const on = selected.includes(b.id);
         return (
           <button key={b.id} type="button" aria-pressed={on} onClick={() => onToggle(b.id)}
-            style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 14px 0 10px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? INK : "rgba(18,19,26,.05)", color: on ? "#FFFFFF" : INK }}>
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 14px 0 10px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? INK : "rgba(18,19,26,.05)", color: on ? "#FFFFFF" : INK }}>
             <BotPresence bot={b} size={16} />
             {b.name}
           </button>

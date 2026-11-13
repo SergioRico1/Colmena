@@ -50,9 +50,9 @@ function Provider({ id, info, primary, fallback, planLimits, login }) {
       : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn(open ? "outline" : "dark", 38)}>{open ? "Cancelar" : "Conectar"}</button>)
     : <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} style={btn("outline", 38)}>Gestionar</button>;
   return (
-    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id])} style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", scrollMarginTop: "24px", overflow: "hidden" }}>
+    <div {...anchorOf({ openai: "chatgpt", anthropic: "claude", "opencode-go": "opencode" }[id])} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 20px" }}>
-        <ProviderMark engine={id} size={44} style={{ background: "#F1F1EC", borderRadius: "13px" }} />
+        <ProviderMark engine={id} size={44} style={{ background: "#F1F1EC", borderRadius: "var(--r-md)" }} />
         <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
           <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-read)", fontWeight: 600 }}>{name}<Chip tone={tag[1]}>{tag[0]}</Chip></span>
           <span role="status" style={{ fontSize: "var(--t-ui)", color: info?.limit || info?.resting || login.waiting ? "#8A5A00" : id === "openai" && login.error && !connected ? "#B4232A" : SOFT }}>{note}</span>

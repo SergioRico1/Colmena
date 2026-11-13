@@ -14,7 +14,7 @@ export function Group({ id, title, note, children, anchor }) {
   return (
     <section id={anchor || undefined} data-setting={anchor || undefined} aria-labelledby={id} style={{ display: "flex", flexDirection: "column", gap: "10px", scrollMarginTop: "24px" }}>
       {title ? <h2 id={id} style={{ margin: "0 0 0 20px", fontSize: "var(--t-meta)", fontWeight: 500, color: FAINT }}>{title}</h2> : null}
-      <div style={{ background: "#FFFFFF", borderRadius: "26px", overflow: "hidden" }}>{children}</div>
+      <div style={{ background: "#FFFFFF", borderRadius: "var(--r-2xl)", overflow: "hidden" }}>{children}</div>
       {note ? <p style={{ margin: "0 20px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: FAINT }}>{note}</p> : null}
     </section>
   );
@@ -38,8 +38,8 @@ export function Text({ title, sub, subColor = MUTED }) {
 }
 export function Knob({ on }) {
   return (
-    <span aria-hidden="true" style={{ width: "52px", height: "32px", flex: "none", padding: "3px", borderRadius: "16px", transition: "background .25s ease", background: on ? "#0B8A5F" : "rgba(18,19,26,.14)" }}>
-      <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
+    <span aria-hidden="true" style={{ width: "52px", height: "32px", flex: "none", padding: "3px", borderRadius: "var(--r-pill)", transition: "background .25s ease", background: on ? "#0B8A5F" : "rgba(18,19,26,.14)" }}>
+      <span style={{ display: "block", width: "26px", height: "26px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.2)", transition: "transform .25s cubic-bezier(.2,.8,.2,1)", transform: on ? "translateX(20px)" : "translateX(0)" }} />
     </span>
   );
 }
@@ -75,13 +75,13 @@ export function FieldRow({ title, sub, children, last, anchor, control = "1 1 34
 }
 export function Segmented({ label, items, value, onPick, busy }) {
   return (
-    <div role="radiogroup" aria-label={label} style={{ display: "flex", gap: "2px", padding: "3px", borderRadius: "999px", background: "rgba(18,19,26,.05)" }}>
+    <div role="radiogroup" aria-label={label} style={{ display: "flex", gap: "2px", padding: "3px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)" }}>
       {items.map(([v, text]) => {
         const on = value === v;
-        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ flex: 1, height: "38px", padding: "0 12px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" }}>{text}</button>;
+        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ flex: 1, height: "38px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, whiteSpace: "nowrap", color: INK, background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.15)" : "none" }}>{text}</button>;
       })}
     </div>
   );
 }
-export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
-export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "14px", background: "#F4F4F0", fontSize: "var(--t-body)", color: INK, boxSizing: "border-box" };
+export const pill = (dark) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600, flex: "none", whiteSpace: "nowrap", background: dark ? INK : "rgba(18,19,26,.06)", color: dark ? "#FFFFFF" : INK });
+export const inputStyle = { flex: "1 1 240px", minWidth: 0, width: "100%", height: "46px", padding: "0 16px", border: 0, borderRadius: "var(--r-lg)", background: "#F4F4F0", fontSize: "var(--t-body)", color: INK, boxSizing: "border-box" };

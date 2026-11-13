@@ -14,7 +14,7 @@ const date = (iso) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "n
 const KEEPER = { dpapi: "La clave la guarda Windows", keychain: "La clave la guarda el Llavero de tu Mac", file: "La clave está en un archivo solo tuyo" };
 const STORE = { dpapi: "DPAPI", keychain: "Llavero", file: "archivo" };
 const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform || navigator.userAgent || "");
-const banner = (bg) => ({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "12px 14px", borderRadius: "12px", background: bg, fontSize: "var(--t-ui)", lineHeight: 1.5 });
+const banner = (bg) => ({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "12px 14px", borderRadius: "var(--r-md)", background: bg, fontSize: "var(--t-ui)", lineHeight: 1.5 });
 
 export default function EncryptionSettings({ s, reload }) {
   const [expert] = useExpert();
@@ -28,7 +28,7 @@ export default function EncryptionSettings({ s, reload }) {
   if (!s) return null;
   const pending = s.pending;
   return (
-    <section {...anchorOf("cifrado")} aria-labelledby="enc-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "20px", background: "#FFFFFF", scrollMarginTop: "24px" }}>
+    <section {...anchorOf("cifrado")} aria-labelledby="enc-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" }}>
       <div {...anchorOf("cifrado-estado")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", scrollMarginTop: "24px" }}>
         <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
           <h3 id="enc-t" style={{ ...h3, fontSize: "var(--t-read)" }}>Cifrado de este ordenador</h3>
@@ -57,7 +57,7 @@ export default function EncryptionSettings({ s, reload }) {
         </div>
       ) : null}
       {open && !s.encrypted && !pending ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "12px", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.55, animation: "fade .25s ease-out" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.55, animation: "fade .25s ease-out" }}>
           <ol style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "4px", color: INK }}>
             <li>Se hace una copia de seguridad cifrada, por si algo saliera mal.</li>
             <li>Se crea una clave que {isMac ? "guarda el Llavero de tu Mac" : "guarda Windows para tu cuenta"}.</li>
@@ -86,7 +86,7 @@ export default function EncryptionSettings({ s, reload }) {
         </div>
       ) : null}
 
-      <details {...anchorOf("cifrado-que-protege")} style={{ padding: "12px 14px", borderRadius: "12px", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
+      <details {...anchorOf("cifrado-que-protege")} style={{ padding: "12px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
         <summary style={{ cursor: "pointer", fontWeight: 600 }}>Qué protege y qué no</summary>
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px", color: "#3D404A" }}>
           <span>Protege tus conversaciones, lo que saben tus bots, tus ajustes y el historial de lo que hacen si alguien copia la carpeta o se lleva el disco. Se sigue viendo cuántos registros hay, sus fechas y estados; nunca el texto.</span>

@@ -1,3 +1,4 @@
+import { radiusOf } from "../../lib/radius.js";
 import { stepOf } from "../../lib/type.js";
 import { useState } from "react";
 import {
@@ -20,7 +21,7 @@ const ON_WHITE = { miro: "#050038", square: "#3E4348" };
 
 export default function AppLogo({ id, name, logo = null, size = 36 }) {
   const [broken, setBroken] = useState(false);
-  const tile = { width: size + "px", height: size + "px", flexShrink: "0", borderRadius: Math.round(size * 0.3) + "px", display: "flex", alignItems: "center", justifyContent: "center" };
+  const tile = { width: size + "px", height: size + "px", flexShrink: "0", borderRadius: radiusOf(Math.round(size * 0.3)) + "px", display: "flex", alignItems: "center", justifyContent: "center" };
   const icon = ICONS[id];
   if (icon)
     return (

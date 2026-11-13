@@ -79,7 +79,7 @@ function Viewer({ task, file, changed, onNote }) {
   }, [task.id, file]);
   const editor = () => post("/code/tasks/" + task.id + "/open-editor", { path: file, line: line || 1 }).then((r) => onNote(r.editor ? null : { info: "No encuentro VS Code, Cursor ni Windsurf: se abre con el programa de ese tipo de archivo." }), (e) => onNote(e.message));
   const reveal = () => revealInTask(task.id, file).then(() => onNote(null), (e) => onNote(e.message));
-  const tool = { height: "30px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
+  const tool = { height: "30px", padding: "0 12px", flex: "none", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, whiteSpace: "nowrap" };
   const status = changed.get(file);
   return (
     <>
@@ -91,12 +91,12 @@ function Viewer({ task, file, changed, onNote }) {
         <button type="button" onClick={editor} title={line ? "Abre el archivo en la línea " + line : "Abre el archivo en VS Code, Cursor o Windsurf"} style={tool}><SquareArrowOutUpRight size={13} strokeWidth={2.2} aria-hidden="true" />Abrir en el editor</button>
         <button type="button" onClick={reveal} style={tool}><FolderOpen size={13} strokeWidth={2.2} aria-hidden="true" />{REVEAL_LABEL}</button>
       </div>
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderRadius: "14px", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgba(18,19,26,.08)", overflow: "hidden" }}>
         {error ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.red }}>{error}</p>
           : !data ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.faint }}>Abriendo…</p>
             : data.kind === "image" ? (
               <div style={{ flex: 1, minHeight: 0, overflow: "auto", display: "grid", placeItems: "center", padding: "16px", background: C.card }}>
-                <img src={data.dataUrl} alt={file} style={{ maxWidth: "100%", height: "auto", borderRadius: "6px", boxShadow: "0 1px 2px rgba(18,19,26,.08)" }} />
+                <img src={data.dataUrl} alt={file} style={{ maxWidth: "100%", height: "auto", borderRadius: "var(--r-sm)", boxShadow: "0 1px 2px rgba(18,19,26,.08)" }} />
               </div>
             ) : data.kind === "binary" ? (
               <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", lineHeight: 1.5, color: C.faint }}>
@@ -153,7 +153,7 @@ export default function Files({ task }) {
   const rows = useMemo(() => visibleRows(dirs, open), [dirs, open]);
   const root = dirs[""];
   const folderName = String(task.cwd || "").split(/[\\/]/).filter(Boolean).pop() || "carpeta";
-  const rowStyle = (depth, on) => ({ width: "100%", minHeight: "30px", display: "flex", alignItems: "center", gap: "6px", padding: "0 8px 0 " + (8 + Math.min(depth, 12) * 14) + "px", border: 0, borderRadius: "8px", background: on ? C.track : "transparent", textAlign: "left", cursor: "pointer", color: C.text });
+  const rowStyle = (depth, on) => ({ width: "100%", minHeight: "30px", display: "flex", alignItems: "center", gap: "6px", padding: "0 8px 0 " + (8 + Math.min(depth, 12) * 14) + "px", border: 0, borderRadius: "var(--r-sm)", background: on ? C.track : "transparent", textAlign: "left", cursor: "pointer", color: C.text });
   const name = { flex: 1, minWidth: 0, font: `400 var(--t-meta)/1.2 ${MONO}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
   const mark = (status) => status ? <span style={{ flex: "none", font: `600 var(--t-micro)/1 ${MONO}`, color: status === "A" ? C.greenText : C.blue }} title={status === "A" ? "Nuevo en la tarea" : "Cambiado en la tarea"}>{status}</span> : null;
   return (
@@ -163,11 +163,11 @@ export default function Files({ task }) {
           <div className="code-turn" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 4px" }}>
             <span title={task.cwd} style={{ flex: 1, minWidth: 0, fontSize: "var(--t-meta)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{folderName}</span>
             <button type="button" onClick={() => revealInTask(task.id, "").then(() => setNote(null), (e) => setNote(e.message))} aria-label={"Abrir la carpeta de la tarea"} title={"Abrir la carpeta de la tarea: " + task.cwd}
-              style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted }}>
+              style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted }}>
               <FolderOpen size={14} strokeWidth={2.2} aria-hidden="true" />
             </button>
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "999px", background: "rgba(18,19,26,.045)", color: C.muted }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.045)", color: C.muted }}>
             <Search size={13} strokeWidth={2.2} aria-hidden="true" />
             <span style={SR}>Filtrar archivos</span>
             <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />
@@ -202,7 +202,7 @@ export default function Files({ task }) {
                           <ChevronRight size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: C.quiet, transform: open.has(r.path) ? "rotate(90deg)" : "none", transition: "transform .15s ease" }} />
                           {open.has(r.path) ? <FolderOpen size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: C.muted }} /> : <Folder size={13} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: C.muted }} />}
                           <span style={name}>{r.name}</span>
-                          {changedDirs.has(r.path) ? <span aria-label="Tiene cambios" title="Tiene archivos cambiados en la tarea" style={{ flex: "none", width: "6px", height: "6px", borderRadius: "50%", background: C.blue }} /> : null}
+                          {changedDirs.has(r.path) ? <span aria-label="Tiene cambios" title="Tiene archivos cambiados en la tarea" style={{ flex: "none", width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: C.blue }} /> : null}
                         </button>
                       )
                     ) : (

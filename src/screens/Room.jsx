@@ -57,9 +57,9 @@ const I = { size: 15, strokeWidth: 2.2, "aria-hidden": "true" };
 const BROWSING = ["navegando", "rellenando un formulario", "usando el ordenador", "ejecutando una tarea"];
 const SHORTCUTS = { aparte: "mod+shift+s", archivos: "mod+shift+b", progreso: "mod+alt+shift+e", hilo: "mod+alt+shift+j", navegador: "mod+alt+shift+u", terminal: "mod+alt+shift+t", reglas: "mod+alt+shift+r" };
 const TABS = Object.fromEntries(["hilo", "progreso", "archivos", "navegador", "terminal", "aparte", "reglas"].map((k) => [k, { id: k, kind: k }]));
-const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "14px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" };
-const menuItem = { minHeight: "38px", display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", border: 0, borderRadius: "9px", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "#12131A", width: "100%" };
-const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
+const popover = { position: "absolute", right: 0, top: "calc(100% + 6px)", zIndex: 30, width: "260px", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "rise .15s ease-out" };
+const menuItem = { minHeight: "38px", display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: "var(--t-ui)", color: "#12131A", width: "100%" };
+const outline = { height: "36px", padding: "0 14px", display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" };
 const MEMBERS_KEY = "colmena:room-members";
 const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" };
 const EMPTY = [];
@@ -157,7 +157,7 @@ function Room({ id, query }) {
   };
   const shareSlot = (artifact) => (
     <button type="button" disabled={!!sharedOut[artifact.id]} onClick={() => shareArtifact(artifact)} title="Las personas de la sala podrán abrirlo. Sale cifrado de tu ordenador."
-      style={{ alignSelf: "flex-start", minHeight: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: sharedOut[artifact.id] ? "default" : "pointer" }}>
+      style={{ alignSelf: "flex-start", minHeight: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: sharedOut[artifact.id] ? "default" : "pointer" }}>
       {sharedOut[artifact.id] === "done" ? "Compartido en la sala" : sharedOut[artifact.id] === "busy" ? "Compartiendo…" : "Compartir en la sala"}
     </button>
   );
@@ -263,7 +263,7 @@ function Room({ id, query }) {
         {waits ? (
           <a href={"#" + waits.anchor} onClick={(e) => { const card = document.getElementById(waits.anchor); if (!card) return; e.preventDefault(); card.scrollIntoView({ block: "nearest" }); card.querySelector("button")?.focus({ preventScroll: true }); }}
             style={{ alignSelf: "flex-start", margin: "0 0 4px 52px", display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>
-            <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FFC93C", boxShadow: "0 0 0 1px rgba(18,19,26,.18)" }} />{waits.text + " · decidir"}
+            <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: "#FFC93C", boxShadow: "0 0 0 1px rgba(18,19,26,.18)" }} />{waits.text + " · decidir"}
           </a>
         ) : null}
       </RowBoundary>
@@ -316,7 +316,7 @@ function Room({ id, query }) {
   // ---- panels on the right
   const resolve = (t) => {
     if (t.kind === "reglas") return { label: "Bots y reglas", icon: <Users {...I} />, title: "Bots y reglas · " + comboLabel(SHORTCUTS.reglas), render: () => <RulesPanel mission={mission} bots={bots} memberIds={memberIds} /> };
-    if (t.kind === "aparte") return { label: "Preguntar aparte", icon: <MessageCircleQuestion {...I} />, title: "Preguntar aparte · " + comboLabel(SHORTCUTS.aparte), render: () => <>{shared ? <p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "12px", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#3D404A" }}>{"Aparte, solo para ti: lo que preguntes aquí no se envía a nadie de la sala. Se queda en tu ordenador."}</p> : null}<AsidePanel mission={mission} /></> };
+    if (t.kind === "aparte") return { label: "Preguntar aparte", icon: <MessageCircleQuestion {...I} />, title: "Preguntar aparte · " + comboLabel(SHORTCUTS.aparte), render: () => <>{shared ? <p role="note" style={{ margin: "14px 20px 0", padding: "10px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "#3D404A" }}>{"Aparte, solo para ti: lo que preguntes aquí no se envía a nadie de la sala. Se queda en tu ordenador."}</p> : null}<AsidePanel mission={mission} /></> };
     if (t.kind === "hilo") return { label: "Entre bots", icon: <MessagesSquare {...I} />, badge: thread.length || null, render: () => <ThreadPanel bare mission={mission} thread={thread} bots={bots} /> };
     if (t.kind === "progreso") return { label: "Progreso", icon: <ListChecks {...I} />, badge: `${progress.done || 0}/${progress.total || 0}`, render: () => <ProgressPanel bare mission={mission} steps={steps} pending={pending} activity={activity} bots={bots} /> };
     if (t.kind === "archivos") return { label: "Archivos de la sala", icon: <FolderOpen {...I} />, render: () => <FilesPanel missionId={missionId} onOpen={openFile} version={workVersion} /> };
@@ -375,17 +375,17 @@ function Room({ id, query }) {
   ];
 
   const audience = mission && !shared ? (
-    <div role="radiogroup" aria-label="Quién lo ve" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "999px", background: "#F1F1EC" }}>
+    <div role="radiogroup" aria-label="Quién lo ve" style={{ display: "inline-flex", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "#F1F1EC" }}>
       {[["sala", "Toda la sala", !aside], ["yo", "Solo yo y un bot", aside]].map(([key, label, on]) => (
         <button key={key} type="button" role="radio" aria-checked={on ? "true" : "false"} title={key === "yo" ? "Pregunta a un bot sin que la sala lo vea (Preguntar aparte)" : "Lo leen todos los de la sala"}
           onClick={() => { if (key === "yo" ? !aside : aside) dock.toggle(TABS.aparte); }}
-          style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-meta)", fontWeight: 500, color: "#12131A", cursor: "pointer" }}>{label}</button>
+          style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-meta)", fontWeight: 500, color: "#12131A", cursor: "pointer" }}>{label}</button>
       ))}
     </div>
   ) : mission && shared ? (
     // With colleagues in the room «Solo yo y un bot» is a private aside: never relayed.
     <button type="button" aria-pressed={aside ? "true" : "false"} onClick={() => dock.toggle(TABS.aparte)} title="Pregunta a uno de tus bots sin que la sala lo vea. No se envía a nadie."
-      style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "999px", background: aside ? "#12131A" : "#F1F1EC", color: aside ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
+      style={{ height: "36px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: aside ? "#12131A" : "#F1F1EC", color: aside ? "#FFFFFF" : "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>
       <MessageCircleQuestion {...I} />{"Aparte, solo para ti"}
     </button>
   ) : null;
@@ -420,7 +420,7 @@ function Room({ id, query }) {
                           <label style={{ flex: 1, minWidth: 0, display: "flex" }}>
                             <span style={hidden}>{"Nombre de la sala"}</span>
                             <input className="c-quiet" autoFocus value={renaming} maxLength={60} onChange={(e) => setRenaming(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setRenaming(null); } }}
-                              style={{ flex: 1, minWidth: 0, height: "34px", padding: "0 10px", border: "1px solid rgba(18,19,26,.2)", borderRadius: "10px", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }} />
+                              style={{ flex: 1, minWidth: 0, height: "34px", padding: "0 10px", border: "1px solid rgba(18,19,26,.2)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600 }} />
                           </label>
                           <button type="submit" style={{ ...outline, height: "34px", background: "#12131A", borderColor: "#12131A", color: "#FFFFFF" }}>{"Guardar"}</button>
                           <button type="button" onClick={() => setRenaming(null)} style={{ ...outline, height: "34px" }}>{"Cancelar"}</button>
@@ -435,7 +435,7 @@ function Room({ id, query }) {
                       </span>
                     </div>
                     <span role="img" aria-label={stackLabel(panel)} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span aria-hidden="true" style={{ display: "flex" }}>{stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-7px" : 0, borderRadius: "50%", boxShadow: "0 0 0 2px #F5F5F2" }}><PersonAvatar person={p} size={26} /></span>)}</span>
+                      <span aria-hidden="true" style={{ display: "flex" }}>{stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-7px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px #F5F5F2" }}><PersonAvatar person={p} size={26} /></span>)}</span>
                       <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "5px" }}>{stackBots.map((b) => <BotMark key={(b.mine ? "" : "o:") + b.id} bot={b} size={18} state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} />)}</span>
                       <span aria-hidden="true" style={{ fontSize: "var(--t-meta)", color: "#4A4D57", whiteSpace: "nowrap" }}>{counts}</span>
                     </span>
@@ -443,8 +443,8 @@ function Room({ id, query }) {
                     {!gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={outline}>{"Invitar"}</button> : null}
                     <button type="button" aria-label={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} title={membersOpen ? "Ocultar los miembros" : "Ver los miembros"} aria-expanded={membersOpen && !dockShown ? "true" : "false"} aria-controls="sala-miembros"
                       onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}
-                      style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "10px", background: membersOpen && !dockShown ? "#EBEBE6" : "transparent", color: "#4A4D57", cursor: "pointer" }}><Users size={17} strokeWidth={2.1} aria-hidden="true" /></button>
-                    {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "10px", background: "transparent", color: "#4A4D57", cursor: "pointer" }}
+                      style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: membersOpen && !dockShown ? "#EBEBE6" : "transparent", color: "#4A4D57", cursor: "pointer" }}><Users size={17} strokeWidth={2.1} aria-hidden="true" /></button>
+                    {menu.length ? <HeaderMenu label="Más opciones" items={menu} style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-md)", background: "transparent", color: "#4A4D57", cursor: "pointer" }}
                       button={<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="18.5" cy="12" r="1.6" /></svg>} /> : null}
                   </div>
                   {searching && shared ? <ShareSearch shareId={shareId} onClose={() => setSearching(false)} /> : null}

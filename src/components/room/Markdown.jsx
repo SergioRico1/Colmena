@@ -23,7 +23,7 @@ function CitedLink({ href, ...props }) {
 /** Inline code; when it is exactly a file the turn changed, a link that opens it. */
 function InlineCode({ children, ...props }) {
   const file = useCodeFile(typeof children === "string" ? children : Array.isArray(children) ? children.join("") : "");
-  const code = <code style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", padding: "3px 6px", background: "#E7EEFF", color: "#1F4FD1", borderRadius: "5px" }} {...props}>{children}</code>;
+  const code = <code style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", padding: "3px 6px", background: "#E7EEFF", color: "#1F4FD1", borderRadius: "var(--r-xs)" }} {...props}>{children}</code>;
   return file ? <FileLink file={file}>{code}</FileLink> : code;
 }
 
@@ -93,7 +93,7 @@ function Table({ size, ...props }) {
         <table ref={ref} style={{ width: "100%", borderCollapse: "collapse", fontSize: stepOf(Math.max(13, size - 2)) + "px", lineHeight: "1.45" }} {...props} />
       </div>
       <button type="button" className="rm-focus c-md-copy" onClick={() => ref.current && copy(tableToTSV(ref.current))} title="Copia la tabla para pegarla en Excel o Hojas de cálculo"
-        style={{ alignSelf: "flex-end", display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "8px", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: copied === "ok" ? "#0B6B4A" : "#4A4F5C" }}>
+        style={{ alignSelf: "flex-end", display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: copied === "ok" ? "#0B6B4A" : "#4A4F5C" }}>
         {copied === "ok" ? <Check size={13} strokeWidth={2.4} aria-hidden="true" /> : <ClipboardCopy size={13} strokeWidth={2.2} aria-hidden="true" />}
         {copied === "ok" ? "Copiada" : copied === "fail" ? "No se pudo copiar" : "Copiar para Excel"}
       </button>
@@ -106,9 +106,9 @@ function CodeBlock({ text, ...props }) {
   const [copied, copy] = useCopied();
   return (
     <div className="c-md-code" style={{ position: "relative" }}>
-      <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "12px", font: "400 var(--t-meta)/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }} {...props} />
+      <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }} {...props} />
       <button type="button" className="rm-focus c-md-copy" onClick={() => copy(String(text || "").replace(/\n$/, ""))} aria-label={copied === "ok" ? "Código copiado" : "Copiar el código"}
-        style={{ position: "absolute", top: "8px", right: "8px", display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 9px", background: "#2B2D36", color: "#E6E8EE", border: "1px solid #3A3E4B", borderRadius: "7px", cursor: "pointer", fontSize: "var(--t-caption)" }}>
+        style={{ position: "absolute", top: "8px", right: "8px", display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 9px", background: "#2B2D36", color: "#E6E8EE", border: "1px solid #3A3E4B", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)" }}>
         {copied === "ok" ? <Check size={13} strokeWidth={2.4} aria-hidden="true" /> : <Copy size={13} strokeWidth={2.2} aria-hidden="true" />}{copied === "ok" ? "Copiado" : "Copiar"}
       </button>
     </div>

@@ -12,7 +12,7 @@ import { noBotsText } from "../../lib/roomView.js";
 // rules and files. What waits for someone else is neutral here; only «te espera» wears honey.
 const head = { margin: "0 0 2px", fontSize: "var(--t-meta)", fontWeight: 600, color: "#5C606C" };
 const small = { fontSize: "var(--t-meta)", color: "#5C606C" };
-const pill = { minHeight: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" };
+const pill = { minHeight: "32px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" };
 const ellipsis = { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 
 /** «Lucía pide añadir a Marta»: informative, for whoever made the room. Neutral colours. */
@@ -28,7 +28,7 @@ function Requests({ view, onChanged }) {
   return (
     <section aria-label="Peticiones para añadir personas" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       {view.requests.map((r) => (
-        <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "14px", background: "#F6F6F3" }}>
+        <div key={r.id} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
           <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45 }}><strong style={{ fontWeight: 600 }}>{r.from?.name || "Alguien"}</strong>{" pide añadir a "}<strong style={{ fontWeight: 600 }}>{r.person?.name || "una persona"}</strong>{" a la sala."}</span>
           <span style={small}>{"Verá lo que se escriba a partir de ahora, no lo anterior."}</span>
           <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -108,13 +108,13 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
         </section>
       )}
       {rules.length ? (
-        <section style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "16px", background: "#F6F6F3" }}>
+        <section style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
           <h2 style={{ margin: 0, fontSize: "var(--t-ui)", fontWeight: 600 }}>{"Reglas de esta sala"}</h2>
           {rules.map(([k, v]) => <div key={k} style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "var(--t-ui)", lineHeight: "1.45" }}><span style={{ color: "#5C606C" }}>{k}</span><span style={{ fontWeight: 500 }}>{v}</span></div>)}
           {onRules ? <button type="button" onClick={onRules} style={{ ...pill, alignSelf: "flex-start" }}>{"Cambiar reglas"}</button> : null}
         </section>
       ) : null}
-      {onFiles ? <button type="button" onClick={onFiles} style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "44px", padding: "0 14px", borderRadius: "12px", border: "1px solid rgba(18,19,26,.1)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{"Archivos de la sala"}<span style={{ color: "#5C606C" }}>{fileCount}</span></button> : null}
+      {onFiles ? <button type="button" onClick={onFiles} style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "44px", padding: "0 14px", borderRadius: "var(--r-md)", border: "1px solid rgba(18,19,26,.1)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer" }}>{"Archivos de la sala"}<span style={{ color: "#5C606C" }}>{fileCount}</span></button> : null}
     </aside>
   );
 }

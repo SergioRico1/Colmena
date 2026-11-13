@@ -15,9 +15,9 @@ import { CodeCard } from "../team/TeamSheets.jsx";
 const INK = "#12131A", MUTED = "#5C606C", TEXT2 = "#4A4D57", GREEN = "#0B6B4A", RED = "#B4232A";
 const hidden = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 const fieldRow = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" };
-const input = { flex: "1 1 240px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "14px", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK };
-const dark = (on = true) => ({ height: "46px", padding: "0 20px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: on ? "pointer" : "default", opacity: on ? 1 : 0.5, flex: "none" });
-const quiet = { height: "46px", padding: "0 14px", border: 0, borderRadius: "999px", background: "transparent", color: TEXT2, fontSize: "var(--t-body)", fontWeight: 500, cursor: "pointer" };
+const input = { flex: "1 1 240px", minWidth: 0, height: "46px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK };
+const dark = (on = true) => ({ height: "46px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: on ? "pointer" : "default", opacity: on ? 1 : 0.5, flex: "none" });
+const quiet = { height: "46px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: TEXT2, fontSize: "var(--t-body)", fontWeight: 500, cursor: "pointer" };
 const note = { margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: MUTED };
 const body = { display: "flex", flexDirection: "column", gap: "12px", padding: "0 20px 20px 20px", animation: "rise .25s ease-out" };
 
@@ -107,7 +107,7 @@ export default function TeamStep({ value, onChange, off = false }) {
     ) : preview ? (
       <div style={body}>
         <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5 }}><strong style={{ fontWeight: 600 }}>{what.title + "."}</strong>{" " + what.text}</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "16px", background: "#F4F4F0" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F4F4F0" }}>
           <span style={{ fontSize: "var(--t-ui)", color: TEXT2 }}>{`Pídele a ${what.from} que te diga sus cuatro palabras. Deben ser estas:`}</span>
           <strong style={{ font: "600 var(--t-title)/1.25 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.01em" }}>{(preview.words || []).join(" · ")}</strong>
         </div>
@@ -143,13 +143,13 @@ export default function TeamStep({ value, onChange, off = false }) {
         const on = choice === c.id;
         const done = (c.id === "create" && value?.team) || (c.id === "join" && value?.joined);
         return (
-          <div key={c.id} style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", boxShadow: `inset 0 0 0 2px ${on ? INK : "transparent"}` }}>
-            <button type="button" role="radio" aria-checked={on} onClick={() => pick(c.id)} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "72px", padding: "14px 20px", border: 0, borderRadius: "20px", background: "transparent", textAlign: "left", cursor: "pointer" }}>
+          <div key={c.id} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: `inset 0 0 0 2px ${on ? INK : "transparent"}` }}>
+            <button type="button" role="radio" aria-checked={on} onClick={() => pick(c.id)} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "72px", padding: "14px 20px", border: 0, borderRadius: "var(--r-xl)", background: "transparent", textAlign: "left", cursor: "pointer" }}>
               <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
                 <span style={{ fontSize: "var(--t-read)", fontWeight: 600 }}>{c.title}</span>
                 <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: MUTED }}>{c.text}</span>
               </span>
-              <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: done ? GREEN : on ? INK : "transparent", boxShadow: on || done ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.25)" }}>
+              <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: done ? GREEN : on ? INK : "transparent", boxShadow: on || done ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.25)" }}>
                 <Check size={12} strokeWidth={3.2} color="#FFFFFF" style={{ opacity: on || done ? 1 : 0 }} />
               </span>
             </button>

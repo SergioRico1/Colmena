@@ -108,13 +108,13 @@ export default function Select({ value, onChange, options, label, "aria-label": 
       {open ? createPortal(
         <ul ref={list} id={listId} role="listbox" aria-label={name || undefined} tabIndex={-1} onKeyDown={onKeyDown}
           onBlur={(e) => { const to = e.relatedTarget; if (to && !list.current?.contains(to) && to !== button.current) close(false); }}
-          style={{ position: "fixed", left: 0, top: 0, zIndex: LIST_Z, visibility: "hidden", boxSizing: "border-box", margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", overflowY: "auto", overscrollBehavior: "contain", borderRadius: "var(--r-lg, 14px)", background: "#FFFFFF", color: "#12131A", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", fontSize: "var(--t-ui)", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 18px 40px -16px rgba(18,19,26,.35)", WebkitAppRegion: "no-drag" }}>
+          style={{ position: "fixed", left: 0, top: 0, zIndex: LIST_Z, visibility: "hidden", boxSizing: "border-box", margin: 0, padding: "6px", listStyle: "none", display: "flex", flexDirection: "column", overflowY: "auto", overscrollBehavior: "contain", borderRadius: "var(--r-lg)", background: "#FFFFFF", color: "#12131A", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", fontSize: "var(--t-ui)", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 18px 40px -16px rgba(18,19,26,.35)", WebkitAppRegion: "no-drag" }}>
           {opts.map((o, i) => {
             const on = i === selected, active = i === at;
             return (
               <li key={i} id={`${listId}-${i}`} role="option" data-index={i} aria-selected={on ? "true" : "false"} aria-disabled={o.disabled ? "true" : undefined} tabIndex={active ? 0 : -1}
                 onClick={() => { if (o.disabled) return; choose(i); close(true); }} onMouseMove={() => { if (!o.disabled && at !== i) setAt(i); }}
-                style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", minHeight: "36px", padding: "0 12px", borderRadius: "var(--r-sm, 8px)", background: active ? "#F1F1EC" : "transparent", fontWeight: on ? 600 : 400, whiteSpace: "nowrap", cursor: o.disabled ? "default" : "pointer", opacity: o.disabled ? 0.5 : 1, outlineOffset: "-2px" }}>
+                style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "14px", minHeight: "36px", padding: "0 12px", borderRadius: "var(--r-sm)", background: active ? "#F1F1EC" : "transparent", fontWeight: on ? 600 : 400, whiteSpace: "nowrap", cursor: o.disabled ? "default" : "pointer", opacity: o.disabled ? 0.5 : 1, outlineOffset: "-2px" }}>
                 <span>{o.label}</span>
                 {on ? <Check size={15} strokeWidth={2.6} aria-hidden="true" style={{ flex: "none" }} /> : <span aria-hidden="true" style={{ flex: "none", width: "15px" }} />}
               </li>

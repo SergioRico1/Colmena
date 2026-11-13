@@ -139,14 +139,14 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
 
   const menu = open && items.length ? (
     <div role="listbox" aria-label={trig.kind === "/" ? "Comandos" : trig.kind === "$" ? "Habilidades" : "Archivos"}
-      style={{ position: "absolute", left: "12px", right: "12px", [below ? "top" : "bottom"]: "calc(100% + 8px)", zIndex: 40, maxHeight: "320px", overflowY: "auto", padding: "8px", borderRadius: "20px", background: C.white, boxShadow: SHEET, animation: "rise .18s ease-out" }}>
+      style={{ position: "absolute", left: "12px", right: "12px", [below ? "top" : "bottom"]: "calc(100% + 8px)", zIndex: 40, maxHeight: "320px", overflowY: "auto", padding: "8px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: SHEET, animation: "rise .18s ease-out" }}>
       <span style={{ display: "block", padding: "4px 10px 8px", fontSize: "var(--t-caption)", fontWeight: 600, color: C.faint }}>{trig.kind === "/" ? "Comandos" : trig.kind === "$" ? "Habilidades · se añaden a tu mensaje" : "Archivos de la tarea"}</span>
       {items.map((it, i) => {
         const Icon = trig.kind === "/" ? SquareSlash : trig.kind === "$" ? Sparkles : FileCode2;
         const on = i === active;
         return (
           <div key={it.name} role="option" aria-selected={on} onMouseDown={(e) => { e.preventDefault(); pick(it); }} onMouseMove={() => setActive(i)}
-            style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "38px", padding: "6px 10px", borderRadius: "12px", background: on ? C.soft : "transparent", cursor: "pointer" }}>
+            style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "38px", padding: "6px 10px", borderRadius: "var(--r-md)", background: on ? C.soft : "transparent", cursor: "pointer" }}>
             <Icon size={14} strokeWidth={2} color={C.muted} aria-hidden="true" style={{ flex: "none" }} />
             <span style={{ font: trig.kind === "@" ? `400 var(--t-meta)/1.3 ${MONO}` : "600 var(--t-meta)/1.3 'Geist', sans-serif", color: C.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: trig.kind === "@" ? "100%" : "40%" }}>{trig.kind === "@" ? it.name : trig.kind + it.name}</span>
             {it.text ? <span style={{ flex: 1, minWidth: 0, fontSize: "var(--t-caption)", color: C.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.text}</span> : null}
@@ -172,18 +172,18 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
       {contexts.map((c) => {
         const Icon = CONTEXT_ICON[c.kind] || FileCode2;
         return (
-          <span key={c.key} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "999px", background: "#FFF4D1", boxShadow: "inset 0 0 0 1px rgba(255,201,60,.55)", fontSize: "var(--t-caption)", color: "#5C4300", maxWidth: "280px", animation: "rise .2s ease-out" }}>
+          <span key={c.key} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "var(--r-pill)", background: "#FFF4D1", boxShadow: "inset 0 0 0 1px rgba(255,201,60,.55)", fontSize: "var(--t-caption)", color: "#5C4300", maxWidth: "280px", animation: "rise .2s ease-out" }}>
             <Icon size={13} strokeWidth={2} aria-hidden="true" />
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.label}</span>
-            <button type="button" onClick={() => setContexts((all) => all.filter((x) => x.key !== c.key))} aria-label={"Quitar " + c.label} style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#8A5A00" }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>
+            <button type="button" onClick={() => setContexts((all) => all.filter((x) => x.key !== c.key))} aria-label={"Quitar " + c.label} style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#8A5A00" }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>
           </span>
         );
       })}
       {files.map((f) => (
-        <span key={f.path} title={f.path} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "999px", background: C.soft, fontSize: "var(--t-caption)", color: C.text, maxWidth: "240px" }}>
+        <span key={f.path} title={f.path} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 6px 0 10px", borderRadius: "var(--r-pill)", background: C.soft, fontSize: "var(--t-caption)", color: C.text, maxWidth: "240px" }}>
           {f.image ? <ImageIcon size={13} strokeWidth={2} aria-hidden="true" /> : <Paperclip size={13} strokeWidth={2} aria-hidden="true" />}
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
-          <button type="button" onClick={() => setFiles((all) => all.filter((x) => x.path !== f.path))} aria-label={"Quitar " + f.name} style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>
+          <button type="button" onClick={() => setFiles((all) => all.filter((x) => x.path !== f.path))} aria-label={"Quitar " + f.name} style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>
         </span>
       ))}
       {uploading ? <span style={{ height: "30px", display: "flex", alignItems: "center", fontSize: "var(--t-caption)", color: C.faint }}>Subiendo…</span> : null}
@@ -192,7 +192,7 @@ export function useComposerExtras({ text, setText, area, taskId = null, projectI
   ) : null;
 
   const clip = (
-    <button type="button" onClick={pickFiles} aria-label="Adjuntar archivos" title="Adjuntar archivos o imágenes (también puedes pegarlas o soltarlas aquí)" style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted }}>
+    <button type="button" onClick={pickFiles} aria-label="Adjuntar archivos" title="Adjuntar archivos o imágenes (también puedes pegarlas o soltarlas aquí)" style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted }}>
       <Paperclip size={16} strokeWidth={2} aria-hidden="true" />
     </button>
   );

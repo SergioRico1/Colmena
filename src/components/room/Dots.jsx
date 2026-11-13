@@ -10,7 +10,7 @@ const CYCLE = 1200;
 export default function WorkingDots({ style }) {
   // Fixed at mount: then the dots sit at «now modulo the cycle» through re-renders too.
   const [offset] = useState(() => -(Date.now() % CYCLE));
-  const dot = (delay) => ({ width: "5px", height: "5px", borderRadius: "50%", background: "currentColor", animation: `dots ${CYCLE}ms ${offset + delay}ms infinite` });
+  const dot = (delay) => ({ width: "5px", height: "5px", borderRadius: "var(--r-circle)", background: "currentColor", animation: `dots ${CYCLE}ms ${offset + delay}ms infinite` });
   return (
     <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center", gap: "3px", color: "#5C606C", ...style }}>
       <span style={dot(0)} /><span style={dot(150)} /><span style={dot(300)} />

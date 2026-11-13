@@ -29,7 +29,7 @@ function FullBar({ when, percent = 100, back = "vuelve" }) {
   const used = Math.max(0, Math.min(100, Math.round(Number(percent)) || 0));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <span aria-hidden="true" style={{ height: "8px", borderRadius: "4px", background: "#EEEEEA", overflow: "hidden" }}>
+      <span aria-hidden="true" style={{ height: "8px", borderRadius: "var(--r-xs)", background: "#EEEEEA", overflow: "hidden" }}>
         <span style={{ display: "block", width: used + "%", height: "100%", background: "#12131A" }} />
       </span>
       <span style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
@@ -39,8 +39,8 @@ function FullBar({ when, percent = 100, back = "vuelve" }) {
     </div>
   );
 }
-const card = { display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px", padding: "28px", borderRadius: "24px", background: "#FFFFFF", animation: "fade .3s ease-out" };
-const outline = (busy = false) => ({ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: busy ? "wait" : "pointer" });
+const card = { display: "flex", flexDirection: "column", justifyContent: "center", gap: "14px", padding: "28px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", animation: "fade .3s ease-out" };
+const outline = (busy = false) => ({ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: 500, cursor: busy ? "wait" : "pointer" });
 const link = { height: "42px", padding: "0 12px", display: "inline-flex", alignItems: "center", border: 0, background: "transparent", color: "#1F4FD1", fontSize: "var(--t-ui)", fontWeight: 500, cursor: "pointer", textDecoration: "none" };
 
 /**

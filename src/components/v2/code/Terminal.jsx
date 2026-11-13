@@ -64,7 +64,7 @@ function Screen({ taskId, term, onExit }) {
       <div ref={box} style={{ position: "absolute", inset: "10px 6px 6px 14px" }} />
       {selection ? (
         <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={send} title="Añade lo seleccionado a tu próximo mensaje"
-          style={{ position: "absolute", right: "16px", bottom: "14px", zIndex: 2, display: "flex", alignItems: "center", gap: "7px", height: "34px", padding: "0 14px", border: 0, borderRadius: "999px", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, boxShadow: "0 12px 30px -12px rgba(0,0,0,.6)", animation: "rise .2s ease-out" }}>
+          style={{ position: "absolute", right: "16px", bottom: "14px", zIndex: 2, display: "flex", alignItems: "center", gap: "7px", height: "34px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: C.white, color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, boxShadow: "0 12px 30px -12px rgba(0,0,0,.6)", animation: "rise .2s ease-out" }}>
           <CornerDownLeft size={13} strokeWidth={2.4} aria-hidden="true" />Enviar a Bruno
         </button>
       ) : null}
@@ -125,15 +125,15 @@ export default function TerminalPanel({ task }) {
         {(list || []).map((t) => {
           const on = t.id === active;
           return (
-            <span key={t.id} style={{ display: "flex", alignItems: "center", gap: "2px", height: "30px", padding: "0 4px 0 12px", borderRadius: "999px", background: on ? "rgba(255,255,255,.1)" : "transparent" }}>
+            <span key={t.id} style={{ display: "flex", alignItems: "center", gap: "2px", height: "30px", padding: "0 4px 0 12px", borderRadius: "var(--r-pill)", background: on ? "rgba(255,255,255,.1)" : "transparent" }}>
               <button type="button" onClick={() => (t.running ? setActive(t.id) : open({ id: t.id }))} style={{ display: "flex", alignItems: "center", gap: "7px", border: 0, background: "transparent", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, color: on ? C.white : "#8A8D96", whiteSpace: "nowrap" }}>
-                <span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", background: t.running ? "#3DDC97" : "rgba(255,255,255,.25)" }} />{t.title}
+                <span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: t.running ? "#3DDC97" : "rgba(255,255,255,.25)" }} />{t.title}
               </button>
-              <button type="button" onClick={() => close(t.id)} aria-label={"Cerrar " + t.title} title="Cerrar la terminal" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#8A8D96" }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>
+              <button type="button" onClick={() => close(t.id)} aria-label={"Cerrar " + t.title} title="Cerrar la terminal" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#8A8D96" }}><X size={11} strokeWidth={2.4} aria-hidden="true" /></button>
             </span>
           );
         })}
-        <button type="button" onClick={() => open()} aria-label="Nueva terminal" title="Nueva terminal" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#8A8D96" }}><Plus size={14} strokeWidth={2.4} aria-hidden="true" /></button>
+        <button type="button" onClick={() => open()} aria-label="Nueva terminal" title="Nueva terminal" style={{ width: "30px", height: "30px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#8A8D96" }}><Plus size={14} strokeWidth={2.4} aria-hidden="true" /></button>
       </div>
       <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
         {current?.running ? <Screen key={current.id} taskId={task.id} term={current} onExit={() => load()} /> : null}
@@ -141,22 +141,22 @@ export default function TerminalPanel({ task }) {
       </div>
       {adding ? (
         <form onSubmit={addScript} style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,.07)" }}>
-          <input className="c-quiet c-on-dark" autoFocus value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Nombre (p. ej. web)" aria-label="Nombre del script" style={{ width: "130px", height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.08)", color: "#E6E7EC", font: `400 var(--t-caption)/1 ${MONO}` }} />
-          <input className="c-quiet c-on-dark" value={draft.command} onChange={(e) => setDraft({ ...draft, command: e.target.value })} placeholder="Orden (p. ej. npm run dev)" aria-label="Orden del script" style={{ flex: "1 1 180px", height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.08)", color: "#E6E7EC", font: `400 var(--t-caption)/1 ${MONO}` }} />
+          <input className="c-quiet c-on-dark" autoFocus value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Nombre (p. ej. web)" aria-label="Nombre del script" style={{ width: "130px", height: "30px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.08)", color: "#E6E7EC", font: `400 var(--t-caption)/1 ${MONO}` }} />
+          <input className="c-quiet c-on-dark" value={draft.command} onChange={(e) => setDraft({ ...draft, command: e.target.value })} placeholder="Orden (p. ej. npm run dev)" aria-label="Orden del script" style={{ flex: "1 1 180px", height: "30px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.08)", color: "#E6E7EC", font: `400 var(--t-caption)/1 ${MONO}` }} />
           <label title="Se ejecuta solo en la copia de cada tarea nueva (p. ej. npm install)" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "#8A8D96" }}><input type="checkbox" checked={draft.onCreate} onChange={(e) => setDraft({ ...draft, onCreate: e.target.checked })} />Al crear cada tarea</label>
           <label title="Se ejecuta en la copia de la tarea al archivarla, para liberar disco (p. ej. npm run clean)" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "#8A8D96" }}><input type="checkbox" checked={draft.onSettle} onChange={(e) => setDraft({ ...draft, onSettle: e.target.checked })} />Al archivar</label>
-          <button type="submit" disabled={!draft.name.trim() || !draft.command.trim()} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: "#FFFFFF", color: C.ink, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Guardar</button>
-          <button type="button" onClick={() => setAdding(false)} style={{ height: "30px", padding: "0 10px", border: 0, borderRadius: "999px", background: "transparent", color: "#8A8D96", cursor: "pointer", fontSize: "var(--t-caption)" }}>Cancelar</button>
+          <button type="submit" disabled={!draft.name.trim() || !draft.command.trim()} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "#FFFFFF", color: C.ink, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Guardar</button>
+          <button type="button" onClick={() => setAdding(false)} style={{ height: "30px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: "transparent", color: "#8A8D96", cursor: "pointer", fontSize: "var(--t-caption)" }}>Cancelar</button>
         </form>
       ) : (
         <div style={{ flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,.07)" }}>
           <span style={{ fontSize: "var(--t-caption)", color: "#8A8D96", marginRight: "4px" }}>Scripts</span>
           {scripts.map((s) => (
-            <button key={s.name} type="button" onClick={() => open({ script: s.name })} title={s.command + " · en una terminal nueva" + (s.onCreate ? " · también al crear cada tarea" : "") + (s.onSettle ? " · también al archivar la tarea" : "")} style={{ display: "flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 11px", border: 0, borderRadius: "999px", background: "rgba(255,255,255,.07)", color: "#E6E7EC", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}` }}>
+            <button key={s.name} type="button" onClick={() => open({ script: s.name })} title={s.command + " · en una terminal nueva" + (s.onCreate ? " · también al crear cada tarea" : "") + (s.onSettle ? " · también al archivar la tarea" : "")} style={{ display: "flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 11px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(255,255,255,.07)", color: "#E6E7EC", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}` }}>
               <Play size={10} fill="currentColor" strokeWidth={0} aria-hidden="true" />{s.name}
             </button>
           ))}
-          <button type="button" onClick={() => { setDraft({ name: "", command: "", onCreate: false, onSettle: false }); setAdding(true); }} title="Añadir un script del proyecto (se guarda en colmena.json)" style={{ display: "flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: "1px dashed rgba(255,255,255,.18)", borderRadius: "999px", background: "transparent", color: "#8A8D96", cursor: "pointer", fontSize: "var(--t-caption)" }}>
+          <button type="button" onClick={() => { setDraft({ name: "", command: "", onCreate: false, onSettle: false }); setAdding(true); }} title="Añadir un script del proyecto (se guarda en colmena.json)" style={{ display: "flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 10px", border: "1px dashed rgba(255,255,255,.18)", borderRadius: "var(--r-pill)", background: "transparent", color: "#8A8D96", cursor: "pointer", fontSize: "var(--t-caption)" }}>
             <Plus size={11} strokeWidth={2.4} aria-hidden="true" />Script
           </button>
         </div>

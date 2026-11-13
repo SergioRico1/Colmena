@@ -72,7 +72,7 @@ export function StuckBand({ mission, bots }) {
   const minutes = Math.max(2, Math.round((now - Date.parse(quiet.since)) / 60000));
   const doing = quiet.verb ? quiet.verb + (quiet.detail ? " · " + quiet.detail : "") : null;
   const control = (action) => act(() => post(`/missions/${mission.id}/control`, { action }));
-  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px", borderRadius: "9px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
+  const btn = { display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 12px", borderRadius: "var(--r-sm)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
   return (
     <div role="status" className="c-band" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "10px clamp(16px, 3vw, 28px)", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE", fontSize: "var(--t-ui)" }}>
       {bot?.id === "atlas" ? <BotAvatar bot={bot} size={26} mood="plano" /> : <Hourglass size={18} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", color: "#4A4F5C" }} />}
@@ -128,7 +128,7 @@ export function BlockerBand({ mission, pending, bots }) {
         <strong>{`${bot.name} te espera:`}</strong>
         {" " + (text || "") + more}
       </span>
-      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "999px", fontWeight: "600", fontSize: "var(--t-meta)" }}>{"Responder"}</span>
+      <span style={{ display: "flex", alignItems: "center", height: "34px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-pill)", fontWeight: "600", fontSize: "var(--t-meta)" }}>{"Responder"}</span>
     </a>
   );
 }
@@ -179,7 +179,7 @@ function ReplyButton({ onClick }) {
   if (!onClick) return null;
   return (
     <button type="button" className="rm-focus" onClick={onClick} aria-label="Responder en un hilo" title="Responder en un hilo"
-      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "8px", cursor: "pointer", color: "#4A4F5C" }}>
+      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", color: "#4A4F5C" }}>
       {REPLY_ICON}
     </button>
   );
@@ -202,7 +202,7 @@ function ForkButton({ message }) {
   };
   return (
     <button type="button" className="rm-focus" onClick={fork} disabled={busy} aria-label="Duplicar desde aquí" title="Duplicar desde aquí: una sala nueva con la conversación hasta este mensaje"
-      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "8px", cursor: busy ? "default" : "pointer", color: "#4A4F5C", opacity: busy ? 0.5 : 1 }}>
+      style={{ width: "30px", height: "30px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: busy ? "default" : "pointer", color: "#4A4F5C", opacity: busy ? 0.5 : 1 }}>
       <GitBranch size={16} strokeWidth={2} aria-hidden="true" />
     </button>
   );
@@ -215,7 +215,7 @@ function RepliesLink({ replies, bots, onOpen, pressed }) {
   const who = [...new Set(replies.map((r) => (r.role === "user" ? "user" : r.botId || "atlas")))].slice(0, 3);
   return (
     <button type="button" className="rm-focus" onClick={onOpen} aria-pressed={pressed ? "true" : "false"}
-      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "#EEF0F4" : "transparent", border: "1px solid " + (pressed ? "#DCE0E8" : "transparent"), borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)" }}>
+      style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "8px", minHeight: "32px", padding: "2px 10px 2px 4px", background: pressed ? "#EEF0F4" : "transparent", border: "1px solid " + (pressed ? "#DCE0E8" : "transparent"), borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>
       <span style={{ display: "flex" }}>{who.map((w) => (w === "user" ? <UserAvatar key="u" size={22} /> : <BotAvatar key={w} bot={findBot(bots, w)} size={22} />))}</span>
       <strong style={{ color: "#1F4FD1" }}>{replies.length === 1 ? "1 respuesta" : replies.length + " respuestas"}</strong>
       {last?.at ? <span style={{ color: "#555A68" }}>{"última a las " + time(last.at)}</span> : null}
@@ -227,7 +227,7 @@ export function DaySeparator({ label }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0 12px", fontSize: "var(--t-caption)", fontWeight: "600", color: "#555A68" }}>
       <span style={{ flex: "1", height: "1px", background: "#E6E8EE" }} />
-      <span style={{ padding: "4px 12px", border: "1px solid #E6E8EE", borderRadius: "12px" }}>{label}</span>
+      <span style={{ padding: "4px 12px", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)" }}>{label}</span>
       <span style={{ flex: "1", height: "1px", background: "#E6E8EE" }} />
     </div>
   );
@@ -257,10 +257,10 @@ export function FailedLine({ error, onRetry, onDiscard }) {
       <CircleAlert size={14} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
       <strong>{"No se envió"}</strong>
       <span style={{ color: "#4A4F5C" }}>{error}</span>
-      <button type="button" className="rm-focus" onClick={onRetry} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "7px", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}>
+      <button type="button" className="rm-focus" onClick={onRetry} style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600" }}>
         <RotateCcw size={12} strokeWidth={2.4} aria-hidden="true" />Reintentar
       </button>
-      <button type="button" className="rm-focus" onClick={onDiscard} style={{ height: "26px", padding: "0 8px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "7px", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "#12131A" }}>Descartar</button>
+      <button type="button" className="rm-focus" onClick={onDiscard} style={{ height: "26px", padding: "0 8px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: "600", color: "#12131A" }}>Descartar</button>
     </span>
   );
 }
@@ -331,7 +331,7 @@ function PlanPhases({ assignments, bots, pending }) {
   const [open, setOpen] = useState({});
   const phases = planPhases(assignments);
   return (
-    <div style={{ maxWidth: "640px", background: "#FFFFFF", border: "0", borderRadius: "24px", boxShadow: pending ? "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)", overflow: "hidden" }}>
+    <div style={{ maxWidth: "640px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-2xl)", boxShadow: pending ? "0 0 0 1px rgba(255,201,60,.6), 0 0 0 7px rgba(255,201,60,.16), 0 30px 60px -30px rgba(201,138,0,.6)" : "0 1px 2px rgba(18,19,26,.05), 0 16px 40px -22px rgba(18,19,26,.16)", overflow: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "12px 16px", background: "#F7F8FA", borderBottom: "1px solid #E6E8EE" }}>
         <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#555A68" }}>{`Plan del equipo · ${assignments.length} ${assignments.length === 1 ? "tarea" : "tareas"}`}</span>
         <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{phases.length > 1 ? `${phases.length} fases, en orden` : "Todos a la vez"}</span>
@@ -342,7 +342,7 @@ function PlanPhases({ assignments, bots, pending }) {
           return (
             <li key={p} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "10px 0", borderTop: p ? "1px solid #E6E8EE" : "0" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#4A4F5C" }}>
-                <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#12131A", color: "#FFFFFF", font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{p + 1}</span>
+                <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#12131A", color: "#FFFFFF", font: "600 var(--t-micro)/1 'Geist Mono', monospace" }}>{p + 1}</span>
                 {waitFor.length ? `Cuando ${waitFor.length > 1 ? "terminen" : "termine"} ${names(waitFor)}` : "Empieza ya"}
               </span>
               {phase.map((a) => {
@@ -374,7 +374,7 @@ function PlanPhases({ assignments, bots, pending }) {
                             {isOpen ? "Ocultar detalle" : "Ver detalle"}
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" style={{ transform: isOpen ? "rotate(180deg)" : "none" }}><path d="m6 9 6 6 6-6" /></svg>
                           </button>
-                          {isOpen ? <Markdown text={detail} size={14} style={{ padding: "10px 12px", background: "#F7F8FA", borderRadius: "10px", color: "#2B2D36" }} /> : null}
+                          {isOpen ? <Markdown text={detail} size={14} style={{ padding: "10px 12px", background: "#F7F8FA", borderRadius: "var(--r-md)", color: "#2B2D36" }} /> : null}
                         </>
                       ) : null}
                     </div>
@@ -413,13 +413,13 @@ function PlanBlock({ mission, message, bots }) {
       setNote("");
     });
   const control = (action) => act(() => post(`/missions/${mission.id}/control`, { action }));
-  const pill = { minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px", background: "rgba(18,19,26,.06)", color: "#12131A", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
+  const pill = { minHeight: "36px", display: "inline-flex", alignItems: "center", gap: "6px", padding: "0 14px", background: "rgba(18,19,26,.06)", color: "#12131A", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)" };
   const changeForm = (onSend, placeholder) => (
     <form onSubmit={(e) => { e.preventDefault(); if (note.trim()) onSend(); }} style={{ maxWidth: "560px" }}>
-      <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "12px" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "var(--r-md)" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Qué cambiarías del plan"}</span>
         <input className="c-bare" type="text" autoFocus value={note} onChange={(e) => setNote(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
-        <button type="submit" aria-label="Enviar cambios" disabled={busy || !note.trim()} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "9px", cursor: "pointer" }}>
+        <button type="submit" aria-label="Enviar cambios" disabled={busy || !note.trim()} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
           <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </label>
@@ -432,7 +432,7 @@ function PlanBlock({ mission, message, bots }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: "8px", minHeight: "36px", padding: "0 4px 0 2px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
-              <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: paused ? "#A9AEBB" : "#0B8A5F", animation: paused ? "none" : "breathe 1.4s ease-in-out infinite" }} />
+              <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: paused ? "#A9AEBB" : "#0B8A5F", animation: paused ? "none" : "breathe 1.4s ease-in-out infinite" }} />
               {paused ? "En pausa" : "En marcha · puedes pararlo o cambiarlo"}
             </span>
             <button type="button" className="rm-focus" disabled={busy} onClick={() => control(paused ? "resume" : "pause")} style={pill}>
@@ -448,15 +448,15 @@ function PlanBlock({ mission, message, bots }) {
           <ErrorLine>{error}</ErrorLine>
         </div>
       ) : plan.approved && plan.auto ? null : plan.approved ? (
-        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "15px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#0B5A3E" }}>
+        <span style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px", background: "#E1F4EC", border: "1px solid #9ED4BC", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: "600", color: "#0B5A3E" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
           {"Aprobado por ti"}
         </span>
       ) : pendingPlan ? (
         <div id="plan" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>{"Aprobar plan"}</button>
-            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{"Pedir cambios"}</button>
+            <button type="button" className="rm-focus" disabled={busy} onClick={() => decide("approved")} style={{ minHeight: "46px", padding: "0 22px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-body)" }}>{"Aprobar plan"}</button>
+            <button type="button" className="rm-focus" aria-expanded={changing ? "true" : "false"} disabled={busy} onClick={() => setChanging(!changing)} style={{ minHeight: "46px", padding: "0 20px", background: "rgba(18,19,26,.06)", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>{"Pedir cambios"}</button>
           </div>
           {changing ? changeForm(() => decide("changes"), "¿Qué cambiarías del reparto?") : null}
           <ErrorLine>{error}</ErrorLine>
@@ -477,7 +477,7 @@ export function ThreadSummary({ thread, summary, bots, pressed, onClick }) {
   }
   const lastAgo = ago(last.at);
   return (
-    <button type="button" className="rm-focus" onClick={onClick} aria-pressed={pressed ? "true" : "false"} style={{ alignSelf: "stretch", maxWidth: "560px", display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: pressed ? "#E7EEFF" : "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "12px", cursor: "pointer", textAlign: "left" }}>
+    <button type="button" className="rm-focus" onClick={onClick} aria-pressed={pressed ? "true" : "false"} style={{ alignSelf: "stretch", maxWidth: "560px", display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", background: pressed ? "#E7EEFF" : "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
         <span role="img" aria-label={botsAlt(people.map((id) => findBot(bots, id)))} style={{ display: "flex" }}>
           {people.map((id, i) => <BotAvatar key={id} bot={findBot(bots, id)} size={22} ring={i > 0} style={i > 0 ? { marginLeft: "-4px", font: "800 var(--t-micro)/1 'Bricolage Grotesque', sans-serif" } : { font: "800 var(--t-micro)/1 'Bricolage Grotesque', sans-serif" }} />)}
@@ -570,7 +570,7 @@ function LiveTurnCard({ step, bot }) {
         <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600 }}>{bot.name}</strong>
         <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{[bot.role, "trabajando…"].filter(Boolean).join(" · ")}</span>
       </div>
-      <div role="group" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "#F7F8FA", border: "1px solid #E6E8EE", borderRadius: "12px", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
+      <div role="group" aria-label={bot.name + " está trabajando"} style={{ alignSelf: "flex-start", display: "flex", flexDirection: "column", gap: "4px", padding: "10px 12px", background: "#F7F8FA", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", minWidth: "min(360px, 100%)", maxWidth: "100%" }}>
         {step.kind === "work" && step.title ? <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A" }}>{plain(step.title).replace(new RegExp("^" + bot.name + ": "), "")}</span> : null}
         {earlier > 0 ? <span style={{ fontSize: "var(--t-caption)", color: "#555A68" }}>{earlier === 1 ? "1 paso antes" : earlier + " pasos antes"}</span> : null}
         {note ? <span key={note} className="c-phrase" style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: step.narration?.text ? "#12131A" : "#6B7080", fontStyle: step.narration?.text ? "normal" : "italic" }}>{note}</span> : null}
@@ -603,7 +603,7 @@ function LearnedLine({ message, bot, entering = false }) {
   const Icon = message.learned?.type === "skill" ? Wrench : Brain;
   const text = undone?.text || message.text;
   const reasons = message.learned?.why || [];
-  const link = { display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" };
+  const link = { display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" };
   return (
     <div className={entering ? "c-enter c-flash" : undefined}>
     <p style={{ margin: "0", padding: "6px 0 6px 52px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#4A4F5C" }}>
@@ -618,14 +618,14 @@ function LearnedLine({ message, bot, entering = false }) {
       ) : null}
       {done ? <span style={{ color: "#555A68" }}>· deshecho</span> : (
         <button type="button" className="rm-focus" disabled={busy} onClick={() => act(async () => setUndone(await post("/messages/" + message.id + "/undo")))}
-          style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "0 4px", height: "24px", background: "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#1F4FD1" }}>
           <Undo2 size={13} strokeWidth={2.4} aria-hidden="true" />Deshacer
         </button>
       )}
       {error ? <span style={{ color: "#B4372A" }}>{error}</span> : null}
     </p>
     {why ? (
-      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "12px", background: "rgba(18,19,26,.04)", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#3D404A", animation: "rise .25s ease-out" }}>
+      <ul style={{ margin: "0 0 6px 52px", padding: "10px 14px", listStyle: "none", display: "flex", flexDirection: "column", gap: "6px", borderRadius: "var(--r-md)", background: "rgba(18,19,26,.04)", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#3D404A", animation: "rise .25s ease-out" }}>
         {reasons.map((w, i) => (
           <li key={i}><span style={{ color: "#6B6F7A" }}>{(WHY_LABEL[w.type] || "Visto") + ": "}</span>{"«" + w.quote + "»"}</li>
         ))}
@@ -823,7 +823,7 @@ export function NewBelow({ show, onClick }) {
   if (!show) return null;
   return (
     <button type="button" className="rm-focus c-new-below" onClick={onClick}
-      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "17px", boxShadow: "0 8px 20px -10px rgba(18,19,26,.6)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" }}>
+      style={{ position: "absolute", left: "50%", top: "-46px", transform: "translateX(-50%)", zIndex: 4, display: "flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", boxShadow: "0 8px 20px -10px rgba(18,19,26,.6)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", whiteSpace: "nowrap" }}>
       <ArrowDown size={15} strokeWidth={2.4} aria-hidden="true" />{"Mensajes nuevos"}
     </button>
   );
@@ -840,7 +840,7 @@ export function Suggestions({ list, onPick }) {
       <Sparkles size={14} strokeWidth={2.2} aria-hidden="true" style={{ color: "#555A68" }} />
       {list.map((t, i) => (
         <button key={i} type="button" className="rm-focus" onClick={() => onPick(t)} title={i === 0 ? "Tab para usarla" : undefined}
-          style={{ height: "30px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "15px", cursor: "pointer", fontSize: "var(--t-meta)", color: "#2B2D36", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          style={{ height: "30px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", color: "#2B2D36", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {t}
         </button>
       ))}
@@ -874,7 +874,7 @@ export function QueueModeHint({ mission }) {
     <span ref={ref} style={{ position: "relative", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "#4A4F5C" }}>
       {"Si escribes ahora, tu mensaje"}
       <button type="button" className="rm-focus" aria-haspopup="menu" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} title={current.detail}
-        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: open ? "#EEF0F4" : "transparent", border: "0", borderRadius: "6px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A" }}>
+        style={{ display: "inline-flex", alignItems: "center", gap: "2px", height: "26px", padding: "0 6px", background: open ? "#EEF0F4" : "transparent", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A" }}>
         {current.label}<ChevronDown size={14} strokeWidth={2.2} aria-hidden="true" />
       </button>
       {open ? (
@@ -1072,14 +1072,14 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           {`${workingCount} ${workingCount === 1 ? "bot trabajando" : "bots trabajando"}`}
           <QueueModeHint mission={mission} />
         </p>
-        <div className="c-ring" style={{ position: "relative", border: "2px solid #12131A", borderRadius: "18px", padding: "12px 12px 12px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div className="c-ring" style={{ position: "relative", border: "2px solid #12131A", borderRadius: "var(--r-xl)", padding: "12px 12px 12px 16px", display: "flex", alignItems: "center", gap: "8px" }}>
           {mentions.menu}
           <label style={{ flex: "1", display: "flex" }}>
             <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje a la sala"}</span>
             <input className="c-bare" ref={inputRef} type="text" placeholder={`Mensaje a #${room}`} {...mentions.inputProps} onKeyDown={onKeyDown} style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
           </label>
           <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} />
-          <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer" }}>
+          <button type="submit" aria-label="Enviar" title="Enviar (Enter)" disabled={busy} className="c-press" style={{ width: "48px", height: "44px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer" }}>
             <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
           </button>
         </div>
@@ -1109,15 +1109,15 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <QueueModeHint mission={mission} />
         </div>
       ) : null}
-      <div className="c-ring" style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "22px" : "28px", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging && !shared ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "22px" : "28px" }}>Suelta aquí para adjuntar</div> : null}
+      <div className="c-ring" style={{ position: "relative", background: "#FFFFFF", borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)", boxShadow: tools ? "0 1px 2px rgba(18,19,26,.06), 0 18px 44px -24px rgba(18,19,26,.4)" : "0 1px 2px rgba(18,19,26,.05), 0 20px 50px -24px rgba(18,19,26,.35)", padding: tools ? "8px 10px 10px 18px" : "10px 10px 10px 20px", display: "flex", flexDirection: "column", gap: "6px" }}>{drop.dragging && !shared ? <div aria-hidden="true" style={{ ...dropOverlay, borderRadius: tools ? "var(--r-2xl)" : "var(--r-3xl)" }}>Suelta aquí para adjuntar</div> : null}
         {plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /> : mentions.menu}
         {mentions.chips.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {mentions.chips.map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "10px", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "30px", padding: "0 4px 0 8px", borderRadius: "var(--r-md)", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 {ch.icon}
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ch.label}</span>
-                <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                <button type="button" onClick={() => mentions.removeRef(ch.key)} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
                   <X size={12} strokeWidth={2.6} aria-hidden="true" />
                 </button>
               </span>
@@ -1127,9 +1127,9 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
         {chosen.length ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {chosenChips(chosen).map((ch) => (
-              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 12px", borderRadius: "999px", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
+              <span key={ch.key} className="c-pop" style={{ display: "inline-flex", alignItems: "center", gap: "4px", height: "30px", padding: "0 4px 0 12px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", fontSize: "var(--t-meta)", fontWeight: 600 }}>
                 {ch.label}
-                <button type="button" onClick={() => setChosen((list) => list.filter((k) => k !== ch.key))} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
+                <button type="button" onClick={() => setChosen((list) => list.filter((k) => k !== ch.key))} aria-label={"Quitar " + ch.label} style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#5C606C" }}>
                   <X size={12} strokeWidth={2.6} aria-hidden="true" />
                 </button>
               </span>
@@ -1152,17 +1152,17 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
         </label>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: tools ? "-8px" : 0 }}>
           {tools}
-          <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title={shared ? "Compartir un archivo, o elegir herramientas para tus bots" : "Añadir archivos, herramientas o apps"} onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "#12131A" : "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", color: plusOpen ? "#FFFFFF" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
+          <button type="button" className="rm-focus" data-plus-toggle="" aria-label="Añadir" aria-haspopup="menu" aria-expanded={plusOpen ? "true" : "false"} title={shared ? "Compartir un archivo, o elegir herramientas para tus bots" : "Añadir archivos, herramientas o apps"} onClick={() => setPlusOpen((v) => !v)} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: plusOpen ? "#12131A" : "rgba(18,19,26,.05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", color: plusOpen ? "#FFFFFF" : "#3D404A", transition: "background .2s ease, color .2s ease" }}>
             <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>
-          <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "50%", background: "rgba(18,19,26,.05)", color: "#3D404A" }} />
-          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "50%", cursor: "pointer", font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
+          <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={40} style={{ borderRadius: "var(--r-circle)", background: "rgba(18,19,26,.05)", color: "#3D404A" }} />
+          <button type="button" className="rm-focus" aria-label={shared ? "Mencionar a alguien" : "Mencionar a un bot"} title={shared ? "Mencionar a una persona o a un bot (@)" : "Mencionar a un bot (@)"} onClick={mentions.start} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "rgba(18,19,26,.05)", border: "0", borderRadius: "var(--r-circle)", cursor: "pointer", font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "#3D404A" }}>{"@"}</button>
           <span style={{ flex: "1", textAlign: "right", fontSize: "var(--t-caption)", color: "#555A68", paddingRight: "4px" }}>
             {text.trim()
               ? working ? `Intro: ${SEND_LABEL[roomMode].toLowerCase()} · Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Enter para enviar · Mayús+Enter, nueva línea"
               : working ? "Esc para pausarlos" : ""}
           </span>
-          <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Enter)"} disabled={busy} className="c-press" style={{ minWidth: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: working ? "0 16px" : "0", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)", transition: "background .2s ease" }}>
+          <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Enter)"} disabled={busy} className="c-press" style={{ minWidth: "46px", height: "46px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: working ? "0 16px" : "0", background: text.trim() ? "#12131A" : "#C9CBD1", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-meta)", transition: "background .2s ease" }}>
             <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><ArrowUp size={17} strokeWidth={2.4} aria-hidden="true" /></span>
             {working ? SEND_LABEL[roomMode] : null}
           </button>
@@ -1193,7 +1193,7 @@ function PanelHead({ title, sub, onClose, closeLabel }) {
       ) : (
         <strong style={{ font: "700 var(--t-lead)/1.1 'Bricolage Grotesque', sans-serif" }}>{title}</strong>
       )}
-      <button type="button" className="rm-focus" aria-label={closeLabel} onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer" }}>
+      <button type="button" className="rm-focus" aria-label={closeLabel} onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-md)", cursor: "pointer" }}>
         <X size={16} strokeWidth={2.2} aria-hidden="true" />
       </button>
     </div>
@@ -1258,10 +1258,10 @@ export function RepliesPanel({ mission, messages, steps = [], bots, parentId, on
         })}
       </div>
       <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", background: "#F7F8FA" }}>
-        <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "14px" }}>
+        <label style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: "6px 6px 6px 12px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-lg)" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
           <textarea className="c-bare" rows="2" value={text} autoFocus onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) send(e); }} placeholder="Responder en el hilo…" style={{ flex: "1", minWidth: "0", resize: "none", border: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", background: "transparent", padding: "4px 0" }} />
-          <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "10px", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
+          <button type="submit" aria-label="Responder" disabled={busy || !text.trim()} style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-md)", cursor: "pointer", opacity: busy || !text.trim() ? 0.55 : 1 }}>
             <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </label>
@@ -1326,10 +1326,10 @@ export function ThreadPanel({ mission, thread, bots, onClose, bare = false }) {
         })}
       </div>
       <form onSubmit={send} style={{ padding: "12px 16px 20px", borderTop: "1px solid #E6E8EE", display: "flex", flexDirection: "column", gap: "8px", position: "sticky", bottom: "0", background: "#F7F8FA" }}>
-        <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "12px" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "4px 4px 4px 12px", background: "#FFFFFF", border: "1.5px solid #A9AEBB", borderRadius: "var(--r-md)" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Responder en el hilo"}</span>
           <input className="c-bare" type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Corrígeles o dales una pista…" style={{ flex: "1", minWidth: "0", height: "40px", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
-          <button type="submit" aria-label="Enviar al hilo" disabled={busy} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "9px", cursor: "pointer" }}>
+          <button type="submit" aria-label="Enviar al hilo" disabled={busy} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-sm)", cursor: "pointer" }}>
             <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </label>
@@ -1360,14 +1360,14 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
           const title = <span style={{ flex: "1", minWidth: "0" }}>{s.title || bot.name}</span>;
           if (s.status === "waiting" || (waitingBots.has(s.botId) && !DONE_STEP.has(s.status))) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFF4D1", border: "2px solid #12131A", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFF4D1", border: "2px solid #12131A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}<strong style={{ fontSize: "var(--t-meta)" }}>{"Te espera"}</strong>
               </div>
             );
           }
           if (DONE_STEP.has(s.status)) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}
                 <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "var(--t-meta)", color: "#0B6B4A", fontWeight: "600" }}>
                   <Check size={14} strokeWidth={2.6} aria-hidden="true" />
@@ -1378,7 +1378,7 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
           }
           if (BLOCKED_STEP.has(s.status)) {
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FBE7DF", border: "1.5px solid #B4372A", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}<strong style={{ fontSize: "var(--t-meta)", color: "#B4372A" }}>{"Bloqueado"}</strong>
               </div>
             );
@@ -1388,13 +1388,13 @@ export function ProgressPanel({ mission, steps, pending, activity, bots, onClose
             const lastStepActivity = (s.activity || [])[s.activity?.length - 1];
             const detail = now?.detail || now?.verb || lastStepActivity?.text || "En marcha";
             return (
-              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+              <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", background: "#FFFFFF", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
                 {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C", textAlign: "right", maxWidth: "45%" }}>{detail}</span>
               </div>
             );
           }
           return (
-            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", border: "1px dashed #A9AEBB", borderRadius: "12px", fontSize: "var(--t-ui)" }}>
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "0 12px", border: "1px dashed #A9AEBB", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)" }}>
               {avatar}{title}<span style={{ fontSize: "var(--t-meta)", color: "#4A4F5C" }}>{"Pendiente"}</span>
             </div>
           );
@@ -1425,7 +1425,7 @@ export function OlderMessages({ count, onShow }) {
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}>
       <button type="button" className="rm-focus" onClick={show} disabled={busy} aria-busy={busy ? "true" : undefined}
-        style={{ height: "34px", padding: "0 14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "17px", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#2B2D36" }}>
+        style={{ height: "34px", padding: "0 14px", background: "#FFFFFF", border: "1px solid #DCE0E8", borderRadius: "var(--r-pill)", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: "600", color: "#2B2D36" }}>
         {busy ? "Cargando…" : count === 1 ? "Ver el mensaje anterior" : `Ver mensajes anteriores · quedan ${count.toLocaleString("es-ES")}`}
       </button>
     </div>

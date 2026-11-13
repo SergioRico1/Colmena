@@ -66,7 +66,7 @@ export default function NoteImport({ onClose }) {
         </>
       ) : (
         <>
-          {changed ? <p role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "12px", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#3D404A" }}>{"Algo ha cambiado desde que lo revisaste (en la carpeta o en tus notas). No se ha traído nada: revisa de nuevo lo que se haría ahora."}</p> : null}
+          {changed ? <p role="alert" style={{ margin: 0, padding: "10px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#3D404A" }}>{"Algo ha cambiado desde que lo revisaste (en la carpeta o en tus notas). No se ha traído nada: revisa de nuevo lo que se haría ahora."}</p> : null}
           <p role="status" style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: "600" }}>{model.applied ? "Hecho: " + model.headline : model.headline}</p>
           {!model.applied && !model.canApply ? <p style={MUTED}>{"No hay nada nuevo que traer."}</p> : null}
           <div tabIndex={0} aria-label="Lo que se trae" style={{ maxHeight: "44vh", overflow: "auto", display: "flex", flexDirection: "column", gap: "14px", padding: "2px" }}>

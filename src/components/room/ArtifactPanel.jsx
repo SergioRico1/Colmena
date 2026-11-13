@@ -103,7 +103,7 @@ function PdfPages({ artifact, meta }) {
       ) : (
         Array.from({ length: pages }, (_, i) => (
           <img key={i} data-lightbox="" data-name={`${artifact?.title || "Documento"} · página ${i + 1}`} src={artifactPageUrl(artifact.id, i + 1)} alt={`Página ${i + 1} de ${meta?.pages || pages}`} loading="lazy" onError={() => setFailed(true)}
-            style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "12px", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />
+            style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />
         ))
       )}
       {meta?.pages > 20 ? <p style={{ margin: "0", fontSize: "var(--t-meta)", color: "#555A68" }}>{`Se muestran 20 de ${meta.pages} páginas.`}</p> : null}
@@ -126,7 +126,7 @@ export function ArtifactBody({ artifact, content, meta = null }) {
   if (format === "png" && artifact?.id) {
     return (
       <figure style={{ margin: "0", display: "flex", flexDirection: "column", gap: "10px" }}>
-        <img data-lightbox="" data-name={(artifact?.title || "imagen") + ".png"} loading="lazy" decoding="async" src={artifactFileUrl(artifact.id)} alt={artifact?.title || "Imagen"} style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "12px", border: "1px solid #E6E8EE", background: "#F7F8FA" }} />
+        <img data-lightbox="" data-name={(artifact?.title || "imagen") + ".png"} loading="lazy" decoding="async" src={artifactFileUrl(artifact.id)} alt={artifact?.title || "Imagen"} style={{ cursor: "zoom-in", display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#F7F8FA" }} />
         {meta?.prompt ? <figcaption style={{ fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#555A68" }}>{`Petición: «${meta.prompt}»`}{meta.width ? ` · ${meta.width}×${meta.height}` : ""}</figcaption> : null}
       </figure>
     );
@@ -141,12 +141,12 @@ export function ArtifactBody({ artifact, content, meta = null }) {
     );
   }
   if (format === "csv" || kind === "table" || kind === "sheet") return <CsvTable text={content} />;
-  if (format === "svg") return <img loading="lazy" decoding="async" src={svgSrc(content)} alt={artifact?.title || "Diseño"} style={{ display: "block", width: "100%", height: "auto", borderRadius: "12px", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />;
+  if (format === "svg") return <img loading="lazy" decoding="async" src={svgSrc(content)} alt={artifact?.title || "Diseño"} style={{ display: "block", width: "100%", height: "auto", borderRadius: "var(--r-md)", border: "1px solid #E6E8EE", background: "#FFFFFF" }} />;
   if (format === "html" && (kind === "slides" || kind === "design")) {
-    return <iframe title={artifact?.title || "Vista previa"} sandbox="" srcDoc={String(content || "")} style={{ width: "100%", height: "520px", border: "1px solid #E6E8EE", borderRadius: "12px", background: "#FFFFFF" }} />;
+    return <iframe title={artifact?.title || "Vista previa"} sandbox="" srcDoc={String(content || "")} style={{ width: "100%", height: "520px", border: "1px solid #E6E8EE", borderRadius: "var(--r-md)", background: "#FFFFFF" }} />;
   }
   if (kind === "code" || CODE_FORMATS.has(format) || format === "html") {
-    return <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "12px", font: "400 var(--t-meta)/1.75 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}>{content}</pre>;
+    return <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.75 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}>{content}</pre>;
   }
   return <Markdown text={content} size={15} />;
 }
@@ -196,14 +196,14 @@ export default function ArtifactPanel({ artifactId, live, bots = [], onClose, va
         </div>
         <div style={{ display: "flex", gap: "4px" }}>
           {content && !fileBased ? (
-            <button type="button" className="rm-focus" onClick={copy} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiado</span> : "Copiar"}</button>
+            <button type="button" className="rm-focus" onClick={copy} style={{ height: "40px", padding: "0 12px", background: "transparent", border: "1px solid #DCE0E8", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)" }}>{copied ? <span className="c-ok"><Check size={13} strokeWidth={2.6} aria-hidden="true" />Copiado</span> : "Copiar"}</button>
           ) : null}
           {artifact && fileBased ? (
-            <a href={artifactFileUrl(artifact.id, true)} download className="rm-focus" onClick={() => setSaved(true)} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", display: "flex", alignItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", textDecoration: "none" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</a>
+            <a href={artifactFileUrl(artifact.id, true)} download className="rm-focus" onClick={() => setSaved(true)} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", display: "flex", alignItems: "center", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600", textDecoration: "none" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</a>
           ) : artifact && content != null ? (
-            <button type="button" className="rm-focus" onClick={save} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "10px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</button>
+            <button type="button" className="rm-focus" onClick={save} title="Ya está en la Biblioteca; descarga una copia" style={{ height: "40px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" }}>{saved ? "Guardado" : "Guardar en Biblioteca"}</button>
           ) : null}
-          {bare ? null : <button type="button" className="rm-focus" aria-label="Cerrar panel" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "10px", cursor: "pointer" }}>
+          {bare ? null : <button type="button" className="rm-focus" aria-label="Cerrar panel" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", background: "transparent", border: "0", borderRadius: "var(--r-md)", cursor: "pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>}
         </div>

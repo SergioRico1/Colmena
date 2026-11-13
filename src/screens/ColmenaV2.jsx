@@ -61,8 +61,8 @@ function Team() {
             <p style={{ margin: "0", fontSize: "var(--t-read)", color: "#4A4D57" }}>{"Quién trabaja contigo: tus bots y las personas con las que te conectas."}</p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" disabled={!peers?.me || relayOff} onClick={() => setInvite(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Invitar a una persona"}</button>
-            <a href="/equipo/nuevo" style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>
+            <button type="button" disabled={!peers?.me || relayOff} onClick={() => setInvite(true)} style={{ height: "44px", padding: "0 18px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: "pointer" }}>{"Invitar a una persona"}</button>
+            <a href="/equipo/nuevo" style={{ height: "44px", padding: "0 20px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
               {"Nuevo bot"}
             </a>
@@ -77,7 +77,7 @@ function Team() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(250px, 100%), 1fr))", gap: "12px" }}>
             {team.map((b) => <BotCard key={b.id} bot={b} row={rows.get(b.id)} ask={asks.find((a) => a.botId === b.id) || null} expert={expert} />)}
-            <a href="/equipo/nuevo" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px", padding: "20px", borderRadius: "22px", border: "1.5px dashed rgba(18,19,26,.2)", color: "#12131A", minHeight: "220px" }}>
+            <a href="/equipo/nuevo" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px", padding: "20px", borderRadius: "var(--r-2xl)", border: "1.5px dashed rgba(18,19,26,.2)", color: "#12131A", minHeight: "220px" }}>
               <span style={{ font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif" }}>{"Un bot nuevo"}</span>
               <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.45", color: "#4A4D57" }}>{"Descríbelo como a un compañero nuevo, o empieza de una plantilla: contable, atención al cliente, investigador…"}</span>
               <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "#1F4FD1" }}>{"Crear →"}</span>
@@ -100,10 +100,10 @@ function BotCard({ bot, row, ask, expert }) {
   const state = work ? (cap(activity?.verb) || "Trabajando") + (wait ? " · te espera" : "") : wait ? waits : STATE[bot.status] || "Libre";
   const idle = !work && !wait;
   return (
-    <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "22px", background: "#FFFFFF", boxShadow: wait ? "0 0 0 1.5px #FFC93C" : "0 1px 2px rgba(18,19,26,.04)" }}>
+    <article style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: wait ? "0 0 0 1.5px #FFC93C" : "0 1px 2px rgba(18,19,26,.04)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
         <Shape bot={bot} size={48} style={{ opacity: idle ? 0.55 : 1, animation: work ? "breathe 2.6s ease-in-out infinite" : "none" }} />
-        <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "500", color: "#3D404A", whiteSpace: "nowrap" }}>{autonomyLabel(bot.autonomy)}</span>
+        <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "500", color: "#3D404A", whiteSpace: "nowrap" }}>{autonomyLabel(bot.autonomy)}</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
         <h3 style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{bot.name}</h3>
@@ -119,8 +119,8 @@ function BotCard({ bot, row, ask, expert }) {
       )}
       {expert && bot.model?.label ? <span style={{ marginTop: "-6px", font: "500 var(--t-caption)/1.3 'Geist Mono', monospace", color: "#5C606C" }}>{[bot.model.label, bot.thinking || "equilibrado", bot.engine || "equipo"].join(" · ")}</span> : null}
       <div style={{ marginTop: "auto", display: "flex", gap: "8px", paddingTop: "12px", borderTop: "1px solid rgba(18,19,26,.06)" }}>
-        <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Hablar"}</a>
-        <a href={`/equipo/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500" }}>{"Ficha"}</a>
+        <a href={`/chat/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600" }}>{"Hablar"}</a>
+        <a href={`/equipo/${encodeURIComponent(bot.id)}`} style={{ flex: "1", height: "38px", display: "grid", placeItems: "center", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500" }}>{"Ficha"}</a>
       </div>
     </article>
   );

@@ -33,7 +33,7 @@ function Preview({ source, anchor, onEnter, onLeave }) {
   const Icon = ICON[source.kind] || Globe;
   return createPortal((
     <div role="tooltip" onMouseEnter={onEnter} onMouseLeave={onLeave}
-      style={{ position: "fixed", zIndex: 70, ...place, padding: "14px 16px", borderRadius: "18px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 20px 44px -18px rgba(18,19,26,.4)", display: "flex", flexDirection: "column", gap: "8px", animation: "rise .18s ease-out" }}>
+      style={{ position: "fixed", zIndex: 70, ...place, padding: "14px 16px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.06), 0 20px 44px -18px rgba(18,19,26,.4)", display: "flex", flexDirection: "column", gap: "8px", animation: "rise .18s ease-out" }}>
       <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "#5C606C", minWidth: 0 }}>
         <Icon size={13} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none" }} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{source.site}</span>
@@ -42,7 +42,7 @@ function Preview({ source, anchor, onEnter, onLeave }) {
       {source.meta ? <span style={{ fontSize: "var(--t-caption)", color: "#6B6F7A" }}>{source.meta}</span> : null}
       {source.excerpt ? <p style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#3D404A" }}>{source.excerpt}</p> : null}
       {source.url ? (
-        <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 14px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>
+        <a href={source.url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 14px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" }}>
           {source.kind === "mail" ? "Abrir el correo" : "Abrir"}<ArrowUpRight size={13} strokeWidth={2.4} aria-hidden="true" />
         </a>
       ) : null}
@@ -71,7 +71,7 @@ function Chip({ source }) {
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
     </>
   );
-  const style = { display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "240px", height: "30px", padding: "0 12px 0 10px", borderRadius: "999px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", fontSize: "var(--t-meta)", color: "#12131A", textDecoration: "none", cursor: source.url ? "pointer" : "default" };
+  const style = { display: "inline-flex", alignItems: "center", gap: "6px", maxWidth: "240px", height: "30px", padding: "0 12px 0 10px", borderRadius: "var(--r-pill)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", fontSize: "var(--t-meta)", color: "#12131A", textDecoration: "none", cursor: source.url ? "pointer" : "default" };
   const events = { onMouseEnter: h.show, onMouseLeave: h.hide, onFocus: h.show, onBlur: h.hide, onKeyDown: (e) => { if (e.key === "Escape") h.close(); } };
   return (
     <>
@@ -103,7 +103,7 @@ export function InlineCitation({ source, children }) {
     <>
       <a ref={ref} href={source.url} target="_blank" rel="noopener noreferrer" className="rm-focus" data-citation={source.kind}
         onMouseEnter={h.show} onMouseLeave={h.hide} onFocus={h.show} onBlur={h.hide}
-        style={{ display: "inline-flex", alignItems: "center", gap: "4px", maxWidth: "100%", padding: "1px 8px 1px 6px", margin: "0 1px", borderRadius: "999px", background: "rgba(18,19,26,.06)", color: "#12131A", fontSize: "0.82em", fontWeight: 500, lineHeight: "1.5", textDecoration: "none", verticalAlign: "baseline", whiteSpace: "nowrap" }}>
+        style={{ display: "inline-flex", alignItems: "center", gap: "4px", maxWidth: "100%", padding: "1px 8px 1px 6px", margin: "0 1px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", color: "#12131A", fontSize: "0.82em", fontWeight: 500, lineHeight: "1.5", textDecoration: "none", verticalAlign: "baseline", whiteSpace: "nowrap" }}>
         <Icon size={11} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
         <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
       </a>

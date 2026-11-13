@@ -63,7 +63,7 @@ function RestorePanel({ file, onStaged, onClose }) {
     try { onStaged(await post("/backup/restore", { path: file.path, password, identity })); } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
   return (
-    <form onSubmit={go} style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "0 22px 16px", padding: "14px 16px", borderRadius: "14px", background: "#F6F6F3", animation: "fade .25s ease-out" }}>
+    <form onSubmit={go} style={{ display: "flex", flexDirection: "column", gap: "10px", margin: "0 22px 16px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "fade .25s ease-out" }}>
       <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{"Restaurar la copia del " + when(file.at || file.createdAt).toLowerCase()}</span>
         <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: SOFT }}>Colmena vuelve a como estaba entonces: conversaciones, entregables, lo que saben tus bots y tus ajustes. Lo de ahora no se borra: se aparta en tu carpeta de Colmena.</span>
@@ -112,7 +112,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
   };
   if (!v) {
     return (
-      <section {...anchorOf("copias")} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "18px 22px", borderRadius: "20px", background: "#FFFFFF" }}>
+      <section {...anchorOf("copias")} style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "18px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF" }}>
         <h3 style={{ ...h3, fontSize: "var(--t-read)" }}>Copias de seguridad</h3>
         <span style={{ fontSize: "var(--t-meta)", color: loadError ? RED : MUTED }}>{loadError || "Cargando…"}</span>
       </section>
@@ -134,12 +134,12 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
   const pending = v.pending;
   const detected = v.folders.find((f) => f.path === v.folder && (f.kind === "onedrive" || f.kind === "gdrive"));
   const restoreHere = restoring && !v.backups.some((b) => b.path === restoring.path);
-  const chip = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", borderRadius: "999px", border: 0, cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: on ? "#FFFFFF" : "#3D404A", background: on ? INK : "#F1F1EC" });
+  const chip = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "34px", padding: "0 14px", borderRadius: "var(--r-pill)", border: 0, cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 500, color: on ? "#FFFFFF" : "#3D404A", background: on ? INK : "#F1F1EC" });
 
   return (
     <>
       {pending ? (
-        <section role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 18px", padding: "16px 22px", borderRadius: "20px", background: "#FFF6DC", animation: "rise .35s cubic-bezier(.2,.8,.2,1)" }}>
+        <section role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 18px", padding: "16px 22px", borderRadius: "var(--r-xl)", background: "#FFF6DC", animation: "rise .35s cubic-bezier(.2,.8,.2,1)" }}>
           <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>La copia está lista para restaurarse</span>
             <span style={{ fontSize: "var(--t-meta)", color: SOFT }}>{`Del ${when(pending.createdAt).toLowerCase()} · ${pending.files} archivos${pending.identity ? " · con tu dirección de Personas" : ""}. Se aplica al reiniciar Colmena.`}</span>
@@ -150,7 +150,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
       ) : null}
       {v.restored && !pending ? <p role="status" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#0B6B4A" }}>{`✓ Restaurada la copia del ${when(v.restored.from).toLowerCase()}. Lo que había antes está en la carpeta «${v.restored.aside}».`}</p> : null}
 
-      <section {...anchorOf("copias")} aria-labelledby="copy-t" style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("copias")} aria-labelledby="copy-t" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden", scrollMarginTop: "24px" }}>
         <div {...anchorOf("copia-ahora")} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", padding: "18px 22px 10px", scrollMarginTop: "24px" }}>
           <span style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "2px" }}>
             <h3 id="copy-t" style={{ ...h3, fontSize: "var(--t-read)" }}>Copias de seguridad</h3>
@@ -231,7 +231,7 @@ export default function BackupSettings({ v, setV, error: loadError = null }) {
           </div>
         )) : null}
 
-        <details {...anchorOf("copia-que-protege")} style={{ margin: "4px 22px 18px", padding: "12px 14px", borderRadius: "12px", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
+        <details {...anchorOf("copia-que-protege")} style={{ margin: "4px 22px 18px", padding: "12px 14px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
           <summary style={{ cursor: "pointer", fontWeight: 600 }}>Qué lleva cada copia y qué no</summary>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px", color: "#3D404A" }}>
             <span>Va entera cifrada con tu contraseña: si alguien la encuentra en la nube o en un disco, no puede leer nada. Si la tocan, Colmena lo nota y no la restaura.</span>

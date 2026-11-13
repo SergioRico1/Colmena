@@ -28,7 +28,7 @@ const hhmm = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()
 const hostOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return ""; } };
 const lower = (s) => String(s || "").replace(/^./, (c) => c.toLowerCase());
 const go = (href) => (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(href); };
-const pill = { height: "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", fontSize: "var(--t-meta)" };
+const pill = { height: "28px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", fontSize: "var(--t-meta)" };
 
 export default function OrdenadorV2({ params = {}, query = {} }) {
   const { bots, folders = [], ready } = useStore();
@@ -100,36 +100,36 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
             <span role="status" style={{ fontSize: "var(--t-body)", color: ask ? "#8A5A00" : MUTED }}>{status}</span>
           </div>
           {frame ? (
-            <button type="button" disabled={!!busy} onClick={takeover ? giveBack : take} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "999px", background: takeover ? INK : "#FFFFFF", color: takeover ? "#FFFFFF" : INK, fontSize: "var(--t-body)", fontWeight: 600, cursor: busy ? "wait" : "pointer", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.16)" }}>
+            <button type="button" disabled={!!busy} onClick={takeover ? giveBack : take} style={{ height: "44px", padding: "0 20px", border: 0, borderRadius: "var(--r-pill)", background: takeover ? INK : "#FFFFFF", color: takeover ? "#FFFFFF" : INK, fontSize: "var(--t-body)", fontWeight: 600, cursor: busy ? "wait" : "pointer", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.16)" }}>
               {takeover ? (busy === "return" ? "Devolviendo…" : "Devolver el control") : busy === "take" ? "Abriendo…" : "Tomar el control"}
             </button>
           ) : null}
         </header>
         {takeover && frame ? (
           <ReturnNote name={name} value={note} onChange={setNote} onSubmit={giveBack} disabled={busy === "return"}
-            style={{ padding: "14px 18px", borderRadius: "20px", background: "#FFFFFF" }}
-            inputStyle={{ height: "44px", border: 0, borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-body)", padding: "0 18px" }} />
+            style={{ padding: "14px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF" }}
+            inputStyle={{ height: "44px", border: 0, borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-body)", padding: "0 18px" }} />
         ) : null}
         {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</p> : null}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
-          <section aria-label="Vista en vivo" style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden", transition: "box-shadow .3s ease", boxShadow: `0 0 0 3px ${takeover ? "#1F4FD1" : "transparent"}, 0 30px 60px -34px rgba(18,19,26,.5)` }}>
+          <section aria-label="Vista en vivo" style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden", transition: "box-shadow .3s ease", boxShadow: `0 0 0 3px ${takeover ? "#1F4FD1" : "transparent"}, 0 30px 60px -34px rgba(18,19,26,.5)` }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", height: "46px", padding: "0 14px", background: "#EDEEF0" }}>
-              <span aria-hidden="true" style={{ display: "flex", gap: "6px" }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#C9CBD3" }} />)}</span>
-              <span title={frame?.url || ""} style={{ flex: 1, minWidth: 0, height: "30px", display: "flex", alignItems: "center", gap: "8px", padding: "0 12px", borderRadius: "8px", background: "#FFFFFF", font: "400 var(--t-meta)/1 'Geist Mono', monospace", color: "#3D404A", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+              <span aria-hidden="true" style={{ display: "flex", gap: "6px" }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: "10px", height: "10px", borderRadius: "var(--r-circle)", background: "#C9CBD3" }} />)}</span>
+              <span title={frame?.url || ""} style={{ flex: 1, minWidth: 0, height: "30px", display: "flex", alignItems: "center", gap: "8px", padding: "0 12px", borderRadius: "var(--r-sm)", background: "#FFFFFF", font: "400 var(--t-meta)/1 'Geist Mono', monospace", color: "#3D404A", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={secure ? "#0B6B4A" : "#9A9DA6"} strokeWidth="2.4" aria-hidden="true" style={{ flex: "none" }}><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" /></svg>
                 {frame ? String(frame.url || "").replace(/^https?:\/\//, "") : "sin página abierta"}
               </span>
               {frame ? (
-                <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "999px", background: live.bg, color: live.fg, fontSize: "var(--t-caption)", fontWeight: 600 }}>
-                  <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "currentColor", animation: ask ? "none" : "breathe 1.4s ease-in-out infinite" }} />
+                <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-pill)", background: live.bg, color: live.fg, fontSize: "var(--t-caption)", fontWeight: 600 }}>
+                  <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "currentColor", animation: ask ? "none" : "breathe 1.4s ease-in-out infinite" }} />
                   {live.text}
                 </span>
               ) : null}
             </div>
             <WatchedView watching={!!frame?.image && !takeover} name={name} busy={!!busy} onTake={take}
-              takeStyle={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}
-              quietStyle={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", cursor: "pointer" }}
+              takeStyle={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}
+              quietStyle={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", cursor: "pointer" }}
               style={{ minHeight: "440px", background: "#FBFBFA", display: "grid", placeItems: "center", overflow: "hidden" }}>
               {frame?.image ? (
                 <img src={frame.image} alt={"Lo que ve " + name + ": " + (frame.title || host || "página web")} style={{ display: "block", width: "100%", height: "auto", maxHeight: "72vh", objectFit: "contain" }} />
@@ -139,28 +139,28 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
                   <span style={{ maxWidth: "380px", fontSize: "var(--t-read)", lineHeight: 1.5 }}>{available === false ? "El navegador de los bots solo funciona en la app de escritorio de Colmena." : `${name} no tiene ninguna página abierta ahora mismo.`}</span>
                 </div>
               )}
-              {takeover ? <div role="status" style={{ position: "absolute", left: "16px", bottom: "16px", padding: "8px 14px", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-meta)", animation: "rise .3s ease-out" }}>{`Tienes el control. ${name} espera y mira lo que haces.`}</div> : null}
+              {takeover ? <div role="status" style={{ position: "absolute", left: "16px", bottom: "16px", padding: "8px 14px", borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-meta)", animation: "rise .3s ease-out" }}>{`Tienes el control. ${name} espera y mira lo que haces.`}</div> : null}
             </WatchedView>
           </section>
 
           <aside style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: "14px" }}>
             {ask && !outcome ? (
-              <div role="region" aria-labelledby="perm-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px", borderRadius: "20px", background: "#FFFFFF", boxShadow: "0 0 0 2px #FFC93C", animation: "rise .35s ease-out" }}>
-                <span style={{ alignSelf: "flex-start", height: "26px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#FFC93C", fontSize: "var(--t-meta)", fontWeight: 600 }}>{ask.redLine ? "Línea roja · necesita tu OK" : "Necesita tu OK"}</span>
+              <div role="region" aria-labelledby="perm-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: "0 0 0 2px #FFC93C", animation: "rise .35s ease-out" }}>
+                <span style={{ alignSelf: "flex-start", height: "26px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#FFC93C", fontSize: "var(--t-meta)", fontWeight: 600 }}>{ask.redLine ? "Línea roja · necesita tu OK" : "Necesita tu OK"}</span>
                 <h2 id="perm-t" style={{ margin: 0, fontSize: "var(--t-lead)", fontWeight: 600, lineHeight: 1.3 }}>{`${name} quiere ${lower(ask.title || "seguir")}`}</h2>
                 {ask.summary || ask.description ? <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: MUTED }}>{ask.summary || ask.description}</p> : null}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                   {card.primary?.hold
-                    ? <HoldButton disabled={!!busy} onConfirm={() => decide("approved")} plainLabel={card.primary.plain} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{card.primary.label}</HoldButton>
-                    : <button type="button" disabled={!!busy} onClick={() => decide("approved")} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Aprobar"}</button>}
-                  {frame ? <button type="button" disabled={!!busy} onClick={take} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", cursor: "pointer" }}>Lo hago yo</button> : null}
+                    ? <HoldButton disabled={!!busy} onConfirm={() => decide("approved")} plainLabel={card.primary.plain} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{card.primary.label}</HoldButton>
+                    : <button type="button" disabled={!!busy} onClick={() => decide("approved")} style={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}>{"Aprobar"}</button>}
+                  {frame ? <button type="button" disabled={!!busy} onClick={take} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", cursor: "pointer" }}>Lo hago yo</button> : null}
                   <button type="button" disabled={!!busy} onClick={() => decide("denied")} style={{ height: "42px", padding: "0 12px", border: 0, background: "transparent", fontSize: "var(--t-body)", color: MUTED, cursor: "pointer" }}>{denyLabel}</button>
                 </div>
               </div>
             ) : null}
-            {outcome ? <div role="status" style={{ padding: "18px 20px", borderRadius: "20px", background: outcome.ok ? "#E3F4EC" : "#F1F1EC", color: outcome.ok ? "#0B6B4A" : INK, fontSize: "var(--t-body)", fontWeight: 500, lineHeight: 1.45 }}>{outcome.text}</div> : null}
+            {outcome ? <div role="status" style={{ padding: "18px 20px", borderRadius: "var(--r-xl)", background: outcome.ok ? "#E3F4EC" : "#F1F1EC", color: outcome.ok ? "#0B6B4A" : INK, fontSize: "var(--t-body)", fontWeight: 500, lineHeight: 1.45 }}>{outcome.text}</div> : null}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF" }}>
               <h2 style={{ margin: "0 0 6px", fontSize: "var(--t-ui)", fontWeight: 600 }}>Lo que ha hecho</h2>
               {items.length ? items.map((s, i) => (
                 <div key={i} style={{ display: "flex", gap: "10px", padding: "5px 0", fontSize: "var(--t-ui)", lineHeight: 1.4 }}>
@@ -169,13 +169,13 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
                 </div>
               )) : <span style={{ fontSize: "var(--t-ui)", color: FAINT }}>Aún no ha hecho nada en el navegador.</span>}
               {tools.length ? (
-                <div aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "8px", padding: "10px 12px", borderRadius: "12px", background: "#F6F6F3", font: "400 var(--t-caption)/1.5 'Geist Mono', monospace", color: "#3D404A" }}>
+                <div aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "8px", padding: "10px 12px", borderRadius: "var(--r-md)", background: "#F6F6F3", font: "400 var(--t-caption)/1.5 'Geist Mono', monospace", color: "#3D404A" }}>
                   {tools.map((t) => <span key={t.id} style={{ display: "flex", gap: "10px" }}><span style={{ color: INK, fontWeight: 500 }}>{t.name}</span><span style={{ color: t.status === "error" ? "#B4232A" : FAINT }}>{t.error || t.status}</span></span>)}
                 </div>
               ) : null}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF" }}>
               <h2 style={{ margin: 0, fontSize: "var(--t-ui)", fontWeight: 600 }}>Lo que puede tocar</h2>
               <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: MUTED }}>Solo su propio navegador, dentro de Colmena. Nunca escribe contraseñas: si una página la pide, te la pasa a ti. Antes de enviar, comprar, publicar o borrar, siempre te pregunta.</p>
               {touch.length || myFolders.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>{[...touch, ...myFolders].map((t) => <span key={t} style={pill}>{t}</span>)}</div> : null}

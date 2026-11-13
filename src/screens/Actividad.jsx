@@ -137,7 +137,7 @@ export default function Actividad() {
     month, waitStat,
   ];
 
-  const chip = (on) => ({ height: "34px", padding: "0 13px", display: "inline-flex", alignItems: "center", gap: "7px", border: "0", borderRadius: "999px", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" });
+  const chip = (on) => ({ height: "34px", padding: "0 13px", display: "inline-flex", alignItems: "center", gap: "7px", border: "0", borderRadius: "var(--r-pill)", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" });
   const team = bots.filter((b) => b.enabled !== false);
   let lastDay = null;
 
@@ -151,8 +151,8 @@ export default function Actividad() {
             <p style={{ margin: "0", fontSize: "var(--t-read)", color: "#4A4D57" }}>{"Qué hace cada bot ahora, qué ha hecho y lo que ha costado. Todo queda registrado."}</p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {expert ? <button type="button" onClick={exportLog} disabled={!visible.length} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: visible.length ? "pointer" : "default" }}>{"Exportar registro"}</button> : null}
-            <button type="button" onClick={togglePause} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: "pointer" }}>{paused ? "Reanudar al equipo" : "Pausar a todo el equipo"}</button>
+            {expert ? <button type="button" onClick={exportLog} disabled={!visible.length} style={{ height: "42px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "500", cursor: visible.length ? "pointer" : "default" }}>{"Exportar registro"}</button> : null}
+            <button type="button" onClick={togglePause} style={{ height: "42px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: "pointer" }}>{paused ? "Reanudar al equipo" : "Pausar a todo el equipo"}</button>
           </div>
         </header>
         {error ? <p role="alert" style={{ margin: "-16px 0 0", fontSize: "var(--t-ui)", color: "#B4232A" }}>{error}</p> : null}
@@ -165,28 +165,28 @@ export default function Actividad() {
                 const work = x.state === "work";
                 const ring = x.state === "wait" ? "0 0 0 1.5px #FFC93C" : x.state === "stuck" ? "0 0 0 1.5px #B4232A" : "none";
                 return (
-                  <article key={x.bot.id} aria-label={`${x.bot.name}: ${x.doing}`} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", boxShadow: ring }}>
+                  <article key={x.bot.id} aria-label={`${x.bot.name}: ${x.doing}`} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: ring }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <Shape bot={x.bot} size={20} anim={work} />
                       <span style={{ flex: "1", fontSize: "var(--t-body)", fontWeight: "600" }}>{x.bot.name}</span>
                       <span style={{ fontSize: "var(--t-meta)", color: x.state === "stuck" ? "#B4232A" : "#5C606C", fontVariantNumeric: "tabular-nums" }}>{x.time}</span>
                     </div>
                     <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.4", color: "#3D404A", minHeight: "40px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{x.doing}</span>
-                    <span aria-hidden="true" style={{ position: "relative", height: "2px", borderRadius: "1px", background: "#EEEEEA", overflow: "hidden" }}>
+                    <span aria-hidden="true" style={{ position: "relative", height: "2px", borderRadius: "var(--r-xs)", background: "#EEEEEA", overflow: "hidden" }}>
                       <span style={{ position: "absolute", top: "0", bottom: "0", width: "40%", background: x.bot.color || "#C9CBD3", animation: work ? "sweep 1.8s ease-in-out infinite" : "none" }} />
                     </span>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "var(--t-meta)" }}>
                       {x.mission ? <a href={hrefOf(x.mission)} style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#1F4FD1" }}>{x.mission.title || x.mission.room}</a> : <span />}
                       {work && x.mission && ["running", "queued", "planning"].includes(x.mission.status)
-                        ? <button type="button" onClick={() => pauseMission(x.mission)} style={{ flex: "none", height: "30px", padding: "0 10px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "transparent", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Pausar"}</button>
-                        : x.href ? <a href={x.href} style={{ flex: "none", height: "30px", padding: "0 10px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", fontSize: "var(--t-meta)", color: "#12131A" }}>{x.state === "wait" ? "Responder" : "Ver"}</a> : null}
+                        ? <button type="button" onClick={() => pauseMission(x.mission)} style={{ flex: "none", height: "30px", padding: "0 10px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-meta)", cursor: "pointer" }}>{"Pausar"}</button>
+                        : x.href ? <a href={x.href} style={{ flex: "none", height: "30px", padding: "0 10px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", color: "#12131A" }}>{x.state === "wait" ? "Responder" : "Ver"}</a> : null}
                     </div>
                   </article>
                 );
               })}
             </div>
           ) : (
-            <p style={{ margin: "0", padding: "16px 18px", borderRadius: "20px", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#4A4D57" }}>{paused ? "El equipo está en pausa. Nadie trabaja hasta que lo reanudes." : "Nadie está trabajando ahora mismo. Lo que pidas aparecerá aquí mientras se hace."}</p>
+            <p style={{ margin: "0", padding: "16px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#4A4D57" }}>{paused ? "El equipo está en pausa. Nadie trabaja hasta que lo reanudes." : "Nadie está trabajando ahora mismo. Lo que pidas aparecerá aquí mientras se hace."}</p>
           )}
           {/* The same line as the sidebar's foot, in words: who works and how many things wait. */}
           <p role="status" style={{ margin: "0", fontSize: "var(--t-ui)", color: "#5C606C" }}>{model.summary.text}</p>
@@ -197,7 +197,7 @@ export default function Actividad() {
             // «Te necesitan» opens Inicio, where each of those things is answered.
             const Box = s.href ? "a" : "div";
             return (
-              <Box key={s.label} href={s.href} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "16px 18px", borderRadius: "18px", background: s.honey ? "#FFC93C" : "#FFFFFF", color: "#12131A" }}>
+              <Box key={s.label} href={s.href} style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "16px 18px", borderRadius: "var(--r-xl)", background: s.honey ? "#FFC93C" : "#FFFFFF", color: "#12131A" }}>
                 <span style={{ fontSize: "var(--t-meta)", opacity: ".8" }}>{s.label}</span>
                 <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{s.value}</span>
                 <span style={{ fontSize: "var(--t-meta)", opacity: ".8" }}>{s.note}</span>
@@ -216,9 +216,9 @@ export default function Actividad() {
               <button key={id} type="button" aria-pressed={filter === id ? "true" : "false"} onClick={() => { setFilter(id); setShown(15); }} style={chip(filter === id)}>{label}</button>
             ))}
             <span style={{ flex: "1" }} />
-            <button type="button" role="switch" aria-checked={expert ? "true" : "false"} onClick={() => setExpert(!expert)} title="El mismo interruptor que el de la barra lateral" style={{ height: "36px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "0 4px 0 10px", border: "0", borderRadius: "999px", background: "transparent", fontSize: "var(--t-ui)", fontWeight: "500", color: "#3D404A", cursor: "pointer" }}>
+            <button type="button" role="switch" aria-checked={expert ? "true" : "false"} onClick={() => setExpert(!expert)} title="El mismo interruptor que el de la barra lateral" style={{ height: "36px", display: "inline-flex", alignItems: "center", gap: "10px", padding: "0 4px 0 10px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-ui)", fontWeight: "500", color: "#3D404A", cursor: "pointer" }}>
               {"Modo experto"}
-              <span aria-hidden="true" style={{ position: "relative", width: "34px", height: "20px", borderRadius: "10px", background: expert ? "#12131A" : "#8A8D96", transition: "background .2s ease" }}><span style={{ position: "absolute", top: "2px", left: expert ? "16px" : "2px", width: "16px", height: "16px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} /></span>
+              <span aria-hidden="true" style={{ position: "relative", width: "34px", height: "20px", borderRadius: "var(--r-pill)", background: expert ? "#12131A" : "#8A8D96", transition: "background .2s ease" }}><span style={{ position: "absolute", top: "2px", left: expert ? "16px" : "2px", width: "16px", height: "16px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s ease" }} /></span>
             </button>
           </div>
           {expert ? (
@@ -234,13 +234,13 @@ export default function Actividad() {
               <span style={{ flex: "1" }} />
               <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "#5C606C" }}>
                 {"Desde"}
-                <Select label="Desde" value={range} onChange={(e) => setRange(e.target.value)} style={{ height: "30px", padding: "0 8px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={RANGES} />
+                <Select label="Desde" value={range} onChange={(e) => setRange(e.target.value)} style={{ height: "30px", padding: "0 8px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-meta)" }} options={RANGES} />
               </label>
             </div>
           ) : null}
 
           {list.length ? (
-            <div style={{ display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF", overflow: "hidden" }}>
+            <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF", overflow: "hidden" }}>
               {list.map((r, i) => {
                 const b = botOf(r.botId);
                 const st = STATUS[r.s] || STATUS.unk;
@@ -259,20 +259,20 @@ export default function Actividad() {
                         </span>
                         {expert && r.tool ? <span style={{ font: "400 var(--t-caption)/1.5 'Geist Mono', monospace", color: "#4A4D57", overflowWrap: "anywhere" }}>{r.tool}</span> : null}
                       </span>
-                      <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: st.bg, color: st.ink, fontSize: "var(--t-caption)", fontWeight: "600" }}>{st.label}</span>
+                      <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: st.bg, color: st.ink, fontSize: "var(--t-caption)", fontWeight: "600" }}>{st.label}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "18px 20px", borderRadius: "22px", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#4A4D57" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", padding: "18px 20px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#4A4D57" }}>
               <span style={{ flex: "1" }}>{feeds.some((id) => !details[id]) ? "Cargando el registro…" : range === "hoy" ? "Hoy todavía no hay nada en el registro." : "No hay nada en el registro de estos días."}</span>
-              {range === "hoy" && !feeds.some((id) => !details[id]) ? <button type="button" onClick={() => setRange("7")} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver los últimos 7 días"}</button> : null}
+              {range === "hoy" && !feeds.some((id) => !details[id]) ? <button type="button" onClick={() => setRange("7")} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver los últimos 7 días"}</button> : null}
             </div>
           )}
           {!expert && visible.length > list.length ? (
-            <button type="button" onClick={() => setShown(shown + 30)} style={{ alignSelf: "flex-start", height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{`Ver ${Math.min(30, visible.length - list.length)} más`}</button>
+            <button type="button" onClick={() => setShown(shown + 30)} style={{ alignSelf: "flex-start", height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{`Ver ${Math.min(30, visible.length - list.length)} más`}</button>
           ) : null}
           {!expert && list.length ? (
             <button type="button" onClick={() => { setRange(range === "hoy" ? "7" : "hoy"); setShown(15); }} style={{ alignSelf: "flex-start", height: "32px", padding: "0 2px", border: "0", background: "transparent", fontSize: "var(--t-ui)", fontWeight: "500", color: "#1F4FD1", cursor: "pointer" }}>{range === "hoy" ? "Ver los últimos 7 días" : "Ver solo hoy"}</button>

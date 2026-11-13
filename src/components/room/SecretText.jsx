@@ -11,12 +11,12 @@ import { maskSecret, secretSegments, suggestKey } from "../../lib/secretMask.js"
 
 const MARKER = /\{\{\s*secret:([A-Z][A-Z0-9_]{0,127})\s*\}\}/g;
 const I = { size: 12, strokeWidth: 2.3, "aria-hidden": "true" };
-const LINK = { display: "inline-flex", alignItems: "center", gap: "4px", height: "22px", padding: "0 7px", margin: "0 0 0 4px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", color: "#3D404A", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, verticalAlign: "1px", userSelect: "none", whiteSpace: "nowrap" };
+const LINK = { display: "inline-flex", alignItems: "center", gap: "4px", height: "22px", padding: "0 7px", margin: "0 0 0 4px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", color: "#3D404A", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, verticalAlign: "1px", userSelect: "none", whiteSpace: "nowrap" };
 
 /** A key already in «Llaves»: its name only. */
 function KeyMarker({ name }) {
   return (
-    <span title="Guardada cifrada en tus llaves" style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "0 8px", borderRadius: "999px", background: "rgba(18,19,26,.07)", fontSize: "0.9em", fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "baseline" }}>
+    <span title="Guardada cifrada en tus llaves" style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "0 8px", borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.07)", fontSize: "0.9em", fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "baseline" }}>
       <KeyRound size={12} strokeWidth={2.3} aria-hidden="true" />{name}
     </span>
   );
@@ -43,10 +43,10 @@ function SaveKey({ secret, messageId, onClose }) {
       setBusy(false);
     }
   };
-  const field = { display: "block", width: "100%", boxSizing: "border-box", height: "34px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", font: "inherit", fontSize: "var(--t-ui)", color: "#12131A" };
+  const field = { display: "block", width: "100%", boxSizing: "border-box", height: "34px", padding: "0 10px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", font: "inherit", fontSize: "var(--t-ui)", color: "#12131A" };
   return (
     <span role="dialog" aria-label="Guardar en llaves" data-secret-ui="" className="c-pop" onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "Enter") save(e); }}
-      style={{ position: "absolute", zIndex: 30, bottom: "calc(100% + 6px)", right: 0, width: "300px", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", borderRadius: "16px", boxShadow: "0 18px 40px -18px rgba(18,19,26,.35)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#12131A", textAlign: "left", whiteSpace: "normal", userSelect: "none" }}>
+      style={{ position: "absolute", zIndex: 30, bottom: "calc(100% + 6px)", right: 0, width: "300px", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px -18px rgba(18,19,26,.35)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "#12131A", textAlign: "left", whiteSpace: "normal", userSelect: "none" }}>
       {saved ? (
         <span role="status" style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
           <KeyRound size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "#0B6B4A" }} />
@@ -65,8 +65,8 @@ function SaveKey({ secret, messageId, onClose }) {
         </label>
         {error ? <span role="alert" style={{ display: "block", color: "#B4232A", fontSize: "var(--t-meta)" }}>{error}</span> : null}
         <span style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>{"Cancelar"}</button>
-          <button type="button" onClick={save} disabled={busy || !name.trim() || !hosts.trim()} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: "#12131A", color: "#FFFFFF", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, opacity: !name.trim() || !hosts.trim() ? 0.5 : 1 }}>{busy ? "Guardando…" : "Guardar"}</button>
+          <button type="button" onClick={onClose} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.06)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>{"Cancelar"}</button>
+          <button type="button" onClick={save} disabled={busy || !name.trim() || !hosts.trim()} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", cursor: busy ? "wait" : "pointer", fontSize: "var(--t-meta)", fontWeight: 600, opacity: !name.trim() || !hosts.trim() ? 0.5 : 1 }}>{busy ? "Guardando…" : "Guardar"}</button>
         </span>
       </>)}
     </span>
@@ -82,7 +82,7 @@ export function MaskedSecret({ secret, messageId = null }) {
   return (
     <span style={{ position: "relative", whiteSpace: "pre-wrap" }}>
       <span data-secret={secret.value} title={shown ? undefined : "Clave oculta"}
-        style={{ padding: "1px 5px", borderRadius: "6px", background: "rgba(18,19,26,.06)", fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", fontSize: "0.88em", letterSpacing: shown ? 0 : ".02em", overflowWrap: "anywhere" }}>
+        style={{ padding: "1px 5px", borderRadius: "var(--r-sm)", background: "rgba(18,19,26,.06)", fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", fontSize: "0.88em", letterSpacing: shown ? 0 : ".02em", overflowWrap: "anywhere" }}>
         {shown ? secret.value : maskSecret(secret.value)}
       </span>
       <button type="button" data-secret-ui="" aria-pressed={shown ? "true" : "false"} onClick={() => setShown((v) => !v)} style={LINK}>

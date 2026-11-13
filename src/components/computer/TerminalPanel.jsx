@@ -26,7 +26,7 @@ const SERVER_STATUS = {
   stopped: ["Parado", "#8A8D96"],
   failed: ["No arrancó", "#FF8A80"],
 };
-const SMALL_BUTTON = { height: "32px", padding: "0 12px", borderRadius: "999px", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "6px" };
+const SMALL_BUTTON = { height: "32px", padding: "0 12px", borderRadius: "var(--r-pill)", border: "0", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "6px" };
 
 /** Development servers of this conversation (server/projects), refreshed every few seconds. */
 function useDevServers(missionId) {
@@ -54,13 +54,13 @@ function ServerCard({ server, onOpenBrowser, onChanged }) {
     onChanged();
   };
   return (
-    <article style={{ borderRadius: "20px", background: "#12131A", color: "#E6E7EC", overflow: "hidden", animation: "rise .3s ease-out" }}>
+    <article style={{ borderRadius: "var(--r-xl)", background: "#12131A", color: "#E6E7EC", overflow: "hidden", animation: "rise .3s ease-out" }}>
       <header style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px 0", fontSize: "var(--t-meta)" }}>
-        <span aria-hidden="true" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "8px", background: "rgba(255,255,255,.08)", color: "#FFFFFF" }}><Server size={14} strokeWidth={2.2} /></span>
+        <span aria-hidden="true" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", borderRadius: "var(--r-sm)", background: "rgba(255,255,255,.08)", color: "#FFFFFF" }}><Server size={14} strokeWidth={2.2} /></span>
         <strong style={{ fontWeight: 600, color: "#FFFFFF", overflowWrap: "anywhere" }}>{server.project}</strong>
         <span style={{ color: "#8A8D96" }}>{"Servidor de desarrollo"}</span>
         <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", color: tint, whiteSpace: "nowrap" }}>
-          {live ? <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "50%", background: tint }} /> : null}
+          {live ? <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: tint }} /> : null}
           {label}{server.status === "failed" && server.exitCode != null ? ` · código ${server.exitCode}` : ""}
         </span>
       </header>
@@ -91,7 +91,7 @@ export default function TerminalPanel({ steps = [], bots = [], missionId = null,
   if (!runs.length && !servers.length) {
     return (
       <div style={{ padding: "28px 22px", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px" }}>
-        <span aria-hidden="true" style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", borderRadius: "14px", background: "#12131A", color: "#FFFFFF" }}><SquareTerminal size={20} strokeWidth={2.2} /></span>
+        <span aria-hidden="true" style={{ width: "44px", height: "44px", display: "grid", placeItems: "center", borderRadius: "var(--r-lg)", background: "#12131A", color: "#FFFFFF" }}><SquareTerminal size={20} strokeWidth={2.2} /></span>
         <strong style={{ font: "600 var(--t-title)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Aún no ha ejecutado nada"}</strong>
         <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.55", color: "#5C606C" }}>{"Cuando un bot ejecute un comando en tu ordenador lo verás aquí, con lo que respondió. Antes de cada comando te pide permiso."}</span>
       </div>
@@ -106,12 +106,12 @@ export default function TerminalPanel({ steps = [], bots = [], missionId = null,
         const failed = r.status === "error" || (c.exitCode != null && Number(c.exitCode) !== 0);
         const [label, tint] = STATUS[r.status === "error" || failed ? "error" : r.status] || [c.exitCode != null ? "Terminó bien" : "Hecho", "#7BE0B4"];
         return (
-          <article key={r.id} style={{ borderRadius: "20px", background: "#12131A", color: "#E6E7EC", overflow: "hidden", animation: "rise .3s ease-out" }}>
+          <article key={r.id} style={{ borderRadius: "var(--r-xl)", background: "#12131A", color: "#E6E7EC", overflow: "hidden", animation: "rise .3s ease-out" }}>
             <header style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 16px 0", fontSize: "var(--t-meta)" }}>
               <BotPresence bot={bot} size={16} state={r.status === "running" ? "work" : "rest"} />
               <strong style={{ fontWeight: 600, color: "#FFFFFF" }}>{bot?.name || "Bot"}</strong>
               <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", color: tint }}>
-                {r.status === "running" ? <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "50%", border: "2px solid rgba(255,255,255,.25)", borderTopColor: "#FFFFFF", animation: "spin .8s linear infinite" }} /> : null}
+                {r.status === "running" ? <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "var(--r-circle)", border: "2px solid rgba(255,255,255,.25)", borderTopColor: "#FFFFFF", animation: "spin .8s linear infinite" }} /> : null}
                 {label}{c.exitCode != null && failed ? ` · código ${c.exitCode}` : ""}
               </span>
             </header>

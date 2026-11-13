@@ -13,8 +13,8 @@ const STEP = 62; // height of a notice plus the gap, when the stack is spread
 const SWIPE_PX = 90;
 
 function Lead({ kind }) {
-  if (kind === "working") return <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", borderRadius: "50%", border: "2px solid rgba(18,19,26,.15)", borderTopColor: INK, animation: "spin .8s linear infinite" }} />;
-  if (kind === "success") return <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: "#0B8A5F", color: "#FFFFFF", animation: "pop .35s ease-out" }}><Check size={12} strokeWidth={3.2} /></span>;
+  if (kind === "working") return <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", borderRadius: "var(--r-circle)", border: "2px solid rgba(18,19,26,.15)", borderTopColor: INK, animation: "spin .8s linear infinite" }} />;
+  if (kind === "success") return <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", color: "#FFFFFF", animation: "pop .35s ease-out" }}><Check size={12} strokeWidth={3.2} /></span>;
   if (kind === "error") return <CircleAlert size={18} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", color: "#B4372A", animation: "pop .35s ease-out" }} />;
   return null;
 }
@@ -49,24 +49,24 @@ function Toast({ toast, depth, spread, paused }) {
         opacity: Math.max(0, 1 - Math.abs(dx) / 220) * (spread || depth < 3 ? 1 : 0), zIndex: 10 - depth,
         transition: drag.current ? "none" : "transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s ease",
         overflow: "hidden", display: "flex", alignItems: "center", gap: "12px", minHeight: "52px",
-        padding: toast.undo ? "6px 6px 6px 20px" : "6px 8px 6px 18px", borderRadius: "999px", background: "#FFFFFF",
+        padding: toast.undo ? "6px 6px 6px 20px" : "6px 8px 6px 18px", borderRadius: "var(--r-pill)", background: "#FFFFFF",
         boxShadow: "0 12px 32px -12px rgba(18,19,26,.28), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .25s ease-out",
         color: error ? "#B4372A" : INK, touchAction: "pan-y", cursor: "grab",
       }}>
       <Lead kind={toast.kind} />
       <span aria-hidden={!front && !spread ? "true" : undefined} style={{ flex: 1, minWidth: 0, fontSize: "var(--t-body)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={toast.text}>{toast.text}</span>
       {toast.undo ? (
-        <button type="button" onClick={toast.undo} style={{ flex: "none", display: "flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 18px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>
+        <button type="button" onClick={toast.undo} style={{ flex: "none", display: "flex", alignItems: "center", gap: "7px", height: "40px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: 600 }}>
           <Undo2 size={15} strokeWidth={2.2} aria-hidden="true" />Deshacer
         </button>
       ) : toast.kind !== "working" ? (
-        <button type="button" aria-label="Cerrar el aviso" onClick={() => dismiss(toast.id)} style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: "#6B6F7A" }}>
+        <button type="button" aria-label="Cerrar el aviso" onClick={() => dismiss(toast.id)} style={{ flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: "#6B6F7A" }}>
           <X size={16} strokeWidth={2.2} aria-hidden="true" />
         </button>
       ) : null}
       {toast.kind === "later" ? (
         // The line that runs out with the five seconds, stopped while the countdowns are.
-        <span aria-hidden="true" style={{ position: "absolute", left: "20px", right: "20px", bottom: 0, height: "2px", borderRadius: "1px", background: "rgba(18,19,26,.08)", overflow: "hidden" }}>
+        <span aria-hidden="true" style={{ position: "absolute", left: "20px", right: "20px", bottom: 0, height: "2px", borderRadius: "var(--r-xs)", background: "rgba(18,19,26,.08)", overflow: "hidden" }}>
           <span key={toast.at} style={{ display: "block", height: "100%", background: INK, transformOrigin: "left", animation: `grow ${toast.ms}ms linear reverse both`, animationPlayState: paused ? "paused" : "running" }} />
         </span>
       ) : null}

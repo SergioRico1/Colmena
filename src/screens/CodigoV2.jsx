@@ -98,7 +98,7 @@ function LimitLine({ task }) {
   const stop = l.status !== "allowed";
   return (
     <p role="status" style={{ margin: "0 4px 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-caption)", color: stop ? C.honeyText : C.faint }}>
-      <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "50%", background: stop ? C.honey : "#C9CBD1" }} />
+      <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: stop ? C.honey : "#C9CBD1" }} />
       {stop ? `Has llegado a tu límite ${span} de ${engine}` : `Has usado el ${Math.round(l.utilization * 100)} % de tu límite ${span} de ${engine}`}{when ? ` · se renueva ${when.includes(",") ? "el " + when : "a las " + when}` : ""}.
     </p>
   );
@@ -118,10 +118,10 @@ function GoalRow({ task, onGoal }) {
   }[g.status] || { text: g.status, fg: C.faint, bar: "#C9CBD1" };
   const pct = g.status === "complete" ? 1 : Math.min(1, (g.turns + (task.running ? 0.5 : 0)) / max);
   const live = g.status === "active";
-  const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "999px", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
+  const btn = { height: "28px", padding: "0 10px", display: "flex", alignItems: "center", gap: "5px", border: 0, borderRadius: "var(--r-pill)", background: "rgba(18,19,26,.05)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600, color: C.ink, whiteSpace: "nowrap" };
   return (
-    <div role="status" aria-label="Objetivo" style={{ position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", padding: "8px 8px 8px 12px", borderRadius: "14px", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05)", animation: "rise .25s ease-out" }}>
-      <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: g.status === "complete" ? C.greenSoft : live ? "rgba(255,122,26,.12)" : C.soft, color: g.status === "complete" ? C.green : live ? C.bruno : C.muted }}>
+    <div role="status" aria-label="Objetivo" style={{ position: "relative", overflow: "hidden", display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", padding: "8px 8px 8px 12px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: "0 1px 2px rgba(18,19,26,.05)", animation: "rise .25s ease-out" }}>
+      <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: g.status === "complete" ? C.greenSoft : live ? "rgba(255,122,26,.12)" : C.soft, color: g.status === "complete" ? C.green : live ? C.bruno : C.muted }}>
         {g.status === "complete" ? <Check size={13} strokeWidth={2.6} /> : <Target size={13} strokeWidth={2.2} />}
       </span>
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -130,7 +130,7 @@ function GoalRow({ task, onGoal }) {
       </span>
       {live ? <button type="button" onClick={() => onGoal("pause")} style={btn} title="Bruno acaba el turno en curso y no sigue solo"><Pause size={11} strokeWidth={2.6} aria-hidden="true" />Pausar</button> : null}
       {["paused", "blocked", "limited"].includes(g.status) ? <button type="button" onClick={() => onGoal("resume")} style={btn} title="Bruno sigue con el objetivo"><Play size={11} strokeWidth={2.6} aria-hidden="true" />Reanudar</button> : null}
-      <button type="button" onClick={() => onGoal("clear")} aria-label="Quitar el objetivo" title="Quitar el objetivo" style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: "transparent", cursor: "pointer", color: C.muted }}><X size={13} strokeWidth={2.4} aria-hidden="true" /></button>
+      <button type="button" onClick={() => onGoal("clear")} aria-label="Quitar el objetivo" title="Quitar el objetivo" style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted }}><X size={13} strokeWidth={2.4} aria-hidden="true" /></button>
       <span aria-hidden="true" style={{ position: "absolute", left: 0, bottom: 0, height: "2px", width: pct * 100 + "%", background: look.bar, transition: "width .5s ease" }} />
     </div>
   );
@@ -155,7 +155,7 @@ function useWatch(taskId) {
   }, [taskId]);
 }
 
-const CHIP = { height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "7px", background: C.white, border: "1px solid rgba(18,19,26,.08)", whiteSpace: "nowrap", color: C.text2 };
+const CHIP = { height: "24px", padding: "0 9px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-sm)", background: C.white, border: "1px solid rgba(18,19,26,.08)", whiteSpace: "nowrap", color: C.text2 };
 const SIGNAL = (bg, fg) => ({ ...CHIP, border: 0, background: bg, color: fg, fontFamily: "'Geist', sans-serif", fontWeight: 600 });
 
 /** What GitHub says of an open PR: draft, approved, changes requested ([text, look, title]). */
@@ -189,7 +189,7 @@ function TaskChips({ task, project, running, onMergePr = null }) {
           <GitMerge size={12} strokeWidth={2.2} aria-hidden="true" />Fusionar en GitHub
         </button>
       ) : null}
-      {running ? <span style={SIGNAL("#EEF0F4", C.blue)}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "50%", background: C.blue }} />Trabajando</span>
+      {running ? <span style={SIGNAL("#EEF0F4", C.blue)}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: C.blue }} />Trabajando</span>
         : task.status === "waiting" || task.status === "planned" ? <span style={SIGNAL(C.honey, C.ink)}>Te espera</span>
           : task.status === "error" ? <span style={SIGNAL(C.redSoft, C.red)}>Atascada</span> : null}
       {task.saved ? <span style={SIGNAL("#E3F4EC", C.greenText)}>✓ Guardada en {base}</span> : null}
@@ -212,13 +212,13 @@ function TaskChips({ task, project, running, onMergePr = null }) {
 function Steps({ steps, approved }) {
   const look = { done: ["✓", "#E3F4EC", C.greenText, C.ink], now: ["•", "#EEF0F4", C.blue, C.ink], todo: ["", C.track, C.blue, C.muted] };
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "18px", background: C.white }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px", borderRadius: "var(--r-xl)", background: C.white }}>
       <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>{approved ? "El plan de Bruno · aprobado" : "Los pasos de Bruno"}</span>
       {steps.map((s, k) => {
         const [mark, bg, ink, text] = look[s.status] || look.todo;
         return (
           <div key={k} style={{ display: "flex", gap: "10px", fontSize: "var(--t-ui)", lineHeight: 1.4 }}>
-            <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "50%", background: bg, color: ink, fontSize: "var(--t-micro)", fontWeight: 700 }}>{mark}</span>
+            <span aria-hidden="true" style={{ flex: "none", width: "18px", height: "18px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: bg, color: ink, fontSize: "var(--t-micro)", fontWeight: 700 }}>{mark}</span>
             <span style={{ color: text }}>{s.text}<span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{s.status === "done" ? " (hecho)" : s.status === "now" ? " (ahora)" : ""}</span></span>
           </div>
         );
@@ -420,7 +420,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
           <button type="button" onClick={openEditor} title={"Abre la copia de la tarea en VS Code, Cursor o Windsurf: " + task.cwd} style={BTN.outline}>Abrir en el editor</button>
           {merge}
           {fixable ? <button type="button" onClick={fix} title={"Le pasa a " + name + (findings.length ? " lo que encontró la revisión" : "") + (ciFailing ? (findings.length ? " y" : "") + " lo que falla en el CI" : "")} style={BTN.primary}>Que {name} lo arregle</button> : null}
-          <button type="button" onClick={more.open} aria-haspopup="menu" aria-expanded={!!more.at} aria-label="Más" title="Más: guardar de otras formas, posponer, archivar…" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: more.at ? C.track : "transparent", color: C.text2, cursor: "pointer" }}>
+          <button type="button" onClick={more.open} aria-haspopup="menu" aria-expanded={!!more.at} aria-label="Más" title="Más: guardar de otras formas, posponer, archivar…" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: more.at ? C.track : "transparent", color: C.text2, cursor: "pointer" }}>
             <Ellipsis size={18} strokeWidth={2.2} aria-hidden="true" />
           </button>
           <MenuSheet menu={more} label="Más" width={300}>
@@ -443,9 +443,9 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
             <Rule />
             <TaskActions task={task} current done={more.close} />
           </MenuSheet>
-          {saving.error ? <p role="alert" onClick={() => saving.setError(null)} style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "340px", margin: 0, padding: "12px 14px", borderRadius: "16px", background: C.white, boxShadow: SHEET, fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.red }}>{saving.error}</p> : null}
+          {saving.error ? <p role="alert" onClick={() => saving.setError(null)} style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "340px", margin: 0, padding: "12px 14px", borderRadius: "var(--r-lg)", background: C.white, boxShadow: SHEET, fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.red }}>{saving.error}</p> : null}
           {saving.warn ? (
-            <div role="alertdialog" aria-label="Antes de fusionar" style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "350px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", borderRadius: "20px", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
+            <div role="alertdialog" aria-label="Antes de fusionar" style={{ position: "absolute", zIndex: 30, top: "48px", right: 0, width: "350px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
               <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text }}>
                 {saving.warn.resolving ? `Hay cambios que chocan con ${base}: ${name} los está resolviendo en su copia (${saving.warn.resolving.slice(0, 3).join(", ")}). Cuando acabe, vuelve a fusionar.`
                   : `La revisión ha encontrado ${saving.warn.serious === 1 ? "un problema importante" : saving.warn.serious + " problemas importantes"} (P0–P1). Los tienes en la conversación.`}
@@ -517,13 +517,13 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
                 return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ flex: "none", whiteSpace: "nowrap", height: "42px", padding: "0 12px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>{tabLabel(id, text)}</button>;
               })}
               <span style={{ flex: 1 }} />
-              <button type="button" onClick={() => onWide(!wide)} aria-pressed={wide} aria-label={wide ? "Volver a ver la conversación" : "Ampliar el espacio de trabajo"} title={wide ? "Volver a ver la conversación" : "Ampliar (la conversación se oculta)"} style={{ width: "32px", height: "32px", marginBottom: "6px", display: "grid", placeItems: "center", border: 0, borderRadius: "50%", background: wide ? C.track : "transparent", cursor: "pointer", color: C.muted }}>
+              <button type="button" onClick={() => onWide(!wide)} aria-pressed={wide} aria-label={wide ? "Volver a ver la conversación" : "Ampliar el espacio de trabajo"} title={wide ? "Volver a ver la conversación" : "Ampliar (la conversación se oculta)"} style={{ width: "32px", height: "32px", marginBottom: "6px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: wide ? C.track : "transparent", cursor: "pointer", color: C.muted }}>
                 {wide ? <Minimize2 size={15} strokeWidth={2} aria-hidden="true" /> : <Maximize2 size={15} strokeWidth={2} aria-hidden="true" />}
               </button>
             </div>
             {tab === "plan" ? <PlanTab plan={plan} name={name} />
-              : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "14px", overflow: "hidden", border: "1px solid rgba(18,19,26,.1)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
-                : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "14px", overflow: "hidden", background: C.ink }}><Suspense fallback={null}><TerminalPanel task={task} /></Suspense></div>
+              : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid rgba(18,19,26,.1)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
+                : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "var(--r-lg)", overflow: "hidden", background: C.ink }}><Suspense fallback={null}><TerminalPanel task={task} /></Suspense></div>
                   : tab === "archivos" ? <Files task={task} />
                     : tab === "procesos" ? <Processes task={task} name={name} />
                       : <Changes task={task} turn={turn} onTurn={setTurn} onCount={setCount} />}
@@ -538,7 +538,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
 function PlanTab({ plan, name }) {
   if (!plan) {
     return (
-      <div style={{ flex: 1, margin: "16px 20px 20px", padding: "28px", borderRadius: "14px", background: C.white, display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
+      <div style={{ flex: 1, margin: "16px 20px 20px", padding: "28px", borderRadius: "var(--r-lg)", background: C.white, display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
         <strong style={{ fontSize: "var(--t-body)" }}>Sin plan en esta tarea</strong>
         <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2, maxWidth: "460px" }}>{name} fue directo a los cambios. Si quieres que proponga antes de tocar nada, elige «Plan» en «…» al escribirle o empieza el mensaje con /plan.</span>
       </div>
@@ -546,7 +546,7 @@ function PlanTab({ plan, name }) {
   }
   const state = { open: "Te espera: «Implementar» o «Refinar» en la conversación.", implemented: "Aprobado: " + name + " lo está siguiendo.", moved: "Se implementa en otra tarea.", refined: "Lo refinaste: hay una versión más nueva." }[plan.status];
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", margin: "16px 20px 20px", padding: "20px", borderRadius: "14px", background: C.white, display: "flex", flexDirection: "column", gap: "10px", fontSize: "var(--t-body)", lineHeight: 1.55 }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: "auto", margin: "16px 20px 20px", padding: "20px", borderRadius: "var(--r-lg)", background: C.white, display: "flex", flexDirection: "column", gap: "10px", fontSize: "var(--t-body)", lineHeight: 1.55 }}>
       <strong>Qué voy a hacer</strong>
       <div style={{ color: C.body }}><Markdown text={plan.text} size={15} /></div>
       {state ? <span style={{ fontSize: "var(--t-meta)", color: plan.status === "open" ? C.honeyText : C.muted }}>{state}</span> : null}

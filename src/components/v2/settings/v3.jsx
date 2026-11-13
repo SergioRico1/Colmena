@@ -21,17 +21,17 @@ export const UNDO_MS = 10000;
 export const anchorOf = (anchor) => (anchor ? { id: anchor, "data-setting": anchor } : {});
 export const srOnly = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
 
-export const card = { display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden", scrollMarginTop: "24px" };
-export const panel = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px 22px", borderRadius: "20px", background: "#FFFFFF", scrollMarginTop: "24px" };
+export const card = { display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden", scrollMarginTop: "24px" };
+export const panel = { display: "flex", flexDirection: "column", gap: "10px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#FFFFFF", scrollMarginTop: "24px" };
 export const h3 = { margin: 0, fontSize: "var(--t-body)", fontWeight: 600 };
-export const field = { width: "240px", maxWidth: "100%", height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "10px", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK, boxSizing: "border-box" };
+export const field = { width: "240px", maxWidth: "100%", height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", color: INK, boxSizing: "border-box" };
 export const select = { ...field, padding: "0 10px" };
 export const mono = "'Geist Mono', monospace";
 
 /** Pill buttons: «outline» (white with a line), «dark» (ink) and «ghost» (text only). */
 export const btn = (kind = "outline", size = 34) => ({
   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px", flex: "none", height: size + "px",
-  padding: size >= 40 ? "0 16px" : "0 12px", borderRadius: "999px", cursor: "pointer", whiteSpace: "nowrap", textDecoration: "none",
+  padding: size >= 40 ? "0 16px" : "0 12px", borderRadius: "var(--r-pill)", cursor: "pointer", whiteSpace: "nowrap", textDecoration: "none",
   fontSize: size >= 40 ? "var(--t-ui)" : "var(--t-meta)", fontWeight: kind === "dark" ? 600 : 500,
   border: kind === "outline" ? "1px solid rgba(18,19,26,.14)" : 0,
   background: kind === "dark" ? INK : kind === "ghost" ? "transparent" : "#FFFFFF",
@@ -87,8 +87,8 @@ export function Row({ title, sub, children, anchor, first = false, as = "div", m
 export function Switch({ on, onChange, label, busy = false, labelledBy }) {
   return (
     <button type="button" role="switch" aria-checked={!!on} aria-label={labelledBy ? undefined : label} aria-labelledby={labelledBy} disabled={busy} onClick={() => onChange(!on)}
-      style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "12px", background: on ? INK : "#8A8D96", cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
-      <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "50%", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s cubic-bezier(.2,.8,.2,1)" }} />
+      style={{ flex: "none", position: "relative", width: "40px", height: "24px", padding: 0, border: 0, borderRadius: "var(--r-pill)", background: on ? INK : "#8A8D96", cursor: busy ? "wait" : "pointer", transition: "background .2s ease" }}>
+      <span aria-hidden="true" style={{ position: "absolute", top: "3px", left: on ? "19px" : "3px", width: "18px", height: "18px", borderRadius: "var(--r-circle)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.3)", transition: "left .2s cubic-bezier(.2,.8,.2,1)" }} />
     </button>
   );
 }
@@ -103,10 +103,10 @@ export function SwitchRow({ title, sub, on, onChange, anchor, first, busy, stron
 /** The grey pill of choices (Apariencia, Unidad). */
 export function Pills({ label, items, value, onPick, busy = false, background = "#F1F1EC" }) {
   return (
-    <div role="radiogroup" aria-label={label} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "999px", background }}>
+    <div role="radiogroup" aria-label={label} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background }}>
       {items.map(([v, text]) => {
         const on = value === v;
-        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "999px", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, color: INK, cursor: "pointer" }}>{text}</button>;
+        return <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)} style={{ height: "32px", padding: "0 14px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.1)" : "none", fontSize: "var(--t-ui)", fontWeight: 500, color: INK, cursor: "pointer" }}>{text}</button>;
       })}
     </div>
   );
@@ -120,7 +120,7 @@ export function Choices({ label, items, value, onPick, busy = false, min = 200 }
         const on = value === v;
         return (
           <button key={String(v)} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => onPick(v)}
-            style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px", padding: "14px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "14px", background: "#FFFFFF", textAlign: "left", color: INK, cursor: "pointer", transition: "border-color .2s ease" }}>
+            style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px", padding: "14px", border: `2px solid ${on ? INK : "rgba(18,19,26,.1)"}`, borderRadius: "var(--r-lg)", background: "#FFFFFF", textAlign: "left", color: INK, cursor: "pointer", transition: "border-color .2s ease" }}>
             <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{text}</span>
             {desc ? <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{desc}</span> : null}
           </button>
@@ -162,14 +162,14 @@ export function Term({ tip, children }) {
 /** A status chip: ✓ Cifrada, Principal, Sin conectar… */
 export function Chip({ children, tone = "grey", style = null }) {
   const look = { green: ["#E3F4EC", "#0B6B4A"], dark: [INK, "#FFFFFF"], grey: ["#F1F1EC", "#3D404A"], quiet: ["#F1F1EC", MUTED], red: ["#FBEAE7", "#B4232A"] }[tone] || ["#F1F1EC", "#3D404A"];
-  return <span style={{ height: "22px", padding: "0 8px", display: "inline-flex", alignItems: "center", flex: "none", borderRadius: "999px", background: look[0], color: look[1], fontSize: "var(--t-caption)", fontWeight: 600, whiteSpace: "nowrap", ...style }}>{children}</span>;
+  return <span style={{ height: "22px", padding: "0 8px", display: "inline-flex", alignItems: "center", flex: "none", borderRadius: "var(--r-pill)", background: look[0], color: look[1], fontSize: "var(--t-caption)", fontWeight: 600, whiteSpace: "nowrap", ...style }}>{children}</span>;
 }
 
 /** A thin bar (6–10 px) of the boards, filled to `percent`. */
 export function Meter({ percent, height = 6, color = INK, tick = null, tickColor = "#8A5A00", label }) {
   const p = Math.max(0, Math.min(100, Number(percent) || 0));
   return (
-    <span role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : "true"} style={{ position: "relative", display: "block", height: height + "px", borderRadius: height / 2 + "px", background: "#EEEEEA", overflow: "hidden" }}>
+    <span role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : "true"} style={{ position: "relative", display: "block", height: height + "px", borderRadius: "var(--r-pill)", background: "#EEEEEA", overflow: "hidden" }}>
       <span style={{ position: "absolute", inset: "0 auto 0 0", width: p + "%", background: color, transformOrigin: "left", animation: "grow .8s ease-out" }} />
       {tick != null ? <span style={{ position: "absolute", top: 0, bottom: 0, left: Math.max(0, Math.min(99, tick)) + "%", width: "2px", background: tickColor }} /> : null}
     </span>

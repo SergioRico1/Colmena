@@ -53,22 +53,22 @@ function SourceCard({ s }) {
   return (
     <span ref={ref} style={{ position: "relative", display: "flex", flex: "0 1 220px", maxWidth: "240px", minWidth: 0 }}>
       <button type="button" className="rm-focus c-lift" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} title={s.url}
-        style={{ flex: "1", minWidth: 0, minHeight: "58px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "4px", padding: "8px 10px", background: "#FFFFFF", border: "1px solid " + (open ? "#12131A" : "#DCE0E8"), borderRadius: "12px", cursor: "pointer", textAlign: "left" }}>
+        style={{ flex: "1", minWidth: 0, minHeight: "58px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "4px", padding: "8px 10px", background: "#FFFFFF", border: "1px solid " + (open ? "#12131A" : "#DCE0E8"), borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left" }}>
         <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "#12131A", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.3" }}>{s.title}</span>
         <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "var(--t-caption)", color: "#555A68", minWidth: 0 }}>
           <Globe {...I} size={12} style={{ flex: "none" }} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.domain}</span>
         </span>
       </button>
       {open ? (
-        <div role="dialog" aria-label={"Fuente: " + s.domain} className="c-pop" style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: 0, width: "min(340px, 80vw)", padding: "12px 14px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "14px", boxShadow: "4px 4px 0 #FFC93C", display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div role="dialog" aria-label={"Fuente: " + s.domain} className="c-pop" style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: 0, width: "min(340px, 80vw)", padding: "12px 14px", background: "#FFFFFF", border: "2px solid #12131A", borderRadius: "var(--r-lg)", boxShadow: "4px 4px 0 #FFC93C", display: "flex", flexDirection: "column", gap: "8px" }}>
           <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "#555A68" }}><Globe {...I} size={12} />{s.domain}</span>
-            <button type="button" className="rm-focus" onClick={() => setOpen(false)} aria-label="Cerrar" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "7px", cursor: "pointer" }}><X {...I} /></button>
+            <button type="button" className="rm-focus" onClick={() => setOpen(false)} aria-label="Cerrar" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer" }}><X {...I} /></button>
           </span>
           <strong style={{ fontSize: "var(--t-ui)", lineHeight: "1.35" }}>{s.title}</strong>
           <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.05em", textTransform: "uppercase", color: "#555A68" }}>{s.kind === "page" ? "Extracto de la página" : "Resultado de la búsqueda"}</span>
           <p style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: "1.5", color: "#2B2D36" }}>{s.excerpt || "Sin extracto."}</p>
-          <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", borderRadius: "9px", fontSize: "var(--t-meta)", fontWeight: "600" }}>Abrir la fuente<ArrowUpRight {...I} /></a>
+          <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", borderRadius: "var(--r-sm)", fontSize: "var(--t-meta)", fontWeight: "600" }}>Abrir la fuente<ArrowUpRight {...I} /></a>
         </div>
       ) : null}
     </span>

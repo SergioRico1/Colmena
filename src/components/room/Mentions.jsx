@@ -19,10 +19,10 @@ const TRIGGER = /(^|\s)@([\p{L}\d_.-]*)$/u;
 const I = { size: 13, strokeWidth: 2.2, "aria-hidden": "true" };
 // design/V3Chat.dc.html «Mencionar»: a white card over the box, rows of 42 px with a small
 // glyph, the name and what it is on the right.
-const MENU = { position: "absolute", zIndex: 30, left: "0", bottom: "calc(100% + 8px)", width: "320px", maxWidth: "calc(100vw - 32px)", maxHeight: "360px", overflowY: "auto", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "16px", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" };
-const ROW = { minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "10px", background: "transparent", textAlign: "left", cursor: "pointer", width: "100%", flex: "none", color: "#12131A" };
+const MENU = { position: "absolute", zIndex: 30, left: "0", bottom: "calc(100% + 8px)", width: "320px", maxWidth: "calc(100vw - 32px)", maxHeight: "360px", overflowY: "auto", display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "#FFFFFF", boxShadow: "0 2px 4px rgba(18,19,26,.06), 0 24px 48px -16px rgba(18,19,26,.35)", animation: "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" };
+const ROW = { minHeight: "42px", display: "flex", alignItems: "center", gap: "12px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: "transparent", textAlign: "left", cursor: "pointer", width: "100%", flex: "none", color: "#12131A" };
 const HEAD = { flex: "none", display: "block", padding: "8px 10px 4px", fontSize: "var(--t-caption)", fontWeight: 600, color: "#5C606C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-const tile = (bg, fg = "#3D404A") => ({ width: "18px", height: "18px", flex: "none", display: "grid", placeItems: "center", borderRadius: "4px", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 });
+const tile = (bg, fg = "#3D404A") => ({ width: "18px", height: "18px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-xs)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 });
 
 function FileGlyph({ name }) {
   const ext = extOf(name);
@@ -44,7 +44,7 @@ export function RefChips({ refs = [], align = "flex-end" }) {
     <span style={{ display: "flex", flexWrap: "wrap", justifyContent: align, gap: "6px" }}>
       {refs.map((r, i) => (
         <span key={r.kind + ":" + (r.id || r.path) + ":" + i} title={r.kind === "chat" ? "Conversación que le pasaste como contexto" : r.path}
-          style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "28px", padding: "0 10px 0 6px", borderRadius: "10px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "var(--t-meta)" }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: "7px", maxWidth: "100%", height: "28px", padding: "0 10px 0 6px", borderRadius: "var(--r-md)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)", fontSize: "var(--t-meta)" }}>
           <RefGlyph kind={r.kind} name={r.label || r.path} />
           <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label || r.path}</span>
         </span>

@@ -29,8 +29,8 @@ import { BotAvatar, ErrorLine, findBot } from "./common.jsx";
 const INLINE = new Set(["permission", "write", "memory", "read"]);
 const I = { size: 14, strokeWidth: 2.3, "aria-hidden": "true" };
 
-const BTN = { height: "38px", padding: "0 16px", borderRadius: "999px", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600", whiteSpace: "nowrap", border: "0" };
-const BAND = { display: "flex", flexDirection: "column", gap: "12px", padding: "16px 18px", background: "#FFFFFF", borderRadius: "24px", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 6px rgba(255,201,60,.14), 0 20px 40px -24px rgba(201,138,0,.55)" };
+const BTN = { height: "38px", padding: "0 16px", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-ui)", fontWeight: "600", whiteSpace: "nowrap", border: "0" };
+const BAND = { display: "flex", flexDirection: "column", gap: "12px", padding: "16px 18px", background: "#FFFFFF", borderRadius: "var(--r-2xl)", boxShadow: "0 0 0 1px rgba(255,201,60,.6), 0 0 0 6px rgba(255,201,60,.14), 0 20px 40px -24px rgba(201,138,0,.55)" };
 
 function Row({ a, bots, note = null }) {
   const { act, busy, error } = useAction();
@@ -64,7 +64,7 @@ function Row({ a, bots, note = null }) {
         <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
           <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#6B6F7A" }}>
             <strong style={{ color: "#12131A", fontWeight: "600" }}>{bot.name}</strong>
-            {a.redLine || a.kind === "send" ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "2px 8px", borderRadius: "999px", background: "#FBEAE7", color: "#B4372A", fontSize: "var(--t-caption)", fontWeight: "600" }}><ShieldAlert {...I} size={12} />sale de tu cuenta</span> : <span>{"· necesita tu OK"}</span>}
+            {a.redLine || a.kind === "send" ? <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "2px 8px", borderRadius: "var(--r-pill)", background: "#FBEAE7", color: "#B4372A", fontSize: "var(--t-caption)", fontWeight: "600" }}><ShieldAlert {...I} size={12} />sale de tu cuenta</span> : <span>{"· necesita tu OK"}</span>}
           </span>
           <span style={{ fontSize: "var(--t-body)", lineHeight: "1.45", color: "#12131A" }}>{model.send ? model.title : a.summary || a.title}</span>
           {/* A send says who it goes to and what it says before it can be approved here. */}
@@ -79,7 +79,7 @@ function Row({ a, bots, note = null }) {
         <div role="group" aria-label="Decir que no" className="c-enter" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
           <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } else if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); e.stopPropagation(); if (!busy) decide("denied", false, reason.trim()); } }}
             placeholder={`¿Por qué? Se lo diremos a ${bot.name} (opcional)`} aria-label="Por qué no"
-            style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "999px", fontSize: "var(--t-ui)" }} />
+            style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)" }} />
           <button type="button" disabled={busy} onClick={() => decide("denied", false, reason.trim())} style={{ ...btn, background: "#12131A", color: "#FFFFFF" }}>{denyLabel}</button>
           <button type="button" onClick={() => setDenying(false)} style={{ ...btn, background: "transparent", fontWeight: "500", color: "#5C606C" }}>Cancelar</button>
         </div>
@@ -179,7 +179,7 @@ function GroupRow({ group, bots }) {
         <div role="group" aria-label="Decir que no" className="c-enter" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", paddingLeft: "40px" }}>
           <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setDenying(false); } else if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); e.stopPropagation(); if (!busy) decide("denied", reason.trim()); } }}
             placeholder={`¿Por qué? Se lo diremos a ${bot.name} (opcional)`} aria-label="Por qué no"
-            style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "999px", fontSize: "var(--t-ui)" }} />
+            style={{ flex: "1 1 220px", height: "38px", padding: "0 14px", background: "#F4F4F0", border: "0", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)" }} />
           <button type="button" disabled={busy} onClick={() => decide("denied", reason.trim())} style={{ ...BTN, background: "#12131A", color: "#FFFFFF" }}>{GROUP_VERBS.deny}</button>
           <button type="button" onClick={() => setDenying(false)} style={{ ...BTN, background: "transparent", fontWeight: "500", color: "#5C606C" }}>Cancelar</button>
         </div>

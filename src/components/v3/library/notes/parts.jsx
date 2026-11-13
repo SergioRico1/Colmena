@@ -6,17 +6,17 @@ import { byName } from "../../../../lib/wikiLinks.js";
 // Shared pieces of Biblioteca › Notas, with the same measures as Files.jsx and Memory.jsx:
 // pill buttons, grey chips, white cards and the sheet a dialog opens in.
 
-export const PILL = { height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" };
+export const PILL = { height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", color: "#12131A", fontSize: "var(--t-ui)", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" };
 export const DARK = { ...PILL, border: "0", background: "#12131A", color: "#FFFFFF", fontWeight: "600" };
-export const QUIET = { height: "32px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "5px", border: "0", borderRadius: "8px", background: "transparent", fontSize: "var(--t-meta)", color: "#4A4D57", cursor: "pointer", textDecoration: "none" };
-export const CHIP = { flex: "none", display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 9px", borderRadius: "999px", background: "#F1F1EC", color: "#3D404A", fontSize: "var(--t-caption)", fontWeight: "500", whiteSpace: "nowrap" };
-export const CARD = { borderRadius: "22px", background: "#FFFFFF" };
-export const FIELD = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#12131A", minWidth: 0 };
+export const QUIET = { height: "32px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "5px", border: "0", borderRadius: "var(--r-sm)", background: "transparent", fontSize: "var(--t-meta)", color: "#4A4D57", cursor: "pointer", textDecoration: "none" };
+export const CHIP = { flex: "none", display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 9px", borderRadius: "var(--r-pill)", background: "#F1F1EC", color: "#3D404A", fontSize: "var(--t-caption)", fontWeight: "500", whiteSpace: "nowrap" };
+export const CARD = { borderRadius: "var(--r-2xl)", background: "#FFFFFF" };
+export const FIELD = { height: "44px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#12131A", minWidth: 0 };
 export const LABEL = { fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" };
 export const ERROR = { margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" };
 export const MUTED = { margin: 0, fontSize: "var(--t-ui)", color: "#5C606C" };
 export const SR = { position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" };
-export const filterChip = (on) => ({ height: "36px", padding: "0 13px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "999px", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" });
+export const filterChip = (on) => ({ height: "36px", padding: "0 13px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap" });
 
 /** The way back: to the list, or to the note from one of its views. */
 export function Back({ href = "/biblioteca/notas", label = "Todas las notas" }) {
@@ -29,8 +29,8 @@ export function Who({ by, bots = [] }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
       {by?.kind === "bot"
-        ? <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", background: bot?.color || "#C9CBD1", borderRadius: bot ? shapeOf(bot).radius : "3px", clipPath: bot ? shapeOf(bot).clip : undefined }} />
-        : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "50%", background: "#12131A" }} />}
+        ? <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", background: bot?.color || "#C9CBD1", borderRadius: bot ? shapeOf(bot).radius : "var(--r-xs)", clipPath: bot ? shapeOf(bot).clip : undefined }} />
+        : <span aria-hidden="true" style={{ flex: "none", width: "11px", height: "11px", borderRadius: "var(--r-circle)", background: "#12131A" }} />}
       {byName(by)}
     </span>
   );
@@ -41,7 +41,7 @@ export function Dialog({ title, onClose = null, width = "520px", children, foote
   const box = useDialogFocus({ onEscape: onClose || undefined });
   return (
     <div onMouseDown={(e) => { if (onClose && e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: "40px 20px", background: "rgba(18,19,26,.32)", WebkitBackdropFilter: "blur(10px)", backdropFilter: "blur(10px)", animation: "fade .25s ease-out" }}>
-      <div ref={box} role="dialog" aria-modal="true" aria-labelledby={id} tabIndex={-1} style={{ width: `min(${width}, 100%)`, maxHeight: "100%", overflow: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "28px", background: "#FFFFFF", borderRadius: "28px", boxShadow: "0 60px 120px -40px rgba(18,19,26,.6)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby={id} tabIndex={-1} style={{ width: `min(${width}, 100%)`, maxHeight: "100%", overflow: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "28px", background: "#FFFFFF", borderRadius: "var(--r-3xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.6)", animation: "sheet .45s cubic-bezier(.2,.8,.2,1)" }}>
         <h2 id={id} style={{ margin: 0, font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.025em", overflowWrap: "anywhere" }}>{title}</h2>
         {children}
         {footer ? <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px", marginTop: "4px" }}>{footer}</div> : null}
@@ -53,7 +53,7 @@ export function Dialog({ title, onClose = null, width = "520px", children, foote
 /** The search box of a list (Files.jsx): a magnifier and a borderless field in a white box. */
 export function SearchBox({ value, onChange, label, placeholder }) {
   return (
-    <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "12px", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
+    <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "40px", padding: "0 14px", borderRadius: "var(--r-md)", background: "#FFFFFF", border: "1px solid rgba(18,19,26,.08)" }}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5C606C" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>
       <span style={SR}>{label}</span>
       <input className="c-bare" type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />

@@ -15,7 +15,7 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
   const spend = usage?.percent != null ? { n: usage.percent + " %", label: "del gasto del mes" } : { n: formatTokens(usage?.monthTokens || 0), label: "tokens este mes" };
   const atlas = bots.find((b) => b.id === "atlas") || { shape: "hex", color: "#12131A" };
   const stat = (value, label) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "16px", background: "rgba(255,255,255,.08)" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "rgba(255,255,255,.08)" }}>
       <span style={{ font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{value}</span>
       <span style={{ fontSize: "var(--t-meta)", color: "#B8BBC4" }}>{label}</span>
     </div>
@@ -28,9 +28,9 @@ export default function WeekDigest({ missions, approvals, skills, usage, bots, g
       </ul>
     </div>
   );
-  const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "999px", fontSize: "var(--t-ui)", fontWeight: "600" };
+  const pill = { display: "inline-flex", alignItems: "center", height: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", fontSize: "var(--t-ui)", fontWeight: "600" };
   return (
-    <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "26px", background: "#12131A", color: "#FFFFFF", animation: "rise .5s ease-out" }}>
+    <section aria-labelledby="wk-t" style={{ display: "flex", flexDirection: "column", gap: "18px", padding: "24px 28px", borderRadius: "var(--r-2xl)", background: "#12131A", color: "#FFFFFF", animation: "rise .5s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <BotPresence bot={atlas} size={26} state="rest" />

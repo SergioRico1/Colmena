@@ -21,7 +21,7 @@ const UNDO_MS = 10000;
 const ARCHIVE_PAGE = 50;
 const ARCHIVE_MAX = 200;
 const day = (iso) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" }).replace(".", "") : "");
-const chipStyle = { flex: "none", display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 9px", borderRadius: "999px", background: "#F1F1EC", color: "#3D404A", fontSize: "var(--t-caption)", fontWeight: "500", whiteSpace: "nowrap" };
+const chipStyle = { flex: "none", display: "inline-flex", alignItems: "center", gap: "5px", height: "24px", padding: "0 9px", borderRadius: "var(--r-pill)", background: "#F1F1EC", color: "#3D404A", fontSize: "var(--t-caption)", fontWeight: "500", whiteSpace: "nowrap" };
 /**
  * How far a memory is trusted, from its provenance (server/memory.mjs memoryProvenance):
  * `trust` 'doubt' contradicts what you said; outside content and documents are «de fuera»;
@@ -70,7 +70,7 @@ function Known({ m, bot, mission, expert }) {
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 14px", minHeight: "56px", padding: "8px 20px", borderTop: "1px solid rgba(18,19,26,.05)", animation: "fade .3s ease-out" }}>
       {draft !== null ? (
         <input className="c-quiet" type="text" autoFocus aria-label="Corregir el recuerdo" value={draft} maxLength={2000} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setDraft(null); }} onBlur={save}
-          style={{ flex: "1 1 300px", minWidth: 0, height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)" }} />
+          style={{ flex: "1 1 300px", minWidth: 0, height: "40px", padding: "0 12px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)" }} />
       ) : (
         <span style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: "5px", minWidth: 0 }}>
           <span style={{ fontSize: "var(--t-body)", lineHeight: "1.4" }}>{m.text}</span>
@@ -155,15 +155,15 @@ export default function Memory({ memories, bots, missions = [], expert }) {
 
   return (
     <>
-      <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 20px", borderRadius: "22px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 44px -30px rgba(18,19,26,.4)" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 20px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 20px 44px -30px rgba(18,19,26,.4)" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Cuéntales algo para que lo recuerden"}</span>
         <input className="c-bare" type="text" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") tell(); }} placeholder="Cuéntales algo para que lo recuerden: «Los viernes salgo a las 15:00»" style={{ flex: "1", minWidth: "0", height: "50px", border: "0", background: "transparent", fontSize: "var(--t-read)" }} />
-        <button type="button" onClick={tell} disabled={!text.trim() || act.busy} style={{ height: "44px", padding: "0 18px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: text.trim() ? "pointer" : "default" }}>{"Guardar"}</button>
+        <button type="button" onClick={tell} disabled={!text.trim() || act.busy} style={{ height: "44px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-body)", fontWeight: "600", cursor: text.trim() ? "pointer" : "default" }}>{"Guardar"}</button>
       </label>
       {act.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{act.error}</p> : null}
 
       {openReview.length || answered.length ? (
-        <section aria-labelledby="rev-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "22px", background: "#FFF6DC" }}>
+        <section aria-labelledby="rev-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-2xl)", background: "#FFF6DC" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             <h2 id="rev-t" style={{ margin: "0", fontSize: "var(--t-read)", fontWeight: "600" }}>{"Por revisar · "}{String(openReview.length)}</h2>
             <span style={{ fontSize: "var(--t-ui)", color: "#4A4D57" }}>{"Lo dedujeron ellos, o lo leyeron en correos, webs o apps. Lo que viene de fuera o está en duda no lo usan hasta que digas que es correcto."}</span>
@@ -172,10 +172,10 @@ export default function Memory({ memories, bots, missions = [], expert }) {
             const bot = botOf(m.botId);
             const doubt = m.trust === "doubt";
             const mine = doubt ? memories.find((x) => x.id === m.contradicts) : null;
-            const pill = { height: "38px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" };
-            const main = { height: "38px", padding: "0 16px", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
+            const pill = { height: "38px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" };
+            const main = { height: "38px", padding: "0 16px", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" };
             return (
-              <div key={m.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "14px 16px", borderRadius: "16px", background: "#FFFFFF" }}>
+              <div key={m.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "14px 16px", borderRadius: "var(--r-lg)", background: "#FFFFFF" }}>
                 <span style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: "3px" }}>
                   <span style={{ fontSize: "var(--t-body)", fontWeight: "500" }}>{m.text}</span>
                   {mine ? <span style={{ fontSize: "var(--t-ui)", color: "#3D404A" }}>{"Tú dijiste: «"}{mine.text}{"». De momento vale lo tuyo."}</span> : null}
@@ -201,10 +201,10 @@ export default function Memory({ memories, bots, missions = [], expert }) {
       <section aria-labelledby="know-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
           <h2 id="know-t" style={{ margin: "0", font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Lo que saben de ti"}</h2>
-          <button type="button" aria-expanded={versions} onClick={() => setVersions((x) => !x)} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: versions ? "#F1F1EC" : "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{nVersions ? `Versiones del perfil · ${nVersions}` : "Versiones del perfil"}</button>
+          <button type="button" aria-expanded={versions} onClick={() => setVersions((x) => !x)} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: versions ? "#F1F1EC" : "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{nVersions ? `Versiones del perfil · ${nVersions}` : "Versiones del perfil"}</button>
         </div>
         {versions ? (
-          <div style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden", animation: "rise .2s ease-out" }}>
+          <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden", animation: "rise .2s ease-out" }}>
             <h3 style={{ margin: "0", padding: "14px 20px 0", fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" }}>{"Tu perfil (USER.md): el resumen de lo que saben de ti. Puedes volver a cualquier versión."}</h3>
             <div style={{ padding: "4px 0 6px" }}><DocHistory doc="user" empty="Todavía no hay un perfil resumido: Colmena lo prepara cuando sabe lo suficiente de ti." /></div>
           </div>
@@ -213,26 +213,26 @@ export default function Memory({ memories, bots, missions = [], expert }) {
           <div role="group" aria-label="Qué recuerdos ver" style={{ display: "flex", gap: "6px" }}>
             {[["core", "Siempre presentes"], ["archive", "Archivo"]].map(([id, label]) => {
               const on = tier === id;
-              return <button key={id} type="button" aria-pressed={on} onClick={() => setTier(id)} style={{ height: "36px", padding: "0 13px", border: "0", borderRadius: "999px", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}{" · "}{String(count[id])}</button>;
+              return <button key={id} type="button" aria-pressed={on} onClick={() => setTier(id)} style={{ height: "36px", padding: "0 13px", border: "0", borderRadius: "var(--r-pill)", background: on ? "#12131A" : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}{" · "}{String(count[id])}</button>;
             })}
           </div>
           <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{tier === "core" ? "Lo tienen delante en cada conversación. Si se llena, lo que menos se usa pasa al archivo." : "No lo llevan siempre encima: lo recuerdan cuando viene a cuento."}</span>
         </div>
         {tier === "archive" && (count.archive > 0 || query) ? (
           <input className="c-quiet" type="search" aria-label="Buscar en el archivo" value={find} maxLength={200} onChange={(e) => { setFind(e.target.value); setShown(ARCHIVE_PAGE); }} placeholder="Buscar en el archivo"
-            style={{ height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-body)" }} />
+            style={{ height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-body)" }} />
         ) : null}
         {archive.error && tier === "archive" ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "#B4232A" }}>{"No se pudo leer el archivo. " + archive.error}</p> : null}
-        {archiveLoading ? <SkeletonList rows={3} style={{ borderRadius: "20px" }} /> : !groups.length ? <p style={{ margin: 0, padding: "18px 20px", borderRadius: "20px", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#5C606C" }}>{tier === "archive" ? (query ? "Nada en el archivo con esas palabras." : "El archivo está vacío. Aquí llega lo que ya no cabe entre lo siempre presente, y lo que tú archives.") : "Todavía no saben nada de ti. Cuéntales algo arriba o tráelo de ChatGPT."}</p> : null}
+        {archiveLoading ? <SkeletonList rows={3} style={{ borderRadius: "var(--r-xl)" }} /> : !groups.length ? <p style={{ margin: 0, padding: "18px 20px", borderRadius: "var(--r-xl)", background: "#FFFFFF", fontSize: "var(--t-body)", color: "#5C606C" }}>{tier === "archive" ? (query ? "Nada en el archivo con esas palabras." : "El archivo está vacío. Aquí llega lo que ya no cabe entre lo siempre presente, y lo que tú archives.") : "Todavía no saben nada de ti. Cuéntales algo arriba o tráelo de ChatGPT."}</p> : null}
         {groups.map((g) => (
-          <div key={g.key} style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", overflow: "hidden" }}>
+          <div key={g.key} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", overflow: "hidden" }}>
             <h3 style={{ margin: "0", padding: "14px 20px 6px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", fontWeight: "600", color: "#5C606C" }}><Mark bot={g.bot} />{g.title}</h3>
             {g.items.map((m) => <Known key={m.id} m={m} bot={botOf(m.botId)} mission={missionOf(m.missionId)} expert={expert} />)}
           </div>
         ))}
         {more > 0 ? (
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px" }}>
-            {shown < ARCHIVE_MAX ? <button type="button" onClick={() => setShown((n) => Math.min(ARCHIVE_MAX, n + ARCHIVE_PAGE))} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver más"}</button> : null}
+            {shown < ARCHIVE_MAX ? <button type="button" onClick={() => setShown((n) => Math.min(ARCHIVE_MAX, n + ARCHIVE_PAGE))} style={{ height: "36px", padding: "0 14px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", cursor: "pointer" }}>{"Ver más"}</button> : null}
             <span style={{ fontSize: "var(--t-ui)", color: "#5C606C" }}>{shown < ARCHIVE_MAX ? `Quedan ${more} más antiguos.` : `Hay ${more} más antiguos: búscalos por lo que dicen.`}</span>
           </div>
         ) : null}

@@ -32,7 +32,7 @@ function PlanCard({ limits }) {
               <span><strong>{windowName(w.windowMinutes)}</strong>{": te queda el " + left + " %"}</span>
               {reset ? <span style={{ color: "#5C606C" }}>{"se renueva a las " + reset}</span> : null}
             </span>
-            <span role="progressbar" aria-label={windowName(w.windowMinutes) + ": usado"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={w.usedPercent} style={{ height: "10px", borderRadius: "5px", background: "#F4F4F0", overflow: "hidden" }}>
+            <span role="progressbar" aria-label={windowName(w.windowMinutes) + ": usado"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={w.usedPercent} style={{ height: "10px", borderRadius: "var(--r-pill)", background: "#F4F4F0", overflow: "hidden" }}>
               <span style={{ display: "block", width: w.usedPercent + "%", height: "100%", background: w.usedPercent >= 90 ? "#E5484D" : w.usedPercent >= 70 ? "#C98A00" : "#12131A" }} />
             </span>
           </div>
@@ -81,7 +81,7 @@ export default function Limites() {
           <span style={{ font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{formatTokens(used)}</span>
           <span style={{ fontSize: "var(--t-body)", color: "#5C606C" }}>{limit ? `de ${formatTokens(limit)} tokens` : "tokens · sin límite"}</span>
         </div>
-        <span role="progressbar" aria-label="Uso del mes" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? 0} style={{ height: "14px", borderRadius: "7px", background: "#F4F4F0", overflow: "hidden", position: "relative" }}>
+        <span role="progressbar" aria-label="Uso del mes" aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? 0} style={{ height: "14px", borderRadius: "var(--r-pill)", background: "#F4F4F0", overflow: "hidden", position: "relative" }}>
           <span style={{ display: "block", width: `${Math.min(100, percent ?? 0)}%`, height: "100%", background: barColor }} />
           {limits.warnAt80 && limit ? <span aria-hidden="true" style={{ position: "absolute", left: "80%", top: "0", bottom: "0", width: "2px", background: "#FFFFFF" }} /> : null}
         </span>
@@ -92,7 +92,7 @@ export default function Limites() {
 
       <PlanCard limits={planLimits} />
 
-      <form onSubmit={submit} aria-labelledby="limite" style={{ background: "#FFFFFF", border: "0", borderRadius: "26px", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={submit} aria-labelledby="limite" style={{ background: "#FFFFFF", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h2 id="limite" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Límite mensual</h2>
           <span style={{ fontSize: "var(--t-meta)", color: "#5C606C" }}>{limits.monthlyTokens ? `Ahora: ${formatTokens(limits.monthlyTokens)} tokens al mes (unas ${pages(limits.monthlyTokens)}).` : "Ahora no hay límite: los bots trabajan lo que haga falta."}</span>
@@ -107,9 +107,9 @@ export default function Limites() {
         <div role="group" aria-label="Límites habituales" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
           {PRESETS.map((p) => {
             const on = limits.monthlyTokens === p;
-            return <button key={p} type="button" title={`Unas ${pages(p)} al mes`} aria-pressed={on} disabled={busy} onClick={() => save({ monthlyTokens: p })} style={on ? { height: "36px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "18px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" } : { height: "36px", padding: "0 12px", background: "#FFFFFF", border: "0", borderRadius: "18px", cursor: "pointer", fontSize: "var(--t-meta)" }}>{formatTokens(p)}</button>;
+            return <button key={p} type="button" title={`Unas ${pages(p)} al mes`} aria-pressed={on} disabled={busy} onClick={() => save({ monthlyTokens: p })} style={on ? { height: "36px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" } : { height: "36px", padding: "0 12px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)" }}>{formatTokens(p)}</button>;
           })}
-          <button type="button" aria-pressed={!limits.monthlyTokens} disabled={busy} onClick={() => save({ monthlyTokens: null })} style={!limits.monthlyTokens ? { height: "36px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "18px", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" } : { height: "36px", padding: "0 12px", background: "#FFFFFF", border: "0", borderRadius: "18px", cursor: "pointer", fontSize: "var(--t-meta)" }}>Sin límite</button>
+          <button type="button" aria-pressed={!limits.monthlyTokens} disabled={busy} onClick={() => save({ monthlyTokens: null })} style={!limits.monthlyTokens ? { height: "36px", padding: "0 12px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: "600" } : { height: "36px", padding: "0 12px", background: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)" }}>Sin límite</button>
         </div>
       </form>
 

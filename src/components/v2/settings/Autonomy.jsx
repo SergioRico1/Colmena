@@ -95,13 +95,13 @@ export default function AutonomySection() {
   return (
     <>
       <Alert>{error || act.error}</Alert>
-      <section {...anchorOf("lineas-rojas")} aria-labelledby="red-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "20px", background: "#12131A", color: "#FFFFFF", scrollMarginTop: "24px" }}>
+      <section {...anchorOf("lineas-rojas")} aria-labelledby="red-t" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-xl)", background: "#12131A", color: "#FFFFFF", scrollMarginTop: "24px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h3 id="red-t" style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600 }}>Siempre te preguntan antes de…</h3>
           <span style={{ fontSize: "var(--t-ui)", color: "#C9CBD3" }}>Las líneas rojas. Ningún ajuste, rutina ni bot puede saltárselas. Navegar por la web nunca pregunta.</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))", gap: "8px" }}>
-          {RED.map((r) => <div key={r} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "0 14px", borderRadius: "12px", background: "rgba(255,255,255,.08)", fontSize: "var(--t-ui)" }}>{lock}{r}</div>)}
+          {RED.map((r) => <div key={r} style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "48px", padding: "0 14px", borderRadius: "var(--r-md)", background: "rgba(255,255,255,.08)", fontSize: "var(--t-ui)" }}>{lock}{r}</div>)}
         </div>
         <span style={{ fontSize: "var(--t-ui)", color: "#E6E7EC" }}>Si pides tú «envíalo», sale tras 10 segundos para que puedas deshacer.</span>
       </section>
@@ -111,10 +111,10 @@ export default function AutonomySection() {
           {team.map((b) => (
             <div key={b.id} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "52px", borderTop: "1px solid rgba(18,19,26,.05)" }}>
               <span style={{ flex: "1 1 140px", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-body)", fontWeight: 500 }}><BotMark bot={b} size={18} />{b.name}</span>
-              <div role="radiogroup" aria-label={"Autonomía de " + b.name} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "999px", background: "#F1F1EC" }}>
+              <div role="radiogroup" aria-label={"Autonomía de " + b.name} style={{ display: "inline-flex", flexWrap: "wrap", padding: "3px", gap: "2px", borderRadius: "var(--r-pill)", background: "#F1F1EC" }}>
                 {AUTONOMY.map(([v, label]) => {
                   const on = (b.autonomy || "sugiere") === v;
-                  return <button key={v} type="button" role="radio" aria-checked={on} disabled={act.busy} onClick={() => !on && setBot(b, { autonomy: v }, `${b.name} ${AUTONOMY_WORD[v]}`, { autonomy: b.autonomy || "sugiere" })} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "999px", background: on ? "#12131A" : "transparent", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
+                  return <button key={v} type="button" role="radio" aria-checked={on} disabled={act.busy} onClick={() => !on && setBot(b, { autonomy: v }, `${b.name} ${AUTONOMY_WORD[v]}`, { autonomy: b.autonomy || "sugiere" })} style={{ height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: on ? "#12131A" : "transparent", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
                 })}
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function AutonomySection() {
             <span role="columnheader">Bot</span>
             {apps.map(([k, label]) => (
               <span key={k} role="columnheader" title={connected(k) ? "Conectada" : "Sin conectar"} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "5px" }}>
-                {label}<span aria-label={connected(k) ? "conectada" : "sin conectar"} style={{ width: "6px", height: "6px", borderRadius: "50%", background: connected(k) ? "#0B8A5F" : "rgba(18,19,26,.18)" }} />
+                {label}<span aria-label={connected(k) ? "conectada" : "sin conectar"} style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: connected(k) ? "#0B8A5F" : "rgba(18,19,26,.18)" }} />
               </span>
             ))}
           </div>
@@ -142,7 +142,7 @@ export default function AutonomySection() {
                 return (
                   <span key={k} role="cell" style={{ display: "grid", placeItems: "center" }}>
                     <button type="button" onClick={() => cycle(b, k)} disabled={act.busy} aria-label={`${b.name} en ${label}: ${text}. Pulsa para cambiar a ${CELL[NEXT[v] || "lee"][0]}.`}
-                      style={{ width: "100%", maxWidth: "92px", height: "32px", padding: "0 10px", border: 0, borderRadius: "999px", background: bg, color: ink, fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", opacity: pending === b.id + k ? 0.5 : 1 }}>{text}</button>
+                      style={{ width: "100%", maxWidth: "92px", height: "32px", padding: "0 10px", border: 0, borderRadius: "var(--r-pill)", background: bg, color: ink, fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", opacity: pending === b.id + k ? 0.5 : 1 }}>{text}</button>
                   </span>
                 );
               })}

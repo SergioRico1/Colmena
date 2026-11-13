@@ -13,7 +13,7 @@ export function BotMark({ bot, size = 20, state = "rest", style = null }) {
   const portrait = portraitOf(bot);
   const color = bot?.color || "#C9CBD1";
   return (
-    <span aria-hidden="true" style={{ flex: "none", display: "inline-grid", placeItems: "center", width: size + "px", height: size + "px", borderRadius: state === "wait" ? "50%" : undefined, boxShadow: state === "wait" ? "0 0 0 2px #FFFFFF, 0 0 0 4px #FFC93C" : "none", ...style }}>
+    <span aria-hidden="true" style={{ flex: "none", display: "inline-grid", placeItems: "center", width: size + "px", height: size + "px", borderRadius: state === "wait" ? "var(--r-circle)" : undefined, boxShadow: state === "wait" ? "0 0 0 2px #FFFFFF, 0 0 0 4px #FFC93C" : "none", ...style }}>
       <span style={{ display: "block", width: size + "px", height: size + "px", background: portrait ? `${color} url("${portrait}") center / cover no-repeat` : color, clipPath: shape.clip, borderRadius: shape.radius, animation: state === "work" ? "breathe 2.4s ease-in-out infinite" : "none" }} />
     </span>
   );
@@ -22,7 +22,7 @@ export function BotMark({ bot, size = 20, state = "rest", style = null }) {
 /** A person: a neutral circle with initials (you in ink). */
 export function PersonMark({ name, size = 32, me = false, tint = "#E6E7EC", ring = null, style = null }) {
   return (
-    <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "50%", background: me ? "#12131A" : tint, color: me ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size * 0.33))}px/1 'Geist', sans-serif`, boxShadow: ring ? `0 0 0 2px ${ring}` : "none", ...style }}>
+    <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: me ? "#12131A" : tint, color: me ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size * 0.33))}px/1 'Geist', sans-serif`, boxShadow: ring ? `0 0 0 2px ${ring}` : "none", ...style }}>
       {fitInitials(me ? "TÚ" : initialsOf(name), size)}
     </span>
   );
@@ -30,8 +30,8 @@ export function PersonMark({ name, size = 32, me = false, tint = "#E6E7EC", ring
 
 /** The 36 px tile of a row in «Chats»: the bot's shape, «#» for a room, initials for a person. */
 export function RowTile({ bot = null, state = "rest", person = null, room = false }) {
-  const tile = { flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "12px" };
+  const tile = { flex: "none", width: "36px", height: "36px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)" };
   if (bot) return <span aria-hidden="true" style={{ ...tile, background: "#F6F6F3" }}><BotMark bot={bot} size={20} state={state} /></span>;
-  if (person) return <span aria-hidden="true" style={{ ...tile, borderRadius: "50%", background: "#E6E7EC", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>{initialsOf(person)}</span>;
+  if (person) return <span aria-hidden="true" style={{ ...tile, borderRadius: "var(--r-circle)", background: "#E6E7EC", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>{initialsOf(person)}</span>;
   return <span aria-hidden="true" style={{ ...tile, background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: 600, color: "#12131A" }}>{room ? "#" : ""}</span>;
 }

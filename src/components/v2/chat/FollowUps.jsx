@@ -9,7 +9,7 @@ export default function FollowUps({ list = [], onPick }) {
       <Sparkles size={14} strokeWidth={2.2} aria-hidden="true" style={{ color: "#8A8D96" }} />
       {list.map((t, i) => (
         <button key={t} type="button" className="rm-focus" onClick={() => onPick(t)} title={i === 0 ? "Tab en el cuadro vacío para usarla" : undefined}
-          style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "999px", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", cursor: "pointer", fontSize: "var(--t-ui)", color: "#12131A", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", animation: "rise .35s ease-out both", animationDelay: i * 70 + "ms" }}>
+          style={{ height: "36px", padding: "0 16px", border: 0, borderRadius: "var(--r-pill)", background: "#FFFFFF", boxShadow: "0 0 0 1px rgba(18,19,26,.08)", cursor: "pointer", fontSize: "var(--t-ui)", color: "#12131A", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", animation: "rise .35s ease-out both", animationDelay: i * 70 + "ms" }}>
           {t}
         </button>
       ))}

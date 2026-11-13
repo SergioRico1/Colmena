@@ -8,12 +8,12 @@ export default function NotFound({ title = "Esta pantalla ya no está", text = "
   return (
     <Shell active={active}>
       <div style={{ minHeight: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px clamp(20px, 4vw, 56px)" }}>
-        <div role="status" style={{ width: "100%", maxWidth: "480px", display: "flex", flexDirection: "column", gap: "14px", padding: "28px", borderRadius: "24px", background: "#FFFFFF" }}>
+        <div role="status" style={{ width: "100%", maxWidth: "480px", display: "flex", flexDirection: "column", gap: "14px", padding: "28px", borderRadius: "var(--r-2xl)", background: "#FFFFFF" }}>
           <h1 style={{ margin: "0", font: "600 var(--t-heading)/1.05 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{title}</h1>
           <span style={{ fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57" }}>{text}</span>
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} style={{ height: "42px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none" }}>{"Volver a Inicio"}</a>
-            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:palette"))} style={{ height: "42px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Buscar"}</button>
+            <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} style={{ height: "42px", padding: "0 18px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", textDecoration: "none" }}>{"Volver a Inicio"}</a>
+            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:palette"))} style={{ height: "42px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "transparent", color: "#12131A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Buscar"}</button>
           </div>
         </div>
       </div>

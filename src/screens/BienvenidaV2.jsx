@@ -53,10 +53,10 @@ function face(bot) {
 }
 // Pasting often brings a trailing space, a line break or an invisible character.
 const clean = (v) => String(v).replace(/[​-‍⁠﻿­]/g, "").trim();
-const ghost = { height: "48px", padding: "0 18px", border: "0", borderRadius: "999px", background: "transparent", fontSize: "var(--t-body)", fontWeight: "500", color: TEXT2, cursor: "pointer" };
-const primary = (off = false) => ({ height: "52px", padding: "0 28px", border: "0", borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-read)", fontWeight: "600", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1, display: "inline-flex", alignItems: "center" });
-const outline = { height: "40px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "999px", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer", flex: "none" };
-const field = { flex: "1 1 240px", minWidth: "0", height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "14px", background: "#FFFFFF", font: "500 var(--t-ui)/1 'Geist Mono', monospace", color: INK };
+const ghost = { height: "48px", padding: "0 18px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-body)", fontWeight: "500", color: TEXT2, cursor: "pointer" };
+const primary = (off = false) => ({ height: "52px", padding: "0 28px", border: "0", borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-read)", fontWeight: "600", cursor: off ? "default" : "pointer", opacity: off ? 0.5 : 1, display: "inline-flex", alignItems: "center" });
+const outline = { height: "40px", padding: "0 16px", border: "1px solid rgba(18,19,26,.16)", borderRadius: "var(--r-pill)", background: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer", flex: "none" };
+const field = { flex: "1 1 240px", minWidth: "0", height: "44px", padding: "0 16px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-lg)", background: "#FFFFFF", font: "500 var(--t-ui)/1 'Geist Mono', monospace", color: INK };
 const h1 = { margin: "0", font: "600 var(--t-display-m)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.04em" };
 const lead = { margin: "0", fontSize: "var(--t-lead)", lineHeight: "1.5", color: TEXT2 };
 
@@ -181,14 +181,14 @@ export default function BienvenidaV2({ query = {} }) {
                 const done = i < step, on = i === step;
                 const body = (
                   <>
-                    <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "50%", border: `1.5px solid ${done || on ? "#FFFFFF" : "rgba(255,255,255,.3)"}`, background: done ? "#FFFFFF" : "transparent", color: done ? INK : "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: "600" }}>{done ? "✓" : String(i + 1)}</span>
+                    <span aria-hidden="true" style={{ flex: "none", width: "26px", height: "26px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", border: `1.5px solid ${done || on ? "#FFFFFF" : "rgba(255,255,255,.3)"}`, background: done ? "#FFFFFF" : "transparent", color: done ? INK : "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: "600" }}>{done ? "✓" : String(i + 1)}</span>
                     <span style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
                       <span style={{ fontSize: "var(--t-body)", fontWeight: "600", color: on || done ? "#FFFFFF" : "#C9CBD3" }}>{label}</span>
                       <span style={{ fontSize: "var(--t-meta)", color: "#A9ACB6" }}>{hint}</span>
                     </span>
                   </>
                 );
-                const row = { display: "flex", alignItems: "center", gap: "14px", minHeight: "44px", padding: "0 14px", borderRadius: "14px", background: on ? "rgba(255,255,255,.08)" : "transparent" };
+                const row = { display: "flex", alignItems: "center", gap: "14px", minHeight: "44px", padding: "0 14px", borderRadius: "var(--r-lg)", background: on ? "rgba(255,255,255,.08)" : "transparent" };
                 return (
                   <li key={label} aria-current={on ? "step" : undefined} style={done ? { display: "flex" } : row}>
                     {done ? <button type="button" onClick={() => setStep(i)} aria-label={`Volver a «${label}»`} style={{ ...row, flex: "1", border: "0", color: "inherit", textAlign: "left", cursor: "pointer", WebkitAppRegion: "no-drag" }}>{body}</button> : body}
@@ -208,7 +208,7 @@ export default function BienvenidaV2({ query = {} }) {
 
           <main style={{ position: "relative", flex: "999 1 560px", minWidth: "0", display: "flex", flexDirection: "column", padding: "56px clamp(24px, 6vw, 96px) 40px" }}>
             {!settings.onboarded && step < LAST ? (
-              <button type="button" disabled={!!busy} onClick={later} style={{ position: "absolute", top: "18px", right: "24px", height: "36px", padding: "0 12px", border: "0", borderRadius: "999px", background: "transparent", color: MUTED, fontSize: "var(--t-ui)", cursor: "pointer", WebkitAppRegion: "no-drag", zIndex: 6 }}>{"Saltar la bienvenida"}</button>
+              <button type="button" disabled={!!busy} onClick={later} style={{ position: "absolute", top: "18px", right: "24px", height: "36px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", color: MUTED, fontSize: "var(--t-ui)", cursor: "pointer", WebkitAppRegion: "no-drag", zIndex: 6 }}>{"Saltar la bienvenida"}</button>
             ) : null}
             <div key={step} style={{ flex: "1", width: "100%", maxWidth: "720px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "32px", animation: "rise .45s ease-out" }}>
               {step === STEP.hola ? (
@@ -229,7 +229,7 @@ export default function BienvenidaV2({ query = {} }) {
                   <p style={{ margin: "0", fontSize: "var(--t-title)", lineHeight: "1.5", color: TEXT2, maxWidth: "600px" }}>{"Colmena es el sitio donde las personas de tu equipo y los bots de cada una trabajan juntos. Estos son los tuyos: viven en tu ordenador, con tu cuenta de IA y tus datos, y tú decides qué hacen solos y qué te preguntan antes."}</p>
                   <label style={{ display: "flex", flexDirection: "column", gap: "8px", maxWidth: "420px" }}>
                     <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{"¿Cómo te llamas? "}<span style={{ fontWeight: "400", color: MUTED }}>{"Así te verán tus compañeros."}</span></span>
-                    <input className="c-quiet" type="text" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }} placeholder="Tu nombre" style={{ height: "48px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "14px", background: "#FFFFFF", fontSize: "var(--t-read)", color: INK }} />
+                    <input className="c-quiet" type="text" value={name} maxLength={80} autoComplete="name" onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }} placeholder="Tu nombre" style={{ height: "48px", padding: "0 16px", border: "1px solid rgba(18,19,26,.14)", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-read)", color: INK }} />
                   </label>
                   <p style={{ margin: "0", fontSize: "var(--t-body)", color: MUTED }}>{"Te llevará unos tres minutos. Puedes saltar cualquier paso."}</p>
                 </div>
@@ -249,17 +249,17 @@ export default function BienvenidaV2({ query = {} }) {
                         : b.id === "openai" && authError ? { text: "No se pudo entrar: " + String(authError.message || authError), fg: RED }
                         : { text: b.note, fg: MUTED };
                       return (
-                        <div key={b.id} style={{ display: "flex", flexDirection: "column", borderRadius: "20px", background: "#FFFFFF", boxShadow: `inset 0 0 0 2px ${on ? INK : "transparent"}` }}>
-                          <button type="button" role="radio" aria-checked={on} onClick={() => { if (!on) { setBrain(b.id); setPanel(false); setError(null); } }} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "76px", padding: "14px 20px", border: "0", borderRadius: "20px", background: "transparent", textAlign: "left", cursor: "pointer" }}>
+                        <div key={b.id} style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: "#FFFFFF", boxShadow: `inset 0 0 0 2px ${on ? INK : "transparent"}` }}>
+                          <button type="button" role="radio" aria-checked={on} onClick={() => { if (!on) { setBrain(b.id); setPanel(false); setError(null); } }} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "76px", padding: "14px 20px", border: "0", borderRadius: "var(--r-xl)", background: "transparent", textAlign: "left", cursor: "pointer" }}>
                             <ProviderMark engine={b.id} size={40} style={{ background: "#F1F1EC" }} />
                             <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "3px" }}>
                               <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{b.name}</span>
                               <span role={on ? "status" : undefined} style={{ fontSize: "var(--t-ui)", color: note.fg }}>{note.text}</span>
                             </span>
                             {e?.connected ? (
-                              <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: GREEN, color: "#FFFFFF" }}><Check size={13} strokeWidth={3} /></span>
+                              <span aria-hidden="true" style={{ width: "24px", height: "24px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: GREEN, color: "#FFFFFF" }}><Check size={13} strokeWidth={3} /></span>
                             ) : b.rec ? (
-                              <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "600", color: "#3D404A" }}>{"Recomendado"}</span>
+                              <span style={{ height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", fontSize: "var(--t-caption)", fontWeight: "600", color: "#3D404A" }}>{"Recomendado"}</span>
                             ) : null}
                           </button>
                           {on && !e?.connected && b.id === "openai" && waiting ? <Waiting url={waiting.url} busy={!!busy} onCancel={cancelLogin} /> : null}
@@ -293,18 +293,18 @@ export default function BienvenidaV2({ query = {} }) {
                     <p style={lead}>{"Lo cambias cuando quieras con el interruptor «Modo experto», al pie de la barra."}</p>
                   </div>
                   <div role="radiogroup" aria-label="Nivel de detalle" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: "12px" }}>
-                    <button type="button" role="radio" aria-checked={!expert} onClick={() => expert && setExpert(false)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px", padding: "22px", border: `2px solid ${expert ? "transparent" : INK}`, borderRadius: "22px", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
+                    <button type="button" role="radio" aria-checked={!expert} onClick={() => expert && setExpert(false)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px", padding: "22px", border: `2px solid ${expert ? "transparent" : INK}`, borderRadius: "var(--r-2xl)", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
                       <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Lo justo"}</span>
                       <span style={{ fontSize: "var(--t-body)", lineHeight: "1.5", color: TEXT2 }}>{"Resultados y lo que te necesita. Los bots te cuentan en frases lo que hacen."}</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "12px", background: "#F6F6F3", fontSize: "var(--t-ui)" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "var(--r-md)", background: "#F6F6F3", fontSize: "var(--t-ui)" }}>
                         <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", ...face(writer) }} />
                         {writer.name + " ha leído el informe"}
                       </span>
                     </button>
-                    <button type="button" role="radio" aria-checked={expert} onClick={() => !expert && setExpert(true)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px", padding: "22px", border: `2px solid ${expert ? INK : "transparent"}`, borderRadius: "22px", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
+                    <button type="button" role="radio" aria-checked={expert} onClick={() => !expert && setExpert(true)} style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "12px", padding: "22px", border: `2px solid ${expert ? INK : "transparent"}`, borderRadius: "var(--r-2xl)", background: "#FFFFFF", textAlign: "left", cursor: "pointer" }}>
                       <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Con todo detalle"}</span>
                       <span style={{ fontSize: "var(--t-body)", lineHeight: "1.5", color: TEXT2 }}>{"Herramientas, tokens, modelo, registros y atajos. Para quien quiere ver las tripas."}</span>
-                      <span style={{ padding: "10px 12px", borderRadius: "12px", background: INK, color: "#E6E7EC", font: "400 var(--t-meta)/1.4 'Geist Mono', monospace" }}>{"read_file informe_q3.docx · 4.120 tk"}</span>
+                      <span style={{ padding: "10px 12px", borderRadius: "var(--r-md)", background: INK, color: "#E6E7EC", font: "400 var(--t-meta)/1.4 'Geist Mono', monospace" }}>{"read_file informe_q3.docx · 4.120 tk"}</span>
                     </button>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -315,9 +315,9 @@ export default function BienvenidaV2({ query = {} }) {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                       {chips.shown.map(([id, label]) => {
                         const on = role === id;
-                        return <button key={id} type="button" aria-pressed={on} onClick={() => { setRole(id); setDropped([]); }} style={{ height: "40px", padding: "0 16px", border: `1px solid ${on ? INK : "rgba(18,19,26,.12)"}`, borderRadius: "999px", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
+                        return <button key={id} type="button" aria-pressed={on} onClick={() => { setRole(id); setDropped([]); }} style={{ height: "40px", padding: "0 16px", border: `1px solid ${on ? INK : "rgba(18,19,26,.12)"}`, borderRadius: "var(--r-pill)", background: on ? INK : "#FFFFFF", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{label}</button>;
                       })}
-                      {chips.more ? <button type="button" aria-expanded="false" onClick={() => setMoreRoles(true)} style={{ height: "40px", padding: "0 16px", border: "1px dashed rgba(18,19,26,.28)", borderRadius: "999px", background: "transparent", color: "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Otro"}</button> : null}
+                      {chips.more ? <button type="button" aria-expanded="false" onClick={() => setMoreRoles(true)} style={{ height: "40px", padding: "0 16px", border: "1px dashed rgba(18,19,26,.28)", borderRadius: "var(--r-pill)", background: "transparent", color: "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>{"Otro"}</button> : null}
                     </div>
                   </div>
                 </>
@@ -334,7 +334,7 @@ export default function BienvenidaV2({ query = {} }) {
                       const atlas = m.id === "atlas";
                       const keep = atlas || !dropped.includes(m.id);
                       return (
-                        <label key={m.id} title={atlas ? "Atlas siempre está: coordina al equipo" : undefined} style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "72px", padding: "14px 18px", borderRadius: "18px", background: "#FFFFFF", cursor: atlas ? "default" : "pointer", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
+                        <label key={m.id} title={atlas ? "Atlas siempre está: coordina al equipo" : undefined} style={{ display: "flex", alignItems: "center", gap: "14px", minHeight: "72px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF", cursor: atlas ? "default" : "pointer", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
                           <span aria-hidden="true" style={{ flex: "none", width: "36px", height: "36px", ...face(m) }} />
                           <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
                             <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{m.name}</span>
@@ -358,8 +358,8 @@ export default function BienvenidaV2({ query = {} }) {
                     {DAY_APPS.map((a) => {
                       const on = apps.includes(a.id);
                       return (
-                        <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "72px", padding: "14px 18px", borderRadius: "18px", background: "#FFFFFF" }}>
-                          <span aria-hidden="true" style={{ flex: "none", width: "40px", height: "40px", display: "grid", placeItems: "center", borderRadius: "12px", background: "#F1F1EC", fontSize: "var(--t-meta)", fontWeight: "600" }}>{a.mark}</span>
+                        <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "16px", minHeight: "72px", padding: "14px 18px", borderRadius: "var(--r-xl)", background: "#FFFFFF" }}>
+                          <span aria-hidden="true" style={{ flex: "none", width: "40px", height: "40px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "#F1F1EC", fontSize: "var(--t-meta)", fontWeight: "600" }}>{a.mark}</span>
                           <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
                             <span style={{ fontSize: "var(--t-read)", fontWeight: "600" }}>{a.name}</span>
                             <span style={{ fontSize: "var(--t-ui)", color: MUTED }}>{a.note}</span>
@@ -382,10 +382,10 @@ export default function BienvenidaV2({ query = {} }) {
                     <h1 style={h1}>{"Pídeles algo."}</h1>
                     <p style={lead}>{anyConnected ? "Escribe como se lo dirías a un compañero. Atlas decide quién lo hace." : "Escribe como se lo dirías a un compañero. Atlas lo repartirá cuando conectes tu cuenta de IA."}</p>
                   </div>
-                  <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 8px 8px 22px", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 60px -30px rgba(18,19,26,.35)" }}>
+                  <form onSubmit={(e) => { e.preventDefault(); send(); }} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 8px 8px 22px", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(18,19,26,.05), 0 24px 60px -30px rgba(18,19,26,.35)" }}>
                     <label htmlFor="v3-first-request" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Tu primera petición"}</label>
                     <input className="c-bare" id="v3-first-request" type="text" autoFocus value={request} onChange={(e) => setText(e.target.value)} placeholder="Escribe lo que necesitas" style={{ flex: "1", minWidth: "0", height: "56px", border: "0", background: "transparent", fontSize: "var(--t-lead)" }} />
-                    <button type="submit" aria-label="Enviar y entrar en Colmena" disabled={!!busy} style={{ width: "48px", height: "48px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "50%", background: INK, color: "#FFFFFF", cursor: busy ? "wait" : "pointer" }}>
+                    <button type="submit" aria-label="Enviar y entrar en Colmena" disabled={!!busy} style={{ width: "48px", height: "48px", flex: "none", display: "grid", placeItems: "center", border: "0", borderRadius: "var(--r-circle)", background: INK, color: "#FFFFFF", cursor: busy ? "wait" : "pointer" }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="M12 19V5M6 11l6-6 6 6" />
                       </svg>
@@ -393,7 +393,7 @@ export default function BienvenidaV2({ query = {} }) {
                   </form>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     {ideas.filter((i) => i !== request).slice(0, 4).map((i) => (
-                      <button key={i} type="button" onClick={() => setText(i)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "999px", background: "transparent", fontSize: "var(--t-ui)", color: "#3D404A", cursor: "pointer" }}>{i}</button>
+                      <button key={i} type="button" onClick={() => setText(i)} style={{ height: "38px", padding: "0 16px", border: "1px solid rgba(18,19,26,.12)", borderRadius: "var(--r-pill)", background: "transparent", fontSize: "var(--t-ui)", color: "#3D404A", cursor: "pointer" }}>{i}</button>
                     ))}
                   </div>
                 </>
@@ -424,7 +424,7 @@ function Waiting({ url, busy, onCancel }) {
   return (
     <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", padding: "0 20px 18px 76px", animation: "rise .25s ease-out" }}>
       <span style={{ flex: "1 1 240px", display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--t-ui)", lineHeight: "1.5", color: TEXT2 }}>
-        <span aria-hidden="true" style={{ width: "14px", height: "14px", flex: "none", border: "2px solid rgba(18,19,26,.15)", borderTopColor: INK, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        <span aria-hidden="true" style={{ width: "14px", height: "14px", flex: "none", border: "2px solid rgba(18,19,26,.15)", borderTopColor: INK, borderRadius: "var(--r-circle)", animation: "spin 1s linear infinite" }} />
         {"Inicia sesión en tu navegador. Te esperamos aquí; cuando termines, vuelve a esta ventana."}
       </span>
       <button type="button" onClick={() => window.open(url, "_blank", "noopener")} style={outline}>{"Abrir otra vez la página"}</button>
@@ -452,16 +452,16 @@ function ClaudeConnect({ busy, onConnect }) {
   const [way, setWay] = useState("cli");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "0 20px 20px 76px", animation: "rise .25s ease-out" }}>
-      <div role="radiogroup" aria-label="Cómo conectar Claude" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "16px", background: "#F6F6F3" }}>
+      <div role="radiogroup" aria-label="Cómo conectar Claude" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
         {CLAUDE_WAYS.map((w) => {
           const on = way === w.id;
           return (
-            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => setWay(w.id)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "8px 14px", border: "0", borderRadius: "12px", cursor: "pointer", textAlign: "left", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none" }}>
+            <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => setWay(w.id)} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "52px", padding: "8px 14px", border: "0", borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left", background: on ? "#FFFFFF" : "transparent", boxShadow: on ? "0 1px 3px rgba(18,19,26,.12)" : "none" }}>
               <span style={{ flex: "1", display: "flex", flexDirection: "column", gap: "2px" }}>
                 <span style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{w.title}</span>
                 <span style={{ fontSize: "var(--t-meta)", color: MUTED }}>{w.sub}</span>
               </span>
-              <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "50%", background: on ? INK : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
+              <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? INK : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgba(18,19,26,.2)" }}>
                 <Check size={11} strokeWidth={3.4} color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
               </span>
             </button>
@@ -472,7 +472,7 @@ function ClaudeConnect({ busy, onConnect }) {
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px" }}>
           <span style={{ flex: "1 1 260px", fontSize: "var(--t-ui)", lineHeight: "1.6", color: MUTED }}>
             {"Si aún no has entrado, abre una terminal y escribe "}
-            <code style={{ padding: "3px 8px", borderRadius: "8px", background: "#F1F1EC", font: "500 var(--t-meta) 'Geist Mono', monospace", color: INK }}>{"claude auth login"}</code>
+            <code style={{ padding: "3px 8px", borderRadius: "var(--r-sm)", background: "#F1F1EC", font: "500 var(--t-meta) 'Geist Mono', monospace", color: INK }}>{"claude auth login"}</code>
           </span>
           <button type="button" disabled={busy} onClick={() => onConnect({ method: "cli" })} style={{ ...outline, background: INK, color: "#FFFFFF", border: "0", fontWeight: "600", cursor: busy ? "wait" : "pointer" }}>{busy ? "Comprobando…" : "Conectar"}</button>
         </div>

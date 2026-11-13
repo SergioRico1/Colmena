@@ -47,11 +47,11 @@ export default function NoteGraph({ focus = "", title = "" }) {
       </div>
       {error ? <p role="alert" style={ERROR}>{error}</p> : null}
       {act.error ? <p role="alert" style={ERROR}>{act.error}</p> : null}
-      {loading && !data ? <div style={{ height: "320px", borderRadius: "16px", background: "#F6F6F3", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
+      {loading && !data ? <div style={{ height: "320px", borderRadius: "var(--r-lg)", background: "#F6F6F3", animation: "shimmer 1.6s ease-in-out infinite" }} /> : null}
       {data && !view.nodes.length ? <p style={{ margin: 0, padding: "40px 0", textAlign: "center", fontSize: "var(--t-body)", color: "#5C606C" }}>{"Aún no hay notas que dibujar."}</p> : null}
       {view.nodes.length ? (
         <>
-          <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`Mapa con ${view.nodes.length} notas y ${view.edges.length} enlaces`} style={{ width: "100%", height: "auto", maxHeight: "70vh", borderRadius: "16px", background: "#FBFBF9", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.05)" }} onMouseLeave={() => setHot(null)}>
+          <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={`Mapa con ${view.nodes.length} notas y ${view.edges.length} enlaces`} style={{ width: "100%", height: "auto", maxHeight: "70vh", borderRadius: "var(--r-lg)", background: "#FBFBF9", boxShadow: "inset 0 0 0 1px rgba(18,19,26,.05)" }} onMouseLeave={() => setHot(null)}>
             <g aria-hidden="true">
               {view.edges.map((e) => <line key={e.from + ">" + e.to} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} stroke="#12131A" strokeOpacity={lit(e) ? (hot ? 0.55 : 0.16) : 0.05} strokeWidth={hot && lit(e) ? 1.4 : 1} />)}
             </g>

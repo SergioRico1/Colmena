@@ -37,11 +37,11 @@ const ext = (name) => (String(name || "").split(".").pop() || "").slice(0, 3).to
 
 /** The square at the start of each row: a glyph, an icon or a bot's shape. */
 function Tile({ children, dark = false, small = false }) {
-  return <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "10px", background: dark ? "#12131A" : "#F1F1EC", font: `600 ${small ? "var(--t-micro)" : "var(--t-caption)"}/1 'Geist', sans-serif`, color: "#3D404A" }}>{children}</span>;
+  return <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: dark ? "#12131A" : "#F1F1EC", font: `600 ${small ? "var(--t-micro)" : "var(--t-caption)"}/1 'Geist', sans-serif`, color: "#3D404A" }}>{children}</span>;
 }
 const glyph = (g, small) => <Tile small={small}>{g}</Tile>;
 // A person is a circle with initials (circles are people; bots keep their shapes).
-const personTile = (initials) => <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "50%", background: "#E6E7EC", font: "600 var(--t-micro)/1 'Geist', sans-serif", color: "#12131A" }}>{initials}</span>;
+const personTile = (initials) => <span aria-hidden="true" style={{ flex: "none", width: "30px", height: "30px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#E6E7EC", font: "600 var(--t-micro)/1 'Geist', sans-serif", color: "#12131A" }}>{initials}</span>;
 const iconTile = (Icon) => <Tile><Icon size={16} strokeWidth={2} /></Tile>;
 const botTile = (bot) => <Tile><Shape bot={bot} size={16} /></Tile>;
 const pathTile = (d) => <Tile><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg></Tile>;
@@ -587,13 +587,13 @@ export default function CommandPalette() {
   let index = -1;
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }} style={{ position: "fixed", inset: "0", zIndex: 1000, background: "rgba(18,19,26,.38)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "72px 24px 24px", overflowY: "auto", animation: "fade .2s ease-out" }}>
-      <div ref={sheet} role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "26px", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.6)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#12131A" }}>
+      <div ref={sheet} role="dialog" aria-modal="true" aria-label="Buscar o pedir" style={{ width: "100%", maxWidth: "920px", display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF", boxShadow: "0 2px 6px rgba(18,19,26,.08), 0 40px 90px -30px rgba(18,19,26,.6)", overflow: "hidden", animation: "sheet .25s ease-out", fontFamily: "'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif", color: "#12131A" }}>
         <div className="c-ring-in" style={{ display: "flex", alignItems: "center", gap: "14px", padding: "0 22px", height: "70px", borderBottom: "1px solid rgba(18,19,26,.07)" }}>
           {menu ? (
-            <button type="button" onClick={back} aria-label="Volver" style={{ display: "flex", alignItems: "center", gap: "6px", flex: "none", height: "32px", padding: "0 12px 0 8px", border: 0, borderRadius: "999px", background: "#F1F1EC", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>
+            <button type="button" onClick={back} aria-label="Volver" style={{ display: "flex", alignItems: "center", gap: "6px", flex: "none", height: "32px", padding: "0 12px 0 8px", border: 0, borderRadius: "var(--r-pill)", background: "#F1F1EC", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "#12131A" }}>
               <ArrowLeft size={14} strokeWidth={2.4} aria-hidden="true" />{menu.title}
             </button>
-          ) : parsed.actionsOnly ? <span style={{ flex: "none", display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Comandos"}</span>
+          ) : parsed.actionsOnly ? <span style={{ flex: "none", display: "inline-flex", alignItems: "center", height: "28px", padding: "0 10px", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-caption)", fontWeight: 600 }}>{"Comandos"}</span>
             : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A4D57" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true" style={{ flex: "none" }}><path d="M11 17.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM20 20l-4.2-4.2" /></svg>}
           <input className="c-bare"
             ref={input}
@@ -612,7 +612,7 @@ export default function CommandPalette() {
             onKeyDown={onKeyDown}
             style={{ flex: "1", minWidth: "0", height: "48px", border: "0", background: "transparent", fontSize: "var(--t-title)", color: "#12131A" }}
           />
-          <button type="button" onClick={close} aria-label="Cerrar" style={{ padding: "5px 8px", border: "0", borderRadius: "7px", background: "#F1F1EC", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#4A4D57", cursor: "pointer" }}>{"Esc"}</button>
+          <button type="button" onClick={close} aria-label="Cerrar" style={{ padding: "5px 8px", border: "0", borderRadius: "var(--r-sm)", background: "#F1F1EC", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#4A4D57", cursor: "pointer" }}>{"Esc"}</button>
         </div>
 
         {menu || mention || parsed.actionsOnly ? null : (
@@ -621,7 +621,7 @@ export default function CommandPalette() {
               const on = scope === id;
               return (
                 <button key={id} type="button" role="tab" aria-selected={on ? "true" : "false"} onMouseDown={(e) => e.preventDefault()} onClick={() => { setScope(id); setActive(null); input.current?.focus(); }}
-                  style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "999px", background: on ? "#12131A" : "#F1F1EC", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
+                  style={{ height: "32px", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: "6px", border: "0", borderRadius: "var(--r-pill)", background: on ? "#12131A" : "#F1F1EC", color: on ? "#FFFFFF" : "#3D404A", fontSize: "var(--t-ui)", fontWeight: "500", cursor: "pointer" }}>
                   {label}{counts ? <span style={{ fontSize: "var(--t-caption)", opacity: ".75" }}>{counts[id]}</span> : null}
                 </button>
               );
@@ -648,7 +648,7 @@ export default function CommandPalette() {
                       onMouseMove={() => { if (!on) setActive(i); }}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => it.run()}
-                      style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: it.ask ? "52px" : "48px", padding: it.ask ? "8px 12px" : "6px 12px", borderRadius: "12px", cursor: "pointer", background: on ? "#F1F1EC" : "transparent", boxShadow: it.ask ? "inset 0 0 0 1px rgba(18,19,26,.1)" : "none" }}
+                      style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: it.ask ? "52px" : "48px", padding: it.ask ? "8px 12px" : "6px 12px", borderRadius: "var(--r-md)", cursor: "pointer", background: on ? "#F1F1EC" : "transparent", boxShadow: it.ask ? "inset 0 0 0 1px rgba(18,19,26,.1)" : "none" }}
                     >
                       {it.icon}
                       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -671,12 +671,12 @@ export default function CommandPalette() {
                 <h2 style={{ margin: "0", font: "600 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" }}>{preview.title}</h2>
                 {preview.desc ? <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#4A4D57", display: "-webkit-box", WebkitLineClamp: "5", WebkitBoxOrient: "vertical", overflow: "hidden" }}>{preview.desc}</p> : null}
                 {preview.facts?.filter(Boolean).length ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px", borderRadius: "16px", background: "#FFFFFF", fontSize: "var(--t-ui)" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "14px", borderRadius: "var(--r-lg)", background: "#FFFFFF", fontSize: "var(--t-ui)" }}>
                     {preview.facts.filter(Boolean).map(([k, v]) => <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}><span style={{ color: "#5C606C" }}>{k}</span><span style={{ fontWeight: "500", textAlign: "right", minWidth: 0, overflowWrap: "anywhere" }}>{v}</span></div>)}
                   </div>
                 ) : null}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => cur.run()} disabled={busy} style={{ height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "999px", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{preview.cta}</button>
+                  <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => cur.run()} disabled={busy} style={{ height: "40px", padding: "0 16px", display: "inline-flex", alignItems: "center", border: "0", borderRadius: "var(--r-pill)", background: "#12131A", color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: "600", cursor: "pointer" }}>{preview.cta}</button>
                 </div>
               </>
             ) : <p style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "#5C606C" }}>{"Escribe para buscar en todo, o pide algo a tu equipo."}</p>}

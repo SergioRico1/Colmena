@@ -25,19 +25,19 @@ import {
 // yet come from the state (`teamsPending`).
 const INK = "#12131A", TEXT = "#3D404A", MUTED = "#5C606C";
 const LINE = "1px solid rgba(18,19,26,.06)";
-const panel = { display: "flex", flexDirection: "column", borderRadius: "22px", background: "#FFFFFF" };
+const panel = { display: "flex", flexDirection: "column", borderRadius: "var(--r-2xl)", background: "#FFFFFF" };
 const h2 = { margin: 0, font: "600 var(--t-heading)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", overflowWrap: "anywhere" };
 const h3 = { margin: 0, fontSize: "var(--t-meta)", fontWeight: 600, color: MUTED };
-const dark = { height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "999px", background: INK, color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer" };
+const dark = { height: "36px", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: "6px", border: 0, borderRadius: "var(--r-pill)", background: INK, color: "#FFFFFF", fontSize: "var(--t-ui)", fontWeight: 600, cursor: "pointer" };
 const danger = { ...dark, background: "#B4231A" };
-const tag = { flex: "none", height: "20px", padding: "0 8px", display: "inline-flex", alignItems: "center", borderRadius: "999px", background: "#F1F1EC", color: TEXT, fontSize: "var(--t-caption)", fontWeight: 600 };
+const tag = { flex: "none", height: "20px", padding: "0 8px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: "#F1F1EC", color: TEXT, fontSize: "var(--t-caption)", fontWeight: 600 };
 const pendingText = { display: "flex", alignItems: "flex-start", gap: "6px", fontSize: "var(--t-meta)", lineHeight: 1.4, color: TEXT };
 const row = { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", minHeight: "64px", padding: "12px 18px" };
 
 /** A read-only bot: its shape, its name and its role. */
 function BotChip({ bot }) {
   return (
-    <li style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", padding: "2px 10px 2px 8px", borderRadius: "999px", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.2 }}>
+    <li style={{ display: "inline-flex", alignItems: "center", gap: "7px", minHeight: "28px", padding: "2px 10px 2px 8px", borderRadius: "var(--r-pill)", background: "#F6F6F3", fontSize: "var(--t-meta)", lineHeight: 1.2 }}>
       <BotMark bot={bot} size={14} />
       <span style={{ fontWeight: 600 }}>{bot.name}</span>
       {bot.role ? <span style={{ color: MUTED }}>{bot.role}</span> : null}
@@ -55,7 +55,7 @@ function Confirm({ title, text, action, busy, onYes, onNo }) {
   const box = useRef(null);
   useEffect(() => { box.current?.querySelector("button")?.focus(); }, []);
   return (
-    <div ref={box} role="group" aria-label={title} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "16px", background: "#F6F6F3" }}>
+    <div ref={box} role="group" aria-label={title} style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "16px 18px", borderRadius: "var(--r-lg)", background: "#F6F6F3" }}>
       <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{title}</strong>
       <span style={{ maxWidth: "70ch", fontSize: "var(--t-ui)", lineHeight: 1.5, color: TEXT }}>{text}</span>
       <span style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -186,7 +186,7 @@ export default function TeamSection() {
             {renaming != null ? (
               <form onSubmit={rename} style={{ flex: "1 1 320px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
                 <h2 id="team-t" style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{`Cambiar el nombre de ${current.name}`}</h2>
-                <input className="c-quiet" autoFocus type="text" aria-label="Nombre del equipo" value={renaming} maxLength={60} onChange={(e) => setRenaming(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(null); } }} style={{ flex: "1 1 220px", minWidth: 0, height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.2)", borderRadius: "12px", background: "#FFFFFF", fontSize: "var(--t-read)", fontWeight: 600, color: INK }} />
+                <input className="c-quiet" autoFocus type="text" aria-label="Nombre del equipo" value={renaming} maxLength={60} onChange={(e) => setRenaming(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(null); } }} style={{ flex: "1 1 220px", minWidth: 0, height: "40px", padding: "0 14px", border: "1px solid rgba(18,19,26,.2)", borderRadius: "var(--r-md)", background: "#FFFFFF", fontSize: "var(--t-read)", fontWeight: 600, color: INK }} />
                 <button type="submit" disabled={busy === "rename"} style={dark}>{busy === "rename" ? "Guardando…" : "Guardar"}</button>
                 <button type="button" onClick={() => { setRenaming(null); setError(null); }} style={outline}>{"Cancelar"}</button>
               </form>
@@ -218,7 +218,7 @@ export default function TeamSection() {
           {!team ? (
             <div style={{ ...panel, padding: "18px", gap: "12px" }} aria-busy={detail.error ? undefined : "true"}>
               {detail.error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.5, color: TEXT }}>{`No se pudo leer el equipo. ${detail.error}`}</p>
-                : [0, 1, 2].map((i) => <span key={i} className="colmena-skeleton" style={{ height: "40px", borderRadius: "12px" }} />)}
+                : [0, 1, 2].map((i) => <span key={i} className="colmena-skeleton" style={{ height: "40px", borderRadius: "var(--r-md)" }} />)}
             </div>
           ) : (
             <ul aria-label={`Personas de ${team.name}`} style={{ ...panel, margin: 0, padding: 0, listStyle: "none" }}>

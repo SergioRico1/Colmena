@@ -22,7 +22,7 @@ export function VerdictMark({ verdict, compact = false, consolidated = false }) 
   if (compact)
     return <span role="img" aria-label={words} title={words} style={{ display: "inline-flex", flex: "none", color: look.color }}><Icon size={13} strokeWidth={2.4} aria-hidden="true" /></span>;
   return (
-    <span title={verdict.summary || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 11px", borderRadius: "999px", fontSize: "var(--t-meta)", fontWeight: 600, background: look.bg, color: look.color, whiteSpace: "nowrap" }}>
+    <span title={verdict.summary || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "5px 11px", borderRadius: "var(--r-pill)", fontSize: "var(--t-meta)", fontWeight: 600, background: look.bg, color: look.color, whiteSpace: "nowrap" }}>
       <Icon size={13} strokeWidth={2.4} aria-hidden="true" />
       {words}
     </span>

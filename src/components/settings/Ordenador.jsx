@@ -27,19 +27,19 @@ export default function Ordenador() {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "14px" }}>
         <PageHeader title="Este ordenador">Las carpetas que tus bots pueden abrir mientras la app esté abierta. Cada bot solo ve las carpetas que marques aquí.</PageHeader>
         {offline
-          ? <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#8F1D22", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "2px", background: "#E5484D" }} />Sin conexión</span>
-          : <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#0B6B4A", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#0B8A5F" }} />En línea</span>}
+          ? <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#8F1D22", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-xs)", background: "#E5484D" }} />Sin conexión</span>
+          : <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "#0B6B4A", fontWeight: "600" }}><span style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "#0B8A5F" }} />En línea</span>}
       </div>
       <Notice>{error}</Notice>
 
       <Card id="carpetas" title="Carpetas compartidas" aside={<span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "#5C606C" }}>{folders.length} {folders.length === 1 ? "carpeta" : "carpetas"}</span>}>
         {folders.length === 0 ? (
-          <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "12px", fontSize: "var(--t-ui)", color: "#5C606C" }}>Aún no has compartido ninguna carpeta. Añade una abajo para que los bots puedan leer o guardar archivos en ella.</p>
+          <p style={{ margin: "0", padding: "14px", background: "#F6F6F3", borderRadius: "var(--r-md)", fontSize: "var(--t-ui)", color: "#5C606C" }}>Aún no has compartido ninguna carpeta. Añade una abajo para que los bots puedan leer o guardar archivos en ella.</p>
         ) : null}
         {folders.map((f, i) => (
           <div key={f.id} style={{ display: "flex", flexDirection: "column", gap: "12px", paddingTop: i ? "14px" : "0", borderTop: i ? "1px solid rgba(18,19,26,.06)" : "0" }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
-              <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#F4F4F0", borderRadius: "10px" }}>
+              <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", display: "grid", placeItems: "center", background: "#F4F4F0", borderRadius: "var(--r-md)" }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 6h7l2 2h9v11H3z" /></svg>
               </span>
               <span style={{ flex: "1 1 240px", minWidth: "0", display: "flex", flexDirection: "column", gap: "4px" }}>
@@ -57,7 +57,7 @@ export default function Ordenador() {
         ))}
       </Card>
 
-      <form onSubmit={add} aria-labelledby="nueva-carpeta" style={{ background: "#FFFFFF", border: "0", borderRadius: "26px", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={add} aria-labelledby="nueva-carpeta" style={{ background: "#FFFFFF", border: "0", borderRadius: "var(--r-2xl)", padding: "22px", display: "flex", flexDirection: "column", gap: "14px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <h2 id="nueva-carpeta" style={{ margin: "0", font: "600 var(--t-title)/1.1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>Añadir carpeta</h2>
           <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5C606C" }}>{window.colmenaWindow?.pickFolder ? "Elígela en tu ordenador o pega su ruta. Los bots no pueden salir de esa carpeta." : "Copia la ruta desde la barra del Explorador de archivos. Los bots no pueden salir de esa carpeta."}</span>
@@ -73,7 +73,7 @@ export default function Ordenador() {
                   if (!chosen) return;
                   const base = chosen.split(/[\\/]/).filter(Boolean).pop() || "";
                   setDraft((d) => ({ ...d, path: chosen, label: d.label || base }));
-                }} style={{ flex: "none", height: "46px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "999px", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>Elegir carpeta…</button>
+                }} style={{ flex: "none", height: "46px", padding: "0 16px", background: "#12131A", color: "#FFFFFF", border: "0", borderRadius: "var(--r-pill)", cursor: "pointer", fontWeight: "600", fontSize: "var(--t-ui)" }}>Elegir carpeta…</button>
               ) : null}
             </span>
           </label>
@@ -91,7 +91,7 @@ export default function Ordenador() {
           <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "#5C606C" }}>Bots con acceso</span>
           <BotChips bots={team} selected={draft.botIds} label="Bots con acceso a la nueva carpeta" onToggle={(id) => setDraft({ ...draft, botIds: toggleIn(draft.botIds, id) })} />
         </div>
-        <button type="submit" disabled={busy} style={{ ...btn.dark, alignSelf: "flex-start", height: "44px", borderRadius: "999px" }}>{busy ? "Añadiendo…" : "Añadir carpeta"}</button>
+        <button type="submit" disabled={busy} style={{ ...btn.dark, alignSelf: "flex-start", height: "44px", borderRadius: "var(--r-pill)" }}>{busy ? "Añadiendo…" : "Añadir carpeta"}</button>
       </form>
     </>
   );
