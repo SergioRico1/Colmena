@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colmena 4 · prototipo de interfaz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Poppins:wght@800&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+/* ── Scale (src/lib/type.js, base.css): kept as is ─────────────────────────── */
+:root{
+  --t-micro:11px;--t-caption:12px;--t-meta:13px;--t-ui:14px;--t-body:15px;--t-read:16px;--t-lead:18px;--t-title:20px;--t-heading:24px;--t-headline:28px;
+  --r-xs:4px;--r-sm:8px;--r-md:12px;--r-lg:16px;--r-pill:999px;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --ui:'Geist',system-ui,'Segoe UI',sans-serif;
+  --display:'Bricolage Grotesque','Geist',sans-serif;
+  --mono:'Geist Mono',ui-monospace,monospace;
+  --honey:#FFC93C;
+}
+/* ── Light: warm paper sidebar, white conversation, ink text ───────────────── */
+[data-theme="light"]{
+  color-scheme:light;
+  --bg:#FFFFFF;--side:#F5F5F1;--side-hover:#EBEBE5;--side-on:#FFFFFF;
+  --raised:#FFFFFF;--sunken:#F4F4F0;--hover:#F6F6F3;
+  --line:#E6E6E0;--line-strong:#D2D2CA;
+  --ink:#12131A;--text:#33363F;--muted:#5C606C;--faint:#666A75;
+  --accent:#2F6BFF;--accent-ink:#1F4FD1;--accent-soft:#E9EFFF;
+  --honey-soft:#FFF7E0;--honey-line:#EDBE45;--honey-ink:#3B2A00;--honey-text:#6B4E00;
+  --mine:#EEF1F6;--ok:#16895A;--danger:#B4332B;
+  --unread-bg:#12131A;--unread-fg:#FFFFFF;
+  --btn-bg:#12131A;--btn-fg:#FFFFFF;--btn-hover:#2A2C36;
+  --pop:0 1px 2px rgba(18,19,26,.06),0 18px 40px -18px rgba(18,19,26,.32);
+  --lift:0 1px 2px rgba(18,19,26,.07),0 4px 12px -6px rgba(18,19,26,.18);
+  --av-base:#FFFFFF;--av-mix:24%;--av-ink:#12131A;--av-ink-mix:72%;
+  --dot:rgba(18,19,26,.15);--scroll:#CFCFC7;
+}
+/* ── Dark: charcoal with a faint blue-black cast (Colmena ink), sidebar darkest,
+   raised surfaces lighter; honey cards sit on a dim amber surface, never a glow. ── */
+[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#1A1B21;--side:#121318;--side-hover:#1E1F26;--side-on:#262832;
+  --raised:#22232B;--sunken:#16171C;--hover:#1F2027;
+  --line:#2B2D36;--line-strong:#3B3E49;
+  --ink:#F1F1F4;--text:#D6D7DD;--muted:#A3A6B1;--faint:#8F929D;
+  --accent:#7EA2FF;--accent-ink:#A9C0FF;--accent-soft:rgba(126,162,255,.15);
+  --honey-soft:#29230F;--honey-line:rgba(255,201,60,.5);--honey-ink:#1E1600;--honey-text:#FFD970;
+  --mine:#2A2D3A;--ok:#3CC48A;--danger:#FF8A80;
+  --unread-bg:#E9EAEE;--unread-fg:#121318;
+  --btn-bg:#F1F1F4;--btn-fg:#121318;--btn-hover:#FFFFFF;
+  --pop:0 1px 2px rgba(0,0,0,.4),0 18px 40px -16px rgba(0,0,0,.7);
+  --lift:0 1px 2px rgba(0,0,0,.35),0 4px 12px -6px rgba(0,0,0,.6);
+  --av-base:#22232B;--av-mix:38%;--av-ink:#FFFFFF;--av-ink-mix:40%;
+  --dot:rgba(255,255,255,.16);--scroll:#3B3E49;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--ui);background:#E4E4DF;color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+html[data-theme="dark"] body{background:#0C0D10}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+::selection{background:color-mix(in oklab,var(--accent) 28%,transparent)}
+input{caret-color:var(--accent)}
+:where(a,button,input,[tabindex]):focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)}
+.ph,.ph-fill{line-height:1}
+/* Prototype bar (not part of the app) */
+.proto-bar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:6px;padding:10px 16px;background:#12131A;color:#F1F1F4}
+.proto-bar .lbl{font:600 var(--t-meta)/1 var(--ui);color:#A3A6B1;margin-right:8px}
+.proto-bar [role="tab"]{height:32px;padding:0 12px;border:0;border-radius:var(--r-sm);background:transparent;color:#C9CBD3;font-size:var(--t-meta);font-weight:500}
+.proto-bar [role="tab"][aria-selected="true"]{background:#2A2C36;color:#FFFFFF}
+.proto-bar [role="tab"]:hover{color:#FFFFFF}
+.proto-bar .sp{flex:1}
+.proto-bar .theme{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid #3B3E49;border-radius:var(--r-sm);background:transparent;color:#F1F1F4;font-size:var(--t-meta)}
+.proto-bar :focus-visible{outline-color:#9DB7FF}
+.stage{padding:24px 0 48px;display:flex;flex-direction:column;align-items:center;gap:32px}
+.frame-wrap[hidden]{display:none}
+.frame-cap{width:1440px;margin:0 0 8px;font:500 var(--t-meta)/1.4 var(--ui);color:#5C606C}
+html[data-theme="dark"] .frame-cap{color:#A3A6B1}
+
+/* ── Window ───────────────────────────────────────────────────────────────── */
+.win{width:1440px;height:900px;display:flex;overflow:hidden;border-radius:12px;background:var(--bg);color:var(--ink);box-shadow:0 30px 80px -30px rgba(18,19,26,.45),0 0 0 1px rgba(18,19,26,.08);font-size:var(--t-ui);position:relative}
+.win a,.sheet a{color:inherit;text-decoration:none}
+html.shot .proto-bar{display:none}
+.win *::-webkit-scrollbar{width:10px}
+.win *::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:8px;border:3px solid transparent;background-clip:padding-box}
+.win *{scrollbar-color:var(--scroll) transparent;scrollbar-width:thin}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+.side{width:272px;flex:none;display:flex;flex-direction:column;background:var(--side);border-right:1px solid var(--line);--bot-cut:var(--side)}
+.side-top{height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 10px 0 14px}
+.dots{display:flex;gap:8px}
+.dots span{width:12px;height:12px;border-radius:50%;background:var(--dot)}
+.brand{display:flex;align-items:center;gap:7px;margin-left:6px}
+.brand img{width:20px;height:20px;display:block}
+.brand b{font:800 15px/1 'Poppins',var(--ui);letter-spacing:-.02em;color:var(--ink)}
+.side-top .sp{flex:1}
+.ib{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);font-size:18px}
+.ib:hover{background:var(--side-hover);color:var(--ink)}
+.team{margin:2px 10px 8px;display:flex;align-items:center;gap:10px;padding:6px 8px;border:0;border-radius:var(--r-md);background:transparent;text-align:left}
+.team:hover{background:var(--side-hover)}
+.team-tile{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:10px;background:var(--ink);color:var(--bg);font:700 var(--t-read)/1 var(--display)}
+.team .t1{font-weight:600;font-size:var(--t-body);color:var(--ink);line-height:1.2}
+.team .t2{font-size:var(--t-caption);color:var(--muted);line-height:1.3}
+.team .ph{margin-left:auto;color:var(--muted)}
+.find{display:flex;gap:6px;margin:0 10px 10px}
+.goto{flex:1;height:34px;display:flex;align-items:center;gap:8px;padding:0 8px 0 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--raised);color:var(--faint);font-size:var(--t-ui)}
+.goto:hover{border-color:var(--line-strong)}
+.goto .ph{font-size:16px;color:var(--muted)}
+.goto .k{margin-left:auto;display:flex;gap:3px}
+kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;background:var(--sunken);border:1px solid var(--line);font:500 var(--t-micro)/1 var(--mono);color:var(--muted)}
+.find .ib{width:34px;height:34px;border:1px solid var(--line);background:var(--raised)}
+.places{display:flex;flex-direction:column;gap:1px;padding:0 10px 8px}
+.row{display:flex;align-items:center;gap:10px;min-height:32px;padding:0 8px;border-radius:var(--r-sm);color:var(--text);text-decoration:none;font-size:var(--t-ui);position:relative}
+.row:hover{background:var(--side-hover);color:var(--ink)}
+.row[aria-current]{background:var(--side-on);color:var(--ink);font-weight:600;box-shadow:var(--lift)}
+[data-theme="dark"] .row[aria-current]{box-shadow:none}
+.row > .ph,.row > .ph-fill{font-size:18px;width:20px;text-align:center;color:var(--muted);flex:none}
+.row[aria-current] > .ph-fill{color:var(--ink)}
+.row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.count{flex:none;min-width:20px;height:20px;padding:0 6px;display:grid;place-items:center;border-radius:var(--r-pill);font:600 var(--t-micro)/1 var(--ui);font-variant-numeric:tabular-nums;background:var(--unread-bg);color:var(--unread-fg)}
+.count.wait{background:var(--honey);color:var(--honey-ink)}
+.groups{flex:1;min-height:0;overflow-y:auto;padding:4px 10px 10px;border-top:1px solid var(--line)}
+.ghead{display:flex;align-items:center;margin:10px 0 2px}
+.gbtn{flex:1;display:flex;align-items:center;gap:4px;height:28px;padding:0 4px;border:0;background:transparent;color:var(--muted);font:600 var(--t-caption)/1 var(--ui);text-align:left;border-radius:6px}
+.gbtn:hover{color:var(--ink)}
+.gbtn .ph{font-size:12px;transition:transform .15s var(--ease)}
+.gbtn[aria-expanded="false"] .ph{transform:rotate(-90deg)}
+.ghead .ib{width:26px;height:26px;font-size:15px}
+.glist{display:flex;flex-direction:column;gap:1px}
+.glist[hidden]{display:none}
+.row.unread .nm{font-weight:700;color:var(--ink)}
+.row .hash{font-size:16px}
+.row.more{color:var(--muted);font-size:var(--t-meta)}
+.brow{min-height:44px;gap:10px;padding:4px 8px}
+.brow .who{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.brow .who .nm{flex:none;max-width:100%;line-height:1.1;color:var(--ink);font-weight:500}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;background:color-mix(in oklab,var(--ink) 7%,transparent);color:var(--muted);font:500 var(--t-micro)/1 var(--ui);white-space:nowrap}
+.state{flex:none;font-size:var(--t-caption);color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.state.wait{height:20px;padding:0 7px;border-radius:var(--r-pill);background:var(--honey);color:var(--honey-ink);font-weight:600}
+.state.off{color:var(--faint)}
+.prow .st{font-size:var(--t-caption);color:var(--muted);flex:none;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow.away .nm{color:var(--muted)}
+.me{flex:none;display:flex;align-items:center;gap:10px;padding:10px 10px 12px;border-top:1px solid var(--line);position:relative}
+.me-btn{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:5px 6px;border:0;border-radius:var(--r-md);background:transparent;text-align:left}
+.me-btn:hover,.me-btn[aria-expanded="true"]{background:var(--side-hover)}
+.me .n{font-weight:600;font-size:var(--t-ui);line-height:1.2}
+.me .s{font-size:var(--t-caption);color:var(--muted)}
+
+/* People: round avatar with initials in their colour, presence dot */
+.av{--p:#5B6680;position:relative;flex:none;display:grid;place-items:center;border-radius:50%;width:var(--s,32px);height:var(--s,32px);background:color-mix(in oklab,var(--p) var(--av-mix),var(--av-base));color:color-mix(in oklab,var(--p) var(--av-ink-mix),var(--av-ink));font:600 var(--fs,var(--t-caption))/1 var(--ui);letter-spacing:.01em}
+.av .pr{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;background:var(--ok);border:2px solid var(--cut,var(--side))}
+.av .pr.away{background:var(--cut,var(--side));box-shadow:inset 0 0 0 2px var(--muted)}
+.bot{display:inline-block;flex:none;line-height:0}
+.bot svg{display:block;overflow:visible}
+
+/* Profile menu */
+.menu{position:absolute;left:10px;bottom:64px;width:252px;padding:6px;border-radius:var(--r-lg);background:var(--raised);box-shadow:var(--pop);border:1px solid var(--line);z-index:5}
+.menu-head{display:flex;align-items:center;gap:12px;padding:10px 8px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.menu-head .n{font-weight:600}
+.menu-head .s{font-size:var(--t-caption);color:var(--muted)}
+.mi{width:100%;display:flex;align-items:center;gap:10px;min-height:36px;padding:0 10px;border:0;border-radius:var(--r-sm);background:transparent;text-align:left;font-size:var(--t-ui);color:var(--ink)}
+.mi:hover{background:var(--hover)}
+.mi .ph{font-size:17px;color:var(--muted)}
+.mi .r{margin-left:auto}
+.mi.out,.mi.out .ph{color:var(--danger)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:6px 0}
+
+/* ── Main column ──────────────────────────────────────────────────────────── */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg);--bot-cut:var(--bg)}
+.mhead{height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px 0 24px;border-bottom:1px solid var(--line)}
+.mhead h1{margin:0;display:flex;align-items:center;gap:6px;font:600 var(--t-lead)/1 var(--ui);letter-spacing:-.01em}
+.mhead h1 .ph{color:var(--muted);font-size:19px}
+.mhead .topic{font-size:var(--t-meta);color:var(--muted);padding-left:12px;border-left:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mhead .sp{flex:1}
+.stack{display:flex;align-items:center;height:32px;padding:0 10px 0 6px;border:1px solid var(--line);border-radius:var(--r-pill);background:transparent;gap:6px;color:var(--muted);font-size:var(--t-meta)}
+.stack:hover{border-color:var(--line-strong);color:var(--ink)}
+.stack .avs{display:flex}
+.stack .avs > *{margin-left:-6px;box-shadow:0 0 0 2px var(--bg);border-radius:50%}
+.stack .avs > .bot{border-radius:4px}
+.stack .avs > :first-child{margin-left:0}
+.mhead .ib:hover{background:var(--hover)}
+.mhead .ib[aria-pressed="true"]{background:var(--hover);color:var(--ink)}
+.body{flex:1;min-height:0;display:flex}
+.convo{flex:1;min-width:0;display:flex;flex-direction:column}
+.stream{flex:1;min-height:0;overflow-y:auto;padding:8px 0 16px}
+.day{display:flex;align-items:center;gap:12px;margin:12px 24px 6px;font-size:var(--t-caption);font-weight:600;color:var(--muted)}
+.day::before,.day::after{content:"";flex:1;height:1px;background:var(--line)}
+.msg{display:grid;grid-template-columns:32px 1fr;column-gap:12px;padding:8px 24px;position:relative}
+.msg:hover{background:var(--hover)}
+.mh{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;line-height:1.2;margin-bottom:3px}
+.mh .n{font-weight:600;font-size:var(--t-body);color:var(--ink)}
+.mh .tag{align-self:center}
+.mh .of{font-size:var(--t-meta);color:var(--muted)}
+.mh time{font-size:var(--t-caption);color:var(--faint);font-variant-numeric:tabular-nums}
+.mt{font-size:var(--t-body);line-height:1.5;color:var(--text);max-width:72ch}
+.mt p{margin:0 0 4px}
+.mention{padding:0 3px;border-radius:4px;background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+.mine{display:flex;flex-direction:column;align-items:flex-end;padding:8px 24px}
+.bubble{max-width:62%;padding:9px 14px;border-radius:16px 16px 6px 16px;background:var(--mine);font-size:var(--t-body);line-height:1.5;color:var(--ink)}
+.mine .meta{display:flex;align-items:center;gap:5px;margin-top:4px;font-size:var(--t-caption);color:var(--faint);font-variant-numeric:tabular-nums}
+.mine .meta .ph{font-size:15px;color:var(--accent-ink)}
+.line{display:flex;align-items:center;gap:8px;padding:6px 24px 6px 68px;font-size:var(--t-meta);color:var(--muted)}
+.line b{font-weight:600;color:var(--text)}
+.line .ph{font-size:15px}
+.line .bot{vertical-align:middle}
+.blocks{display:flex;flex-direction:column;gap:8px;margin-top:8px;align-items:flex-start}
+.work{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sunken);color:var(--text);font-size:var(--t-meta);min-width:340px}
+.work:hover{border-color:var(--line-strong)}
+.work .ph{color:var(--muted);font-size:16px}
+.work .tm{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.file{display:flex;align-items:center;gap:12px;width:540px;padding:10px 10px 10px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--raised)}
+.ftile{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:10px;background:var(--accent-soft);color:var(--accent-ink);font-size:22px}
+.file .fn{font-weight:600;font-size:var(--t-ui);color:var(--ink)}
+.file .fm{font-size:var(--t-caption);color:var(--muted)}
+.file .acts{margin-left:auto;display:flex;gap:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-strong);background:var(--raised);color:var(--ink);font-size:var(--t-meta);font-weight:600;white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.btn .ph{font-size:15px}
+.btn.primary{background:var(--btn-bg);border-color:var(--btn-bg);color:var(--btn-fg)}
+.btn.primary:hover{background:var(--btn-hover)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--text)}
+.btn.ghost:hover{background:color-mix(in oklab,var(--ink) 6%,transparent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.lg{height:36px;padding:0 14px;font-size:var(--t-ui)}
+
+/* Step-by-step question */
+.q{width:540px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--raised);overflow:hidden}
+.q-h{display:flex;align-items:baseline;gap:10px;padding:14px 16px 4px}
+.q-h .t{font-weight:600;font-size:var(--t-read);color:var(--ink);flex:1}
+.q-h .c{font-size:var(--t-caption);color:var(--muted);font-variant-numeric:tabular-nums}
+.q-sub{padding:0 16px 10px;font-size:var(--t-meta);color:var(--muted)}
+.opts{display:flex;flex-direction:column;gap:6px;padding:0 12px 12px}
+.opt{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:transparent;text-align:left;color:var(--ink)}
+.opt:hover{border-color:var(--line-strong);background:var(--hover)}
+.opt kbd{flex:none;margin-top:1px}
+.opt .ot{font-size:var(--t-ui);font-weight:500;line-height:1.35}
+.opt .os{display:block;font-size:var(--t-caption);color:var(--muted);font-weight:400;margin-top:2px}
+.opt[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt[aria-checked="true"] kbd{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.opt .ph-fill{margin-left:auto;color:var(--accent-ink);font-size:18px;align-self:center}
+.opt.other{color:var(--muted)}
+.q-f{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line)}
+.pips{flex:1;display:flex;justify-content:center;gap:6px}
+.pips i{width:6px;height:6px;border-radius:50%;background:var(--line-strong)}
+.pips i.on{width:18px;border-radius:3px;background:var(--ink)}
+
+/* Waits for YOU: the only honey in the app */
+.need{width:560px;border:1px solid var(--honey-line);border-radius:var(--r-md);background:var(--honey-soft);overflow:hidden}
+.need-h{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.need-h .t{font-weight:600;font-size:var(--t-ui);color:var(--ink);flex:1;display:flex;align-items:center;gap:8px}
+.pill-wait{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:var(--r-pill);background:var(--honey);color:var(--honey-ink);font:600 var(--t-caption)/1 var(--ui);flex:none}
+.pill-wait .ph-fill{font-size:13px}
+.need .exp{font-size:var(--t-caption);color:var(--honey-text);font-weight:600;font-variant-numeric:tabular-nums}
+.timer{height:2px;margin:0 14px;background:color-mix(in oklab,var(--ink) 12%,transparent);border-radius:2px;overflow:hidden}
+.timer i{display:block;height:100%;width:77%;background:color-mix(in oklab,var(--ink) 55%,transparent)}
+.action{display:flex;align-items:center;gap:12px;margin:12px 14px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--raised)}
+.action .ftile{width:36px;height:36px;font-size:18px;background:var(--sunken);color:var(--ink)}
+.action .a1{font-weight:600;font-size:var(--t-ui);color:var(--ink)}
+.action .a2{font-size:var(--t-caption);color:var(--muted)}
+.action .lnk{margin-left:auto;display:inline-flex;align-items:center;gap:2px;border:0;background:transparent;color:var(--accent-ink);font-size:var(--t-meta);font-weight:600;padding:4px;border-radius:6px;white-space:nowrap}
+.need-f{display:flex;align-items:center;gap:8px;padding:0 14px 12px;flex-wrap:wrap}
+.need-f .note{margin-left:auto;font-size:var(--t-caption);color:var(--muted)}
+.need-q{margin:0 14px;font-size:var(--t-body);color:var(--ink);line-height:1.45}
+.need-w{display:flex;align-items:center;gap:8px;margin:8px 14px 12px;font-size:var(--t-meta);color:var(--text)}
+.need-w .ph{font-size:16px;color:var(--muted)}
+.hold{position:relative;overflow:hidden;isolation:isolate}
+.hold::before{content:"";position:absolute;inset:0;background:color-mix(in oklab,var(--btn-fg) 22%,transparent);transform:scaleX(0);transform-origin:left;z-index:-1;transition:transform .2s var(--ease)}
+.hold.holding::before{transform:scaleX(1);transition:transform 1.2s linear}
+.hold.sent{background:var(--ok);border-color:var(--ok)}
+.status{display:flex;align-items:center;gap:8px;padding:6px 24px 6px 68px;font-size:var(--t-meta);color:var(--muted)}
+.status b{font-weight:600;color:var(--text)}
+
+/* Composer */
+.composer{flex:none;padding:0 24px 18px}
+.cbox{display:flex;align-items:center;gap:6px;min-height:52px;padding:8px 8px 8px 8px;border:1px solid var(--line-strong);border-radius:var(--r-md);background:var(--raised)}
+.cbox:focus-within{border-color:var(--accent)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 8px 0 6px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sunken);font-size:var(--t-meta);font-weight:600;color:var(--ink);flex:none}
+.chip .ph{font-size:16px;color:var(--muted)}
+.chip .cv{font-size:12px}
+.cbox .ib{width:32px;height:32px}
+.cbox .ib:hover{background:var(--hover)}
+.cbox .sep{width:1px;height:20px;background:var(--line);margin:0 2px}
+.cbox input{flex:1;min-width:0;height:32px;border:0;background:transparent;font-size:var(--t-read);color:var(--ink);outline:none;padding:0 6px}
+.cbox input::placeholder{color:var(--faint);opacity:1}
+.send{width:36px;height:36px;flex:none;display:grid;place-items:center;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);font-size:18px}
+.send:hover{background:var(--btn-hover)}
+.chint{margin:6px 4px 0;font-size:var(--t-caption);color:var(--faint);display:flex;gap:14px}
+
+/* Right panel */
+.panel{width:312px;flex:none;display:flex;flex-direction:column;border-left:1px solid var(--line);background:var(--bg);--bot-cut:var(--bg)}
+.seg{display:flex;gap:2px;margin:12px 16px 4px;padding:3px;border-radius:var(--r-sm);background:var(--sunken);border:1px solid var(--line)}
+.seg button{flex:1;height:28px;border:0;border-radius:6px;background:transparent;font-size:var(--t-meta);font-weight:500;color:var(--muted)}
+.seg button[aria-selected="true"]{background:var(--raised);color:var(--ink);font-weight:600;box-shadow:var(--lift)}
+.pbody{flex:1;min-height:0;overflow-y:auto;padding:12px 20px 20px}
+.pbody[hidden]{display:none}
+.hero{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:8px 0 16px;border-bottom:1px solid var(--line)}
+.hero .bot{margin-bottom:10px}
+.hero h2{margin:0;font:700 var(--t-heading)/1.1 var(--display);letter-spacing:-.01em;color:var(--ink)}
+.hero .own{font-size:var(--t-meta);color:var(--muted);display:flex;align-items:center;gap:8px;margin-top:4px}
+.hero .now{display:flex;align-items:center;gap:6px;margin-top:8px}
+.facts{margin:0;padding:12px 0;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--line)}
+.facts dt{font-size:var(--t-caption);color:var(--muted);margin-bottom:3px}
+.facts dd{margin:0;font-size:var(--t-ui);color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facts dd .ph{color:var(--muted);font-size:16px}
+.facts .soft{color:var(--muted);font-size:var(--t-meta)}
+.pacts{display:flex;flex-direction:column;gap:8px;padding-top:16px}
+.pacts .btn{width:100%}
+.msec{margin:6px 0 16px}
+.msec h3{margin:0 0 6px;font-size:var(--t-caption);font-weight:600;color:var(--muted);display:flex;gap:6px}
+.mrow{display:flex;align-items:center;gap:10px;min-height:40px;padding:2px 6px;margin:0 -6px;border-radius:var(--r-sm)}
+.mrow:hover{background:var(--hover)}
+.mrow .n{font-weight:500;color:var(--ink)}
+.mrow .r{margin-left:auto;font-size:var(--t-caption);color:var(--muted)}
+.mrow.away .n{color:var(--muted)}
+.bots-row{display:flex;flex-wrap:wrap;gap:4px}
+.bcell{width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 2px;border-radius:var(--r-sm);text-align:center}
+.bcell:hover{background:var(--hover)}
+.bcell span{font-size:var(--t-caption);color:var(--text);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.invite{display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 8px;border:1px dashed var(--line-strong);border-radius:var(--r-sm);background:transparent;color:var(--text);font-size:var(--t-meta);font-weight:500}
+.invite:hover{border-style:solid}
+
+/* ── Inicio ───────────────────────────────────────────────────────────────── */
+.home{flex:1;min-height:0;overflow-y:auto;display:flex;gap:40px;padding:28px 40px 40px}
+.home-main{flex:1;min-width:0;max-width:760px}
+.home-side{width:300px;flex:none;padding-top:6px}
+.greet h1{margin:0;font:700 var(--t-headline)/1.15 var(--display);letter-spacing:-.015em;color:var(--ink)}
+.greet p{margin:6px 0 0;font-size:var(--t-ui);color:var(--muted)}
+.greet p b{color:var(--ink);font-weight:600}
+.start{margin-top:24px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--raised)}
+.start-h{display:flex;align-items:baseline;gap:10px;padding:14px 16px 10px}
+.start-h h2{margin:0;font-size:var(--t-read);font-weight:600;flex:1}
+.start-h .c{font-size:var(--t-meta);color:var(--muted);font-variant-numeric:tabular-nums}
+.start-h .ib{align-self:center;width:28px;height:28px;font-size:15px}
+.start-h .ib:hover{background:var(--hover)}
+.segbar{display:flex;gap:4px;padding:0 16px 12px}
+.segbar i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.segbar i.on{background:var(--ok)}
+.srow{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--line)}
+.srow > .ph,.srow > .ph-fill{font-size:20px;color:var(--muted);flex:none;width:22px}
+.srow.done > .ph-fill{color:var(--ok)}
+.srow .s1{font-weight:600;font-size:var(--t-ui);color:var(--ink)}
+.srow.done .s1{color:var(--muted);font-weight:500}
+.srow .s2{font-size:var(--t-meta);color:var(--muted)}
+.srow .acts{margin-left:auto;display:flex;gap:6px;align-items:center}
+.sec{margin-top:28px}
+.sec-h{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.sec-h h2{margin:0;font-size:var(--t-read);font-weight:600}
+.sec-h .c{font-size:var(--t-meta);color:var(--muted)}
+.sec-h a{margin-left:auto;font-size:var(--t-meta);color:var(--accent-ink);text-decoration:none;font-weight:500}
+.needs{border:1px solid var(--honey-line);border-radius:var(--r-md);background:var(--honey-soft);overflow:hidden}
+.nrow{display:flex;align-items:center;gap:12px;padding:12px 14px}
+.nrow + .nrow{border-top:1px solid color-mix(in oklab,var(--honey-line) 55%,transparent)}
+.nrow .x{flex:1;min-width:0}
+.nrow .n1{font-weight:600;font-size:var(--t-ui);color:var(--ink)}
+.nrow .n2{font-size:var(--t-meta);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nrow .exp{font-size:var(--t-caption);color:var(--honey-text);font-weight:600;white-space:nowrap}
+.nrow .acts{display:flex;gap:6px}
+.runs{border:1px solid var(--line);border-radius:var(--r-md)}
+.rrow{display:flex;align-items:center;gap:12px;padding:10px 14px}
+.rrow + .rrow{border-top:1px solid var(--line)}
+.rrow .x{flex:1;min-width:0}
+.rrow .n1{font-size:var(--t-ui);color:var(--ink);font-weight:500}
+.rrow .n2{font-size:var(--t-caption);color:var(--muted)}
+.prog{width:120px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--ink);opacity:.7}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:flex;gap:10px;align-items:center;padding:7px 0;font-size:var(--t-meta);color:var(--text)}
+.feed time{margin-left:auto;color:var(--faint);font-size:var(--t-caption);font-variant-numeric:tabular-nums}
+.feed b{font-weight:600;color:var(--ink)}
+.side-h{font-size:var(--t-caption);font-weight:600;color:var(--muted);margin:0 0 8px}
+.side-block{margin-bottom:24px}
+
+/* ── Bot sheet ────────────────────────────────────────────────────────────── */
+.sheet{width:1440px;border-radius:12px;background:var(--bg);color:var(--ink);padding:40px 48px 56px;box-shadow:0 30px 80px -30px rgba(18,19,26,.45),0 0 0 1px rgba(18,19,26,.08);--bot-cut:var(--bg)}
+.sheet h1{margin:0;font:700 var(--t-headline)/1.15 var(--display);letter-spacing:-.015em}
+.sheet .lead{margin:8px 0 0;max-width:80ch;color:var(--muted);font-size:var(--t-ui);line-height:1.5}
+.sheet h2{margin:40px 0 4px;font-size:var(--t-lead);font-weight:600}
+.sheet h2 + p{margin:0 0 16px;color:var(--muted);font-size:var(--t-meta);max-width:90ch}
+.pal{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.sw{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:var(--r-md)}
+.sw .rmp{display:flex;flex-direction:column;width:14px;height:44px;border-radius:4px;overflow:hidden;flex:none}
+.sw .rmp i{flex:1}
+.sw .nm{font-weight:600;font-size:var(--t-meta)}
+.sw code{font:500 var(--t-caption)/1.3 var(--mono);color:var(--muted)}
+.sw .who{font-size:var(--t-caption);color:var(--muted)}
+table.grid{border-collapse:separate;border-spacing:0;width:100%}
+.grid th,.grid td{padding:6px 4px;text-align:center;vertical-align:middle}
+.grid thead th{font-size:var(--t-caption);font-weight:500;color:var(--muted)}
+.grid thead tr:first-child th{font-weight:600;color:var(--ink);font-size:var(--t-meta);padding-bottom:0}
+.grid th.l,.grid td.l{text-align:left;padding-left:0;white-space:nowrap}
+.grid td.l b{display:block;font-size:var(--t-ui)}
+.grid td.l span{font-size:var(--t-caption);color:var(--muted)}
+.grid tbody tr + tr td{border-top:1px solid var(--line)}
+.grid td.gap,.grid th.gap{width:18px;padding:0}
+.grid .gb{border-left:1px solid var(--line)}
+table.legend{border-collapse:collapse;width:100%;font-size:var(--t-meta)}
+.legend th{font-size:var(--t-caption);color:var(--muted);font-weight:500;text-align:left;padding:6px 12px 6px 0;border-bottom:1px solid var(--line)}
+.legend td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--text)}
+.legend td b{color:var(--ink)}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tile{border-radius:var(--r-md);padding:20px;border:1px solid var(--line);background:var(--bg);color:var(--ink);--bot-cut:var(--bg)}
+.tile h3{margin:0 0 14px;font-size:var(--t-meta);font-weight:600;color:var(--muted)}
+.sizes{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.sizes figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sizes figcaption{font:500 var(--t-caption)/1 var(--mono);color:var(--muted)}
+.heroes{display:flex;gap:16px}
+.heroes .tile{flex:1;display:flex;align-items:center;gap:20px}
+.heroes b{display:block;font:700 var(--t-title)/1.1 var(--display)}
+.heroes span{font-size:var(--t-meta);color:var(--muted)}
+.vs{display:flex;flex-direction:column;gap:6px}
+.vs .msg{padding:6px 8px;margin:0 -8px;border-radius:var(--r-sm)}
+.vs .brow{background:var(--side);border-radius:var(--r-sm)}
+
+@keyframes pb-tw{0%,55%{opacity:1}56%,100%{opacity:.15}}
+.pb-spark{animation:pb-tw 1.4s steps(1) infinite}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .hold.holding::before{transform:scaleX(1)}
+}
+</style>
+</head>
+<body>
+<header class="proto-bar">
+  <span class="lbl">Colmena 4 · prototipo</span>
+  <div role="tablist" aria-label="Marcos" style="display:flex;gap:4px">
+    <button role="tab" id="tab-sala-claro" aria-controls="f-sala-claro" aria-selected="true">Sala · claro</button>
+    <button role="tab" id="tab-sala-oscuro" aria-controls="f-sala-oscuro" aria-selected="false" tabindex="-1">Sala · oscuro</button>
+    <button role="tab" id="tab-inicio" aria-controls="f-inicio" aria-selected="false" tabindex="-1">Inicio</button>
+    <button role="tab" id="tab-bots" aria-controls="f-bots" aria-selected="false" tabindex="-1">Hoja de bots</button>
+  </div>
+  <span class="sp"></span>
+  <button class="theme" id="theme" type="button" aria-label="Cambiar tema de Inicio y de la hoja de bots"><i class="ph ph-sun" aria-hidden="true"></i><span>Claro</span></button>
+</header>
+<main class="stage">
+  <section class="frame-wrap" id="f-sala-claro" role="tabpanel" aria-labelledby="tab-sala-claro"><p class="frame-cap">1 · Sala compartida, tema claro. La conversación está al final: pregunta, petición de Lucía y OK de Vera.</p><div class="win" data-theme="light" id="w1"></div></section>
+  <section class="frame-wrap" id="f-sala-oscuro" role="tabpanel" aria-labelledby="tab-sala-oscuro" hidden><p class="frame-cap">2 · La misma sala en oscuro, desplazada hacia arriba (relevo, entrega, pregunta) y con el panel de miembros.</p><div class="win" data-theme="dark" id="w2"></div></section>
+  <section class="frame-wrap" id="f-inicio" role="tabpanel" aria-labelledby="tab-inicio" hidden><p class="frame-cap">3 · Inicio con «Para empezar», «Te necesitan» y el menú de tu perfil abierto. Sigue el tema elegido arriba.</p><div class="win theme-follow" id="w3"></div></section>
+  <section class="frame-wrap" id="f-bots" role="tabpanel" aria-labelledby="tab-bots" hidden><p class="frame-cap">4 · Hoja de bots. Sigue el tema elegido arriba; los mosaicos de tamaño enseñan los dos.</p><div class="sheet theme-follow" id="w4"></div></section>
+</main>
+<script>
+"use strict";
+const LOGO = "data:image/png;base64,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";
+
+/* ═══ Colour helpers ═══════════════════════════════════════════════════════ */
+const hex2rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const rgb2hex = (r) => "#" + r.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return rgb2hex(A.map((v, i) => v + (B[i] - v) * t)); };
+function hsl(hex) {
+  let [r, g, b] = hex2rgb(hex).map((v) => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0; const l = (mx + mn) / 2;
+  if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+    h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; }
+  return [h, s, l];
+}
+function fromHsl(h, s, l) {
+  h = ((h % 360) + 360) % 360; const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return rgb2hex([r, g, b].map((v) => (v + m) * 255));
+}
+
+/* ═══ The bot palette: 12 colours, one per person. No honey, no amber (hues 25°–70° are left empty). ═══ */
+const PALETTE = [
+  ["coral", "Coral", "#E5484D"], ["teja", "Teja", "#C4552B"], ["musgo", "Musgo", "#6E8F1A"], ["hoja", "Hoja", "#2E9A3E"],
+  ["esmeralda", "Esmeralda", "#0E8C6A"], ["turquesa", "Turquesa", "#0A8C9E"], ["cielo", "Cielo", "#1F8FD8"], ["cobalto", "Cobalto", "#3A5BE8"],
+  ["violeta", "Violeta", "#6E48F0"], ["orquidea", "Orquídea", "#A445D6"], ["frambuesa", "Frambuesa", "#D43C86"], ["pizarra", "Pizarra", "#5B6680"],
+];
+const COLOR = Object.fromEntries(PALETTE.map(([id, , hx]) => [id, hx]));
+
+/* ═══ pixelBot ═════════════════════════════════════════════════════════════
+   pixelBot({shape, color, role, seed, size, mood, owner}) → SVG string.
+   - shape  hex | square | circle | diamond | leaf | arch   (the role's silhouette)
+   - color  the owner's palette colour (hex)
+   - role   coordinador | investigacion | datos | diseno | redaccion | codigo  (picks the prop)
+   - seed   moves the dithering phase and the specular pixel, so two bots never share texture
+   - size   20 | 24 | 32 | 48 | 96 … ; the grid is 10, 12 or 16 cells so every cell is whole pixels
+   - mood   libre | trabajando | espera | pausa
+   - owner  {initials, color} → a round chip bottom-right (circles are for people)
+   Every bot: a dark «cell» visor (the flat hexagon of the Colmena mark) with eyes in a light
+   tint of its own colour, a 1-cell outline, light rim top-left, shadow and checker dither
+   bottom-right. ═══════════════════════════════════════════════════════════════ */
+const SHAPES = {
+  hex: (u, v) => Math.abs(v) <= 1 && Math.abs(u) <= 1.06 - 0.5 * Math.abs(v),
+  square: (u, v) => u ** 4 + v ** 4 <= 1,
+  circle: (u, v) => u * u + v * v <= 1.06,
+  diamond: (u, v) => Math.abs(u) ** 1.4 + Math.abs(v) ** 1.4 <= 1.02,
+  leaf: (u, v) => { const s = (u - v) / Math.SQRT2, t = (u + v) / Math.SQRT2; return (Math.abs(t) + 0.3) ** 2 + s * s <= 1.69; },
+  arch: (u, v) => v < -0.1 ? u * u + ((v + 0.1) / 0.9) ** 2 <= 1.02 : !(Math.abs(u) > 0.8 && v > 0.84),
+};
+// Grid geometry per resolution: body box [x0,x1)×[y0,y1) and the visor rows/cols (inclusive).
+const GRID = {
+  10: { box: [0, 10, 1, 10], plate: [2, 7, 3, 5] },
+  12: { box: [0, 12, 2, 12], plate: [2, 9, 4, 7] },
+  16: { box: [1, 15, 3, 16], plate: [3, 12, 6, 10] },
+};
+// Faces: [cells in eye tint, cells in highlight white, cells dimmed]. Coordinates are absolute.
+const FACES = {
+  16: {
+    libre: { eye: [[5, 7], [4, 8], [6, 8], [10, 7], [9, 8], [11, 8], [7, 10], [8, 10]] },
+    trabajando: { eye: [[4, 8], [5, 8], [6, 8], [9, 8], [10, 8], [11, 8], [7, 10], [8, 10]] },
+    espera: { eye: [[5, 6], [6, 6], [5, 7], [6, 7], [9, 6], [10, 6], [9, 7], [10, 7], [7, 9], [8, 9]], hi: [[5, 6], [9, 6]] },
+    pausa: { dim: [[4, 9], [5, 9], [6, 9], [9, 9], [10, 9], [11, 9]] },
+  },
+  12: {
+    libre: { eye: [[3, 5], [2, 6], [4, 6], [8, 5], [7, 6], [9, 6]] },
+    trabajando: { eye: [[3, 6], [4, 6], [7, 6], [8, 6]] },
+    espera: { eye: [[3, 4], [4, 4], [3, 5], [4, 5], [7, 4], [8, 4], [7, 5], [8, 5], [5, 7], [6, 7]], hi: [[3, 4], [7, 4]] },
+    pausa: { dim: [[3, 6], [4, 6], [7, 6], [8, 6]] },
+  },
+  10: {
+    libre: { eye: [[3, 4], [6, 4], [3, 3], [6, 3]] },
+    trabajando: { eye: [[2, 4], [3, 4], [6, 4], [7, 4]] },
+    espera: { eye: [[3, 3], [6, 3]], hi: [] },
+    pausa: { dim: [[3, 5], [6, 5]] },
+  },
+};
+// Props: `off` cells are drawn only where the body is not; `on` cells paint over the body.
+// Kinds: eye (light tint) · hi (white) · deep (outline tone) · paint (the design drop) · ink (visor dark)
+const PROPS = {
+  coordinador: { // bee antennae with light knobs: the coordinator of the hive
+    16: { off: [["shade", [6, 2], [5, 1], [9, 2], [10, 1]], ["base", [4, 0], [11, 0], [4, 1], [11, 1]]] },
+    12: { off: [["shade", [4, 1], [7, 1]], ["base", [3, 0], [8, 0]]] },
+    10: { off: [["base", [3, 0], [6, 0]]] },
+  },
+  investigacion: { // a magnifier held up top-right, glass glinting
+    16: { off: [["base", [12, 0], [13, 0], [11, 1], [14, 1], [11, 2], [14, 2], [12, 3], [13, 3]], ["eye", [12, 1], [13, 1], [12, 2]], ["hi", [13, 2]], ["shade", [10, 4], [9, 5]]] },
+    12: { off: [["base", [9, 0], [10, 0], [11, 0], [9, 1], [11, 1], [9, 2], [10, 2], [11, 2]], ["eye", [10, 1]]] },
+    10: { off: [["base", [7, 0], [8, 0], [9, 0], [7, 1], [9, 1], [8, 2]], ["eye", [8, 1]]] },
+  },
+  datos: { // a rising bar chart on the belly
+    16: { on: [["eye", [6, 13], [8, 12], [8, 13], [10, 11], [10, 12], [10, 13]]] },
+    12: { on: [["eye", [4, 10], [6, 9], [6, 10], [8, 8], [8, 9], [8, 10]]] },
+    10: { on: [["eye", [3, 8], [5, 7], [5, 8], [7, 6], [7, 7], [7, 8]]] },
+  },
+  diseno: { // a drop of paint landing on the top vertex
+    16: { off: [["paint", [8, 0], [7, 1], [8, 1], [7, 2], [8, 2]], ["hi", [7, 1]]], on: [["paint", [7, 3], [8, 3], [8, 4]]] },
+    12: { off: [["paint", [6, 0], [5, 1], [6, 1]], ["hi", [5, 1]]], on: [["paint", [5, 2], [6, 2], [6, 3]]] },
+    10: { off: [["paint", [4, 0], [5, 0]]], on: [["paint", [4, 1], [5, 1]]] },
+  },
+  redaccion: { // a quill tucked behind the leaf's tip, nib down
+    16: { off: [["rim", [15, 0], [14, 0], [15, 1]], ["base", [13, 1], [14, 1], [14, 2], [13, 2]], ["shade", [12, 3]], ["deep", [11, 4]]] },
+    12: { off: [["base", [11, 0], [10, 0], [11, 1], [10, 1]], ["shade", [9, 2]], ["deep", [8, 3]]] },
+    10: { off: [["base", [9, 0], [8, 0], [9, 1], [8, 1]]] },
+  },
+  codigo: { // < > on the chest
+    16: { on: [["eye", [6, 11], [5, 12], [6, 13], [9, 11], [10, 12], [9, 13]]] },
+    12: { on: [["eye", [4, 8], [3, 9], [4, 10], [7, 8], [8, 9], [7, 10]]] },
+    10: { on: [["eye", [3, 6], [2, 7], [3, 8], [6, 6], [7, 7], [6, 8]]] },
+  },
+};
+const MOOD_MARKS = { // top-left: a twinkle while working, a «z» while paused
+  trabajando: { 16: [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]], 12: [[1, 0], [0, 1], [1, 1], [2, 1]], 10: [[0, 0], [1, 1]] },
+  pausa: { 16: [[0, 0], [1, 0], [2, 0], [3, 0], [2, 1], [1, 2], [0, 3], [1, 3], [2, 3], [3, 3]], 12: [[0, 0], [1, 0], [2, 0], [1, 1], [0, 2], [1, 2], [2, 2]], 10: [] },
+};
+
+function tones(hex, mood) {
+  const base = mood === "pausa" ? mix(hex, "#8C8F99", 0.35) : hex;
+  const [h] = hsl(hex);
+  let ph = h + 150; const n = ((ph % 360) + 360) % 360; if (n > 20 && n < 75) ph += 70; // never amber
+  return {
+    rim: mix(base, "#FFFFFF", 0.36), base, shade: mix(base, "#0B0C12", 0.24), deep: mix(base, "#0B0C12", 0.6),
+    spec: mix(base, "#FFFFFF", 0.62), plate: mix(hex, "#0D0E14", 0.84), eye: mix(hex, "#FFFFFF", 0.84), hi: "#FFFFFF",
+    dim: mix(hex, "#FFFFFF", 0.45), paint: fromHsl(ph, 0.85, 0.6), ink: mix(hex, "#0D0E14", 0.84),
+  };
+}
+function pixelBot({ shape = "hex", color = "#6E48F0", role = "coordinador", seed = 0, size = 48, mood = "libre", owner = null, label = "" } = {}) {
+  const N = size <= 20 ? 10 : size <= 24 ? 12 : 16, c = size / N;
+  const G = GRID[N], T = tones(color, mood), inside = SHAPES[shape] || SHAPES.hex;
+  const [x0, x1, y0, y1] = G.box, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, hw = (x1 - x0) / 2, hh = (y1 - y0) / 2;
+  const grid = Array.from({ length: N }, () => Array(N).fill(null));
+  const body = (i, j) => i >= 0 && j >= 0 && i < N && j < N && grid[j][i] !== null;
+  for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++) {
+    const u = (i + 0.5 - cx) / hw, v = (j + 0.5 - cy) / hh;
+    if (inside(u, v)) grid[j][i] = "base";
+  }
+  const isBody = grid.map((r) => r.map((v) => v !== null));
+  const B = (i, j) => i >= 0 && j >= 0 && i < N && j < N && isBody[j][i];
+  const edge = (i, j) => !B(i - 1, j) || !B(i + 1, j) || !B(i, j - 1) || !B(i, j + 1);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (!isBody[j][i]) continue;
+    if (edge(i, j)) { grid[j][i] = "deep"; continue; }
+    const up = edge(i, j - 1) || edge(i - 1, j), down = edge(i, j + 1) || edge(i + 1, j);
+    if (up && !down) grid[j][i] = "rim";
+    else if (down) grid[j][i] = "shade";
+    else if ((j - cy) / hh > 0.42 && (i + j + seed) % 2 === 0) grid[j][i] = "shade"; // dither, lower body
+  }
+  // specular: the first base cell from the top-left, nudged by the seed
+  outer: for (let j = y0 + 1; j < y1; j++) for (let i = x0 + 1 + (seed % 2); i < x1; i++) if (grid[j][i] === "base" && grid[j - 1][i] === "rim") { grid[j][i] = "spec"; break outer; }
+  // visor: flat hexagon cell, kept inside the outline
+  const [px0, px1, py0, py1] = G.plate;
+  for (let j = py0; j <= py1; j++) for (let i = px0; i <= px1; i++) {
+    const h = py1 - py0 + 1, d = Math.abs(j - (py0 + py1) / 2), k = h >= 5 ? Math.round(d) : d >= (h - 1) / 2 ? 1 : 0;
+    const cut = i < px0 + k || i > px1 - k;
+    if (!cut && isBody[j][i] && !edge(i, j)) grid[j][i] = "plate";
+  }
+  const put = (kind, [i, j], onlyEmpty) => { if (i < 0 || j < 0 || i >= N || j >= N) return; if (onlyEmpty && isBody[j][i]) return; grid[j][i] = kind; };
+  const F = FACES[N][mood] || FACES[N].libre;
+  (F.eye || []).forEach((p) => isBody[p[1]][p[0]] && put("eye", p));
+  (F.dim || []).forEach((p) => isBody[p[1]][p[0]] && put("dim", p));
+  (F.hi || []).forEach((p) => isBody[p[1]][p[0]] && put("hi", p));
+  const P = PROPS[role]?.[N];
+  if (P) {
+    (P.off || []).forEach(([k, ...cells]) => cells.forEach((p) => put(k, p, true)));
+    (P.on || []).forEach(([k, ...cells]) => cells.forEach((p) => put(k, p, false)));
+  }
+  const marks = MOOD_MARKS[mood]?.[N] || [];
+  const markKind = mood === "trabajando" ? "spark" : "zz";
+  marks.forEach((p) => { if (!isBody[p[1]][p[0]]) grid[p[1]][p[0]] = markKind; });
+  // runs → rects
+  const fill = { ...T, spark: T.base, zz: T.base };
+  let rects = "", spark = "";
+  for (let j = 0; j < N; j++) {
+    let i = 0;
+    while (i < N) {
+      const k = grid[j][i]; if (!k) { i++; continue; }
+      let e = i; while (e + 1 < N && grid[j][e + 1] === k) e++;
+      const r = `<rect x="${i * c}" y="${j * c}" width="${(e - i + 1) * c}" height="${c}" fill="${fill[k]}"/>`;
+      if (k === "spark") spark += r; else rects += r;
+      i = e + 1;
+    }
+  }
+  if (spark) rects += `<g class="pb-spark">${spark}</g>`;
+  let badge = "";
+  if (owner) {
+    const r = Math.max(4.5, size * 0.21), bx = size - r + size * 0.04, by = size - r + size * 0.04;
+    const ring = Math.max(1.5, size * 0.045), text = 2 * r >= 17;
+    const ini = 2 * r < 22 ? owner.initials.slice(0, 1) : owner.initials;
+    const fs = Math.max(11, Math.round(r * 0.95));
+    badge = `<g shape-rendering="geometricPrecision"><circle cx="${bx}" cy="${by}" r="${r}" fill="${owner.color}" stroke="var(--bot-cut,#fff)" stroke-width="${ring}"/>` +
+      (text ? `<text x="${bx}" y="${by}" dy=".36em" text-anchor="middle" font-family="Geist,sans-serif" font-weight="700" font-size="${fs}" fill="#FFFFFF">${ini}</text>` : "") + `</g>`;
+  }
+  const al = label ? ` role="img" aria-label="${label}"` : ` aria-hidden="true"`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"${al}>${rects}${badge}</svg>`;
+}
+
+/* ═══ Content: team Lumbre ═══════════════════════════════════════════════ */
+const PEOPLE = {
+  sergio: { name: "Sergio Rico", short: "Sergio", ini: "SR", color: "violeta", status: "Disponible", presence: "on" },
+  lucia: { name: "Lucía Martín", short: "Lucía", ini: "LM", color: "frambuesa", status: "En una llamada", presence: "on" },
+  luis: { name: "Luis Vega", short: "Luis", ini: "LV", color: "turquesa", status: "Vuelve a las 12", presence: "away" },
+};
+const ROLES = { coordinador: ["Coordinador", "hex"], investigacion: ["Investigación", "circle"], datos: ["Datos y finanzas", "square"], diseno: ["Diseño", "diamond"], redaccion: ["Redacción", "leaf"], codigo: ["Código", "arch"] };
+const BOTS = {
+  atlas: { name: "Atlas", role: "coordinador", owner: "sergio", state: "espera", seed: 1 },
+  vera: { name: "Vera", role: "redaccion", owner: "sergio", state: "espera", seed: 2 },
+  nora: { name: "Nora", role: "investigacion", owner: "sergio", state: "trabajando", seed: 3 },
+  tomas: { name: "Tomás", role: "datos", owner: "sergio", state: "trabajando", seed: 4 },
+  pablo: { name: "Pablo", role: "codigo", owner: "sergio", state: "pausa", seed: 5 },
+  iris: { name: "Iris", role: "diseno", owner: "lucia", state: "trabajando", seed: 6 },
+  veral: { name: "Vera", role: "redaccion", owner: "lucia", state: "libre", seed: 7 },
+  olga: { name: "Olga", role: "investigacion", owner: "lucia", state: "libre", seed: 8 },
+  bruno: { name: "Bruno", role: "codigo", owner: "luis", state: "trabajando", seed: 9 },
+};
+const ME = "sergio";
+const STATE_WORD = { libre: "libre", trabajando: "trabajando", espera: "te espera", pausa: "en pausa" };
+
+function botSvg(id, size, opts = {}) {
+  const b = BOTS[id], p = PEOPLE[b.owner], [roleName, shape] = ROLES[b.role];
+  const mine = b.owner === ME;
+  const mood = opts.mood || b.state;
+  const owner = mine || opts.noBadge ? null : { initials: p.ini, color: COLOR[p.color] };
+  const label = `${b.name}, ${roleName}${mine ? "" : ", bot de " + p.short}`;
+  return `<span class="bot">${pixelBot({ shape, color: COLOR[p.color], role: b.role, seed: b.seed, size, mood, owner, label: opts.decor ? "" : label })}</span>`;
+}
+function av(pid, size = 32, presence = true, cut) {
+  const p = PEOPLE[pid], fs = size >= 40 ? "var(--t-ui)" : size >= 28 ? "var(--t-caption)" : "var(--t-micro)";
+  const ini = size < 22 ? p.ini[0] : p.ini;
+  const pr = presence ? `<i class="pr ${p.presence === "on" ? "" : "away"}" aria-hidden="true"></i>` : "";
+  return `<span class="av" style="--p:${COLOR[p.color]};--s:${size}px;--fs:${fs};${cut ? "--cut:" + cut : ""}" role="img" aria-label="${p.name}">${ini}${pr}</span>`;
+}
+const I = (n, fill) => `<i class="${fill ? "ph-fill" : "ph"} ph-${n}" aria-hidden="true"></i>`;
+
+/* ═══ Sidebar ═════════════════════════════════════════════════════════════ */
+function sidebar({ active = null, room = null, menu = false }) {
+  const places = [["inicio", "Inicio", "house"], ["trabajo", "Trabajo", "list-checks"], ["codigo", "Código", "code"], ["equipo", "Equipo", "users-three"], ["biblioteca", "Biblioteca", "books"]];
+  const rooms = [["general", false, 0], ["lanzamiento", false, 0], ["precios", false, 4], ["web-nueva", true, 1], ["prensa", false, 0], ["ideas", true, 0]];
+  const mine = Object.entries(BOTS).filter(([, b]) => b.owner === ME);
+  const state = (s) => s === "espera" ? `<span class="state wait">te espera</span>` : s === "trabajando" ? `<span class="state">trabajando</span>` : `<span class="state ${s === "pausa" ? "off" : ""}">${STATE_WORD[s]}</span>`;
+  return `<aside class="side" aria-label="Barra lateral">
+  <div class="side-top"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="brand"><img src="${LOGO}" alt=""><b>Colmena</b></span><span class="sp"></span>
+    <button class="ib" type="button" aria-label="Plegar la barra (Ctrl B)">${I("sidebar-simple")}</button></div>
+  <button class="team" type="button" aria-haspopup="menu" aria-expanded="false"><span class="team-tile" aria-hidden="true">L</span><span><span class="t1">Lumbre</span><br><span class="t2">3 personas · 18 bots</span></span>${I("caret-down")}</button>
+  <div class="find"><button class="goto" type="button">${I("magnifying-glass")}<span>Ir a…</span><span class="k"><kbd>Ctrl</kbd><kbd>K</kbd></span></button><button class="ib" type="button" aria-label="Nuevo (Ctrl N)">${I("note-pencil")}</button></div>
+  <nav class="places" aria-label="Sitios">${places.map(([id, l, ic]) => `<a class="row" href="#" ${active === id ? 'aria-current="page"' : ""}>${I(ic, active === id)}<span class="nm">${l}</span>${id === "inicio" ? `<span class="count wait" aria-label="3 te esperan">3</span>` : ""}</a>`).join("")}</nav>
+  <div class="groups">
+    <div class="ghead"><button class="gbtn" type="button" aria-expanded="true">${I("caret-down")}Salas</button><button class="ib" type="button" aria-label="Nueva sala">${I("plus")}</button></div>
+    <div class="glist">${rooms.map(([n, lock, u]) => `<a class="row ${u ? "unread" : ""}" href="#" ${room === n ? 'aria-current="page"' : ""}>${I(lock ? "lock-simple" : "hash")}<span class="nm">${n}</span>${u ? `<span class="count" aria-label="${u} sin leer">${u}</span>` : ""}</a>`).join("")}<a class="row more" href="#">${I("dots-three")}<span class="nm">Ver todas · 11</span></a></div>
+    <div class="ghead"><button class="gbtn" type="button" aria-expanded="true">${I("caret-down")}Bots</button><button class="ib" type="button" aria-label="Nuevo bot">${I("plus")}</button></div>
+    <div class="glist">${mine.map(([id, b]) => `<a class="row brow" href="#">${botSvg(id, 32, { decor: true })}<span class="who"><span class="nm">${b.name}</span><span class="tag">${ROLES[b.role][0]}</span></span>${state(b.state)}</a>`).join("")}<a class="row more" href="#">${I("dots-three")}<span class="nm">Ver todos · 8</span></a></div>
+    <div class="ghead"><button class="gbtn" type="button" aria-expanded="true">${I("caret-down")}Personas</button><button class="ib" type="button" aria-label="Mensaje a una persona">${I("plus")}</button></div>
+    <div class="glist">${["lucia", "luis"].map((pid, k) => `<a class="row prow ${PEOPLE[pid].presence === "on" ? "" : "away"} ${k === 0 ? "unread" : ""}" href="#">${av(pid, 24)}<span class="nm">${PEOPLE[pid].name}</span>${k === 0 ? `<span class="count" aria-label="2 sin leer">2</span>` : `<span class="st">${PEOPLE[pid].status}</span>`}</a>`).join("")}</div>
+  </div>
+  <div class="me">
+    ${menu ? profileMenu() : ""}
+    <button class="me-btn" type="button" aria-haspopup="menu" aria-expanded="${menu}">${av("sergio", 32)}<span style="min-width:0"><span class="n">Sergio Rico</span><br><span class="s">Disponible</span></span></button>
+    <button class="ib" type="button" aria-label="Avisos">${I("bell")}</button>
+  </div>
+</aside>`;
+}
+function profileMenu() {
+  return `<div class="menu" role="menu" aria-label="Tu perfil">
+    <div class="menu-head">${av("sergio", 40, true, "var(--raised)")}<span><span class="n">Sergio Rico</span><br><span class="s">@sergio · Disponible</span></span></div>
+    <button class="mi" role="menuitem">${I("smiley")}Definir estado<span class="r">${I("caret-right")}</span></button>
+    <button class="mi" role="menuitem">${I("pencil-simple")}Editar perfil</button>
+    <button class="mi" role="menuitem">${I("gear-six")}Ajustes<span class="r"><kbd>Ctrl</kbd> <kbd>,</kbd></span></button>
+    <hr><button class="mi out" role="menuitem">${I("sign-out")}Salir</button></div>`;
+}
+
+/* ═══ Room ════════════════════════════════════════════════════════════════ */
+function msgPerson(pid, time, html) {
+  const p = PEOPLE[pid];
+  return `<article class="msg">${av(pid, 32, false)}<div><div class="mh"><span class="n">${p.name}</span><time>${time}</time></div><div class="mt">${html}</div></div></article>`;
+}
+function msgBot(id, time, html, blocks = "") {
+  const b = BOTS[id], p = PEOPLE[b.owner];
+  const of = b.owner === ME ? "" : `<span class="of">bot de ${p.short}</span>`;
+  return `<article class="msg">${botSvg(id, 32, { mood: "libre" })}<div><div class="mh"><span class="n">${b.name}</span><span class="tag">${ROLES[b.role][0]}</span>${of}<time>${time}</time></div><div class="mt">${html}</div>${blocks ? `<div class="blocks">${blocks}</div>` : ""}</div></article>`;
+}
+const question = `<div class="q" role="group" aria-labelledby="q1t">
+  <div class="q-h"><span class="t" id="q1t">¿A quién mandamos la nota primero?</span><span class="c">1 de 5</span></div>
+  <div class="q-sub">Elige una o escribe la tuya. Pulsa la letra para responder.</div>
+  <div class="opts" role="radiogroup" aria-labelledby="q1t">
+    <button class="opt" role="radio" aria-checked="false"><kbd>A</kbd><span class="ot">A los 40 contactos de la lista de prensa<span class="os">Medios locales, blogs y dos podcasts</span></span></button>
+    <button class="opt" role="radio" aria-checked="true"><kbd>B</kbd><span class="ot">Solo a los 12 que nos cubrieron en la beta<span class="os">Los que ya conocen Brújula</span></span>${I("check-circle", true)}</button>
+    <button class="opt" role="radio" aria-checked="false"><kbd>C</kbd><span class="ot">A nadie todavía: la reviso yo antes</span></button>
+    <button class="opt other" role="radio" aria-checked="false"><kbd>D</kbd><span class="ot">Otra respuesta…</span></button>
+  </div>
+  <div class="q-f"><button class="btn ghost" disabled>${I("arrow-left")}Volver</button><span class="pips" aria-label="Pregunta 1 de 5"><i class="on"></i><i></i><i></i><i></i><i></i></span><button class="btn primary">Siguiente${I("arrow-right")}</button></div>
+</div>`;
+const approval = `<section class="need" aria-labelledby="ap1">
+  <div class="need-h"><span class="pill-wait">${I("hand-pointing", true)}Te espera</span><span class="t" id="ap1">Vera pide tu OK</span><span class="exp">Caduca en 23 min</span></div>
+  <div class="timer" role="progressbar" aria-label="Tiempo para decidir" aria-valuenow="23" aria-valuemin="0" aria-valuemax="30"><i></i></div>
+  <div class="action"><span class="ftile">${I("paper-plane-right")}</span><span><span class="a1">Enviar la nota de prensa a 12 contactos</span><br><span class="a2">Desde sergio@lumbre.example · adjunta «Nota de prensa — Brújula 2.docx»</span></span><button class="lnk" type="button">Ver detalles${I("caret-right")}</button></div>
+  <div class="need-f"><button class="btn primary lg hold" type="button" data-hold>${I("paper-plane-right")}<span>Mantén para enviar</span></button><button class="btn lg" type="button">No enviar</button><span class="note">Lucía y Luis ven «Vera espera el OK de Sergio»</span></div>
+</section>`;
+const request = `<section class="need" aria-labelledby="rq1">
+  <div class="need-h"><span class="pill-wait">${I("hand-pointing", true)}Te espera</span><span class="t" id="rq1">${av("lucia", 20, false)}Lucía pide algo a Vera</span></div>
+  <p class="need-q">«¿Me sacas un resumen de tres líneas para la portada de la web?»</p>
+  <div class="need-w">${I("desktop")}Trabajará en tu ordenador, con tu cuenta. Lucía solo verá la respuesta.</div>
+  <div class="need-f"><button class="btn primary" type="button">Adelante</button><button class="btn" type="button">Ahora no</button><span style="flex:1"></span><button class="btn ghost" type="button">Siempre para Lucía</button><button class="btn ghost" type="button">Nunca para Lucía</button></div>
+</section>`;
+const deliverable = `<div class="file"><span class="ftile">${I("file-doc")}</span><span style="min-width:0"><span class="fn">Nota de prensa — Brújula 2.docx</span><br><span class="fm">Word · 280 palabras · Biblioteca › Lanzamiento</span></span><span class="acts"><button class="btn" type="button">${I("eye")}Ver</button><button class="btn" type="button">${I("download-simple")}Guardar</button></span></div>`;
+
+function stream() {
+  return `<div class="day">Hoy</div>
+  ${msgPerson("lucia", "9:58", `<p>Buenos días. Brújula 2 sale el 2 de diciembre, sin cambios. Nos falta la nota de prensa y decidir a quién se la mandamos.</p>`)}
+  ${msgPerson("luis", "10:03", `<p>Las capturas nuevas están en Biblioteca › Lanzamiento. Bruno deja la web lista esta tarde.</p>`)}
+  <div class="mine"><div class="bubble"><span class="mention">@Vera</span> escribe la nota con los datos de la beta. <span class="mention">@Atlas</span> reparte lo demás y dime si hay algo que decidir.</div><div class="meta"><time>10:06</time>${I("checks")}<span>Visto</span></div></div>
+  <div class="line">${botSvg("vera", 20, { mood: "libre" })}<b>Vera</b>${I("arrows-left-right")}${botSvg("atlas", 20, { mood: "libre" })}<b>Atlas</b><span>· 3 min</span></div>
+  ${msgBot("vera", "10:12", `<p>Borrador listo: 280 palabras, para prensa local y blogs de productividad. Las cifras de la beta son las de la hoja de Tomás.</p>`, `<button class="work" type="button">${I("wrench")}<span>Usó 4 herramientas</span><span class="tm">12 min</span>${I("caret-right")}</button>${deliverable}`)}
+  ${msgBot("atlas", "10:14", `<p>Antes de enviarla necesito cerrar cinco cosas contigo. Una a una:</p>`, question)}
+  <div class="status">${botSvg("iris", 24, { mood: "trabajando" })}<span><b>Iris</b> (de Lucía) está trabajando · prepara 3 imágenes para redes</span></div>
+  ${msgPerson("lucia", "10:20", `<p><span class="mention">@Vera</span> ¿me sacas un resumen de tres líneas para la portada de la web?</p>`).replace("</div></div></article>", `</div><div class="blocks">${request}</div></div></article>`)}
+  ${msgBot("vera", "10:22", `<p>Para enviar la nota a los 12 contactos de la beta necesito tu OK:</p>`, approval)}`;
+}
+function panelProfile(hidden) {
+  return `<div class="pbody" id="pp" role="tabpanel" ${hidden ? "hidden" : ""}>
+  <div class="hero">${botSvg("vera", 96, { mood: "espera", decor: true })}<h2>Vera</h2><span class="tag">Redacción</span>
+    <span class="own">${av("sergio", 20, false)}Tu bot</span>
+    <span class="now"><span class="state wait">te espera</span><span class="soft" style="font-size:var(--t-meta);color:var(--muted)">tu OK para enviar la nota</span></span></div>
+  <dl class="facts">
+    <div><dt>Cómo piensa</dt><dd>${I("brain")}ChatGPT · Plan Plus</dd></div>
+    <div><dt>Autonomía</dt><dd>${I("sliders-horizontal")}Hace y avisa</dd><dd class="soft" style="margin-top:2px">Lo que sale de tu ordenador te lo pregunta</dd></div>
+    <div><dt>Puede usar</dt><dd><span class="tag">Correo</span><span class="tag">Calendario</span><span class="tag">Carpeta</span></dd></div>
+    <div><dt>Quién puede pedirle</dt><dd>${av("lucia", 20, false)}Lucía <span class="soft">· Pregúntame</span></dd><dd style="margin-top:4px">${av("luis", 20, false)}Luis <span class="soft">· Pregúntame</span></dd></div>
+  </dl>
+  <div class="pacts"><button class="btn primary lg" type="button">${I("chat-circle-dots")}Abrir chat</button><button class="btn lg" type="button">Ver en Equipo</button></div>
+</div>`;
+}
+function panelMembers(hidden) {
+  const cell = (id) => `<a class="bcell" href="#">${botSvg(id, 32, { decor: false })}<span>${BOTS[id].name}</span></a>`;
+  return `<div class="pbody" id="pm" role="tabpanel" ${hidden ? "hidden" : ""}>
+  <div class="msec"><h3>Personas · 3</h3>
+    ${["sergio", "lucia", "luis"].map((pid) => `<div class="mrow ${PEOPLE[pid].presence === "on" ? "" : "away"}">${av(pid, 28, true, "var(--bg)")}<span class="n">${PEOPLE[pid].name}${pid === ME ? ' <span style="color:var(--muted);font-weight:400">(tú)</span>' : ""}</span><span class="r">${pid === "lucia" ? "Administra" : pid === "luis" ? "Vuelve a las 12" : ""}</span></div>`).join("")}</div>
+  <div class="msec"><h3>Tus bots · 4</h3><div class="bots-row">${["atlas", "vera", "nora", "tomas"].map(cell).join("")}</div></div>
+  <div class="msec"><h3>Bots de Lucía · 3</h3><div class="bots-row">${["iris", "veral", "olga"].map(cell).join("")}</div></div>
+  <div class="msec"><h3>Bots de Luis · 1</h3><div class="bots-row">${cell("bruno")}</div></div>
+  <button class="invite" type="button">${I("user-plus")}Invitar a la sala</button>
+</div>`;
+}
+function salaFrame({ panel = "perfil", chip = "sala" }) {
+  const chipHtml = chip === "sala" ? `<button class="chip" type="button" aria-haspopup="listbox">${I("users-three")}Toda la sala${I("caret-down")}</button>`
+    : `<button class="chip" type="button" aria-haspopup="listbox">${botSvg("vera", 20, { mood: "libre", decor: true })}Vera${I("caret-down")}</button>`;
+  return `${sidebar({ room: "lanzamiento" })}
+  <div class="main" role="main">
+    <header class="mhead"><h1>${I("hash")}lanzamiento</h1><span class="topic">Brújula 2 sale el 2 de diciembre · lista de tareas en Biblioteca</span><span class="sp"></span>
+      <button class="stack" type="button" aria-label="3 personas y 8 bots en la sala"><span class="avs">${av("lucia", 24, false)}${av("luis", 24, false)}${botSvg("atlas", 24, { decor: true, mood: "libre" })}${botSvg("iris", 24, { decor: true, mood: "libre" })}</span>3 personas · 8 bots</button>
+      <button class="ib" type="button" aria-label="Buscar en la sala">${I("magnifying-glass")}</button>
+      <button class="ib" type="button" aria-label="Panel lateral" aria-pressed="true">${I("sidebar-simple")}</button></header>
+    <div class="body">
+      <div class="convo">
+        <div class="stream" tabindex="0" aria-label="Mensajes de #lanzamiento">${stream()}</div>
+        <div class="composer"><div class="cbox">${chipHtml}<span class="sep"></span><button class="ib" type="button" aria-label="Adjuntar">${I("paperclip")}</button><button class="ib" type="button" aria-label="Emoji">${I("smiley")}</button>
+          <input type="text" aria-label="Mensaje en #lanzamiento" placeholder="Mensaje en #lanzamiento · @ para nombrar a alguien">
+          <button class="send" type="button" aria-label="Enviar">${I("paper-plane-right", true)}</button></div></div>
+      </div>
+      <aside class="panel" aria-label="Detalles">
+        <div class="seg" role="tablist"><button role="tab" aria-selected="${panel === "perfil"}" data-p="pp">Vera</button><button role="tab" aria-selected="${panel === "miembros"}" data-p="pm">Miembros · 11</button></div>
+        ${panelProfile(panel !== "perfil")}${panelMembers(panel !== "miembros")}
+      </aside>
+    </div>
+  </div>`;
+}
+
+/* ═══ Inicio ══════════════════════════════════════════════════════════════ */
+function inicioFrame() {
+  return `${sidebar({ active: "inicio", menu: true })}
+  <div class="main" role="main">
+    <header class="mhead"><h1>${I("house")}Inicio</h1><span class="sp"></span><button class="ib" type="button" aria-label="Buscar">${I("magnifying-glass")}</button></header>
+    <div class="home">
+      <div class="home-main">
+        <div class="greet"><h1>Buenos días, Sergio</h1><p>Jueves, 13 de noviembre · <b>3 cosas te esperan</b> · 3 bots trabajando</p></div>
+        <section class="start" aria-labelledby="st">
+          <div class="start-h"><h2 id="st">Para empezar</h2><span class="c">1 de 4</span><button class="ib" type="button" aria-label="Ocultar «Para empezar»">${I("x")}</button></div>
+          <div class="segbar" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></div>
+          <div class="srow done">${I("check-circle", true)}<span><span class="s1">Conecta tu IA</span><br><span class="s2">ChatGPT · Plan Plus. Tus bots piensan con tu cuenta.</span></span></div>
+          <div class="srow">${I("user-circle")}<span><span class="s1">Cuéntame sobre ti</span><br><span class="s2">Qué haces y cómo te gusta trabajar. Lo leen todos tus bots.</span></span><span class="acts"><button class="btn" type="button">Contar</button></span></div>
+          <div class="srow">${I("plugs-connected")}<span><span class="s1">Conecta tus apps</span><br><span class="s2">Correo, calendario y archivos. Leer nunca cambia nada.</span></span><span class="acts"><button class="btn ghost" type="button">Ahora no</button><button class="btn" type="button">Elegir</button></span></div>
+          <div class="srow">${I("user-plus")}<span><span class="s1">Invita a tu equipo</span><br><span class="s2">Lumbre ya tiene a Lucía y a Luis. Invita a quien falte.</span></span><span class="acts"><button class="btn" type="button">Invitar</button></span></div>
+        </section>
+        <section class="sec" aria-labelledby="tn">
+          <div class="sec-h"><h2 id="tn">Te necesitan</h2><span class="count wait">3</span></div>
+          <div class="needs">
+            <div class="nrow">${botSvg("vera", 32, { mood: "espera" })}<div class="x"><div class="n1">Vera pide tu OK</div><div class="n2">Enviar la nota de prensa a 12 contactos · #lanzamiento</div></div><span class="exp">Caduca en 23 min</span><span class="acts"><button class="btn primary" type="button">Revisar</button></span></div>
+            <div class="nrow">${av("lucia", 32, false)}<div class="x"><div class="n1">Lucía pide algo a Vera</div><div class="n2">Un resumen de tres líneas para la web · #lanzamiento</div></div><span class="acts"><button class="btn" type="button">Ahora no</button><button class="btn primary" type="button">Adelante</button></span></div>
+            <div class="nrow">${botSvg("atlas", 32, { mood: "espera" })}<div class="x"><div class="n1">Atlas te pregunta</div><div class="n2">¿A quién mandamos la nota primero? · 1 de 5 · #lanzamiento</div></div><span class="acts"><button class="btn" type="button">Responder</button></span></div>
+          </div>
+        </section>
+        <section class="sec" aria-labelledby="em">
+          <div class="sec-h"><h2 id="em">En marcha</h2><span class="c">3</span><a href="#">Ver Trabajo</a></div>
+          <div class="runs">
+            <div class="rrow">${botSvg("tomas", 32, { mood: "trabajando" })}<div class="x"><div class="n1">Cuadra los precios con las ventas de la beta</div><div class="n2">Tomás · paso 3 de 5 · #precios</div></div><div class="prog" role="progressbar" aria-label="Avance" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"><i style="width:60%"></i></div></div>
+            <div class="rrow">${botSvg("nora", 32, { mood: "trabajando" })}<div class="x"><div class="n1">Busca 20 blogs de productividad en español</div><div class="n2">Nora · lleva 14 · empezó hace 8 min</div></div><div class="prog"><i style="width:70%"></i></div></div>
+            <div class="rrow">${botSvg("pablo", 32, { mood: "pausa" })}<div class="x"><div class="n1">Revisa los enlaces rotos de la web</div><div class="n2">Pablo · en pausa hasta que conectes el repositorio</div></div><button class="btn ghost" type="button">Reanudar</button></div>
+          </div>
+        </section>
+      </div>
+      <aside class="home-side" aria-label="Lumbre ahora">
+        <div class="side-block"><h2 class="side-h">En Lumbre ahora</h2>
+          ${["lucia", "luis"].map((pid) => `<div class="mrow ${PEOPLE[pid].presence === "on" ? "" : "away"}">${av(pid, 28, true, "var(--bg)")}<span class="n">${PEOPLE[pid].name}</span><span class="r">${PEOPLE[pid].status}</span></div>`).join("")}
+          <div class="mrow">${botSvg("iris", 28 > 24 ? 32 : 24, { mood: "trabajando" })}<span class="n">Iris</span><span class="r">trabajando · de Lucía</span></div>
+          <div class="mrow">${botSvg("bruno", 32, { mood: "trabajando" })}<span class="n">Bruno</span><span class="r">trabajando · de Luis</span></div>
+        </div>
+        <div class="side-block"><h2 class="side-h">Hoy</h2>
+          <ul class="feed">
+            <li>${I("file-doc")}<span><b>Vera</b> entregó la nota de prensa</span><time>10:12</time></li>
+            <li>${I("at")}<span><b>Lucía</b> te nombró en #lanzamiento</span><time>10:20</time></li>
+            <li>${I("file-xls")}<span><b>Tomás</b> terminó Ventas beta.xlsx</span><time>9:40</time></li>
+            <li>${I("arrows-left-right")}<span><b>Vera</b> y <b>Atlas</b> se pasaron el encargo</span><time>10:09</time></li>
+          </ul></div>
+      </aside>
+    </div>
+  </div>`;
+}
+
+/* ═══ Bot sheet ═══════════════════════════════════════════════════════════ */
+function botsSheet() {
+  const shapes = Object.entries(ROLES);
+  const cols = ["violeta", "frambuesa", "turquesa", "musgo"];
+  const moods = [["libre", "libre"], ["trabajando", "trab."], ["espera", "espera"], ["pausa", "pausa"]];
+  const PROP = { coordinador: "Antenas de abeja", investigacion: "Lupa con brillo", datos: "Gráfico de barras", diseno: "Gota de pintura", redaccion: "Pluma", codigo: "‹ › en el pecho" };
+  const WHY = { coordinador: "Atlas dirige la colmena: la forma del logo y las antenas de la abeja que reparte.", investigacion: "Busca y contrasta: la lupa está levantada, fuera del cuerpo, para que no tape la cara.", datos: "Cifras: tres barras que suben, en la barriga, legibles hasta 20 px.", diseno: "Color: la gota cae sobre el vértice y es del tono opuesto al cuerpo (nunca ámbar).", redaccion: "Escribe: una pluma detrás de la punta de la hoja, plumín hacia abajo.", codigo: "Código: los signos ‹ › en el pecho, sin gafas ni cascos." };
+  const table = (size) => `<table class="grid"><thead><tr><th class="l" rowspan="2">Forma · papel</th>${cols.map((c, k) => `<th class="gap"></th><th colspan="4" class="${k ? "gb" : ""}">${PALETTE.find((p) => p[0] === c)[1]}</th>`).join("")}</tr>
+    <tr>${cols.map((c, k) => `<th class="gap"></th>${moods.map(([, l], j) => `<th class="${k && !j ? "gb" : ""}">${l}</th>`).join("")}`).join("")}</tr></thead>
+    <tbody>${shapes.map(([role, [rn, shape]], si) => `<tr><td class="l"><b>${rn}</b><span>${shape} · ${PROP[role]}</span></td>${cols.map((c, k) => `<td class="gap"></td>${moods.map(([m], j) => `<td class="${k && !j ? "gb" : ""}"><span class="bot">${pixelBot({ shape, color: COLOR[c], role, seed: si + k, size, mood: m })}</span></td>`).join("")}`).join("")}</tr>`).join("")}</tbody></table>`;
+  const sizesTile = (theme) => `<div class="tile" data-theme="${theme}"><h3>${theme === "light" ? "Fondo claro" : "Fondo oscuro"} · 20 · 24 · 32 · 48 · 96 px</h3><div class="sizes">${[20, 24, 32, 48, 96].map((s) => `<figure>${pixelBot({ shape: "hex", color: COLOR.violeta, role: "coordinador", seed: 1, size: s })}<figcaption>${s}</figcaption></figure>`).join("")}${[20, 24, 32, 48, 96].map((s) => `<figure>${pixelBot({ shape: "leaf", color: COLOR.frambuesa, role: "redaccion", seed: 7, size: s, mood: "trabajando", owner: { initials: "LM", color: COLOR.frambuesa } })}<figcaption>${s}</figcaption></figure>`).join("")}</div></div>`;
+  const veraPair = (theme) => `<div class="tile" data-theme="${theme}"><h3>${theme === "light" ? "Claro" : "Oscuro"}: tu Vera y la Vera de Lucía</h3><div class="vs">
+    <div class="row brow">${botSvg("vera", 32, { mood: "libre" })}<span class="who"><span class="nm">Vera</span><span class="tag">Redacción</span></span><span class="state">libre</span></div>
+    <div class="row brow">${botSvg("veral", 32, { mood: "libre" })}<span class="who"><span class="nm">Vera</span><span class="tag">Redacción · de Lucía</span></span><span class="state">libre</span></div>
+    <div class="msg">${botSvg("vera", 32, { mood: "libre" })}<div><div class="mh"><span class="n">Vera</span><span class="tag">Redacción</span><time>10:12</time></div><div class="mt">Borrador listo.</div></div></div>
+    <div class="msg">${botSvg("veral", 32, { mood: "libre" })}<div><div class="mh"><span class="n">Vera</span><span class="tag">Redacción</span><span class="of">bot de Lucía</span><time>10:13</time></div><div class="mt">El mío también.</div></div></div>
+    <div class="sizes" style="margin-top:8px">${[24, 48, 96].map((s) => `<figure>${botSvg("vera", s, { mood: "libre" })}<figcaption>tuya · ${s}</figcaption></figure><figure>${botSvg("veral", s, { mood: "libre" })}<figcaption>de Lucía · ${s}</figcaption></figure>`).join("")}</div></div></div>`;
+  return `<h1>Los bots de Colmena</h1>
+  <p class="lead">Seis formas, una por papel; un color por persona; una visera oscura con forma de celda, como la del logo, con los ojos del color del bot. Cada bot lleva un solo accesorio de pocos píxeles. Los generamos en el propio navegador: misma entrada, mismo dibujo.</p>
+  <h2>Paleta de bots · 12 colores</h2><p>Un color por persona: sus bots y su avatar lo comparten. Ni miel ni ámbar (los tonos de 25° a 70° quedan vacíos). Las tiras muestran luz, base, sombra y contorno.</p>
+  <div class="pal">${PALETTE.map(([id, n, hx], k) => { const t = tones(hx, "libre"); const who = Object.entries(PEOPLE).find(([, p]) => p.color === id); return `<div class="sw"><span class="rmp" aria-hidden="true"><i style="background:${t.rim}"></i><i style="background:${t.base}"></i><i style="background:${t.shade}"></i><i style="background:${t.deep}"></i></span>${pixelBot({ shape: shapes[k % 6][1][1], color: hx, role: shapes[k % 6][0], seed: k, size: 32 })}<span><span class="nm">${n}</span><br><code>${hx}</code>${who ? `<br><span class="who">${who[1].short}</span>` : ""}</span></div>`; }).join("")}</div>
+  <h2>Forma, papel y accesorio</h2><p>La forma dice el papel; el accesorio lo confirma. Nada de sombreros, coronas, lazos ni cascos.</p>
+  <table class="legend"><thead><tr><th>Bot</th><th>Forma</th><th>Papel</th><th>Accesorio</th><th>Por qué</th></tr></thead><tbody>${shapes.map(([role, [rn, shape]], k) => `<tr><td>${pixelBot({ shape, color: COLOR[["violeta", "frambuesa", "turquesa", "cobalto", "esmeralda", "coral"][k]], role, seed: k, size: 48 })}</td><td><b>${{ hex: "Hexágono", square: "Cuadrado redondeado", circle: "Círculo", diamond: "Rombo", leaf: "Hoja", arch: "Arco" }[shape]}</b></td><td>${rn}</td><td>${PROP[role]}</td><td>${WHY[role]}</td></tr>`).join("")}</tbody></table>
+  <h2>Formas × colores × estados · 24 px</h2><p>Estados: libre (ojos en arco, como el logo), trabajando (ojos concentrados y un destello que parpadea), te espera (ojos abiertos mirando arriba, con brillo), en pausa (ojos cerrados, cuerpo apagado y una «z»).</p>
+  ${table(24)}
+  <h2>Los mismos a 48 px</h2><p></p>
+  ${table(48)}
+  <h2>Tamaños, en los dos temas</h2><p>Atlas de Sergio (sin chapa: es tuyo) y la Vera de Lucía (con su chapa). A 20 y 24 px la chapa es un punto; a partir de 48 lleva la inicial.</p>
+  <div class="duo">${sizesTile("light")}${sizesTile("dark")}</div>
+  <h2>Tres bots a 96 px</h2><p></p>
+  <div class="heroes">${[["atlas", "espera"], ["iris", "trabajando"], ["bruno", "libre"]].map(([id, m]) => `<div class="tile">${botSvg(id, 96, { mood: m })}<span><b>${BOTS[id].name}</b><span>${ROLES[BOTS[id].role][0]} · ${BOTS[id].owner === ME ? "tuyo" : "de " + PEOPLE[BOTS[id].owner].short} · ${STATE_WORD[m]}</span></span></div>`).join("")}</div>
+  <h2>¿Cuál es tu Vera?</h2><p>Misma forma y mismo papel; cambia el color de la dueña, la chapa redonda con su inicial y la palabra «de Lucía».</p>
+  <div class="duo">${veraPair("light")}${veraPair("dark")}</div>`;
+}
+
+/* ═══ Mount + behaviour ═══════════════════════════════════════════════════ */
+document.getElementById("w1").innerHTML = salaFrame({ panel: "perfil", chip: "sala" });
+document.getElementById("w2").innerHTML = salaFrame({ panel: "miembros", chip: "vera" });
+document.getElementById("w3").innerHTML = inicioFrame();
+document.getElementById("w4").innerHTML = botsSheet();
+
+const mq = matchMedia("(prefers-color-scheme: dark)");
+if (new URLSearchParams(location.search).has("shot")) document.documentElement.classList.add("shot");
+let theme = new URLSearchParams(location.search).get("theme") || (mq.matches ? "dark" : "light");
+function applyTheme() {
+  document.documentElement.dataset.theme = theme;
+  document.querySelectorAll(".theme-follow").forEach((el) => (el.dataset.theme = theme));
+  const b = document.getElementById("theme");
+  b.innerHTML = `${I(theme === "dark" ? "moon" : "sun")}<span>${theme === "dark" ? "Oscuro" : "Claro"}</span>`;
+}
+applyTheme();
+document.getElementById("theme").addEventListener("click", () => { theme = theme === "dark" ? "light" : "dark"; applyTheme(); });
+
+const tabs = [...document.querySelectorAll('.proto-bar [role="tab"]')];
+function show(id, focus) {
+  tabs.forEach((t) => { const on = t.getAttribute("aria-controls") === id; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
+  document.querySelectorAll(".frame-wrap").forEach((f) => (f.hidden = f.id !== id));
+  history.replaceState(null, "", "#" + id.slice(2));
+  settle();
+}
+tabs.forEach((t, k) => {
+  t.addEventListener("click", () => show(t.getAttribute("aria-controls")));
+  t.addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const n = tabs[(k + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]; show(n.getAttribute("aria-controls"), true); } });
+});
+function settle() { // light frame: newest at the bottom; dark frame: scrolled up to the hand-off and the question
+  const s1 = document.querySelector("#w1 .stream"); if (s1) s1.scrollTop = s1.scrollHeight;
+  const s2 = document.querySelector("#w2 .stream"); if (s2) { const line = s2.querySelector(".line"); s2.scrollTop = line ? line.offsetTop - s2.offsetTop - 140 : 0; }
+}
+const start = "f-" + (location.hash.slice(1) || "sala-claro");
+show(document.getElementById(start) ? start : "f-sala-claro");
+addEventListener("hashchange", () => { const id = "f-" + location.hash.slice(1); if (document.getElementById(id)) show(id); });
+document.fonts && document.fonts.ready.then(settle);
+
+// Frames are 1440 wide: on a narrower window they scale down instead of scrolling sideways.
+function fit() { const z = Math.min(1, (innerWidth - 32) / 1440); document.querySelectorAll(".win,.sheet,.frame-cap").forEach((el) => (el.style.zoom = z)); }
+addEventListener("resize", fit); fit();
+
+document.addEventListener("click", (e) => {
+  const g = e.target.closest(".gbtn");
+  if (g) { const open = g.getAttribute("aria-expanded") !== "true"; g.setAttribute("aria-expanded", open); g.closest(".ghead").nextElementSibling.hidden = !open; }
+  const seg = e.target.closest(".seg [role=tab]");
+  if (seg) { const panel = seg.closest(".panel"); panel.querySelectorAll(".seg [role=tab]").forEach((b) => b.setAttribute("aria-selected", b === seg)); panel.querySelectorAll(".pbody").forEach((p) => (p.hidden = p.id !== seg.dataset.p)); }
+  const opt = e.target.closest(".opt");
+  if (opt) { const grp = opt.parentElement; grp.querySelectorAll(".opt").forEach((o) => { o.setAttribute("aria-checked", o === opt); o.querySelector(".ph-fill")?.remove(); }); opt.insertAdjacentHTML("beforeend", I("check-circle", true)); }
+  if (e.target.closest("a[href='#']")) e.preventDefault();
+});
+// Option letters: A–D pick an answer in the question of the visible frame.
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toUpperCase(); if (!"ABCD".includes(k) || k.length !== 1) return;
+  const frame = document.querySelector(".frame-wrap:not([hidden])"); const opts = frame?.querySelectorAll(".opt"); if (!opts?.length) return;
+  opts["ABCD".indexOf(k)]?.click();
+});
+// «Mantén para enviar»: 1.2 s of pointer or Space/Enter held.
+document.querySelectorAll("[data-hold]").forEach((b) => {
+  let t; const label = b.querySelector("span");
+  const go = () => { if (b.classList.contains("sent")) return; b.classList.add("holding"); t = setTimeout(() => { b.classList.remove("holding"); b.classList.add("sent"); label.textContent = "Enviado"; }, matchMedia("(prefers-reduced-motion: reduce)").matches ? 600 : 1200); };
+  const stop = () => { clearTimeout(t); b.classList.remove("holding"); };
+  b.addEventListener("pointerdown", go); ["pointerup", "pointerleave"].forEach((ev) => b.addEventListener(ev, stop));
+  b.addEventListener("keydown", (e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); go(); } });
+  b.addEventListener("keyup", (e) => { if (e.key === " " || e.key === "Enter") stop(); });
+});
+</script>
+</body>
+</html>
