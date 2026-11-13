@@ -226,7 +226,11 @@ export function Confirm({ title, children, action, onConfirm, onCancel, busy = f
   const box = useRef(null);
   const id = useId();
   const opener = useRef(typeof document !== "undefined" ? document.activeElement : null);
-  useEffect(() => { box.current?.querySelector("[data-cancel]")?.focus({ preventScroll: true }); }, []);
+  useEffect(() => {
+    const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    box.current?.scrollIntoView({ block: "nearest", behavior: calm ? "auto" : "smooth" });
+    box.current?.querySelector("[data-cancel]")?.focus({ preventScroll: true });
+  }, []);
   const cancel = () => { onCancel(); requestAnimationFrame(() => opener.current?.focus?.({ preventScroll: true })); };
   return (
     <div ref={box} role="alertdialog" aria-labelledby={id + "t"} aria-describedby={id + "d"} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); cancel(); } }}
