@@ -188,6 +188,9 @@ export class RoomWork {
     if (!message.req || !bot || bot.enabled === false || bot.audience === "yo") return false;
     const room = this.rooms.roomOfShare(share);
     if (!room) return false;
+    // The room waits for a roster newer than the one here (Peers#newerRoster): who is in it is
+    // not known for sure, so nothing is taken from anyone but its owner and whoever told us.
+    if (p.rosterHeld?.(share, message.from)) return true;
     const rule = this.ruleFor(message.from);
     if (rule === "nunca") return false;
     if (this.store.where("roomAsks", "shareId", share.id).some((a) => a.peerId === message.id && a.botId === bot.id)) return true;

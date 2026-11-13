@@ -209,6 +209,7 @@ choice open:
   the timeline takes 47 ms without the index and 7 ms with it (56 → 15 ms encrypted); the old
   page (`where` + sort of the whole conversation) 33 → 16 ms (172 → 155 ms encrypted, where
   decrypting every row is what costs).
+- **Roster version on messages.** `msg.v` is the sender's `share.version`. `Peers#newerRoster`: `v > share.version` (not the owner's own room) sets `wantVersion`, `heldUntil` (`rosterHoldMs`, 30 s) and `newerFrom` on the share and sends the owner `room.sync {share, v}`. While held, `post` queues the envelopes for everyone but the owner and `newerFrom` with `peerOutbox.hold = shareId` and `nextAt = heldUntil`; `onRoster` (a newer roster, or the owner repeating the same version) clears the three fields and `releaseHeld` sends what waited to current members and drops the rest. `RoomWork#incoming` takes no request from a held sender. An unresolved hold is not started again for `rosterHoldGap` (10 min). `Rooms#onSync`: the owner answers a member with `share` (the roster as it is) and a non-member with a roster of the owner alone and `title: ""`, once every 10 s per person and room.
 - **`GET /api/sidebar`** was not built: the sidebar reads `rooms` from `/api/state`
   (`src/lib/sidebar.js`), which changes live.
 - **`/api/state` budget.** The room list costs about 100 bytes a room. The older `peers` view

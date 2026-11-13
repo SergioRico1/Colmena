@@ -76,6 +76,7 @@ export class Rooms {
     this.turns = new Map(); // peer message id → the mission message that started a turn for it
     this.thinking = new Map(); // stepId → { shareId, face }
     this.greeted = new Map(); // shareId → the roster version whose people were told your bots
+    this.synced = new Map(); // shareId:address → when that person was last sent the roster they asked for
     this.attached = new WeakSet();
     // Other people's requests to your bots, and what a room's people see of a bot's work (server/room-work.mjs).
     this.work = new RoomWork(this);
@@ -528,10 +529,29 @@ export class Rooms {
       case "room.no": return this.onRefused(from, body);
       case "room.intro": return this.onIntro(from, body);
       case "room.bots": return this.onBots(from, body);
+      case "room.sync": return this.onSync(from, body);
       case "room.status": return this.work.onStatus(from, body);
       case "room.handoff": return this.work.onHandoff(from, body);
       default: // a newer Colmena's message: ignored
     }
+  }
+  /**
+   * Someone asks for the roster of a room of yours again (a message told them theirs is old:
+   * Peers#newerRoster). A member gets it as it is now, also when it has not changed, so they
+   * know nothing was lost. Someone who is not in it learns only that: a roster with you alone
+   * and no title. Once every few seconds each.
+   */
+  onSync(from, body) {
+    const p = this.needPeers();
+    const s = typeof body.share === "string" ? this.store.get("peerShares", body.share) : null;
+    if (!s || s.kind !== "group" || s.owner !== p.address || s.leftAt || s.removedAt) return;
+    const key = s.id + ":" + from.id, t = p.clock();
+    if (t - (this.synced.get(key) || 0) < 10000) return;
+    this.synced.set(key, t);
+    if (this.synced.size > 500) this.synced.delete(this.synced.keys().next().value);
+    const roster = s.members.some((m) => m.id === from.id) ? p.roster(s)
+      : p.roster(s, { title: "", members: [{ id: p.address, role: "owner", box: p.identity.box.pub, name: p.myName() }] });
+    if (p.enqueue(from.id, { type: "share", share: roster })) void p.flushOutbox();
   }
   /** A member of a room of yours asks you to add someone: noted, and you are told. Nothing is added until you say so. */
   onRequest(from, body) {

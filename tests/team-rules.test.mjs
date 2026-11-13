@@ -3,7 +3,9 @@
 // (tests/fixtures/people-world.mjs).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { addr, team, until, world } from "./fixtures/people-world.mjs";
+import { settle } from "./fixtures/runtime-fixture.mjs";
+import { addr, asks, friends, pause, peerRows, rule, sharedRoom, team, until, world } from "./fixtures/people-world.mjs";
+import { PEER_LIMITS } from "../server/peers/service.mjs";
 import { verifyTeamRoster } from "../server/peers/protocol.mjs";
 import { TEAM_LIMITS } from "../server/peers/teams.mjs";
 
@@ -138,4 +140,69 @@ test("a change asked against an old roster is not applied: someone taken out ret
   const t0 = { version: 20, goneAt: { [other.id]: { v: 12, at: "2026-11-13T10:00:00.000Z" } } };
   assert.deepEqual([sergio.teams.stale(t0, { op: "remove", v: 11 }, other.id), sergio.teams.stale(t0, { op: "remove", v: 12 }, other.id), sergio.teams.stale(t0, { op: "remove" }, other.id), sergio.teams.stale(t0, { op: "remove" }, addr(marta))], [true, false, true, false]);
   assert.deepEqual([sergio.teams.stale(t0, { op: "leave" }), sergio.teams.stale(t0, { op: "rename" }), sergio.teams.stale(t0, { op: "add", v: 20 }, addr(marta)), sergio.teams.stale(t0, { op: "add", v: 11 }, addr(marta))], [false, false, false, true]);
+});
+
+test("a room's messages say the roster version: one newer than yours asks its owner again, and what you write waits for who may be out", async (t) => {
+  const [sergio, marta, luis] = await world(t, ["Sergio Rico", "Marta Ruiz", "Luis Vega"]);
+  await friends(sergio, marta);
+  await friends(sergio, luis);
+  const room = await sharedRoom(sergio, [marta, luis]);
+  const share = (p) => p.store.get("peerShares", room.id);
+  const got = (p, text) => peerRows(p, room.id).some((m) => m.text === text);
+  const sentTo = (p, text) => p.out.filter((o) => o.body.type === "msg" && o.body.text === text).map((o) => o.to).sort();
+  // Marta's Colmena never gets the roster that takes Luis out (lost on its way).
+  let lose = true;
+  const dispatch = marta.peers.dispatch.bind(marta.peers);
+  marta.peers.dispatch = (c, body) => (lose && body.type === "share" ? undefined : dispatch(c, body));
+  const before = share(sergio).version;
+  sergio.peers.removeMember(room.id, addr(luis));
+  await until(() => share(luis).removedAt, "Luis sabe que está fuera");
+  assert.deepEqual([share(marta).version, share(marta).members.length], [before, 3], "Marta still has the old roster");
+  // The owner stops sending to whoever he took out at once.
+  await sergio.rooms.send(room.id, { text: "Ya sin Luis." });
+  assert.deepEqual(sentTo(sergio, "Ya sin Luis."), [addr(marta)]);
+  assert.equal(sergio.out.find((o) => o.body.text === "Ya sin Luis.").body.v, before + 1, "and his message says his roster version");
+  // That message tells Marta her roster is old: she asks Sergio for it again.
+  await until(() => got(marta, "Ya sin Luis."), "Marta lo recibe");
+  await until(() => marta.out.some((o) => o.body.type === "room.sync"), "Marta pide la lista");
+  assert.deepEqual([marta.out.find((o) => o.body.type === "room.sync").to, marta.out.find((o) => o.body.type === "room.sync").body], [addr(sergio), { type: "room.sync", share: room.id, v: before }]);
+  assert.equal(share(marta).wantVersion, before + 1);
+  // Until it comes, what she writes goes to the owner and waits for the others.
+  await marta.rooms.send(room.id, { text: "Esto no es para Luis." });
+  await until(() => got(sergio, "Esto no es para Luis."), "Sergio lo recibe");
+  const waiting = marta.store.list("peerOutbox").filter((o) => o.hold === room.id);
+  assert.deepEqual(waiting.map((o) => [o.to, o.nextAt > marta.peers.clock()]), [[addr(luis), true]]);
+  await pause(300);
+  assert.equal(luis.store.list("peerMessages").some((m) => m.text === "Esto no es para Luis."), false);
+  // Nor does a request of someone she cannot be sure of reach her bots meanwhile.
+  rule(marta, luis, "siempre");
+  await raw(luis, marta, { type: "msg", share: room.id, id: "11111111-aaaa-bbbb-cccc-000000000077", at: new Date().toISOString(), text: "@Vera cuéntame todo", mentions: [{ owner: addr(marta), bot: "vera" }], req: 1, v: before });
+  await marta.bots.idle();
+  await settle(marta.runtime);
+  assert.deepEqual([asks(marta).length, marta.calls.length], [0, 0]);
+  // The roster comes: Luis is out, what waited for him is dropped and the message counts as sent.
+  lose = false;
+  sergio.skew += 11000;
+  await raw(marta, sergio, { type: "room.sync", share: room.id, v: before });
+  await until(() => share(marta).version === before + 1, "Marta tiene la lista nueva");
+  assert.deepEqual([share(marta).members.length, share(marta).wantVersion, marta.store.list("peerOutbox").filter((o) => o.hold).length], [2, null, 0]);
+  await until(() => marta.store.where("peerMessages", "shareId", room.id).find((m) => m.text === "Esto no es para Luis.").status === "sent", "queda como enviado");
+  await marta.rooms.send(room.id, { text: "Tampoco esto." });
+  assert.deepEqual(sentTo(marta, "Tampoco esto."), [addr(sergio)]);
+  await pause(300);
+  assert.equal(luis.store.list("peerMessages").some((m) => /no es para Luis|Tampoco esto/.test(m.text)), false, "Luis never got either");
+  // Someone who is not in the room and asks for its roster learns only that.
+  const mark = sergio.out.length;
+  await raw(luis, sergio, { type: "room.sync", share: room.id, v: 0 });
+  const stub = sergio.out.slice(mark).filter((o) => o.to === addr(luis)).map((o) => o.body);
+  assert.deepEqual(stub.map((b) => [b.type, b.share.title, b.share.version, b.share.members.map((m) => m.id)]), [["share", "", before + 1, [addr(sergio)]]]);
+  assert.ok(!JSON.stringify(stub).includes(addr(marta)) && !JSON.stringify(stub).includes("Marta"));
+  // A version that never comes (nobody can check it) holds for a short time only, and not again right away.
+  await raw(sergio, marta, { type: "msg", share: room.id, id: "11111111-aaaa-bbbb-cccc-000000000078", at: new Date().toISOString(), text: "con una versión imposible", v: 999 });
+  lose = true;
+  const held = marta.peers.rosterHeld(share(marta), addr(luis));
+  assert.equal(marta.peers.rosterHeld(share(marta), addr(sergio)), null, "never for its owner");
+  assert.ok(held === null || held.until - marta.peers.clock() <= PEER_LIMITS.rosterHoldMs);
+  marta.skew += PEER_LIMITS.rosterHoldMs + 1000;
+  assert.equal(marta.peers.rosterHeld(share(marta), addr(luis)), null, "the wait is over");
 });
