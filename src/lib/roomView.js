@@ -144,6 +144,33 @@ export function statusLine(item) {
   }
 }
 
+/** States of a bot that is still at it (or held): shown as a live line under the conversation. */
+const LIVE_STATES = new Set(["thinking", "working", "waiting", "limited", "away"]);
+
+/**
+ * The live lines of a room: what other owners' bots are doing right now, from the room view's
+ * `activity` (one per owner and bot). Your own bots are left out (their work shows as a turn of
+ * the sala and what waits for you as a card), and so is whatever already ended: that is a line
+ * of the conversation (`engine: "line"`), not a state.
+ */
+export function liveLines(activity = []) {
+  return (activity || [])
+    .filter((a) => a && !a.owner?.you && LIVE_STATES.has(a.state) && a.bot)
+    .map((a) => ({ ...a, id: "live:" + (a.owner?.address || "") + ":" + (a.bot.id || a.bot.name), kind: "status", at: null }));
+}
+
+/**
+ * «Vera (de Sergio) está pensando…» comes with the typing events of a Colmena from before
+ * statuses; a bot that already has a live line is not said twice.
+ */
+export function thinkingLeft(names = [], lines = [], own = []) {
+  // `lines`: every state the room knows of other owners' bots, ended ones too («ha parado a Vera»).
+  const shown = lines.filter((l) => !l.owner?.you).map((l) => fold(l.bot?.name)).filter(Boolean);
+  const mine = own.map(fold);
+  // `own`: your bots at work here (their turn shows live); theirs are written «Vera (de Sergio)».
+  return (names || []).filter((n) => !mine.includes(fold(n)) && !shown.some((b) => fold(n) === b || fold(n).startsWith(b + " (")));
+}
+
 /** A handoff between two bots: both names and the sentence a screen reader gets. */
 export function handoffLine(item) {
   // As built the bot that hands over is `bot`; `from` is accepted too.
@@ -318,6 +345,16 @@ export function requestHint(text, picks = []) {
     : "Esos bots son de otras personas: le llegará a cada una para que decida";
 }
 
+/**
+ * The request on a message someone wrote to one of YOUR bots (`asks` of a timeline item) that
+ * still waits for your decision, or null. Its card sits over the composer; the message, which
+ * may be far above, only points at it.
+ */
+export function askWaiting(item) {
+  const ask = (item?.asks || []).find((a) => a?.state === "asked" && a.id);
+  return ask ? { id: ask.id, anchor: "peticion-" + ask.id, text: `${ask.bot?.name || "Tu bot"} espera tu OK` } : null;
+}
+
 /** What each answer to «someone asks your bot» sends, and its button. */
 export function askChoices(ask) {
   const who = firstName(ask?.from?.name);
@@ -344,6 +381,25 @@ export function newsLine(items = [], { bots = [], waiting = 0 } = {}) {
   if (n) parts.push((n === 1 ? "Mensaje nuevo de " : `${n} mensajes nuevos de `) + listNames(who.slice(0, 3)) + (who.length > 3 ? " y más" : ""));
   if (waiting > 0) parts.push(waiting === 1 ? "Algo te espera en esta sala" : `${waiting} cosas te esperan en esta sala`);
   return parts.join(". ");
+}
+
+/**
+ * The same ended state said twice in a row about one bot (a stop reaches the others once from
+ * the sala and once from the turn): the second line within a few seconds is left out.
+ */
+export function withoutRepeats(rows = [], ms = 5000) {
+  let last = null;
+  const out = [];
+  for (const m of rows) {
+    if (m?.engine === "line" && m.kind === "status") {
+      const key = [m.owner?.address || "", m.bot?.id || "", m.state || "", m.text || ""].join("|");
+      const at = Date.parse(m.at) || 0;
+      if (last && last.key === key && Math.abs(at - last.at) < ms) continue;
+      last = { key, at };
+    }
+    out.push(m);
+  }
+  return rows.length === out.length ? rows : out;
 }
 
 /** Timeline pages joined: older pages first, each id once (the newest copy wins). */

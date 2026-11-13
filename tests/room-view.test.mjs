@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { botShape, firstName, initialsOf, listNames } from "../src/lib/identity.js";
 import {
-  askChoices, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, inviteCandidates, inviteTruth, itemType, joinItems,
+  askChoices, askWaiting, liveLines, thinkingLeft, withoutRepeats, authorKey, authorOf, authorView, continues, durationText, groupFlags, handoffLine, inviteCandidates, inviteTruth, itemType, joinItems,
   memberPanel, mentionGroups, mentionTargets, newsLine, requestHint, presenceWord, roomPlace, roomRole, stackLabel, stateWord, statusLine,
 } from "../src/lib/roomView.js";
 import { mentionItems } from "../src/lib/mentionMenu.js";
@@ -248,6 +248,44 @@ test("pages of the timeline join into one list, each row once, in order", () => 
   // Rows of the same instant keep the order the server gave them (the sala before the people).
   assert.deepEqual(joinItems([{ id: "m", at: at(0), engine: "mission" }, { id: "q", at: at(0), engine: "peer" }]).map((m) => m.id), ["m", "q"]);
   assert.deepEqual(joinItems(null, undefined, [{ at: at(0) }]), []);
+});
+
+test("live lines: what other owners' bots are doing now, never yours, never what already ended", () => {
+  const vera = { id: "vera", name: "Vera" }, sergio = { address: "s", name: "Sergio Rico", you: false };
+  const activity = [
+    { owner: sergio, bot: vera, state: "waiting", text: "Vera espera el OK de Sergio" },
+    { owner: sergio, bot: { id: "atlas", name: "Atlas" }, state: "done", tools: 2, text: "Atlas usó 2 herramientas" },
+    { owner: { address: "me", name: "Yo", you: true }, bot: { id: "nora", name: "Nora" }, state: "waiting", text: "Nora espera tu OK" },
+    { owner: { address: "l", name: "Luis" }, bot: { id: "vera", name: "Vera" }, state: "away", text: "Luis no está; Vera seguirá cuando vuelva" },
+    { owner: sergio, state: "working" },
+  ];
+  const lines = liveLines(activity);
+  assert.deepEqual(lines.map((l) => [l.id, l.kind, l.state, l.at]), [["live:s:vera", "status", "waiting", null], ["live:l:vera", "status", "away", null]]);
+  assert.equal(itemType(lines[0]), "status");
+  assert.equal(statusLine(lines[0]), "Vera espera el OK de Sergio");
+  assert.deepEqual(liveLines(null), []);
+});
+
+test("«está pensando» is not said twice: a bot with a state of its own, or one of yours at work, is left out", () => {
+  const activity = [{ owner: { address: "s", name: "Sergio" }, bot: { name: "Vera" }, state: "stopped" }, { owner: { you: true }, bot: { name: "Nora" }, state: "waiting" }];
+  assert.deepEqual(thinkingLeft(["Vera (de Sergio)", "Íris (de Luis)", "Nora"], activity), ["Íris (de Luis)", "Nora"]);
+  assert.deepEqual(thinkingLeft(["Vera", "Vera (de Luis)", "Atlas"], [], ["vera"]), ["Vera (de Luis)", "Atlas"], "your own bot by its exact name only");
+  assert.deepEqual(thinkingLeft(["Veranito (de Sergio)"], activity), ["Veranito (de Sergio)"]);
+  assert.deepEqual(thinkingLeft(undefined, undefined), []);
+});
+
+test("the same ended state twice in a row about one bot shows once", () => {
+  const line = (id, when, bot = "vera") => ({ id, engine: "line", kind: "status", state: "stopped", at: when, owner: { address: "s" }, bot: { id: bot }, text: "x" });
+  const rows = [{ id: "m1", engine: "peer", at: "2026-11-13T10:00:00.000Z" }, line("a", "2026-11-13T10:00:01.000Z"), line("b", "2026-11-13T10:00:01.004Z"), line("c", "2026-11-13T10:00:01.100Z", "atlas"), line("d", "2026-11-13T10:02:00.000Z")];
+  assert.deepEqual(withoutRepeats(rows).map((r) => r.id), ["m1", "a", "c", "d"]);
+  const clean = rows.slice(0, 2);
+  assert.equal(withoutRepeats(clean), clean, "nothing to drop: the same list");
+});
+
+test("a request that waits for you is pointed at from its message", () => {
+  assert.deepEqual(askWaiting({ asks: [{ id: "q1", state: "done" }, { id: "q2", state: "asked", bot: { name: "Vera" } }] }), { id: "q2", anchor: "peticion-q2", text: "Vera espera tu OK" });
+  assert.equal(askWaiting({ asks: [{ id: "q1", state: "working" }] }), null);
+  assert.equal(askWaiting({}), null);
 });
 
 test("every room opens at /sala/:id, private or with people", () => {

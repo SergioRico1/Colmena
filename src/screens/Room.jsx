@@ -38,7 +38,7 @@ import { RELAY_LABEL, editMessage, fileBase64, unsendMessage } from "../lib/peer
 import { isHidden, later, reversible, useToasts } from "../lib/undoToast.js";
 import { roomLinks } from "../lib/rooms.js";
 import { firstName, initialsOf, listNames } from "../lib/identity.js";
-import { itemType, memberPanel, newsLine, roomPlace, stackLabel } from "../lib/roomView.js";
+import { askWaiting, itemType, liveLines, memberPanel, newsLine, roomPlace, stackLabel, thinkingLeft, withoutRepeats } from "../lib/roomView.js";
 import { useRoomTimeline } from "../lib/useRoomTimeline.js";
 import NotFound from "./NotFound.jsx";
 
@@ -166,7 +166,10 @@ function Room({ id, query }) {
   const { mission, steps: missionSteps, thread, artifacts, approvals, live, activity, memberIds } = room;
   // What someone asked one of your bots here is decided on its own card (RoomAsks), once.
   const asks = view?.asks || EMPTY;
-  const pending = useMemo(() => (asks.length ? room.pending.filter((a) => !a.roomRequest) : room.pending), [asks.length, room.pending]);
+  // Its approval reaches the state before the room view is read again: never drawn from there too.
+  const pending = useMemo(() => (room.pending.some((a) => a.roomRequest) ? room.pending.filter((a) => !a.roomRequest) : room.pending), [room.pending]);
+  const requestKey = (store.approvals || EMPTY).filter((a) => a.roomRequest && (a.roomId === roomId || a.roomRequest.roomId === roomId)).map((a) => a.id + ":" + a.status).join(",");
+  useEffect(() => { if (shared && requestKey) refreshView(); }, [shared, requestKey, refreshView]);
   const waitingCount = pending.length + asks.filter((a) => a.state === "asked").length;
   const [sharedOut, setSharedOut] = useState({}); // artifact id → "busy" | "done"
   const shareArtifact = async (artifact) => {
@@ -182,7 +185,7 @@ function Room({ id, query }) {
   );
   // The rows: a room with people reads the merged timeline; a private one, its sala.
   const rows = useMemo(() => {
-    const base = shared ? tl.rows.filter((m) => itemType(m) && !isHidden("peermsg:" + m.id)) : room.spoken || room.messages;
+    const base = shared ? withoutRepeats(tl.rows.filter((m) => itemType(m) && !isHidden("peermsg:" + m.id))) : room.spoken || room.messages;
     return withOrphanQuestions(base, pending);
   }, [shared, tl.rows, room.spoken, room.messages, pending]);
   const missionRows = useMemo(() => (shared ? rows.filter((m) => itemType(m) === "mission") : room.messages), [shared, rows, room.messages]);
@@ -234,6 +237,14 @@ function Room({ id, query }) {
   const guest = !!view?.people?.find((p) => p.you && p.role === "guest");
   const relay = peers?.relay?.status || "off";
 
+  // What other owners' bots are doing right now («Vera espera el OK de Sergio»): neutral lines.
+  const liveNow = useMemo(() => (shared ? liveLines(view?.activity) : EMPTY), [shared, view?.activity]);
+  // Your own bots at work show as a live turn of the sala: not again as «está pensando».
+  // A sala you stopped keeps its turn open: its bots are not «pensando» either.
+  const held = mission?.status === "paused";
+  const mineBusy = useMemo(() => bots.filter((b) => held || activity.some((x) => x.botId === b.id) || live.some((l) => l.botId === b.id)).map((b) => b.name), [bots, activity, live, held]);
+  const thinking = useMemo(() => thinkingLeft(tl.thinking, view?.activity || EMPTY, mineBusy), [tl.thinking, view?.activity, mineBusy]);
+
   // ---- the people's side: who «@» means, threads, files, edits
   const mentionable = useMemo(() => (view?.bots || EMPTY).flatMap((g) => g.bots.map((b) => ({ owner: g.owner.address, bot: b.id, name: b.name, role: b.role, color: b.color, shape: b.shape, mine: !!g.owner.you, note: g.owner.you ? "tu bot" : "de " + firstName(g.owner.name) }))), [view]);
   const botOf = useCallback((owner, bot) => mentionable.find((x) => x.owner === owner && x.bot === bot) || null, [mentionable]);
@@ -265,10 +276,18 @@ function Room({ id, query }) {
     if (type === "status") return <StatusLine key={m.id} item={m} />;
     if (type === "handoff") return <HandoffLine key={m.id} item={m} />;
     if (type !== "peer") return null;
+    const waits = askWaiting(m);
     return (
-      <RowBoundary key={m.id} resetKey={m.id + ":" + (m.edited || "") + ":" + (m.status || "")}>
+      <RowBoundary key={m.id} resetKey={m.id + ":" + (m.edited || "") + ":" + (m.status || "") + ":" + (waits ? "w" : "")}>
         <PeopleMessage m={m} dm={false} botOf={botOf} shared={sameName} lastSeen={m.id === lastSeenMine} continued={continued} onMeeting={tl.reload}
           onReact={react} onRetry={retry} onEdit={edit} onDelete={remove} onThread={m.local || gone ? null : openThread} onOpenFile={setViewing} onError={setError} />
+        {/* It waits for you: a honey dot and where to decide (the card is over the composer). */}
+        {waits ? (
+          <a href={"#" + waits.anchor} onClick={(e) => { const card = document.getElementById(waits.anchor); if (!card) return; e.preventDefault(); card.scrollIntoView({ block: "nearest" }); card.querySelector("button")?.focus({ preventScroll: true }); }}
+            style={{ alignSelf: "flex-start", margin: "0 0 4px 52px", display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "13px", fontWeight: 600, color: "#12131A", textDecoration: "none" }}>
+            <span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#FFC93C", boxShadow: "0 0 0 1px rgba(18,19,26,.18)" }} />{waits.text + " · decidir"}
+          </a>
+        ) : null}
       </RowBoundary>
     );
   };
@@ -384,10 +403,10 @@ function Room({ id, query }) {
   ) : null;
 
   // People typing and other people's bots thinking; files on their way; what went wrong.
-  const above = shared && (tl.typing.length || tl.thinking.length || sending.length || error) ? (
+  const above = shared && (tl.typing.length || thinking.length || sending.length || error) ? (
     <p role="status" style={{ margin: "0 0 8px", minHeight: "18px", display: "flex", flexWrap: "wrap", gap: "4px 16px", fontSize: "13px", color: "#5C606C" }}>
       {tl.typing.length ? <span>{listNames(tl.typing.map(firstName)) + (tl.typing.length > 1 ? " están escribiendo…" : " está escribiendo…")}</span> : null}
-      {tl.thinking.length ? <span>{listNames(tl.thinking) + (tl.thinking.length > 1 ? " están pensando…" : " está pensando…")}</span> : null}
+      {thinking.length ? <span>{listNames(thinking) + (thinking.length > 1 ? " están pensando…" : " está pensando…")}</span> : null}
       {sending.length ? <span>{"Cifrando y enviando " + listNames(sending) + "…"}</span> : null}
       {error ? <span role="alert" style={{ color: "#B4372A" }}>{error}</span> : null}
     </p>
@@ -449,7 +468,8 @@ function Room({ id, query }) {
                     </div>
                   ) : null}
                 </header>
-                {mission ? <BlockerBand mission={mission} pending={pending.filter((a) => !rows.some((m) => m.approvalId === a.id))} bots={bots} /> : null}
+                {/* One honey card per thing that waits: the band only says what is not already drawn below (a row of the conversation or the card over the composer). */}
+                {mission ? <BlockerBand mission={mission} pending={pending.filter((a) => a.kind === "question" && !rows.some((m) => m.approvalId === a.id))} bots={bots} /> : null}
                 {mission ? <StuckBand mission={mission} bots={bots} /> : null}
                 {shared && relay !== "online" ? (
                   <p role="status" style={{ flex: "none", margin: 0, padding: "10px 26px", background: "#ECECE7", color: "#3D404A", fontSize: "14px" }}>
@@ -471,6 +491,7 @@ function Room({ id, query }) {
                       ) : null}
                       <RoomMessages mission={mission} messages={rows} thread={thread} bots={bots} approvals={approvals} artifacts={artifacts} steps={steps} onOpenArtifact={openDoc} openArtifactId={null} showThread={false} onOpenReplies={mission ? openReplies : null}
                         foreign={shared ? foreign : null} renderForeign={shared ? renderForeign : null} shareSlot={shared && !gone ? shareSlot : null} />
+                      {liveNow.length ? <div role="status" aria-label="Bots de otras personas en esta sala" style={{ display: "flex", flexDirection: "column" }}>{liveNow.map((line) => <StatusLine key={line.id} item={line} />)}</div> : null}
                       {mission?.limited ? <LimitBanner mission={mission} botName={mission.limited.botIds?.length === 1 ? findBot(bots, mission.limited.botIds[0])?.name : null} /> : null}
                       {/* Where the bots' live work shows: «qué está haciendo ahora» appears when this is out of view. */}
                       <span aria-hidden="true" data-room-end="" style={{ display: "block", height: "1px", marginTop: "-1px" }} />

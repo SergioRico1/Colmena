@@ -66,6 +66,11 @@ export function useRoomTimeline(roomId, shareId, onActivity = null) {
       }
       // Another owner's bot started, stopped or waits: the room's live states, no page needed.
       if (event.type === "room-activity") { activityRef.current?.(event.activity || []); return; }
+      // A line of the conversation («usó 4 herramientas · 12 min», a hand-off): into the page as it is.
+      if (event.type === "room-line") {
+        if (event.item?.id) setData((d) => (d.loading ? d : { ...d, latest: { ...d.latest, items: joinItems(d.latest.items, [event.item]) } }));
+        return;
+      }
       if (event.type === "message" && event.message?.from !== "me") setTyping((names) => names.filter((n) => n !== event.message.author?.name));
       // A message, a seen mark, a file that finished, a meeting that moved: the page again.
       soon(event.type === "message" ? 40 : 200);
