@@ -27,7 +27,7 @@
 // the team's, with `teamId` and `general: true` in its roster. An older Colmena sees a group.
 import { randomUUID } from "node:crypto";
 import { now } from "../store.mjs";
-import { isAddress, isTeamId, signTeamRoster, TEAM_MAX_MEMBERS, verifyTeamRoster } from "./protocol.mjs";
+import { isAddress, isTeamId, signTeamRoster, TEAM_MAX_MEMBERS, verifyCard, verifyTeamRoster } from "./protocol.mjs";
 import { statusNow } from "../notifications.mjs";
 import { botsOf, cleanBot, dmId, PeerError, PEER_LIMITS, statusOf } from "./service.mjs";
 
@@ -40,6 +40,15 @@ export const TEAM_LIMITS = Object.freeze({
   // Open codes per team in one Colmena (they also count towards the 20 of «Personas»).
   invites: 10,
   name: 60, gone: 64, waiting: 20, syncEvery: 24 * 3600000,
+  // A change an admin asks for says which roster it was made against (team.req `v`). Adding
+  // someone or changing who administers is refused when that roster is more than this many
+  // versions behind: an admin whose Colmena is on has the current one within seconds, and a
+  // request that old was held back or comes from a Colmena that has not caught up. It gets the
+  // roster and asks again.
+  staleVersions: 8,
+  // People one admin may bring into a team in a day (each is a new key the creator signs for
+  // everybody): half a team.
+  addsPerDay: 16,
 });
 export const GENERAL = "general";
 const ROLE = { owner: "creador", admin: "admin", member: "miembro" };
@@ -72,6 +81,7 @@ export class Teams {
   constructor({ peers, store = peers.store }) {
     this.peers = peers;
     this.store = store;
+    this.toldOut = new Map(); // address:team → when someone who went out was last told so
   }
   start() {
     const safely = (fn) => (event) => { try { fn(event); } catch (error) { this.peers.log?.("Equipos: " + error.message); } };
@@ -139,6 +149,25 @@ export class Teams {
       members: t.members.map((m) => ({ id: m.id, role: m.role, box: m.box, name: m.id === this.me ? this.peers.myName() : this.peers.contact(m.id)?.name || m.name })),
       ...(changes || {}),
     });
+  }
+  /**
+   * What someone who is no longer in a team of yours is told: that they are out, as of which
+   * version. A roster signed like any other (their Colmena, also an older one, reads «I am not
+   * in it»), with the creator alone in it: nobody else's name, address or key, nor the team's
+   * name as it is now.
+   */
+  outRoster(t) {
+    return signTeamRoster(this.peers.identity, {
+      kind: "team", id: t.id, name: "", owner: t.owner, version: t.version, room: t.room, at: t.at,
+      members: [{ id: this.me, role: "owner", box: this.peers.identity.box.pub }],
+    });
+  }
+  /** Tells someone who went out that they are out (once a minute each at most). */
+  tellOut(t, address) {
+    if (!(t.gone || []).includes(address) || this.clock() - (this.toldOut.get(address + ":" + t.id) || 0) < 60000) return;
+    this.toldOut.set(address + ":" + t.id, this.clock());
+    if (this.toldOut.size > 500) this.toldOut.delete(this.toldOut.keys().next().value);
+    if (this.peers.enqueue(address, { type: "team.roster", roster: this.outRoster(t) })) void this.peers.flushOutbox();
   }
   /**
    * Someone of a team as a «known» person: they can write in rooms you share, not to you
@@ -242,7 +271,9 @@ export class Teams {
       return this.store.patch("teams", t.id, { ...changes, version: t.version + 1, at: now() });
     });
     const roster = this.roster(next);
-    for (const id of new Set([...next.members.map((m) => m.id), ...extra])) if (id !== this.me) this.peers.enqueue(id, { type: "team.roster", roster });
+    for (const m of next.members) if (m.id !== this.me) this.peers.enqueue(m.id, { type: "team.roster", roster });
+    // Whoever just went out learns that, and nothing of who stays.
+    for (const id of new Set(extra)) if (id !== this.me && !next.members.some((m) => m.id === id)) this.peers.enqueue(id, { type: "team.roster", roster: this.outRoster(next) });
     this.syncGeneral(next, extra);
     void this.peers.flushOutbox();
     this.after(t, next);
@@ -271,8 +302,10 @@ export class Teams {
   dropMember(t, address) {
     if (address === t.owner) throw new PeerError("A quien creó el equipo no se le puede quitar.", 409);
     if (!t.members.some((m) => m.id === address)) throw new PeerError("Esa persona no está en el equipo.", 404);
-    // `gone`: who may still ask for the roster that shows they are out.
-    return this.commit(t, { members: t.members.filter((m) => m.id !== address), gone: [...(t.gone || []).filter((x) => x !== address), address].slice(-TEAM_LIMITS.gone) }, [address]);
+    // `gone`: who may still ask whether they are out. `goneAt`: the version and the moment each
+    // went out, so nothing asked before that brings them back or takes them out again.
+    const goneAt = Object.fromEntries([...Object.entries(t.goneAt || {}).filter(([id]) => id !== address), [address, { v: t.version + 1, at: now() }]].slice(-TEAM_LIMITS.gone));
+    return this.commit(t, { members: t.members.filter((m) => m.id !== address), gone: [...(t.gone || []).filter((x) => x !== address), address].slice(-TEAM_LIMITS.gone), goneAt }, [address]);
   }
   renameTeam(t, name) {
     const title = clip(name, TEAM_LIMITS.name);
@@ -286,19 +319,42 @@ export class Teams {
     const role = on ? "admin" : "member";
     return m.role === role ? t : this.commit(t, { members: t.members.map((x) => (x.id === address ? { ...x, role } : x)) });
   }
+  /**
+   * Someone an admin asks to add, as the creator takes them: with a key the creator already
+   * holds, or with their own card (address, box key and name signed by themselves). A key an
+   * admin merely says is theirs is never signed into the roster. A few a day from one admin.
+   */
+  vouched(t, admin, member) {
+    const refuse = () => { throw new PeerError("Esa persona no es válida."); };
+    const had = this.peers.contact(member?.id);
+    const card = verifyCard(member?.card);
+    const person = had?.box && had.status !== "removed" ? { id: had.id, box: had.box, name: had.name } : card && card.id === member?.id ? { id: card.id, box: card.box, name: card.name } : refuse();
+    const day = new Date(Date.now() - 864e5).toISOString();
+    const added = (t.added || []).filter((x) => x.at > day);
+    if (added.filter((x) => x.by === admin).length >= TEAM_LIMITS.addsPerDay) refuse();
+    if (!t.members.some((m) => m.id === person.id)) this.store.patch("teams", t.id, { added: [...added, { by: admin, at: now() }].slice(-200) });
+    return person;
+  }
   /** An admin's request (or anyone's «I leave»): checked against the roster as it is now. */
   onRequest(from, body) {
     const t = this.owned(body.team);
     if (!t) return;
     const again = () => { this.peers.enqueue(from.id, { type: "team.roster", roster: this.roster(this.record(t.id)) }); void this.peers.flushOutbox(); };
     const role = this.roleOf(t, from.id);
-    // Someone who is no longer in it only learns that they are out.
-    if (!role) return void ((t.gone || []).includes(from.id) && again());
+    // Someone who is no longer in it only learns that they are out: never who is in it now.
+    if (!role) return void this.tellOut(t, from.id);
     if (body.op === "leave") return void this.dropMember(t, from.id);
     // Not an admin (any more): nothing changes, and they get the roster that says so.
     if (role !== "admin") return again();
+    // Asked against an old roster (or by a Colmena that does not say which): not applied.
+    const about = typeof body.member === "string" ? body.member : body.member?.id;
+    if (this.stale(t, body, about)) {
+      again();
+      if (body.op === "add" && isAddress(about)) this.peers.enqueue(from.id, { type: "team.no", team: t.id, member: about, reason: "refused" });
+      return;
+    }
     try {
-      if (body.op === "add") this.addMember(t, { id: body.member?.id, box: body.member?.box, name: body.member?.name });
+      if (body.op === "add") this.addMember(t, this.vouched(t, from.id, body.member));
       else if (body.op === "remove") this.dropMember(t, String(body.member || ""));
       else if (body.op === "rename") this.renameTeam(t, body.name);
       else if (body.op === "admin") this.adminSet(t, String(body.member || ""), body.on === true);
@@ -310,12 +366,28 @@ export class Teams {
       if (body.op === "add" && isAddress(body.member?.id)) this.peers.enqueue(from.id, { type: "team.no", team: t.id, member: body.member.id, reason: error.reason || "refused" });
     }
   }
+  /**
+   * Whether a change an admin asks for was made against a roster too old to apply it:
+   *  · about someone who was taken out after that roster (a request held back must neither
+   *    bring them back nor take them out again: they return only with an invitation made after
+   *    they left);
+   *  · adding someone or changing who administers, against a roster several versions behind, or
+   *    from a Colmena that does not say which roster it had (an older one).
+   * Leaving is always taken; a new name is harmless whenever it was asked.
+   */
+  stale(t, body, about = null) {
+    if (!["add", "remove", "admin"].includes(body.op)) return false;
+    const v = Number.isSafeInteger(body.v) && body.v > 0 ? body.v : 0;
+    const left = about ? t.goneAt?.[about] : null;
+    if (left && (v < left.v || (typeof body.made === "string" && body.made <= left.at))) return true;
+    return body.op !== "remove" && (!v || t.version - v > TEAM_LIMITS.staleVersions);
+  }
   onSync(from, body) {
     const t = this.owned(body.team);
     if (!t) return;
     const member = !!this.roleOf(t, from.id);
-    if (!member && !(t.gone || []).includes(from.id)) return;
-    if (member && Number(body.v) >= t.version) return;
+    if (!member) return void this.tellOut(t, from.id);
+    if (Number(body.v) >= t.version) return;
     this.peers.enqueue(from.id, { type: "team.roster", roster: this.roster(t) });
     void this.peers.flushOutbox();
   }
@@ -331,9 +403,12 @@ export class Teams {
     if (!c?.box) return;
     const no = (reason) => { this.peers.enqueue(from, { type: "team.no", team: invite.team, reason }); void this.peers.flushOutbox(); };
     if (!t || !this.admin(t)) return no("refused");
-    const person = { id: from, box: c.box, name: c.name };
-    if (t.owner !== this.me) return this.request(t, { op: "add", member: person });
+    const person = { id: from, box: c.box, name: c.name, card: c.card };
+    // `made`: when the code was made (someone who was taken out returns only with a newer one).
+    if (t.owner !== this.me) return this.request(t, { op: "add", member: person, v: t.version, made: invite.createdAt });
     try {
+      const left = t.goneAt?.[from];
+      if (left && String(invite.createdAt || "") <= left.at) return no("refused");
       this.addMember(t, person);
     } catch (error) {
       if (!(error instanceof PeerError)) throw error;
@@ -342,7 +417,10 @@ export class Teams {
   }
 
   // ---------------------------------------------------------------- what you do
-  /** Sends the creator a change you may ask for; it shows as «waiting» until a new roster comes. */
+  /**
+   * Sends the creator a change you may ask for; it shows as «waiting» until a new roster comes.
+   * Each says the roster it was asked against (`v`): its creator applies nothing asked against an old one.
+   */
   request(t, body) {
     if (!this.peers.enqueue(t.owner, { type: "team.req", team: t.id, ...body })) throw new PeerError("No se pudo avisar a quien creó el equipo.", 409);
     const target = typeof body.member === "string" ? body.member : body.member?.id || null;
@@ -355,7 +433,7 @@ export class Teams {
     const title = clip(name, TEAM_LIMITS.name);
     if (!title) throw new PeerError("Ponle un nombre al equipo.");
     if (t.owner === this.me) this.renameTeam(t, title);
-    else if (title !== t.name) this.request(t, { op: "rename", name: title });
+    else if (title !== t.name) this.request(t, { op: "rename", name: title, v: t.version });
     return this.view(id);
   }
   remove(id, address) {
@@ -365,7 +443,7 @@ export class Teams {
     if (address === t.owner) throw new PeerError("A quien creó el equipo no se le puede quitar.", 409);
     if (!this.roleOf(t, address)) throw new PeerError("Esa persona no está en el equipo.", 404);
     if (t.owner === this.me) this.dropMember(t, address);
-    else this.request(t, { op: "remove", member: address });
+    else this.request(t, { op: "remove", member: address, v: t.version });
     return this.view(id);
   }
   setAdmin(id, address, on) {
@@ -375,7 +453,7 @@ export class Teams {
     if (!role) throw new PeerError("Esa persona no está en el equipo.", 404);
     if (role === "owner") throw new PeerError("Quien creó el equipo siempre lo administra.", 409);
     if (t.owner === this.me) this.adminSet(t, address, on);
-    else if ((role === "admin") !== !!on) this.request(t, { op: "admin", member: address, on: !!on });
+    else if ((role === "admin") !== !!on) this.request(t, { op: "admin", member: address, on: !!on, v: t.version });
     return this.view(id);
   }
   /** A code for one person, good for 24 hours: whoever uses it joins the team. */
@@ -564,7 +642,7 @@ export class Teams {
   }
 
   // ---------------------------------------------------------------- teammates who are not contacts
-  profile() { return { type: "team.profile", name: this.peers.myName(), bots: this.peers.myBots(), status: this.peers.myStatus() }; }
+  profile() { return { type: "team.profile", name: this.peers.myName(), bots: this.peers.myBots(), status: this.peers.myStatus(), card: this.peers.myCard() }; }
   /**
    * Your name, bots and status to new teammates you do not talk to directly (contacts get
    * «profile»). Both sides say hello when a roster brings them together, and one of the two
@@ -588,6 +666,7 @@ export class Teams {
    */
   onProfile(from, body) {
     if (!this.teammate(from.id)) return;
+    this.peers.keepCard(from.id, body.card);
     this.store.patch("peerContacts", from.id, { profileAt: now(), ...(clip(body.name, PEER_LIMITS.name) ? { name: clip(body.name, PEER_LIMITS.name) } : {}), ...(Array.isArray(body.bots) ? { bots: botsOf(body) } : {}), ...("status" in body ? { away: statusOf(body) } : {}) });
     if (body.hi === true && body.got !== true) {
       this.peers.enqueue(from.id, this.profile());

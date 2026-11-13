@@ -91,7 +91,7 @@ and `peerErrand` (`server/peers/errands.mjs:203-205`); narrowing is mission-wide
 | `GET /api/rooms?team=` | Rooms of a team, or the private and team-less ones |
 | `GET /api/rooms/:id` | Room with `people[{address,name,role,presence}]` and `bots[{owner,bots}]` |
 | `GET /api/rooms/:id/timeline?cursor=` | Merged page |
-| `POST /api/rooms/:id/messages` | Send, routed as above |
+| `POST /api/rooms/:id/messages` | Send, routed as above. `POST /api/missions/:id/messages` and `/queue` answer 409 for the sala of a room with a share |
 | `POST /api/rooms/:id/people` | Invite; creates the share on first use |
 | `POST /api/rooms/:id/leave`, `PATCH /api/rooms/:id`, `POST /api/rooms/:id/seen` | Leave, rename or archive, mark read |
 
@@ -121,6 +121,15 @@ decision (a plan, a choice) waits as a room: it names a bot only in that bot's o
 
 - Store kinds `teams` (the last roster verified, signed by the creator) and `teamMemberships`
   (your state in each); `settings.currentTeam`.
+- Someone who is not a member (taken out, or asking again with `team.req` / `team.sync` while in
+  `gone`) gets `Teams#outRoster`: a signed roster of the current version with `name: ""` and the
+  creator as its only member. The full roster only ever goes to current members.
+- `team.req {team, op, v, made?, …}`: `v` is the roster version the sender had, `made` (with
+  `add`) when the code was made. The creator keeps `teams.goneAt {address: {v, at}}` (when each
+  person was taken out) and `Teams#stale` refuses: `add`/`remove`/`admin` about someone with
+  `v < goneAt.v` or `made <= goneAt.at`; `add`/`admin` with no `v` or more than
+  `TEAM_LIMITS.staleVersions` (8) behind. `leave` and `rename` are always taken. A refused
+  request is answered with the current roster (and `team.no` for an `add`).
 - «general» is a `peerShares` group whose id is the team roster's `room`; its record and
   `shareView` carry `teamId` and `general: true`. Other rooms of a team carry `teamId` only
   (`createGroup(title, members, { teamId })`). Adopt them by those fields.
@@ -158,6 +167,12 @@ choice open:
   Trabajo (`Tareas.jsx`) lists tasks only, by this kind (`src/lib/rooms.js › tasksOf`).
 - **A room and its share always have the same id.** It follows from the id rules, and the code
   relies on it: `ensureForShare` adopts the room with the share's id.
+
+  Trabajo (`Tareas.jsx`) still lists salas too: it was not this task's file.
+- **A room and its share have the same id**, with one exception. `ensureForShare` adopts a
+  share-less room with the share's id only when this Colmena owns that share (its first
+  invitation). A group of somebody else that arrives with the id of a private room gets a room
+  with a fresh id (`ofShare` finds it by `shareId`); the private room is untouched.
 - **`createdBy`** is null for a private room made before «Personas» had its keys; views fill in
   your address.
 - **Titles.** A private room is named after its sala's `#slug` (what salas show today), and
@@ -173,9 +188,16 @@ choice open:
   bot to find a meeting slot still goes to meetings. Personal bots («solo para mí») never work in
   a room. The turn is told the room is shared and gets the last 30 messages of the people as
   outside content.
-- **What is relayed.** The final answer of every completed step that left a message, except a
-  plan step, once (`peerId`, and `peerParts` when it went in several). While the step runs the
-  others see the bot thinking. A relay that fails (no mailbox) is logged and not retried.
+- **What is relayed.** The final answer of every completed step of the shared conversation
+  (`Rooms#throughShare`: it has `roomAsk`, or it started at or after `share.createdAt` and the
+  message it answers — followed back through a teammate that passed the word or a late answer; for
+  a step with no `ackOn`, the last user message before it began — has `peerId`) that left a
+  message without `stall`, except a plan step, once (`peerId`, and `peerParts` when it went in several). While the step runs the
+  others see the bot thinking. A posted answer waits in `peerOutbox` like any message. One that
+  could not be posted, and a request's deliverable that could not be uploaded, are kept in
+  `roomUnsent {id: answer:step | file:artifact, kind, shareId, stepId|artifactId, askId?, botId,
+  replyTo?, t}` and tried again by `RoomWork#unsent` every tick and after a restart, for
+  `ROOM_WORK.unsentMs` (7 days).
 - **Parts.** `part: {of, n, total, glue}` on bot messages; `of` is the id of the first part and
   `glue` what stood between two parts, so the text joins back as it was. Later parts neither
   count as unread nor notify.
@@ -188,6 +210,7 @@ choice open:
   person `room.intro` with the owner's address and key. A code (`invite`) is still the owner's
   alone: 403 «Pídele a <dueño> que le invite.». `roomRequests` are not in any «what waits for
   you» list yet: `waitingItems` belongs to another task.
+- **Cards.** `room.req.member` and `room.intro.owner` carry `card` (the person's own signed `{kind, id, box, name, at, sig}`: `protocol.mjs`); `Rooms#onRequest`, `Rooms#onIntro` and `Teams#vouched` take the key and name from a verified card (or from a contact already held) and ignore the rest. `Rooms#askOwner` answers 409 while either card is missing. `ROOM_LIMITS.intros` (10 a day per sender).
 - **Decision 2 (`room.bots`).** Team profiles cover every member of a room of a team, and
   contacts get `profile`. `room.bots` is sent only to people you share a room with who are
   neither. Their presence stays unknown (shown offline).
@@ -200,6 +223,7 @@ choice open:
   the timeline takes 47 ms without the index and 7 ms with it (56 → 15 ms encrypted); the old
   page (`where` + sort of the whole conversation) 33 → 16 ms (172 → 155 ms encrypted, where
   decrypting every row is what costs).
+- **Roster version on messages.** `msg.v` is the sender's `share.version`. `Peers#newerRoster`: `v > share.version` (not the owner's own room) sets `wantVersion`, `heldUntil` (`rosterHoldMs`, 30 s) and `newerFrom` on the share and sends the owner `room.sync {share, v}`. While held, `post` queues the envelopes for everyone but the owner and `newerFrom` with `peerOutbox.hold = shareId` and `nextAt = heldUntil`; `onRoster` (a newer roster, or the owner repeating the same version) clears the three fields and `releaseHeld` sends what waited to current members and drops the rest. `RoomWork#incoming` takes no request from a held sender. An unresolved hold is not started again for `rosterHoldGap` (10 min). `Rooms#onSync`: the owner answers a member with `share` (the roster as it is) and a non-member with a roster of the owner alone and `title: ""`, once every 10 s per person and room.
 - **`GET /api/sidebar`** was not built: the sidebar reads `rooms` from `/api/state`
   (`src/lib/sidebar.js`), which changes live.
 - **`/api/state` budget.** The room list costs about 100 bytes a room. The older `peers` view
@@ -236,8 +260,10 @@ who is not a contact is a `known` contact and has the same field, so the rule is
 and `text` (the same wrapped as outside content: every reader of the sala gets it marked).
 `origin.mjs`: `isOtherPerson`; `isPersonMessage` false, `personWords` empty, `isOutsideOrigin`
 true, and `worksFromOutside` true for any step with `roomAsk`. Send guards, `personTurnText`,
-the notes' and blocks' «the person asked» and the mission brief skip it; `Connections#request`
-auto-sends nothing in such a turn. A turn for another person never merges with one of the
+the notes' and blocks' «the person asked» and the mission brief skip it. In such a turn
+(`mission.peerErrand`) `Connections#request` approves nothing by itself except a read: no
+standing write grant, no «escribe» access of the bot, no `ownAppTarget`, no auto-send; every
+write, send and delete is a pending approval of the owner. A turn for another person never merges with one of the
 owner's (`deliverTurn`), is never routed, and a lost one is never given to Atlas.
 
 **Decision 4.** `step.capabilities` (plus `step.roomAsk`, `step.attended`) come from the message
@@ -249,14 +275,53 @@ Código, errands, memory or soul tools; hosted web search follows `web`). It is 
 `toolsForStep`, `runStep` and `tool`; nothing is stored on the mission. The capabilities are the
 errand ones (`settings.peerErrandTools`: web, carpetas, apps, ordenador).
 
+**A request turn (`server/request-turn.mjs`).** With `peerErrand` set (a request in a room, or an
+errand between bots) `toolsForStep` ends with an allow-list, closed by default:
+
+- always (`REQUEST_ALWAYS`): `ask_room`, `ask_user`, `create_deliverable`, `create_document`,
+  `create_spreadsheet`, `create_presentation`, `create_image`, `read_deliverable`, `read_file`;
+- by capability (`REQUEST_BY_CAPABILITY`): web → `web_fetch` (and hosted search); carpetas →
+  `list_folder`, `read_folder_file`; apps → `apps_accounts`, `apps_search`, `apps_describe`,
+  `apps_execute`, `apps_table` and the direct app tools (`isAppToolName`); ordenador →
+  `browser_open|read|screenshot|act|fill|submit|download`, `open_app`,
+  `desktop_windows|open|look|do`;
+- everything else is neither offered nor run, whatever adds it (`extraTools`, `stepTools`, a new
+  built-in). `use_tool` and `find_tools` read the same list.
+
+`read_file`, `read_deliverable`, the files a deliverable tool embeds (`image`, `rows_from`) and
+the version a deliverable follows are scoped to the artifacts of that request
+(`EffectMethods#requestArtifacts`: steps with the same `roomAsk`; an errand's own mission). A
+request's `create_deliverable` writes no working file in the sala's folder.
+
+What such a step reads (`ContextMethods#requestHistory`): one message with `step.request` — the
+requester's words wrapped as outside content, the room's title and `Rooms#sharedNote(…, {reader})`,
+i.e. up to 30 messages of the share (`peerMessages`: not local, not failed, not in a thread) sent
+since the requester was first seen in the room (`roomMembers {id: share:address, shareId, address,
+since}`, kept by `RoomWork#sawMembers`). A turn that goes on from the request (a teammate named,
+a late answer) gets the first turn's `request` before its own. Never: `priorMessages`, the brief,
+«Resultados previos», hints, reactions, sibling answers. While it runs nothing of the sala is
+injected (`injectHints`, `injectMessages`, `injectRelays`, `injectBrief`, `injectPermissionChange`
+are skipped; `injectLateAnswers` adds the owner's late answer to a question of that very step).
+`composeInstructions` leaves out memory, profile, standing orders, the skill index and the sala's
+slug. Attachments never reach a request turn (`Rooms#send` refuses them in a room with people).
+
 **Questions.** `ask_user` is unchanged (a local approval of the owner). `ask_room {question}`
 exists only in a step with `roomAsk` (`Runtime#stepTools`): it posts the question as a plain
 message of the bot addressed to the requester and the step ends without relaying its closing
 line. The requester's reply (linked, a mention of that bot, or their next plain message within
 10 minutes) starts a new turn of the same request, outside content again; at most 3 per request.
 
-**Limits.** 6 requests per person, room and hour (`ERRAND_LIMITS.perHour`), counted when they
-reach a rule other than `nunca`; over it the requester gets `throttled`. A message signed by a
+**Limits** (`ROOM_WORK`, `RoomWork#overLimit`). Counted over the stored `roomAsks` (each keeps
+`t`, the clock when it came), so they survive a restart: 6 per person, room and hour (`perHour`);
+12 per person and hour and 40 per day over all rooms (`personHour`, `personDay`); 30 per hour for
+everybody (`allHour`); 5 requests of one person in state `asked` at once (`open`). A request
+counts when it reaches a rule other than `nunca`; over a limit it is not taken and the requester
+gets `throttled`: one `room.status` to the requester only, once per requester, room and hour
+(`RoomWork#throttled`, `roomThrottled {id: share:address, shareId, from, t}`, `throttledMs`). A reply to `ask_room` is not a request: it adds to `roomAsks.replies`, at most
+3 (`replies`) start a turn. In a room made by someone else where the owner of the bot has not
+taken part (`RoomWork#takesPart`: owns it, it is a team's «general», wrote there, or approved a
+request there by hand) a `siempre` request is stored with `rule: "pregunta", held: true` and
+asks. A message signed by a
 bot, a card or a guest's message never gets here. Admission: a `siempre` request is `long` work
 (parked when the plan window is almost used: status `limited`); one approved just now is
 `attended` and counts as the owner's turn. Brakes for self-started work do not apply; the step's
@@ -265,16 +330,23 @@ own loop guard does.
 **What leaves (wire).** Besides the final answer (unchanged):
 
 - `room.status {share, bot, state, at, tools?, ms?}`: `bot` an id, `state` one of thinking,
-  working, waiting, limited, done, declined, stopped, failed, throttled; `at` the sender's clock
+  working, waiting, limited, done, declined, stopped, failed, throttled, expired; `at` the sender's clock
   in ms; `tools`/`ms` integers, only with `done`. Built and accepted by `cleanStatus`, which
   copies those fields and nothing else. `thinking`/`working` are ephemeral (not kept by the
   mailbox, refreshed every 30 s to whoever is connected); the rest are queued like any message.
-  Not remembered in `peerSeen`: a status older than the last one known is ignored.
+  Not remembered in `peerSeen`: a status older than the last one known is ignored. The newest
+  `at` heard of each (room, owner, bot) is kept in `roomHeard {id: share:owner:bot, shareId, at}`,
+  across restarts and after the status itself is dropped.
 - `room.handoff {share, from, to, at}`: two bot ids of the sender (pass-the-word, a plan's
   work step, `ask_bot`/`message_bot` through the `thread` records), once a minute per pair.
 - Deliverables made in a step with `roomAsk` (its `deliverable` messages) go as files after the
   answer (`PeerFiles#sendArtifact`, signed as the bot, `replyTo` the answer). Text deliverables
   (md, txt, csv) are sent as a file of that format. `POST /api/rooms/:id/share` is the manual way.
+  Capped (`RoomWork#shareOver`): 3 files and 25 MB per request (`roomAsks.shared`, `sharedBytes`),
+  10 files and 100 MB per requester and day. What is over stays (`roomAsks.kept`) and asks the
+  owner: approval `{id: "roomshare:"+ask, kind: "question", tool: "room_share", options: share|no,
+  roomShare: {askId, shareId, artifactIds, bot, replyTo}}`, closed by `Runtime#answer` like a
+  `roomRequest` card (no message is written).
 - Nothing from a routine's turn or an incognito conversation (`RoomWork#silent`).
 
 **Receiving.** `roomStatus {id: share:owner:bot, shareId, owner, bot, state, since, at, tools?,
@@ -285,6 +357,8 @@ status. Live states are dropped after 90 s without a refresh, or shown as `away`
 owner is offline (up to 12 h); ended ones stay 2 minutes as the status; waiting/limited 7 days.
 `RoomWork#tick` (every 10 s) refreshes and sweeps.
 
+**Expiry and start** (`RoomWork#sweepOwn`, every tick, from the store). An own `waiting` status whose pending approvals of that bot have all expired (`approvalExpiresAt`) becomes `expired`; an approval of a step with `roomAsk` is denied (`decidedBy: "colmena"`), its step is completed as skipped and the request ends as `expired`. `ROOM_WORK.settleMs` (30 s) after start, a `roomAsks` still `working` whose sala is neither running nor waiting ends as `failed` (or `done` when no step of it is open). `roomAsks.state`: asked, working, done, declined, failed, stopped, expired.
+
 **Old peers.** They ignore `room.status` and `room.handoff` (the `room.*` dispatch falls through)
 and see final answers and files, as before. Their mention carries no `req`, so it gets the
 tool-less answer whatever the rule: they could not see «waiting for the owner».
@@ -294,8 +368,7 @@ bullet of «One count»): `roomId` is on the approval and in `roomRequest.roomId
 approval. Questions and red lines raised inside a request turn are ordinary approvals of the
 room's mission (`missionId`; the room is `rooms.ofMission(missionId)`).
 
-**Not done.** The memory digest is still in the bot's prompt in a request turn (as in an
-errand): the turn is told not to tell, but only the tools are enforced. Today's sala screen
+**Not done.** Today's sala screen
 (`/sala/:mission`) shows a request as a message of its author; statuses of a room without a
 share do not exist. Ajustes › Personas lists the rule for contacts; a teammate who is not a
 contact gets theirs from the card («Siempre/Nunca para…») or `PATCH /api/peers/contacts/:id`.

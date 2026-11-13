@@ -1024,12 +1024,13 @@ export class Runtime {
     if (!step.history) {
       // Seen is exactly what the first request carries: a note that is not in it is still new
       // for this step's later rounds (injectHints), never silently marked as read.
-      const hints = this.startHints(mission, step);
+      // A turn for another person's request reads none of the owner's notes, nor the sala's brief.
+      const hints = this.forOther(step) ? [] : this.startHints(mission, step);
       step = this.patchStep(step, {
         history: this.initialHistory(mission, step, hints),
         // (Those an earlier turn of a chat was given are settled too: they are not new here.)
-        seenHints: this.hintsRead(step, hints, this.hintsFor(step).map((h) => h.id)),
-        ...(this.usesBrief(mission, step) ? { seenBrief: this.missionBrief(missionId, { forBotId: bot.id, exceptStepId: step.id }).keys } : {}),
+        ...(this.forOther(step) ? {} : { seenHints: this.hintsRead(step, hints, this.hintsFor(step).map((h) => h.id)) }),
+        ...(!this.forOther(step) && this.usesBrief(mission, step) ? { seenBrief: this.missionBrief(missionId, { forBotId: bot.id, exceptStepId: step.id }).keys } : {}),
         instructions: instructions(),
       });
     } else if (!step.instructions) step = this.patchStep(step, { instructions: instructions() });
@@ -1187,12 +1188,19 @@ export class Runtime {
         this.maybeNarrate(missionId, step.id, bot);
         // Before the first word: what it is doing, so a slow start never looks frozen.
         if (!step.rounds) this.setActivity(bot.id, missionId, step.id, "preparando", "");
-        step = this.injectHints(step);
-        step = this.injectJoined(this.store.get("missions", missionId) || mission, step);
-        step = this.injectPermissionChange(this.store.get("missions", missionId) || mission, step);
-        step = this.injectMessages(this.store.get("missions", missionId) || mission, step);
-        step = this.injectRelays(step);
-        step = this.injectBrief(this.store.get("missions", missionId) || mission, step);
+        if (this.forOther(step)) {
+          // A turn for another person's request: nothing of the sala joins it on the way (the
+          // owner's notes and messages, the brief, what teammates say), only the owner's late
+          // answer to a question this step asked.
+          step = this.injectLateAnswers(mission, step);
+        } else {
+          step = this.injectHints(step);
+          step = this.injectJoined(this.store.get("missions", missionId) || mission, step);
+          step = this.injectPermissionChange(this.store.get("missions", missionId) || mission, step);
+          step = this.injectMessages(this.store.get("missions", missionId) || mission, step);
+          step = this.injectRelays(step);
+          step = this.injectBrief(this.store.get("missions", missionId) || mission, step);
+        }
         const contextOptions = { tools, instructions: (step.instructions || instructions()) + moreTools, webSearch: this.searchFor(bot, step, mission) };
         step = await this.manageContext(mission, step, bot, model, signal, contextOptions);
         if (this.contextTokens(step, overhead) > this.contextBudget(model).hardLimit)

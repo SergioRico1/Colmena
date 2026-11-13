@@ -65,7 +65,9 @@ export class PeerFiles {
 
   async blobsOk() {
     const h = await this.peers.client?.health().catch(() => null);
-    if (!h?.blobs) throw new PeerError("El buzón que usáis aún no guarda archivos: hay que actualizarlo (docs/PEOPLE.md › Buzón en Cloudflare).", 409);
+    // Not reachable now is not «cannot keep files»: whoever sends may try again later.
+    if (!h) throw new PeerError("Ahora no hay conexión con el buzón. Prueba en un momento.", 503);
+    if (!h.blobs) throw new PeerError("El buzón que usáis aún no guarda archivos: hay que actualizarlo (docs/PEOPLE.md › Buzón en Cloudflare).", 409);
     return h.blobs;
   }
   /** Seals `bytes` and leaves it at the mailbox: → {id, parts, size, sha256}. */

@@ -23,29 +23,54 @@
 //    itself (a bot that «works» is refreshed by its owner's Colmena; with no news it is dropped,
 //    or shown as «Sergio no está» when its owner went offline), and lines in the conversation.
 import { createHash, randomUUID } from "node:crypto";
+import { stat } from "node:fs/promises";
 import { now } from "./store.mjs";
 import { isAutomated } from "./origin.mjs";
+import { approvalExpiresAt } from "./state.mjs";
 import { ERRAND_LIMITS, ERRAND_TOOLS_DEFAULT } from "./peers/errands.mjs";
 import { cleanBot } from "./peers/service.mjs";
 
 /** Every state a status can say. Nothing else travels, and nothing else is accepted. */
-export const ROOM_STATES = Object.freeze(["thinking", "working", "waiting", "limited", "done", "declined", "stopped", "failed", "throttled"]);
+export const ROOM_STATES = Object.freeze(["thinking", "working", "waiting", "limited", "done", "declined", "stopped", "failed", "throttled", "expired"]);
 /** Refreshed by the owner's Colmena while the step runs; stale without news. */
 const LIVE = new Set(["thinking", "working"]);
 /** Hold until something else is said (the owner decides, the plan renews). */
 const HELD = new Set(["waiting", "limited"]);
 /** Said once: a line in the conversation, and the status for a short while. */
-const ENDED = new Set(["done", "declined", "stopped", "failed", "throttled"]);
+const ENDED = new Set(["done", "declined", "stopped", "failed", "throttled", "expired"]);
+// How much other people's requests may make your computer work. Every request that reaches your
+// rule is a `roomAsks` record with the moment it came (`t`), so the counts hold across a restart.
+//  · perHour 6: one person in one room. A person working with your bot asks a handful of things
+//    an hour; more is a loop or abuse.
+//  · personHour 12, personDay 40: the same person over ALL rooms (two busy rooms an hour, a long
+//    working day), so being in many rooms with you is not worth more.
+//  · allHour 30: everybody together. Each request is a model turn on YOUR plan: 30 an hour is one
+//    every two minutes, more than a team of 32 needs and far below what would use up a plan.
+//  · open 5: cards of one person waiting for your answer at once («Pregúntame»). A sixth says
+//    nothing new to you; they are told your bot is not taking more for now.
+//  · replies 3: turns a request may start after its own (answers to ask_room), one per question.
+// A request in a room somebody else made, where you have never taken part, asks you whatever
+// your rule says (RoomWork#takesPart): being put in a room is not agreeing to work in it.
 export const ROOM_WORK = Object.freeze({
   perHour: ERRAND_LIMITS.perHour, // requests of one person in one room that reach your bots, per hour
+  personHour: 12, personDay: 40, // requests of one person in all rooms, per hour and per day
+  allHour: 30, // requests of everybody, per hour
+  open: 5, // requests of one person waiting for your OK at the same time
+  // What a request may share in the room by itself (its deliverables): a few files and one
+  // mailbox file's worth per request; per person and day, half of what your Colmena may upload
+  // in a day (200 MB). Past that the files stay here and you are asked.
+  files: 3, fileBytes: 25 * 1024 * 1024, filesDay: 10, fileBytesDay: 100 * 1024 * 1024,
+  throttledMs: 3600000, // «no atiende más peticiones por ahora» is said once in this long per person and room
   text: 4000, // characters of a request
-  question: 2000, questions: 3, // ask_room: characters, and how many per request
+  question: 2000, questions: 3, replies: 3, // ask_room: characters, how many per request, and how many answers start a turn
   replyMs: 10 * 60000, // how long an unlinked message of the requester counts as the reply to ask_room
   liveMs: 90000, // «thinking» / «working» without a refresh
   refreshMs: 30000, // how often the owner's Colmena refreshes them
   endedMs: 120000, // how long an ended status stays as the bot's status
   heldMs: 7 * 864e5, // «waiting» / «limited» with no news at all
   awayMs: 12 * 3600000, // «Sergio no está; Vera seguirá cuando vuelva»
+  unsentMs: 7 * 864e5, // how long an answer or a file that could not leave is tried again (what the mailbox itself keeps)
+  settleMs: 30000, // after Colmena starts, how long a request that was at work may take to go on before it is closed
   handoffMs: 60000, // the same two bots are said to hand over once in this long
   lines: 400, // lines kept per room
   tools: 100000, ms: 30 * 864e5, // the most a summary may say
@@ -92,6 +117,7 @@ export function statusText(state, { bot, owner, you = false, tools = 0, ms = 0 }
     case "stopped": return you ? "Has parado a " + bot : o + " ha parado a " + bot;
     case "failed": return bot + " no ha podido terminarlo";
     case "throttled": return bot + " no atiende más peticiones por ahora";
+    case "expired": return you ? "No llegaste a dar el OK a " + bot : bot + " no llegó a tener el OK de " + o;
     case "away": return o + " no está; " + bot + " seguirá cuando vuelva";
     default: return bot;
   }
@@ -104,10 +130,11 @@ export class RoomWork {
     this.sent = new Map(); // step id → { state, shareId, botId, missionId }: what the others were last told of it
     this.fresh = new Map(); // status id → when it was last heard (this Colmena's clock)
     this.told = new Map(); // status id → when a live status of yours last went out
-    this.asked = new Map(); // shareId:address → [times] of requests that reached your bots
+    this.taking = new Set(); // shareIds of rooms you are known to take part in (takesPart)
     this.passed = new Map(); // shareId:a:b → when that hand-off was last said
     this.shown = new Map(); // room id → signature of the activity last announced
     this.sharing = new Set(); // deliverables on their way to a room
+    this.members = new Map(); // shareId → the roster version whose people were noted (sawMembers)
     this.timer = null;
   }
   get runtime() { return this.rooms.runtime; }
@@ -115,6 +142,7 @@ export class RoomWork {
   clock() { return this.rooms.getPeers?.()?.clock?.() ?? Date.now(); }
   log(message) { this.rooms.log(message); }
   start() {
+    this.startedAt = Date.now();
     if (this.runtime && typeof this.runtime.toolsForStep === "function") this.runtime.stepTools = (mission, step, bot) => this.tools(mission, step, bot);
     this.timer = setInterval(() => { try { this.tick(); } catch (error) { this.log(error.message); } }, 10000);
     this.timer.unref?.();
@@ -137,6 +165,26 @@ export class RoomWork {
     if (c) this.store.patch("peerContacts", address, { asks: { ...(c.asks || {}), encargos: rule } });
   }
   nameOf(address) { return this.peers?.person(address).name || "Alguien"; }
+  /**
+   * When each person was first in a room, as this Colmena saw it (`roomMembers`): what they can
+   * have read of it starts there, and a turn for their request is told nothing older. Someone
+   * who went out and came back starts again.
+   */
+  sawMembers(share) {
+    if (share?.kind !== "group" || this.members.get(share.id) === share.version) return;
+    this.members.set(share.id, share.version);
+    const known = this.store.where("roomMembers", "shareId", share.id);
+    const inIt = new Set(share.members.map((m) => m.id));
+    for (const r of known) if (!inIt.has(r.address)) this.store.remove("roomMembers", r.id);
+    const have = new Set(known.map((r) => r.address));
+    // The first time the room is seen, whoever is in it was there from the start.
+    const start = known.length ? null : share.createdAt || now();
+    for (const m of share.members) if (!have.has(m.id)) this.store.put("roomMembers", { id: share.id + ":" + m.id, shareId: share.id, address: m.id, since: m.addedAt || start || now() });
+  }
+  since(share, address) {
+    this.sawMembers(share);
+    return this.store.get("roomMembers", share.id + ":" + address)?.since || now();
+  }
 
   // ---------------------------------------------------------------- 1 · a request arrives
   /**
@@ -150,24 +198,57 @@ export class RoomWork {
     if (!message.req || !bot || bot.enabled === false || bot.audience === "yo") return false;
     const room = this.rooms.roomOfShare(share);
     if (!room) return false;
+    // The room waits for a roster newer than the one here (Peers#newerRoster): who is in it is
+    // not known for sure, so nothing is taken from anyone but its owner and whoever told us.
+    if (p.rosterHeld?.(share, message.from)) return true;
     const rule = this.ruleFor(message.from);
     if (rule === "nunca") return false;
     if (this.store.where("roomAsks", "shareId", share.id).some((a) => a.peerId === message.id && a.botId === bot.id)) return true;
-    // At most N an hour from one person in one room, whatever the rule.
-    const key = share.id + ":" + message.from, t = this.clock();
-    const recent = (this.asked.get(key) || []).filter((x) => t - x < 3600000);
-    if (recent.length >= ROOM_WORK.perHour) {
-      this.say(share, bot.id, "throttled");
+    // The limits (ROOM_WORK), whatever the rule: over any of them the request is not taken.
+    const t = this.clock();
+    if (this.overLimit(share, message.from, t)) {
+      this.throttled(share, bot.id, message.from, t);
       return true;
     }
-    this.asked.set(key, [...recent, t]);
+    // «Siempre» reaches the rooms you take part in. In one somebody else made and where you have
+    // done nothing yet, the request asks you (as «Pregúntame»).
+    const held = rule === "siempre" && !this.takesPart(share);
     const ask = this.store.put("roomAsks", {
       id: randomUUID(), roomId: room.id, shareId: share.id, from: message.from, fromName: this.nameOf(message.from), botId: bot.id, peerId: message.id,
-      text: String(message.text || "").slice(0, ROOM_WORK.text), ...(message.thread ? { peerThread: message.thread } : {}), rule, state: "asked", at: now(),
+      text: String(message.text || "").slice(0, ROOM_WORK.text), ...(message.thread ? { peerThread: message.thread } : {}), rule: held ? "pregunta" : rule, ...(held ? { held: true } : {}), state: "asked", at: now(), t,
     });
-    if (rule === "siempre") this.begin(ask.id, { attended: false });
+    if (rule === "siempre" && !held) this.begin(ask.id, { attended: false });
     else this.askOwner(ask, room, share, bot);
     return true;
+  }
+  /**
+   * Which limit a new request of `from` in `share` would pass, or null: «room» (that person in
+   * that room this hour), «person» (that person in all rooms, this hour or today), «open» (their
+   * requests already waiting for you) or «all» (everybody this hour). Read from the requests
+   * kept (`roomAsks`), so a restart forgets nothing.
+   */
+  overLimit(share, from, t = this.clock()) {
+    const HOUR = 3600000, DAY = 24 * HOUR;
+    const when = (a) => (Number.isFinite(a.t) ? a.t : Date.parse(a.at) || 0);
+    const within = (list, ms) => list.filter((a) => t - when(a) < ms).length;
+    const theirs = this.store.where("roomAsks", "from", from);
+    if (within(theirs.filter((a) => a.shareId === share.id), HOUR) >= ROOM_WORK.perHour) return "room";
+    if (within(theirs, HOUR) >= ROOM_WORK.personHour || within(theirs, DAY) >= ROOM_WORK.personDay) return "person";
+    if (theirs.filter((a) => a.state === "asked").length >= ROOM_WORK.open) return "open";
+    return within(this.store.list("roomAsks"), HOUR) >= ROOM_WORK.allHour ? "all" : null;
+  }
+  /**
+   * Whether you take part in a room: you made it, it is the «general» of a team you joined, you
+   * wrote in it yourself, or you already said yes by hand to a request there. Nobody accepts a
+   * room in Colmena (its owner puts you in), so this is what stands for it.
+   */
+  takesPart(share) {
+    const p = this.peers;
+    if (!p || share.owner === p.address || share.general || this.taking.has(share.id)) return true;
+    const yes = this.store.where("roomAsks", "shareId", share.id).some((a) => a.attended)
+      || this.store.where("peerMessages", "shareId", share.id).some((m) => m.from === p.address && !m.bot && !m.local && !m.card);
+    if (yes) this.taking.add(share.id);
+    return yes;
   }
   /** «Pregúntame»: a card that waits for you, and a neutral line for everyone else. */
   askOwner(ask, room, share, bot) {
@@ -258,7 +339,9 @@ export class RoomWork {
         : "";
       const row = this.runtime.addMessage(mission.id, reply ? message.text : ask.text, [], {
         to: [bot.id], author: { address: ask.from, name }, peerId: message.id, capabilities: this.capabilities(), roomAsk: ask.id, attended,
-        context: about + this.rooms.sharedNote(room, share, message),
+        // All the turn reads besides the request: the room's name and what its people already
+        // said there that whoever asks can have read. Nothing of the sala (Runtime#requestHistory).
+        context: about + this.rooms.sharedNote(room, share, message, { reader: ask.from }),
       });
       if (message.thread || ask.peerThread) this.store.patch("messages", row.id, { peerThread: message.thread || ask.peerThread });
       this.store.patch("roomAsks", ask.id, { state: "working", missionId: mission.id, ...(reply ? {} : { messageId: row.id, startedAt: now(), attended: !!attended }), question: null });
@@ -315,6 +398,13 @@ export class RoomWork {
     const plain = !message.mentions?.length && !message.people?.length && !message.thread && t - q.at < ROOM_WORK.replyMs;
     if (!linked && !named && !plain) return false;
     if (this.ruleFor(message.from) === "nunca" || (p.contact(message.from)?.asks?.bots || "mencion") === "nunca") return false;
+    // A reply belongs to its request (it is not counted as a new one) and has a cap of its own:
+    // one turn per question, a few per request.
+    if ((ask.replies || 0) >= ROOM_WORK.replies) {
+      this.store.patch("roomAsks", ask.id, { question: null });
+      return false;
+    }
+    this.store.patch("roomAsks", ask.id, { replies: (ask.replies || 0) + 1 });
     this.begin(ask.id, { attended: false, reply: { peerId: message.id, question: q.text } });
     return true;
   }
@@ -352,6 +442,9 @@ export class RoomWork {
       extra = { tools, ms: Math.max(0, Math.round((step.seconds || 0) * 1000)) };
     }
     if (!state || state === was) return;
+    // A step still written as running while its sala is stopped (it is unwinding) is not at
+    // work: what was said when the sala stopped stands, once.
+    if (LIVE.has(state) && ["paused", "cancelled"].includes(this.store.get("missions", step.missionId)?.status)) return;
     // «thinking» never follows «working» in the same step (a round without tools after one with).
     if (state === "thinking" && was === "working") return;
     if (!was && (step.passedBy || step.kind === "work")) this.handoff(share, step.passedBy || "atlas", bot.id);
@@ -396,11 +489,24 @@ export class RoomWork {
     this.handoff(share, entry.from, entry.to);
   }
   /**
+   * A request over a limit: «Vera no atiende más peticiones por ahora», said once per person,
+   * room and hour (`roomThrottled`, kept across a restart), and only to whoever asked. What
+   * they send after that in the same hour gets no answer at all.
+   */
+  throttled(share, botId, from, t = this.clock()) {
+    const id = share.id + ":" + from;
+    const last = this.store.get("roomThrottled", id);
+    if (last && Math.abs(t - last.t) < ROOM_WORK.throttledMs) return;
+    this.store.put("roomThrottled", { id, shareId: share.id, from, t });
+    this.say(share, botId, "throttled", {}, { only: from });
+  }
+  /**
    * Tells everyone in the room the state of one of your bots, and keeps it here too. The body is
    * made by cleanStatus: an enumerated state and numbers. Live states go out without being kept
    * anywhere (to whoever is connected); the rest wait at the mailbox until they are read.
+   * `only`: it is for one person of the room and nobody else gets it.
    */
-  say(share, botId, state, extra = {}) {
+  say(share, botId, state, extra = {}, { only = null } = {}) {
     const p = this.peers;
     if (!p || !share || share.leftAt || share.removedAt) return;
     const status = cleanStatus({ bot: botId, state, at: this.clock(), ...extra }, this.clock());
@@ -418,7 +524,7 @@ export class RoomWork {
     }
     this.told.delete(id);
     let queued = false;
-    for (const to of p.others(share)) if (p.enqueue(to, body)) queued = true;
+    for (const to of p.others(share)) if ((!only || to === only) && p.enqueue(to, body)) queued = true;
     if (queued) void p.flushOutbox();
   }
   /** Two bots of yours hand work to each other in a room with people: names only, once in a while. */
@@ -439,29 +545,132 @@ export class RoomWork {
    * The deliverables a bot made in a turn for a request you allowed go to the room as files,
    * after its answer (they were made for whoever asked). Nothing else is ever shared by itself.
    */
-  async deliver(share, step, bot, answerId = null) {
+  deliver(share, step, bot, answerId = null) {
+    // One at a time: a step is written several times as it ends, and what one delivery shared counts for the next.
+    const run = (this.delivering || Promise.resolve()).then(() => this.deliverNow(share, step, bot, answerId));
+    this.delivering = run.catch(() => {});
+    return run;
+  }
+  async deliverNow(share, step, bot, answerId = null) {
     const files = this.peers?.files;
     if (!files || !step?.roomAsk || step.skipped) return [];
     const ask = this.store.get("roomAsks", step.roomAsk);
     if (!ask || ask.shareId !== share.id) return [];
     const made = this.store.where("messages", "missionId", step.missionId).filter((m) => m.kind === "deliverable" && m.stepId === step.id && m.artifactId).map((m) => m.artifactId);
-    const done = new Set(ask.shared || []), out = [];
+    const done = new Set([...(ask.shared || []), ...(ask.kept || [])]), out = [], kept = [];
+    const add = (id, more) => { const a = this.store.get("roomAsks", id); return this.store.patch("roomAsks", id, more(a)); };
     for (const artifactId of [...new Set(made)]) {
       // Claimed at once: a step is written several times as it ends, and each file goes once.
       if (done.has(artifactId) || this.sharing.has(artifactId)) continue;
       this.sharing.add(artifactId);
       try {
+        const size = await this.sizeOf(artifactId);
+        // Over what a request may share by itself (ROOM_WORK.files…): it stays, and you are asked.
+        if (this.shareOver(this.store.get("roomAsks", ask.id), size)) { kept.push(artifactId); continue; }
         const sent = await files.sendArtifact(share.id, artifactId, "", { bot: cleanBot(bot), replyTo: answerId });
         out.push(sent.message.id);
         done.add(artifactId);
-        this.store.patch("roomAsks", ask.id, { shared: [...new Set([...(this.store.get("roomAsks", ask.id)?.shared || []), artifactId])] });
+        add(ask.id, (a) => ({ shared: [...new Set([...(a.shared || []), artifactId])], sharedBytes: (a.sharedBytes || 0) + size }));
       } catch (error) {
         this.log("Un entregable de " + bot.name + " no pudo compartirse en la sala: " + error.message);
+        // It could not leave now (the mailbox is not reachable): kept, and tried again.
+        if (!error.status || error.status >= 500) this.keepUnsent({ id: "file:" + artifactId, kind: "file", shareId: share.id, askId: ask.id, artifactId, botId: bot.id, replyTo: answerId, size: await this.sizeOf(artifactId).catch(() => 0) });
+        done.add(artifactId);
       } finally {
         this.sharing.delete(artifactId);
       }
     }
+    if (kept.length) this.askShare(add(ask.id, (a) => ({ kept: [...new Set([...(a.kept || []), ...kept])] })), share, bot, kept, answerId);
     return out;
+  }
+  /**
+   * Something of a bot's turn that could not leave for the room when the turn ended (its
+   * answer, a file it made for a request): kept in `roomUnsent` and tried again every tick and
+   * after a restart, for as long as the mailbox would have kept it.
+   */
+  keepUnsent(record) {
+    if (!this.store.get("roomUnsent", record.id)) this.store.put("roomUnsent", { ...record, at: now(), t: Date.now() });
+  }
+  sentNow(id) {
+    if (this.store.get("roomUnsent", id)) this.store.remove("roomUnsent", id);
+  }
+  async unsent() {
+    const p = this.peers;
+    if (!p || this.retrying) return;
+    this.retrying = true;
+    try {
+      for (const u of this.store.list("roomUnsent")) {
+        const share = this.store.get("peerShares", u.shareId), bot = this.store.get("bots", u.botId);
+        const room = share && this.rooms.ofShare(share.id);
+        if (!share || share.leftAt || share.removedAt || !bot || !room || Date.now() - (u.t || 0) > ROOM_WORK.unsentMs) { this.store.remove("roomUnsent", u.id); continue; }
+        if (u.kind === "answer") {
+          const step = this.store.get("steps", u.stepId);
+          if (!step || this.rooms.relay(room, share, step, cleanBot(bot)) || !this.store.get("roomUnsent", u.id)) this.sentNow(u.id);
+        } else if (u.kind === "file" && p.client?.status === "online") {
+          try {
+            await p.files.sendArtifact(share.id, u.artifactId, "", { bot: cleanBot(bot), replyTo: u.replyTo || null });
+            const ask = this.store.get("roomAsks", u.askId);
+            if (ask) this.store.patch("roomAsks", ask.id, { shared: [...new Set([...(ask.shared || []), u.artifactId])], sharedBytes: (ask.sharedBytes || 0) + (u.size || 0) });
+            this.sentNow(u.id);
+          } catch (error) {
+            // Not a matter of waiting (the file is gone, its kind cannot travel): dropped.
+            if (error.status && error.status < 500) this.sentNow(u.id);
+          }
+        }
+      }
+    } finally {
+      this.retrying = false;
+    }
+  }
+  /** What a deliverable weighs as it would travel (its file and the PDF that shows it). */
+  async sizeOf(artifactId) {
+    const a = await this.peers?.files?.artifactFile?.(artifactId);
+    if (!a) return 0;
+    const of = async (file) => (file ? (await stat(file).catch(() => null))?.size || 0 : 0);
+    return (a.bytes ? a.bytes.length : await of(a.path)) + await of(a.pdf);
+  }
+  /** Whether one more file of `size` is over what request `ask` may share by itself: per request, and per person and day. */
+  shareOver(ask, size) {
+    if ((ask.shared || []).length >= ROOM_WORK.files || (ask.sharedBytes || 0) + size > ROOM_WORK.fileBytes) return true;
+    const t = this.clock(), when = (a) => (Number.isFinite(a.t) ? a.t : Date.parse(a.at) || 0);
+    const today = this.store.where("roomAsks", "from", ask.from).filter((a) => t - when(a) < 864e5);
+    return today.reduce((n, a) => n + (a.shared || []).length, 0) >= ROOM_WORK.filesDay || today.reduce((n, a) => n + (a.sharedBytes || 0), 0) + size > ROOM_WORK.fileBytesDay;
+  }
+  /** Files a request made beyond what it may share by itself: a card for you, «¿Los comparto en la sala?». */
+  askShare(ask, share, bot, artifactIds, answerId = null) {
+    const id = "roomshare:" + ask.id, who = first(ask.fromName);
+    const old = this.store.get("approvals", id);
+    const ids = [...new Set([...(old?.status === "pending" ? old.roomShare.artifactIds : []), ...artifactIds])];
+    const titles = ids.map((x) => "«" + clip(this.store.get("artifacts", x)?.title || "archivo", 60) + "»");
+    const room = this.rooms.ofShare(share.id);
+    this.store.put("approvals", {
+      id, missionId: room?.missionId || null, roomId: room?.id || share.id, botId: bot.id, stepId: null, callId: null, tool: "room_share", kind: "question",
+      title: clip(bot.name + " ha hecho más archivos para " + who, 140),
+      summary: bot.name + " ha hecho para " + who + " más de lo que se comparte solo en «" + share.title + "»: " + titles.join(", ") + ". ¿" + (ids.length === 1 ? "Lo comparto" : "Los comparto") + " en la sala?",
+      context: bot.name + " · " + share.title, blocks: 1,
+      options: [{ id: "share", label: "Compartir", primary: true }, { id: "no", label: "No compartir" }],
+      email: null, canAlways: false, status: "pending", createdAt: old?.createdAt || now(), decidedAt: null, decidedBy: null, resolution: null,
+      roomShare: { askId: ask.id, shareId: share.id, artifactIds: ids, bot: { id: bot.id, name: bot.name }, replyTo: answerId || old?.roomShare?.replyTo || null },
+    });
+    try {
+      this.peers.notifier?.notify({ kind: "needs", title: bot.name + " ha hecho más archivos para " + who, text: titles.join(", "), url: room ? this.rooms.view(room).href : "/", extra: { roomId: room?.id || share.id, approvalId: id, peerShare: share.id } });
+    } catch (error) { this.log("No se pudo avisar: " + error.message); }
+  }
+  /** Your answer to that card: the files go to the room, or stay here. */
+  async sharedDecided(a) {
+    this.store.patch("approvals", a.id, { roomHandled: true });
+    if (a.status !== "answered" || a.answer?.optionId !== "share") return;
+    const bot = cleanBot(this.store.get("bots", a.roomShare.bot?.id));
+    for (const artifactId of a.roomShare.artifactIds) {
+      try {
+        const size = await this.sizeOf(artifactId);
+        await this.peers.files.sendArtifact(a.roomShare.shareId, artifactId, "", { bot, replyTo: a.roomShare.replyTo });
+        const x = this.store.get("roomAsks", a.roomShare.askId);
+        if (x) this.store.patch("roomAsks", x.id, { shared: [...new Set([...(x.shared || []), artifactId])], sharedBytes: (x.sharedBytes || 0) + size });
+      } catch (error) {
+        this.log("Un entregable no pudo compartirse en la sala: " + error.message);
+      }
+    }
   }
   /** You share a deliverable of yours with the room by hand (POST /api/rooms/:id/share). */
   async shareArtifact(roomId, artifactId, caption = "") {
@@ -514,10 +723,14 @@ export class RoomWork {
     if (!status) return;
     const id = share.id + ":" + from.id + ":" + status.bot;
     // Older than what is known (a replay, or two that crossed): ignored.
-    const last = Math.max(this.store.get("roomStatus", id)?.at || 0, this.heard?.get(id) || 0);
+    // The newest one heard is kept (`roomHeard`), also across a restart and after the status
+    // itself is gone: an old one sent again later never comes back.
+    const kept = this.store.get("roomHeard", id)?.at || 0;
+    const last = Math.max(this.store.get("roomStatus", id)?.at || 0, this.heard?.get(id) || 0, kept);
     if (status.at <= last) return;
     (this.heard ??= new Map()).set(id, status.at);
     if (this.heard.size > 2000) this.heard.delete(this.heard.keys().next().value);
+    this.store.put("roomHeard", { id, shareId: share.id, at: status.at });
     this.keep(share, from.id, status, { quiet: status.state === "done" && !status.tools });
   }
   onHandoff(from, body) {
@@ -612,6 +825,8 @@ export class RoomWork {
   tick() {
     const p = this.peers;
     if (!p) return;
+    try { this.sweepOwn(); } catch (error) { this.log(error.message); }
+    void this.unsent().catch((error) => this.log(error.message));
     const t = this.clock();
     const rooms = new Set();
     for (const s of this.store.list("roomStatus")) {
@@ -631,10 +846,60 @@ export class RoomWork {
       if (this.shown.get(room.id) !== signature) this.announce(room);
     }
   }
+  /**
+   * What your own bots were last said to be doing that is no longer so (every tick, read from
+   * what is stored, so it also holds after a restart):
+   *  · «espera el OK de…» for an approval that expired undecided (sends and changes in apps
+   *    expire after 30 minutes): the others read that it never got the OK. In a turn for
+   *    another person's request the approval is closed, the turn ends and so does the request;
+   *    in a turn of your own the card stays with you as expired.
+   *  · a request that was at work when Colmena closed and did not go on with its sala: it ends
+   *    as «no ha podido terminarlo» instead of staying at work for good.
+   */
+  sweepOwn() {
+    const p = this.peers;
+    for (const s of this.store.list("roomStatus")) {
+      if (s.owner !== p.address || s.state !== "waiting") continue;
+      const share = this.store.get("peerShares", s.shareId), room = this.rooms.ofShare(s.shareId);
+      if (!share || share.leftAt || share.removedAt || !room?.missionId) continue;
+      if (this.store.where("roomAsks", "shareId", share.id).some((a) => a.botId === s.bot && a.state === "asked")) continue;
+      const pending = this.store.where("approvals", "missionId", room.missionId).filter((a) => a.botId === s.bot && a.status === "pending" && !a.roomRequest && !a.roomShare);
+      const dead = pending.filter((a) => { const end = approvalExpiresAt(a); return !!end && Date.parse(end) <= Date.now(); });
+      if (!dead.length || dead.length < pending.length) continue;
+      for (const a of dead) this.expired(a);
+      this.say(share, s.bot, "expired");
+      this.announce(room);
+    }
+    if (Date.now() - (this.startedAt || 0) < ROOM_WORK.settleMs || this.settled) return;
+    this.settled = true;
+    for (const ask of this.store.list("roomAsks").filter((a) => a.state === "working")) {
+      const mission = ask.missionId ? this.store.get("missions", ask.missionId) : null;
+      const open = mission ? this.store.where("steps", "missionId", mission.id).filter((x) => x.roomAsk === ask.id && x.status !== "completed") : [];
+      if (mission && !open.length) { this.end(ask.id, "done"); continue; }
+      // Going on with its sala (running again, or waiting for you): it will say so itself.
+      if (mission && (this.runtime?.active?.has?.(mission.id) || ["queued", "running", "planning", "waiting"].includes(mission.status))) continue;
+      this.end(ask.id, "failed");
+      const share = this.store.get("peerShares", ask.shareId);
+      if (share) { this.say(share, ask.botId, "failed"); const room = this.rooms.ofShare(share.id); if (room) this.announce(room); }
+    }
+  }
+  /** An approval of a turn for another person's request that nobody decided in time: closed, and the request with it. */
+  expired(a) {
+    // (An approval of a connected app has no `stepId`: its id is «step:call».)
+    const step = this.store.get("steps", a.stepId || String(a.id).slice(0, String(a.id).lastIndexOf(":")));
+    if (!step?.roomAsk) return;
+    const close = () => this.store.patch("approvals", a.id, { status: "denied", decidedAt: now(), decidedBy: "colmena", resolution: "Caducó sin decidir" });
+    if (a.tool === "apps_execute" && this.runtime?.connections?.decide) void this.runtime.connections.decide(a.id, { decision: "denied" }).then(() => this.store.patch("approvals", a.id, { decidedBy: "colmena", resolution: "Caducó sin decidir" })).catch(close);
+    else close();
+    if (this.store.get("roomAsks", step.roomAsk)?.state === "working") this.end(step.roomAsk, "expired");
+    if (step.status !== "completed") this.store.patch("steps", step.id, { status: "completed", skipped: true, stalled: null, pending: [], completedAt: now() });
+    try { this.runtime?.wake?.(step.missionId); } catch (error) { this.log(error.message); }
+  }
   /** What the store tells (server/room.mjs changed): your decision on a card, a hand-off, a sala that stopped. */
   changed({ kind, op, data }) {
     if (op === "remove" || !data) return;
     if (kind === "approvals" && data.roomRequest && data.status !== "pending" && !data.roomHandled) return this.decided(data);
+    if (kind === "approvals" && data.roomShare && data.status !== "pending" && !data.roomHandled) return void this.sharedDecided(data).catch((error) => this.log(error.message));
     if (kind === "thread" && op === "insert") return this.threadChanged(data);
     if (kind === "missions" && this.rooms.shared.has(data.id)) return this.missionChanged(data);
   }

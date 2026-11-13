@@ -20,11 +20,14 @@ import { roomSlug } from "./runtime/helpers.mjs";
 import { snoozeUntil } from "./rooms.mjs";
 import { statusNow } from "./notifications.mjs";
 import { wrapReport } from "./external-content.mjs";
-import { isAddress } from "./peers/protocol.mjs";
+import { isAddress, verifyCard } from "./peers/protocol.mjs";
 import { PEER_LIMITS, botsOf, cleanBot } from "./peers/service.mjs";
 import { RoomWork } from "./room-work.mjs";
 
-export const ROOM_LIMITS = Object.freeze({ title: PEER_LIMITS.title, requests: 20, context: 30, parts: 20, bots: 6 });
+// `intros`: people one person may make known to you in a day (room.intro: the owner of a room
+// they propose you for; room.req: someone they propose for a room of yours). A person proposes a
+// few people a day at most; each one is a new key kept here.
+export const ROOM_LIMITS = Object.freeze({ title: PEER_LIMITS.title, requests: 20, context: 30, parts: 20, bots: 6, intros: 10 });
 /** Assistant rows that count as something new in a room (docs/ROOMS-CONTRACT.md › Unread). */
 const UNREAD_KINDS = new Set(["message", "deliverable", "question", "plan"]);
 const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
@@ -76,6 +79,7 @@ export class Rooms {
     this.turns = new Map(); // peer message id → the mission message that started a turn for it
     this.thinking = new Map(); // stepId → { shareId, face }
     this.greeted = new Map(); // shareId → the roster version whose people were told your bots
+    this.synced = new Map(); // shareId:address → when that person was last sent the roster they asked for
     this.attached = new WeakSet();
     // Other people's requests to your bots, and what a room's people see of a bot's work (server/room-work.mjs).
     this.work = new RoomWork(this);
@@ -201,9 +205,14 @@ export class Rooms {
    */
   ensureForShare(s) {
     if (!s || s.kind !== "group") return null;
-    const found = this.ofShare(s.id) || (this.store.get("rooms", s.id)?.shareId ? null : this.store.get("rooms", s.id));
+    // A room of yours without people that has this very id is that room only when the
+    // conversation is one YOU made (its first invitation). Somebody else's group that happens to
+    // carry the id of a room of yours never takes it over: it gets a room of its own.
+    const same = this.store.get("rooms", s.id);
+    const mine = !!s.owner && s.owner === this.getPeers?.()?.address;
+    const found = this.ofShare(s.id) || (same && !same.shareId && mine ? same : null);
     const tie = { title: s.title || "sala", slug: roomSlug(s.title), teamId: s.teamId || null, general: !!s.general };
-    if (!found) return this.save({ id: s.id, ...tie, missionId: null, shareId: s.id, createdBy: s.owner || null, createdAt: s.createdAt || now(), archived: false, snoozedUntil: null, seenAt: null });
+    if (!found) return this.save({ id: same ? randomUUID() : s.id, ...tie, missionId: null, shareId: s.id, createdBy: s.owner || null, createdAt: s.createdAt || now(), archived: false, snoozedUntil: null, seenAt: null });
     const next = { ...found, ...tie, shareId: s.id, ...(found.shareId ? {} : { createdBy: s.owner || found.createdBy }) };
     return JSON.stringify(next) === JSON.stringify(found) ? found : this.save(next);
   }
@@ -238,6 +247,7 @@ export class Rooms {
   shareChanged(s) {
     if (s?.kind !== "group") return;
     this.ensureForShare(s);
+    this.work.sawMembers(s);
     if (!s.leftAt && !s.removedAt && this.greeted.get(s.id) !== s.version) this.greetRoommates(s);
   }
   shareGone(shareId) {
@@ -515,10 +525,14 @@ export class Rooms {
     if (!c || !isAddress(c.box) || !["active", "known"].includes(c.status)) throw new RoomError("Solo puedes proponer a personas con las que ya hablas.");
     const owner = p.contact(s.owner);
     if (!owner?.box) throw new RoomError("No se pudo avisar a quien creó la sala.", 409);
+    // Each of the two learns the other's key from you: only as that person signed it themselves.
+    const mine = (x) => { const card = verifyCard(x?.card); return card && card.id === x.id && card.box === x.box ? card : null; };
+    if (!mine(c)) throw new RoomError("Todavía no puedes proponer a " + c.name + ": su Colmena aún no te ha confirmado su clave. Prueba cuando haya estado conectada.", 409);
+    if (!mine(owner)) throw new RoomError("Todavía no puedes proponerlo: la Colmena de " + (owner.name || "quien creó la sala") + " aún no te ha confirmado su clave. Prueba cuando haya estado conectada.", 409);
     // A Colmena only takes a room's list from someone it knows: the person learns from you who
     // made this room (as they would learn of anyone you put in a room of yours).
-    p.enqueue(address, { type: "room.intro", share: s.id, owner: { id: owner.id, box: owner.box, name: owner.name } });
-    if (!p.enqueue(s.owner, { type: "room.req", share: s.id, op: "add", member: { id: c.id, box: c.box, name: c.name } })) throw new RoomError("No se pudo avisar a quien creó la sala.", 409);
+    p.enqueue(address, { type: "room.intro", share: s.id, owner: { id: owner.id, box: owner.box, name: owner.name, card: owner.card } });
+    if (!p.enqueue(s.owner, { type: "room.req", share: s.id, op: "add", member: { id: c.id, box: c.box, name: c.name, card: c.card } })) throw new RoomError("No se pudo avisar a quien creó la sala.", 409);
     void p.flushOutbox();
     return { asked: true, owner: { address: s.owner, name: owner?.name || "Alguien" }, person: { address, name: c.name }, text: "Se lo hemos pedido a " + (owner?.name || "quien creó la sala") + "." };
   }
@@ -528,10 +542,29 @@ export class Rooms {
       case "room.no": return this.onRefused(from, body);
       case "room.intro": return this.onIntro(from, body);
       case "room.bots": return this.onBots(from, body);
+      case "room.sync": return this.onSync(from, body);
       case "room.status": return this.work.onStatus(from, body);
       case "room.handoff": return this.work.onHandoff(from, body);
       default: // a newer Colmena's message: ignored
     }
+  }
+  /**
+   * Someone asks for the roster of a room of yours again (a message told them theirs is old:
+   * Peers#newerRoster). A member gets it as it is now, also when it has not changed, so they
+   * know nothing was lost. Someone who is not in it learns only that: a roster with you alone
+   * and no title. Once every few seconds each.
+   */
+  onSync(from, body) {
+    const p = this.needPeers();
+    const s = typeof body.share === "string" ? this.store.get("peerShares", body.share) : null;
+    if (!s || s.kind !== "group" || s.owner !== p.address || s.leftAt || s.removedAt) return;
+    const key = s.id + ":" + from.id, t = p.clock();
+    if (t - (this.synced.get(key) || 0) < 10000) return;
+    this.synced.set(key, t);
+    if (this.synced.size > 500) this.synced.delete(this.synced.keys().next().value);
+    const roster = s.members.some((m) => m.id === from.id) ? p.roster(s)
+      : p.roster(s, { title: "", members: [{ id: p.address, role: "owner", box: p.identity.box.pub, name: p.myName() }] });
+    if (p.enqueue(from.id, { type: "share", share: roster })) void p.flushOutbox();
   }
   /** A member of a room of yours asks you to add someone: noted, and you are told. Nothing is added until you say so. */
   onRequest(from, body) {
@@ -539,8 +572,13 @@ export class Rooms {
     const s = typeof body.share === "string" ? this.store.get("peerShares", body.share) : null;
     if (body.op !== "add" || !s || s.kind !== "group" || s.owner !== p.address || s.general || s.leftAt || s.removedAt) return;
     if (!["owner", "member"].includes(p.roleOf(s, from.id))) return; // a guest, or someone who is not in it
-    const member = body.member;
+    // The person proposed, as they signed themselves (their address, box key and name): a key
+    // somebody else merely says is theirs is never kept. Someone already known here keeps theirs.
+    const card = verifyCard(body.member?.card), had = p.contact(body.member?.id);
+    const member = had?.box && had.status !== "removed" ? { id: had.id, box: had.box, name: had.name } : card && card.id === body.member?.id ? { id: card.id, box: card.box, name: card.name } : null;
     if (!isAddress(member?.id) || !isAddress(member.box) || member.id === p.address || s.members.some((m) => m.id === member.id)) return;
+    const day = new Date(Date.now() - 864e5).toISOString();
+    if (this.store.where("roomRequests", "from", from.id).filter((r) => String(r.at) > day).length >= ROOM_LIMITS.intros) return;
     const open = this.store.where("roomRequests", "shareId", s.id).filter((r) => r.status === "asked");
     if (open.length >= ROOM_LIMITS.requests || open.some((r) => r.member.id === member.id)) return;
     const room = this.roomOfShare(s);
@@ -554,9 +592,12 @@ export class Rooms {
    * of any room a contact of yours puts you in.
    */
   onIntro(from, body) {
-    const p = this.needPeers(), owner = body.owner;
-    if (from.status !== "active" || !isAddress(owner?.id) || !isAddress(owner.box) || owner.id === p.address || p.contact(owner.id)) return;
-    this.store.put("peerContacts", { id: owner.id, box: owner.box, name: clip(owner.name, PEER_LIMITS.name) || "Alguien", status: "known", via: "intro:" + from.id, addedAt: now() });
+    const p = this.needPeers(), owner = verifyCard(body.owner?.card);
+    // Only with the owner's own card (their address, box key and name, signed by them), and a few a day from one person.
+    if (from.status !== "active" || !owner || owner.id !== body.owner.id || owner.id === p.address || p.contact(owner.id)) return;
+    const day = new Date(Date.now() - 864e5).toISOString();
+    if (this.store.where("peerContacts", "via", "intro:" + from.id).filter((c) => String(c.addedAt) > day).length >= ROOM_LIMITS.intros) return;
+    this.store.put("peerContacts", { id: owner.id, box: owner.box, name: clip(owner.name, PEER_LIMITS.name) || "Alguien", status: "known", via: "intro:" + from.id, addedAt: now(), card: owner });
   }
   /** Your one-click answer to a «please add»: in (the new roster goes to everyone) or not. */
   decide(x, requestId, decision) {
@@ -612,13 +653,13 @@ export class Rooms {
     const p = this.peers;
     if (!p) return;
     this.greeted.set(s.id, s.version);
-    const bots = p.myBots(), signature = JSON.stringify(bots);
+    const bots = p.myBots(), signature = JSON.stringify([bots, "card"]);
     let sent = false;
     for (const id of this.roommates(s)) {
       const c = p.contact(id);
       if (c.roomBotsSig === signature) continue;
       // `hi`: both sides say it when a roster brings them together, and one roster may still be on its way.
-      if (!p.enqueue(id, { type: "room.bots", bots, hi: true, got: !!c.roomBotsAt })) continue;
+      if (!p.enqueue(id, { type: "room.bots", bots, hi: true, got: !!c.roomBotsAt, card: p.myCard() })) continue;
       this.store.patch("peerContacts", id, { roomBotsSig: signature });
       sent = true;
     }
@@ -632,8 +673,9 @@ export class Rooms {
     const p = this.needPeers();
     const together = this.store.list("peerShares").some((s) => s.kind === "group" && !s.leftAt && !s.removedAt && s.members.some((m) => m.id === from.id) && s.members.some((m) => m.id === p.address));
     if (!together || !Array.isArray(body.bots)) return;
+    p.keepCard(from.id, body.card);
     this.store.patch("peerContacts", from.id, { bots: botsOf(body), roomBotsAt: now() });
-    if (body.hi === true && body.got !== true && p.enqueue(from.id, { type: "room.bots", bots: p.myBots() })) void p.flushOutbox();
+    if (body.hi === true && body.got !== true && p.enqueue(from.id, { type: "room.bots", bots: p.myBots(), card: p.myCard() })) void p.flushOutbox();
   }
 
   // ---------------------------------------------------------------- messages
@@ -722,13 +764,19 @@ export class Rooms {
     const missing = botIds.filter((b) => b !== "atlas" && !m.botIds.includes(b)).slice(0, Math.max(0, ROOM_LIMITS.bots - m.botIds.length));
     return missing.length ? this.store.patch("missions", m.id, { botIds: [...m.botIds, ...missing] }) : m;
   }
-  /** What your bot is told about where it is, and what the people said before (outside content). */
-  sharedNote(room, share, message) {
+  /**
+   * What your bot is told about where it is, and what the people said before (outside content).
+   * It is read from the conversation the people share, never from the sala: what was said here
+   * before the room had people, and what only you see, is not in it. `reader`: the turn answers
+   * that person's request, so it gets only what they can have read (from when they came in).
+   */
+  sharedNote(room, share, message, { reader = null } = {}) {
     const p = this.needPeers();
     const others = share.members.map((m) => m.id).filter((id) => id !== p.address).map((id) => p.person(id).name);
     const owner = p.myName();
+    const since = reader ? this.work.since(share, reader) : "";
     const said = this.store.ordered("peerMessages", "shareId", share.id, { before: { at: message.at, id: message.id }, limit: ROOM_LIMITS.context, lacks: "thread" })
-      .filter((m) => !m.local && !m.deletedAt && m.text).reverse();
+      .filter((m) => !m.local && !m.deletedAt && m.text && (!reader || (m.status !== "failed" && String(m.at) >= since))).reverse();
     const who = (m) => (m.bot ? m.bot.name + " (bot de " + p.person(m.from).name + ")" : p.person(m.from).name);
     const lines = said.map((m) => `[${hhmm(m.at)}] ${who(m)}: ${m.text}`);
     return "\n\n[Colmena] Esto se ha escrito en la sala «" + share.title + "», que " + owner + " comparte con " + (others.length ? others.join(", ") : "otras personas") + ". Tu respuesta final la leerán todos, cada uno en su ordenador: " +
@@ -769,6 +817,29 @@ export class Rooms {
     if (step.status === "completed" && bot && step.roomAsk) void this.work.deliver(s, step, bot, answerId).catch((error) => this.log(error.message));
   }
   /**
+   * Whether a turn belongs to the conversation the people share: it started after the room had
+   * people, and what it answers came through that conversation (a message you posted there, or
+   * another person's request). A turn of the sala from before, or one for something written to
+   * the sala alone, says nothing to them, whenever its step is written again.
+   */
+  throughShare(s, step) {
+    if (step.roomAsk) return true;
+    const began = step.startedAt || step.createdAt || "";
+    if (!began || String(began) < String(s.createdAt || "")) return false;
+    // What it answers; a teammate that was passed the word answers a bot: followed back.
+    let asked = step.ackOn ? this.store.get("messages", step.ackOn) : null;
+    // Your late answer to a question of a bot goes on from the turn that asked it.
+    const source = (m) => (m?.role === "assistant" && m.stepId ? m.stepId : m?.role === "user" && m.lateAnswer && m.approvalId ? this.store.get("approvals", m.approvalId)?.stepId : null);
+    for (let i = 0; i < 6 && source(asked); i++) {
+      const before = this.store.get("steps", source(asked));
+      if (before?.roomAsk) return true;
+      asked = before?.ackOn && before.ackOn !== asked.id ? this.store.get("messages", before.ackOn) : null;
+    }
+    // A part of a plan answers no message of its own: the last thing written before it began.
+    if (!step.ackOn) asked = this.store.where("messages", "missionId", step.missionId).filter((m) => m.role === "user" && (m.kind || "message") === "message" && String(m.at) <= String(began)).at(-1) || null;
+    return !!asked?.peerId;
+  }
+  /**
    * A turn of your bot ended in a room with people: its FINAL answer is posted to them, signed
    * as your bot, and the mission message keeps the id it travelled with (`peerId`; `peerParts`
    * when it went in several). Only that: no progress lines, plans, questions, approvals or
@@ -777,7 +848,9 @@ export class Rooms {
    */
   relay(room, s, step, bot) {
     if (step.skipped || step.quietReply || step.kind === "plan" || step.askedRoom) return null;
-    const rows = this.store.where("messages", "missionId", step.missionId).filter((m) => m.stepId === step.id && m.role === "assistant" && (m.kind || "message") === "message");
+    if (!this.throughShare(s, step)) return null;
+    // (A line that says the bot got stuck is for its owner: never the answer.)
+    const rows = this.store.where("messages", "missionId", step.missionId).filter((m) => m.stepId === step.id && m.role === "assistant" && (m.kind || "message") === "message" && !m.stall);
     const last = rows.at(-1);
     if (!last) return null;
     if (rows.some((m) => m.peerId)) return rows.find((m) => m.peerId).peerId;
@@ -798,8 +871,14 @@ export class Rooms {
       });
     } catch (error) {
       this.log("La respuesta de " + bot.name + " no pudo salir a la sala: " + error.message);
+      // Nothing went: it is kept and tried again (RoomWork#unsent), also after a restart. Once
+      // posted, a message waits in the outbox like any other until the mailbox takes it.
+      if (!ids.length) this.work.keepUnsent({ id: "answer:" + step.id, kind: "answer", shareId: s.id, stepId: step.id, botId: bot.id });
     }
-    if (ids.length) this.store.patch("messages", last.id, { peerId: ids[0], ...(ids.length > 1 ? { peerParts: ids } : {}) });
+    if (ids.length) {
+      this.store.patch("messages", last.id, { peerId: ids[0], ...(ids.length > 1 ? { peerParts: ids } : {}) });
+      this.work.sentNow("answer:" + step.id);
+    }
     return ids[0] || null;
   }
 }

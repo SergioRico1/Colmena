@@ -240,11 +240,16 @@ export class Connections {
       // After reading content with injection phrases (runtime flags the step), a change waits
       // for you whatever the rules say; reads still run.
       const flagged = isFlagged(this.store, step.id);
-      if ((granted || runsWithoutAsking({kind, redLine}, access)) && !(flagged && kind !== 'read'))
+      // A turn for another person's request (an errand, or a request to your bot in a room:
+      // `peerErrand`): reading follows what you allow for their requests, but nothing that
+      // changes an app runs on a standing rule, on what the bot may write, or because the
+      // mission made it. Every change, send and delete in such a turn asks you.
+      const forOther = !!mission.peerErrand;
+      if ((granted || runsWithoutAsking({kind, redLine}, access)) && !((flagged || forOther) && kind !== 'read'))
         return this.decide(id, {decision: 'approved', revision: ticket.revision, remember: false, auto: true});
       // Effect, not name (redlines.mjs): undoing what this mission created in your account, or
       // the one action your own message in this turn named with its exact target.
-      if (redLine && kind !== 'send' && !flagged) {
+      if (redLine && kind !== 'send' && !flagged && !forOther) {
         const own = ownAppTarget(this.store, mission.id, {tool: p.tool, toolkit: p.toolkit, arguments: p.arguments});
         const action = !own && actionOfTool(p.tool);
         const asked = action && personAsked(personTurnText(this.store, mission, step), {action, targets: appTargets(p.arguments)});

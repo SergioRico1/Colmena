@@ -285,7 +285,8 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   // bot not to reveal them is not enough: what it never reads it cannot be talked into saying.
   const forOther = !!mission?.peerErrand;
   const tagged = !forOther && [...personal, ...team, ...own].some((l) => /\[(?:compruébalo|cómo)\]/.test(l));
-  const skills = skillIndex(store, bot);
+  // Skills are the owner's procedures: their names and summaries stay out too.
+  const skills = forOther ? [] : skillIndex(store, bot);
   const parts = [
     soul.trim(),
     agents.trim(),
@@ -303,7 +304,7 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   parts.push(REACTIONS_NOTE);
   parts.push(
     "# Habilidades activas\n" +
-      (skills.length ? skills.join("\n") + "\nCarga el contenido con read_skill antes de seguir un procedimiento." : "Ninguna todavía."),
+      (skills.length ? skills.join("\n") + "\nCarga el contenido con read_skill antes de seguir un procedimiento." : forOther ? "Ninguna en este turno." : "Ninguna todavía."),
   );
   // Standing orders («Encargos» in the bot profile); red lines still apply.
   try {
@@ -343,7 +344,8 @@ export function composeInstructions(store, bot, { mission = null, autonomy = nul
   const day = nowHere.toLocaleDateString("es-ES", { timeZone: zone, weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const offset = (() => { const p = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "longOffset" }).formatToParts(nowHere).find((x) => x.type === "timeZoneName")?.value || "GMT+00:00"; return p.replace("GMT", "") || "+00:00"; })();
   const context = [`Hoy es ${day} (${nowHere.toLocaleDateString("sv-SE", { timeZone: zone })}) en la zona horaria de la persona: ${zone} (UTC${offset}). La hora exacta va al final de cada encargo o mensaje. Usa esa zona para fechas y horas (calendario, plazos, «mañana», «el jueves»): en las consultas pon ese desfase o ${zone}, nunca otra zona, y da las horas en hora local.`];
-  if (mission?.room) context.push("Sala: #" + mission.room + ".");
+  // (The sala's own name is the owner's: a request turn is told the shared room's title with the request.)
+  if (mission?.room && !forOther) context.push("Sala: #" + mission.room + ".");
   if (mission?.safety === "preguntar") context.push("Esta misión pide preguntar antes de enviar nada fuera (correos, publicaciones, compras o pagos). Navegar, leer y preparar trabajo interno no necesita permiso.");
   parts.push("# Contexto\n" + context.join(" ") + "\nResponde en español salvo que la persona use otro idioma.");
   if (extra) parts.push(extra);

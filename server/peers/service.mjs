@@ -17,7 +17,7 @@ import { randomUUID } from "node:crypto";
 import { now } from "../store.mjs";
 import { statusNow } from "../notifications.mjs";
 import {
-  b64u, formatInviteCode, inviteLookup, inviteProof, isAddress, newIdentity, newInviteCode, open, openInvite, parseInviteCode, ProtocolError, safetyWords, sameProof, seal, sealInvite, sha256, validIdentity, canonical, signBytes, verifyBytes,
+  b64u, formatInviteCode, inviteLookup, inviteProof, isAddress, newIdentity, newInviteCode, open, openInvite, parseInviteCode, ProtocolError, safetyWords, sameProof, seal, sealInvite, sha256, validIdentity, canonical, signBytes, verifyBytes, signCard, verifyCard,
 } from "./protocol.mjs";
 import { RelayClient } from "./relay-client.mjs";
 
@@ -28,6 +28,12 @@ export const DEFAULT_RELAY = "https://colmena.klast-lab-fa693a.workers.dev";
 export const DOWNLOAD_URL = "https://github.com/SergioRico1/Colmena/releases/latest";
 export const PEER_LIMITS = Object.freeze({
   text: 8000, title: 60, name: 80, members: 32, perMinute: 120, inviteHours: 24, invitesOpen: 20, page: 60, seenDays: 31,
+  // A group's message says the roster version its sender has. One newer than ours means a
+  // roster did not reach us: we ask its owner again and, meanwhile, what we write there waits
+  // for whoever that roster may have taken out. For this long at most (an owner who is on
+  // answers within a second; one who is off must not stop the conversation), and not again for
+  // a while if the roster never came.
+  rosterHoldMs: 30000, rosterHoldGap: 10 * 60000,
 });
 const BINDING = { profile: "peer-identity", hostId: "colmena-peers-v1", clientId: "peer-identity", subject: "identity" };
 const PERSON_COLORS = ["#EFE2D3", "#DCE5EE", "#E2E9D7", "#E3E2F3", "#F3E1E1", "#E1EFEC", "#EEE6D2", "#E6E1EC"];
@@ -46,6 +52,8 @@ export const initialsOf = (name) => {
 export const colorOf = (address) => PERSON_COLORS[sha256(String(address))[0] % PERSON_COLORS.length];
 export const dmId = (a, b) => "dm-" + b64u(sha256("colmena-dm|" + [a, b].sort().join("|"))).slice(0, 24);
 const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+/** «1 persona», «3 personas»: a count with its noun in the right number. */
+export const countOf = (n, one, many) => n + " " + (n === 1 ? one : many);
 const lastLineOf = (text) => clip(String(text).replace(/[*_#>`|]+/g, ""), 140);
 const SHAPES = new Set(["hex", "circle", "square", "diamond", "leaf", "arch"]);
 /** A bot as it travels (and as it is accepted from someone else): only these fields, checked. */
@@ -222,7 +230,7 @@ export class Peers extends EventEmitter {
   myBots() {
     return this.store.list("bots").filter((b) => b.enabled !== false).slice(0, 24).map((b) => cleanBot(b)).filter(Boolean);
   }
-  myProfile() { return { name: this.myName(), box: this.identity.box.pub, bots: this.myBots(), status: this.myStatus() }; }
+  myProfile() { return { name: this.myName(), box: this.identity.box.pub, bots: this.myBots(), status: this.myStatus(), card: this.myCard() }; }
   /** Your status for other people: available, «dnd» (No molestar) or «away» (Fuera), until a time. */
   myStatus() { return statusNow(this.store.get("settings", "main"), this.clock()); }
   /** Sets your status; your contacts get it with your profile (once per change). */
@@ -234,6 +242,24 @@ export class Peers extends EventEmitter {
     this.store.patch("settings", "main", { status: mode === "available" ? null : { mode, until: end ? new Date(end).toISOString() : null, at: now() } });
     this.announceProfile();
     return this.stateView();
+  }
+  /** Your card: your address, box key and name, signed by you (protocol.mjs signCard). Made once per name. */
+  myCard() {
+    const name = clip(this.nameOf() || "", PEER_LIMITS.name) || "Sin nombre";
+    if (this.card?.name !== name || this.card.box !== this.identity.box.pub) this.card = signCard(this.identity, name, now());
+    return this.card;
+  }
+  /**
+   * The card someone sent of THEMSELVES (in their own envelope): kept with them, to pass on when
+   * they are proposed to a room or a team. What they sign about themselves counts more than
+   * what anybody else told us: the key of someone we only knew through others, and their name.
+   */
+  keepCard(from, raw) {
+    const card = verifyCard(raw), c = this.contact(from);
+    if (!card || card.id !== from || !c) return;
+    if (c.box !== card.box && c.status !== "known") return; // someone we talk to directly: their key is the one we agreed
+    const told = String(c.via || "").startsWith("intro:") || c.status === "known";
+    this.store.patch("peerContacts", from, { card, ...(c.box !== card.box ? { box: card.box } : {}), ...(told && card.name ? { name: card.name } : {}) });
   }
   /** Someone's status as they last told us (an expired one is gone). */
   awayOf(c) {
@@ -313,11 +339,41 @@ export class Peers extends EventEmitter {
     if (!this.client) throw new PeerError("Falta conectar Colmena al buzón (Ajustes › Personas).", 409);
   }
   /** Seals `body` for `to` and queues it; the outbox retries until the mailbox takes it. */
-  enqueue(to, body, { messageId = null } = {}) {
+  enqueue(to, body, { messageId = null, hold = null } = {}) {
     const c = this.contact(to);
     if (!c?.box) return null;
     const env = seal(this.identity, { to, toBox: c.box, body });
-    return this.store.put("peerOutbox", { id: env.id, to, env, messageId, attempts: 0, nextAt: 0, createdAt: now() });
+    // `hold` {share, until}: it waits for that group's roster (rosterHeld), then goes or is dropped.
+    return this.store.put("peerOutbox", { id: env.id, to, env, messageId, attempts: 0, nextAt: hold ? hold.until : 0, ...(hold ? { hold: hold.share } : {}), createdAt: now() });
+  }
+  /**
+   * A message of a group says its sender holds roster version `v`. Newer than ours: a roster
+   * was lost on its way. Its owner is asked again (room.sync) and, until it comes or a short
+   * time passes, what you write there waits for everyone but the owner and whoever told us
+   * (rosterHeld): someone that roster took out must not go on receiving.
+   */
+  newerRoster(s, v, from) {
+    if (s.kind !== "group" || s.owner === this.address || !Number.isSafeInteger(v) || v <= s.version) return;
+    const t = this.clock();
+    // Already waiting for it; or it never came last time: not again for a while.
+    if (s.wantVersion && t < (s.heldUntil || 0) + PEER_LIMITS.rosterHoldGap) return;
+    this.store.patch("peerShares", s.id, { wantVersion: v, heldUntil: t + PEER_LIMITS.rosterHoldMs, newerFrom: from });
+    if (this.enqueue(s.owner, { type: "room.sync", share: s.id, v: s.version })) void this.flushOutbox();
+  }
+  /** Whether a group waits for a roster it knows to be newer: {share, until} for what is sent to `to` meanwhile, else null. */
+  rosterHeld(s, to) {
+    if (s.kind !== "group" || !s.wantVersion || s.wantVersion <= s.version || this.clock() >= (s.heldUntil || 0)) return null;
+    return to === s.owner || to === s.newerFrom ? null : { share: s.id, until: s.heldUntil };
+  }
+  /** The roster came: what waited goes to whoever is still in the group, and is dropped for whoever is not. */
+  releaseHeld(s) {
+    const members = new Set(s.members.map((m) => m.id));
+    let any = false;
+    for (const o of this.store.list("peerOutbox").filter((x) => x.hold === s.id)) {
+      if (members.has(o.to)) { this.store.patch("peerOutbox", o.id, { nextAt: 0, hold: null }); any = true; }
+      else { this.store.remove("peerOutbox", o.id); if (o.messageId) this.delivered(o.messageId, o.to); }
+    }
+    if (any) void this.flushOutbox();
   }
   async flushOutbox() {
     if (!this.client || this.client.status !== "online") return;
@@ -685,7 +741,7 @@ export class Peers extends EventEmitter {
     const extra = { ...(replyTo ? { replyTo } : {}), ...(thread ? { thread } : {}), ...(signed ? { bot: signed } : {}), ...(named.length ? { mentions: named } : {}), ...(persons.length ? { people: persons } : {}), ...(card ? { card } : {}), ...(piece ? { part: piece } : {}), ...(asks ? { req: 1 } : {}) };
     const to = this.others(s).filter((id) => ["active", "known", "pending"].includes(this.contact(id)?.status));
     const m = this.store.put("peerMessages", { id: id || randomUUID(), shareId, from: this.address, text: body, at: now(), status: to.length ? "sending" : "sent", pendingTo: to, ...extra });
-    for (const id of to) this.enqueue(id, { type: "msg", share: shareId, id: m.id, at: m.at, text: body, ...extra, ...(s.kind === "group" ? { v: s.version } : {}) }, { messageId: m.id });
+    for (const id of to) this.enqueue(id, { type: "msg", share: shareId, id: m.id, at: m.at, text: body, ...extra, ...(s.kind === "group" ? { v: s.version } : {}) }, { messageId: m.id, hold: this.rosterHeld(s, id) });
     // What your bot says does not mean you have read the conversation.
     this.store.patch("peerShares", shareId, { lastAt: m.at, lastLine: lastLineOf((signed ? signed.name + ": " : "") + body), lastFrom: this.address, ...(signed ? {} : { unread: 0 }) });
     void this.flushOutbox();
@@ -874,6 +930,7 @@ export class Peers extends EventEmitter {
     const name = clip(body.profile.name, PEER_LIMITS.name) || inv.name;
     const existing = this.contact(from);
     this.store.put("peerContacts", { ...(existing || {}), id: from, box: body.profile.box, name, invitedAs: inv.name, status: "active", via: "invitation", addedAt: existing?.addedAt || now(), lastSeenAt: now(), asks: existing?.asks || { ...ASK_DEFAULTS }, bots: botsOf(body.profile), away: statusOf(body.profile) });
+    this.keepCard(from, body.profile.card);
     this.store.patch("peerInvites", inv.id, { status: "used", usedAt: now(), usedBy: from, code: null });
     void this.client?.deleteInvite(inv.lookup);
     this.enqueue(from, { type: "welcome", profile: this.myProfile() });
@@ -893,10 +950,12 @@ export class Peers extends EventEmitter {
     switch (body.type) {
       case "welcome":
         if (c.status === "pending") this.store.patch("peerContacts", from, { status: "active", bots: botsOf(body.profile), away: statusOf(body.profile), ...(body.profile?.name ? { name: clip(body.profile.name, PEER_LIMITS.name) } : {}) });
+        this.keepCard(from, body.profile?.card);
         this.ensureDm(from);
         this.sayOnline(from);
         return;
       case "profile":
+        this.keepCard(from, body.card);
         this.store.patch("peerContacts", from, { ...(body.name ? { name: clip(body.name, PEER_LIMITS.name) } : {}), ...(Array.isArray(body.bots) ? { bots: botsOf(body) } : {}), ...("status" in body ? { away: statusOf(body) } : {}) });
         return;
       case "bye": {
@@ -1019,7 +1078,11 @@ export class Peers extends EventEmitter {
       if (typeof sig !== "string" || !verifyBytes(c.id, canonical(unsigned), sig)) return;
     }
     const current = this.store.get("peerShares", roster.id);
-    if (current && (current.owner !== c.id || current.version >= roster.version)) return;
+    if (current && (current.owner !== c.id || current.version >= roster.version)) {
+      // Its owner says again the very roster we have: nothing newer was lost (newerRoster).
+      if (current.owner === c.id && current.version === roster.version && current.wantVersion) this.releaseHeld(this.store.patch("peerShares", current.id, { wantVersion: null, heldUntil: null, newerFrom: null }));
+      return;
+    }
     const members = Array.isArray(roster.members) ? roster.members.slice(0, PEER_LIMITS.members) : [];
     const inIt = members.some((m) => m.id === this.address);
     if (!inIt) {
@@ -1041,15 +1104,19 @@ export class Peers extends EventEmitter {
       members: members.filter((m) => isAddress(m.id)).map((m) => ({ id: m.id, role: m.id === c.id ? "owner" : m.role === "guest" ? "guest" : "member" })),
       // A room of one of your teams: kept only if that team says so (teams.mjs).
       ...(this.teams?.tieOf(roster) || {}),
+      // The roster we may have been waiting for is here (newerRoster).
+      wantVersion: null, heldUntil: null, newerFrom: null,
     };
     this.store.put("peerShares", record);
-    if (!current) this.notify({ title: c.name + " te ha añadido a «" + record.title + "»", text: "Una conversación con " + (record.members.length - 1) + " personas.", shareId: record.id });
+    this.releaseHeld(record);
+    if (!current) this.notify({ title: c.name + " te ha añadido a «" + record.title + "»", text: "Una conversación con " + countOf(record.members.length - 1, "persona", "personas") + ".", shareId: record.id });
   }
   onMessage(c, body) {
     const s = this.memberShare(body.share, c.id);
     if (!s) return;
     const text = String(body.text || "").slice(0, PEER_LIMITS.text);
     if (!text.trim() || typeof body.id !== "string" || !/^[A-Za-z0-9-]{8,64}$/.test(body.id)) return;
+    this.newerRoster(s, body.v, c.id);
     const existing = this.store.get("peerMessages", body.id);
     if (existing) return;
     // The sender's time, always written the same way: a conversation is read in the order of its `at`.
@@ -1107,10 +1174,10 @@ export class Peers extends EventEmitter {
     const name = this.myName();
     const bots = this.myBots();
     const status = this.myStatus();
-    const signature = JSON.stringify([name, bots, status]);
+    const signature = JSON.stringify([name, bots, status, "card"]);
     if (this.config().announced === signature) return;
     this.store.put("peerConfig", { ...this.config(), announced: signature });
-    for (const c of this.contacts().filter((x) => x.status === "active")) this.enqueue(c.id, { type: "profile", name, bots, status });
+    for (const c of this.contacts().filter((x) => x.status === "active")) this.enqueue(c.id, { type: "profile", name, bots, status, card: this.myCard() });
     this.emit("profile-out", { name, bots, status }); // teammates who are not contacts (teams.mjs)
     void this.flushOutbox();
   }

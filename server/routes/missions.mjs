@@ -222,8 +222,15 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
   // What a message of yours may carry; a room adds whom it is for (routes/rooms.mjs).
   const messageFields = { text: z.string().trim().min(1).max(20000), attachments: z.array(attachmentInput).max(5).default([]), replyTo: z.string().trim().min(1).max(200).optional(), mode: z.enum(QUEUE_MODES).optional(), use: z.array(z.string().trim().min(2).max(40)).max(8).optional(), deep: z.boolean().optional(), refs: refsInput.optional() };
   /** Your message in a sala or a chat, and the turn that answers it. `to`: the bots it is for, when the sender says so. */
+  // The sala of a room with people takes no message of its own: what you write there goes
+  // through the room (POST /api/rooms/:id/messages), so the people read the question and not
+  // only the answer.
+  const notInSharedRoom = (missionId) => {
+    if (app.locals.rooms?.shared?.has(missionId)) throw new HttpError(409, "Esta sala tiene personas: escribe desde la sala para que lo lean todos.");
+  };
   const sendMessage = async (missionId, { text, attachments = [], replyTo, mode, use, deep, refs, to }) => {
     mustGet("missions", missionId, "Misión");
+    notInSharedRoom(missionId);
     notAside(text);
     const add = need("addMessage");
     // «@» picks: files or folders of this conversation, other conversations (mention-refs.mjs).
@@ -241,7 +248,7 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
   // The queue of a conversation (server/queue.mjs): messages written while the bot works,
   // sent one by one when it finishes; «Pasárselo ya» gives one to it at its next step.
   const queueText = z.string().trim().min(1).max(QUEUE_TEXT_MAX);
-  const queued = (req) => { const m = mustGet("missions", req.params.id, "Misión"); return m; };
+  const queued = (req) => { const m = mustGet("missions", req.params.id, "Misión"); notInSharedRoom(m.id); return m; };
   const queueReply = (res, missionId) => res.json(queueView(store.get("missions", missionId)));
   app.post("/api/missions/:id/queue", (req, res) => {
     const { text } = check(z.object({ text: queueText }).strict(), req.body);
