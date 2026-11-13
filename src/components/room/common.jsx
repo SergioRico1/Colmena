@@ -44,19 +44,21 @@ export function fileSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
 }
 
+// A file kind's tile, from the theme's tokens: red PDF, green sheets, blue text, neutral others.
+const RED = { background: "var(--c-error-soft)", color: "var(--c-error)" }, GREEN = { background: "var(--c-ok-soft)", color: "var(--c-ok-ink)" }, BLUE = { background: "var(--c-accent-soft)", color: "var(--c-accent-ink)" };
 const EXT_STYLE = {
-  pdf: { background: "#FDE7E7", color: "#A3201B", label: "PDF" },
-  xls: { background: "#E1F4EC", color: "#0B6B4A", label: "XLS" },
-  xlsx: { background: "#E1F4EC", color: "#0B6B4A", label: "XLS" },
-  csv: { background: "#E1F4EC", color: "#0B6B4A", label: "CSV" },
-  doc: { background: "#E7EEFF", color: "#1F4FD1", label: "DOC" },
-  docx: { background: "#E7EEFF", color: "#1F4FD1", label: "DOC" },
-  md: { background: "#E7EEFF", color: "#1F4FD1", label: "MD" },
-  txt: { background: "#E7EEFF", color: "#1F4FD1", label: "TXT" },
+  pdf: { ...RED, label: "PDF" },
+  xls: { ...GREEN, label: "XLS" },
+  xlsx: { ...GREEN, label: "XLS" },
+  csv: { ...GREEN, label: "CSV" },
+  doc: { ...BLUE, label: "DOC" },
+  docx: { ...BLUE, label: "DOC" },
+  md: { ...BLUE, label: "MD" },
+  txt: { ...BLUE, label: "TXT" },
 };
 export function extStyle(name) {
   const ext = (String(name || "").split(".").pop() || "").toLowerCase();
-  return EXT_STYLE[ext] || { background: "#EEF0F4", color: "#4A4F5C", label: (ext || "ARCH").slice(0, 4).toUpperCase() };
+  return EXT_STYLE[ext] || { background: "var(--c-sunken)", color: "var(--c-text-2)", label: (ext || "ARCH").slice(0, 4).toUpperCase() };
 }
 
 /** Attachment card from the Chat mockup (user bubble). */
@@ -110,10 +112,10 @@ export const popoverStyle = {
   maxHeight: "360px",
   overflowY: "auto",
   padding: "6px",
-  background: "var(--c-card)",
+  background: "var(--c-raised)",
   border: "1px solid var(--c-line)",
   borderRadius: "var(--r-md)",
-  boxShadow: "0 14px 34px rgba(18,19,26,.16)",
+  boxShadow: "var(--c-shadow-pop)",
   display: "flex",
   flexDirection: "column",
   gap: "2px",

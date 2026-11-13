@@ -3,6 +3,8 @@ import { botFaceSpec } from "../lib/pixelBot.js";
 import { botShape } from "../lib/identity.js";
 import { portraitOf } from "../lib/bots.js";
 import { SHAPES } from "./v2/Presence.jsx";
+import { familyInk } from "../lib/personColor.js";
+import "../styles/conversation.css";
 
 // A bot, drawn as Colmena's pixel character (Colmena 4; lib/pixelBot.js; docs/SCREENS.md › v4).
 //
@@ -24,7 +26,7 @@ function BotFace({ bot, size = 32, state = null, mood = null, owner = null, deco
   const a11y = decorative ? { "aria-hidden": "true" } : { role: "img", "aria-label": name };
   if (portrait) {
     const shape = SHAPES[botShape(bot?.shape)];
-    return <span {...a11y} className={className} style={{ display: "inline-block", flex: "none", width: size + "px", height: size + "px", background: `${bot?.color || "#5B6680"} url("${portrait}") center / cover no-repeat`, clipPath: shape.clip, borderRadius: shape.radius, ...style }} />;
+    return <span {...a11y} className={className} style={{ display: "inline-block", flex: "none", width: size + "px", height: size + "px", background: `${bot?.color || "var(--c-chip)"} url("${portrait}") center / cover no-repeat`, clipPath: shape.clip, borderRadius: shape.radius, ...style }} />;
   }
   const { spec } = face;
   const b = spec.badge;
@@ -35,8 +37,9 @@ function BotFace({ bot, size = 32, state = null, mood = null, owner = null, deco
       {spec.spark.length ? <g className="pb-spark">{spec.spark.map(row)}</g> : null}
       {b ? (
         <g shapeRendering="geometricPrecision" data-owner-badge="">
-          <circle cx={b.cx} cy={b.cy} r={b.r} fill={b.color} stroke="var(--c-cut, #FFFFFF)" strokeWidth={b.ring} />
-          {b.text ? <text x={b.cx} y={b.cy} dy=".36em" textAnchor="middle" fontFamily="Geist, sans-serif" fontWeight="700" fontSize={b.fontSize} fill="#FFFFFF">{b.text}</text> : null}
+          {/* The owner's chip in their family's deep colour (a pastel would not carry white letters). */}
+          <circle cx={b.cx} cy={b.cy} r={b.r} fill={familyInk(b.color)} stroke="var(--c-cut)" strokeWidth={b.ring} />
+          {b.text ? <text x={b.cx} y={b.cy} dy=".36em" textAnchor="middle" fontFamily="Geist, sans-serif" fontWeight="700" fontSize={b.fontSize} fill="var(--c-badge-text)">{b.text}</text> : null}
         </g>
       ) : null}
     </svg>

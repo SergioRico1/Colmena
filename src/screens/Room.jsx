@@ -30,6 +30,7 @@ import RoomInvite from "../components/room/RoomInvite.jsx";
 import RoomAsks from "../components/room/RoomAsks.jsx";
 import RowBoundary from "../components/RowBoundary.jsx";
 import PeopleMessage from "../components/v2/people/PeopleMessage.jsx";
+import PeerMine, { isPlainMine } from "../components/room/PeerMine.jsx";
 import PeopleThread from "../components/v2/people/ThreadPanel.jsx";
 import ShareSearch from "../components/v2/people/ShareSearch.jsx";
 import { FileViewer } from "../components/v2/people/PeerFiles.jsx";
@@ -278,8 +279,10 @@ function Room({ id, query }) {
     const waits = askWaiting(m);
     return (
       <RowBoundary key={m.id} resetKey={m.id + ":" + (m.edited || "") + ":" + (m.status || "") + ":" + (waits ? "w" : "")}>
-        <PeopleMessage m={m} dm={false} botOf={botOf} shared={sameName} lastSeen={m.id === lastSeenMine} continued={continued} onMeeting={tl.reload}
-          onReact={react} onRetry={retry} onEdit={edit} onDelete={remove} onThread={m.local || gone ? null : openThread} onOpenFile={setViewing} onError={setError} />
+        {/* Yours, plain: on the right in the bubble (room/PeerMine.jsx); the rest as everyone's rows. */}
+        {isPlainMine(m) ? <PeerMine m={m} botOf={botOf} shared={sameName} lastSeen={m.id === lastSeenMine} continued={continued} onReact={react} onRetry={retry} onEdit={edit} onDelete={remove} onThread={m.local || gone ? null : openThread} onError={setError} />
+          : <PeopleMessage m={m} dm={false} botOf={botOf} shared={sameName} lastSeen={m.id === lastSeenMine} continued={continued} onMeeting={tl.reload}
+            onReact={react} onRetry={retry} onEdit={edit} onDelete={remove} onThread={m.local || gone ? null : openThread} onOpenFile={setViewing} onError={setError} />}
         {/* What waits for you is decided on its one card, pinned over the composer (always in view):
             no second honey line here. A screen reader is told by the announcer and the card. */}
       </RowBoundary>

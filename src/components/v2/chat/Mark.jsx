@@ -1,5 +1,7 @@
 import { fitInitials, stepOf } from "../../../lib/type.js";
 import BotFace from "../../BotFace.jsx";
+import { avatarColors } from "../../../lib/personColor.js";
+import "../../../styles/conversation.css";
 
 // Marks. Colmena 4: a bot is its pixel character (components/BotFace.jsx) with a face for its
 // state, no letters. People are neutral circles with initials; you are «TÚ» in ink. A room is
@@ -21,10 +23,10 @@ export function BotMark({ bot, size = 20, state = "rest", style = null, owner = 
   );
 }
 
-/** A person: a neutral circle with initials (you in ink). */
-export function PersonMark({ name, size = 32, me = false, tint = "#E6E7EC", ring = null, style = null }) {
+/** A person: a circle with initials in a tint of their family colour (you in ink). */
+export function PersonMark({ name, size = 32, me = false, tint = null, ring = null, style = null }) {
   return (
-    <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: me ? "var(--c-btn)" : tint, color: me ? "var(--c-btn-text)" : "#12131A", font: `600 ${stepOf(Math.round(size * 0.33))}px/1 'Geist', sans-serif`, boxShadow: ring ? `0 0 0 2px ${ring}` : "none", ...style }}>
+    <span aria-hidden="true" style={{ flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", ...(me ? { background: "var(--c-btn)", color: "var(--c-btn-text)" } : avatarColors(tint)), font: `600 ${stepOf(Math.round(size * 0.33))}px/1 'Geist', sans-serif`, boxShadow: ring ? `0 0 0 2px ${ring}` : "none", ...style }}>
       {fitInitials(me ? "TÚ" : initialsOf(name), size)}
     </span>
   );
