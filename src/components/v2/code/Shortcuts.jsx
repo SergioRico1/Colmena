@@ -20,6 +20,8 @@ export const DIFF_KEYS = [
   ["u", "Unificado o lado a lado"], ["x", "Plegar o desplegar el archivo"], ["c", "Copiar la ruta del archivo"],
   ["e", "Abrir el archivo en el editor"], ["/", "Buscar en los cambios"], ["Enter", "Siguiente resultado (⇧: anterior)"],
 ];
+/** Keys of the composer (fixed). While Bruno works, Enter sends a correction into his turn. */
+export const COMPOSER_KEYS = [["↵", "Enviar (mientras trabaja: corrección al momento)"], ["Ctrl ↵", "Mientras trabaja: para cuando acabe"], ["⇧ ↵", "Salto de línea"]];
 /** Keys of the menus and tabs of Código (fixed). */
 export const MENU_KEYS = [["↑ ↓", "Moverse por un menú"], ["Inicio Fin", "Primera o última opción"], ["Esc", "Cerrar y volver al botón"], ["← →", "Cambiar de pestaña en el espacio de trabajo"]];
 
@@ -123,7 +125,7 @@ export default function ShortcutsSheet({ onClose }) {
               </button>
             </div>
           ))}
-          {[["En los cambios", DIFF_KEYS], ["Menús y pestañas", MENU_KEYS]].map(([title, list]) => (
+          {[["Al escribir a Bruno", COMPOSER_KEYS], ["En los cambios", DIFF_KEYS], ["Menús y pestañas", MENU_KEYS]].map(([title, list]) => (
             <div key={title} role="group" aria-label={title}>
               <h3 style={{ margin: "16px 10px 6px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>{title}</h3>
               {list.map(([key, text]) => (

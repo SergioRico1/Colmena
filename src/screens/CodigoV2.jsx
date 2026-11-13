@@ -558,7 +558,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
                   else if (cmd === "nueva") navigate("/codigo?proyecto=" + task.projectId);
                   else if (cmd === "atajos") window.dispatchEvent(new Event("colmena:code-shortcuts"));
                 }}
-                placeholder={running ? "Escribe a " + name + " mientras trabaja…" : mode === "plan" ? (openPlan ? "¿Qué cambiarías del plan?" : "Describe qué quieres: " + name + " te propone un plan…") : "Escribe a " + name + "… / para comandos"}
+                placeholder={running ? (task.steer === false ? "Escribe y se lo paso a " + name + " cuando acabe…" : "Corrige o añade algo mientras trabaja…") : mode === "plan" ? (openPlan ? "¿Qué cambiarías del plan?" : "Describe qué quieres: " + name + " te propone un plan…") : "Escribe a " + name + "… / para comandos"}
                 onSend={send}
                 onStop={() => act(() => post("/code/tasks/" + task.id + "/stop", {}))}
                 onChange={(body) => act(() => patch("/code/tasks/" + task.id, body))}

@@ -485,7 +485,17 @@ function drive(code, taskId) {
     ["run", "Ejecutó node --test tests/coupon.test.js", "node --test tests/coupon.test.js", "Porcentaje y fijo, en verde. "],
     ["read", "Leyó src/checkout.js", "src/checkout.js", "Falta enseñarlo en el resumen del pago. "],
   ];
-  const entry = { engine: { kind: "claude-code", pid: null, commands: [], interrupt: async () => { stop(); return true; }, close() {} }, turn: null, idle: null };
+  // A correction (server/code/steer.mjs) is taken like Codex does: received, read a moment later
+  // at the next step, and answered in the log.
+  const steer = async (text, { id }) => {
+    setTimeout(() => {
+      if (!entry.turn) return;
+      code.onEvent(taskId, entry, { type: "steerRead", id });
+      code.onEvent(taskId, entry, { type: "text", text: "Entendido: " + String(text).split("\n")[0].slice(0, 120) + " Lo tengo en cuenta en lo que queda." });
+    }, 1400);
+    return { ack: "received" };
+  };
+  const entry = { engine: { kind: "claude-code", pid: null, alive: true, commands: [], steer, interrupt: async () => { stop(); return true; }, close() {} }, turn: null, idle: null };
   const task = code.mustTask(taskId);
   const n = (task.turns || []).length + 1;
   const user = code.addItem(taskId, { kind: "user", text: "Sigue: que el resumen del pago enseñe el cupón aplicado.", turn: n });

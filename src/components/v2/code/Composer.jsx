@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUp, Ellipsis, X, Wrench, ListChecks, Lightning, FolderCode, ShieldCheck, LockOpen } from "../../Icon.js";
-import { C, Seg, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO, SR } from "./parts.jsx";
+import { C, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO, SR } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
 import { engineModelGroups, useEngineInstall, ENGINE_NAME, EngineMark, modelNote } from "./EngineModels.jsx";
 import { MenuButton } from "../../Menu.js";
@@ -12,20 +12,18 @@ import { MicButton, appendDictation } from "../../interaction/Voice.jsx";
 
 // The «Código» composer (T3 Code): Enter sends, Shift+Enter breaks the line; «Construir» or
 // «Plan» (a plan first, nothing changes until «Implementar»); engine · model, effort and Bruno's
-// access; while Bruno works a message waits for the end of the turn («Cuando acabe») or reaches
-// him now («Pasárselo ya»). Queued messages show above. «/» commands, «$» skills, «@» files and
-// attachments come from Extras.jsx; the microphone dictates.
+// access. While Bruno works, what you send is a «Corrección»: it reaches the running turn
+// (Enter; server/code/steer.mjs), and Ctrl+Enter leaves it for when he finishes. A Codex without
+// turn/steer can only wait: the line above says so. «Parar» stays apart from sending. Queued
+// messages show above. «/» commands, «$» skills, «@» files and attachments come from
+// Extras.jsx; the microphone dictates.
 // Two looks (design/V3Codigo.dc.html, V3CodigoTarea.dc.html): `variant="home"`, the big box with
 // «Empezar» at the top of Código; and the task's, one line to write to Bruno with the rest in «…».
-
-const WHEN_KEY = "colmena:code-while-working";
-const readWhen = () => { try { return localStorage.getItem(WHEN_KEY) === "steer" ? "steer" : "queue"; } catch { return "queue"; } };
 
 export default function Composer({ task = null, models = [], busy = false, running = false, onSend, onStop, onChange, onUnqueue, placeholder, draft = null, footer = null, autoFocus = false, mode = "build", onMode = null, projectId = null, commands = [], onCommand = null, status = null, disabled = null, engines = [], variant = "task", label = "Empezar" }) {
   const home = variant === "home";
   const [expert] = useExpert();
   const [text, setText] = useState("");
-  const [when, setWhen] = useState(readWhen);
   const install = useEngineInstall();
   const area = useRef(null);
   const extras = useComposerExtras({ text, setText, area, taskId: task?.id || null, projectId, commands, onCommand, below: home });
@@ -36,12 +34,13 @@ export default function Composer({ task = null, models = [], busy = false, runni
     el.style.height = "auto";
     el.style.height = Math.min(home ? 320 : 220, el.scrollHeight) + "px";
   }, [text, home]);
-  const pickWhen = (v) => { setWhen(v); try { localStorage.setItem(WHEN_KEY, v); } catch {} };
-  const submit = async (e) => {
+  // While Bruno works: a correction now, unless this engine cannot take one (or Ctrl+Enter).
+  const steers = running && task?.steer !== false;
+  const submit = async (e, later = false) => {
     e?.preventDefault();
     const value = text.trim();
     if ((!value && !extras.files.length && !extras.contexts.length) || busy || extras.uploading) return;
-    const ok = await onSend(value, running ? when : "queue", mode, extras.files, extras.contexts);
+    const ok = await onSend(value, steers && !later ? "steer" : "queue", mode, extras.files, extras.contexts);
     if (ok !== false) { setText(""); extras.clear(); }
   };
   const hiddenQueued = useHidden("codequeue");
@@ -53,7 +52,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
   const field = (
     <textarea className="c-bare" ref={area} data-code-composer="" rows={home ? 2 : 1} value={text} autoFocus={autoFocus} onChange={(e) => { setText(e.target.value); extras.track(); }} placeholder={placeholder}
       onSelect={extras.track} onPaste={extras.onPaste}
-      onKeyDown={(e) => { if (extras.onKeyDown(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e); }}
+      onKeyDown={(e) => { if (extras.onKeyDown(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) submit(e, e.ctrlKey || e.metaKey); }}
       style={home
         ? { flex: 1, minWidth: 0, border: 0, resize: "none", background: "transparent", fontSize: "var(--t-title)", lineHeight: 1.45 }
         : { flex: 1, minWidth: 0, minHeight: "40px", padding: "9px 0", border: 0, resize: "none", background: "transparent", fontSize: "var(--t-body)", lineHeight: "22px", maxHeight: "220px" }} />
@@ -99,10 +98,11 @@ export default function Composer({ task = null, models = [], busy = false, runni
         </div>
       ) : null}
       {running ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px", margin: "0 0 8px 4px", fontSize: "var(--t-caption)", color: C.faint }}>
-          <span>Si escribes mientras trabaja:</span>
-          <Seg small label="Si escribes mientras trabaja" value={when} onChange={pickWhen} options={[["queue", "Cuando acabe"], ["steer", "Pasárselo ya"]]} />
-        </div>
+        <p data-steer-hint="" style={{ margin: "0 0 8px 4px", fontSize: "var(--t-caption)", lineHeight: 1.45, color: C.muted }}>
+          {steers
+            ? <><Kbd>Intro</Kbd> se lo corriges sin pararle · <Kbd>Ctrl Intro</Kbd> cuando acabe</>
+            : (ENGINE_NAME[task?.engine] || "Este motor") + " de este ordenador no deja corregir mientras trabaja: lo que escribas sale cuando acabe. Actualízalo para corregirle al momento."}
+        </p>
       ) : null}
       {status}
       {mode === "plan" ? <span style={{ display: "block", margin: "0 0 8px 4px", fontSize: "var(--t-caption)", color: C.muted }}><strong style={{ fontWeight: 600, color: C.ink }}>Modo plan</strong> · Bruno propone antes de tocar nada.</span> : null}
@@ -112,11 +112,11 @@ export default function Composer({ task = null, models = [], busy = false, runni
         <div style={{ display: "flex", alignItems: "flex-end", gap: "4px" }}>
           <label style={{ flex: 1, minWidth: 0, display: "flex" }}><span style={SR}>{placeholder}</span>{field}</label>
           {running ? (
-            <button type="button" onClick={onStop} aria-label="Parar" title="Parar a Bruno" style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .08)", cursor: "pointer" }}>
-              <span aria-hidden="true" style={{ width: "11px", height: "11px", borderRadius: "var(--r-xs)", background: C.ink }} />
+            <button type="button" onClick={onStop} title="Parar a Bruno (Ctrl+.)" style={{ height: "36px", flex: "none", display: "inline-flex", alignItems: "center", gap: "7px", padding: "0 12px 0 11px", border: 0, borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .07)", color: C.ink, cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500 }}>
+              <span aria-hidden="true" style={{ width: "10px", height: "10px", borderRadius: "var(--r-xs)", background: C.ink }} />Parar
             </button>
           ) : null}
-          <button type="submit" aria-label="Enviar" disabled={!ready || busy} style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: C.ink, color: C.white, cursor: ready && !busy ? "pointer" : "default", opacity: ready && !busy ? 1 : 0.85, transition: "opacity .15s ease" }}>
+          <button type="submit" aria-label={steers ? "Enviar corrección" : "Enviar"} title={steers ? "Enviar corrección (Intro)" : undefined} disabled={!ready || busy} style={{ width: "36px", height: "36px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: C.ink, color: C.white, cursor: ready && !busy ? "pointer" : "default", opacity: ready && !busy ? 1 : 0.85, transition: "opacity .15s ease" }}>
             <ArrowUp size={16} strokeWidth={2.4} aria-hidden="true" />
           </button>
         </div>
@@ -167,7 +167,11 @@ function optionGroups({ task, mode, onMode, onChange, engines, shown, install, r
   ];
 }
 
-export const modelLabel = (models, id) => models.find((m) => m.id === id)?.label || MODEL_LABEL[id] || id;
+const Kbd = ({ children }) => (
+  <kbd style={{ display: "inline-grid", placeItems: "center", height: "18px", padding: "0 5px", boxSizing: "border-box", borderRadius: "var(--r-xs)", background: "rgb(var(--c-ink-rgb) / .06)", font: "500 var(--t-micro)/1 'Geist Mono', ui-monospace, monospace", color: C.text, verticalAlign: "1px", whiteSpace: "nowrap" }}>{children}</kbd>
+);
+
+export const modelLabel =(models, id) => models.find((m) => m.id === id)?.label || MODEL_LABEL[id] || id;
 
 /** How much of the model's context the task uses; a click offers «Compactar» (T3 Code). */
 function ContextRing({ used, max = 200000, onCompact = null, disabled = false }) {

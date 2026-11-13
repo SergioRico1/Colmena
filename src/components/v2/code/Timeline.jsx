@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useExpert } from "../../../lib/expert.js";
-import { Pencil, History, ListChecks, Undo2, Check, Target, ShieldCheck, GitPullRequest } from "../../Icon.js";
+import { Pencil, History, ListChecks, Undo2, Check, Checks, Target, ShieldCheck, GitPullRequest } from "../../Icon.js";
 import Markdown from "../../room/Markdown.jsx";
 import { C, MONO, HEAD, CARD, Stat, BTN } from "./parts.jsx";
 import { EngineMark } from "./EngineModels.jsx";
@@ -240,6 +240,28 @@ function PlanCard({ item, busy, onPlan, onShowPlan }) {
   );
 }
 
+// How far a correction got (server/code/steer.mjs `ack`): Codex says when it has it and when
+// it read it; Claude Code and OpenCode take it at their next step without saying so.
+const STEER_ACK = {
+  sending: { text: "enviando…" },
+  sent: { text: "la lee en su siguiente paso" },
+  received: { text: "le ha llegado", icon: Check },
+  read: { text: "leída", icon: Checks },
+  lost: { text: "no le llegó: sale en el siguiente turno", warn: true },
+};
+
+/** «Corrección» over a message sent while Bruno worked, with how far it got. */
+function SteerLabel({ item }) {
+  const ack = STEER_ACK[item.ack] || null;
+  const Icon = ack?.icon || null;
+  return (
+    <span data-steer-ack={item.ack || ""} style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "4px", fontSize: "var(--t-caption)", lineHeight: 1.4, color: ack?.warn ? "var(--c-warn)" : C.muted }}>
+      <strong style={{ fontWeight: 600, color: ack?.warn ? "inherit" : C.text }}>Corrección</strong>
+      {ack ? <><span aria-hidden="true">·</span>{Icon ? <Icon size={12} strokeWidth={2.4} aria-hidden="true" /> : null}<span>{ack.text}</span></> : null}
+    </span>
+  );
+}
+
 /** Rows Bruno writes or does (they hang under his shape and name). */
 export const BOT_ROWS = new Set(["text", "log", "turn"]);
 
@@ -251,7 +273,7 @@ export function TimelineRow({ row, ctx }) {
     return (
       <div className="code-turn" style={{ alignSelf: "flex-end", maxWidth: "92%", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
         <div data-message-id={item.id} style={{ padding: "10px 14px", background: "var(--c-mine)", borderRadius: "var(--r-xl) var(--r-xl) var(--r-sm) var(--r-xl)", fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-          {item.steer ? <span style={{ display: "block", fontSize: "var(--t-caption)", color: C.faint, marginBottom: "4px" }}>Se lo pasaste mientras trabajaba</span> : null}{item.text}
+          {item.steer ? <SteerLabel item={item} /> : null}{item.text}
           {item.contexts?.length ? (
             <span style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: item.text ? "8px" : 0 }}>
               {item.contexts.map((c, k) => <span key={k} title={[c.note, c.text].filter(Boolean).join("\n\n").slice(0, 1200)} style={{ padding: "3px 9px", borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", fontSize: "var(--t-caption)", color: "var(--c-honey-text)" }}>{c.label}</span>)}
