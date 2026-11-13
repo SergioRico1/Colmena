@@ -9,6 +9,7 @@ import { addr, ask, asks, botAnswer, friends, pause, peerRows, rule, sharedRoom,
 import { REQUEST_ALWAYS, REQUEST_BY_CAPABILITY, requestCapability, requestToolAllowed } from "../server/request-turn.mjs";
 import { canCreateImages } from "../server/images.mjs";
 import { createPage } from "../server/wiki.mjs";
+import { categoryOf } from "../server/connections.mjs";
 
 const sorted = (list) => [...list].sort();
 const signal = () => new AbortController().signal;
@@ -335,4 +336,69 @@ test("a request is told only what its requester can have read: what was said in 
   const hers = JSON.stringify(sergio.calls.at(-1).input);
   assert.match(hers, /DESPUES-5678/);
   assert.match(hers, /ANTES-DE-LUIS-1234/);
+});
+
+test("in a request turn every change in an app asks the owner: no standing rule, no «may write», no «this mission made it»; reads follow «apps»", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  rule(sergio, marta, "siempre");
+  sergio.store.patch("settings", "main", { peerErrandTools: { web: false, carpetas: false, apps: true, ordenador: false } });
+  sergio.store.put("connectionGrants", { id: "grant-read", active: true });
+  // «Qué app usa cada bot»: Vera may write in Sergio's mail.
+  sergio.store.patch("bots", "vera", { tools: { ...(sergio.store.get("bots", "vera").tools || {}), [categoryOf({ toolkit: "gmail", tool: "GMAIL_CREATE_EMAIL_DRAFT" })]: "escribe" } });
+  const app = (tool, args, id) => ({ type: "function_call", name: "apps_execute", arguments: JSON.stringify({ tool, account: "acc", arguments_json: JSON.stringify(args) }), call_id: id });
+  // Sergio's own turn in the room: his bot may write in his mail, so a draft is made without asking.
+  // (Each turn is held half-way, so the calls below are made while it runs.)
+  const held = async (start, text) => {
+    let release = null;
+    // (Let go by itself after a while: a failed assertion must not leave the turn open.)
+    sergio.reply = () => new Promise((r) => { release = () => r(answer(text)); setTimeout(release, 15000).unref(); });
+    await start();
+    await until(() => release, "el turno está en marcha");
+    return { step: sergio.runtime.liveStep(sergio.store.where("steps", "missionId", sergio.rooms.must(room.id).missionId).at(-1).id), end: async () => { release(); await botAnswer(marta, room, text); await settle(sergio.runtime); } };
+  };
+  const mine = await held(() => sergio.rooms.send(room.id, { text: "@Vera prepara un borrador" }), "Para Sergio.");
+  const mission = sergio.store.get("missions", room.missionId), own = mine.step;
+  const made = await sergio.runtime.tool(mission, own, app("GMAIL_CREATE_EMAIL_DRAFT", { recipient_email: "ana@lumbre.es", subject: "Hola", body: "Borrador." }, "own-draft"), signal());
+  assert.equal(made.ok, true, JSON.stringify(made));
+  assert.deepEqual(sergio.effects, ["p-GMAIL_CREATE_EMAIL_DRAFT"]);
+  // …and undoing what this very mission made runs without asking, in a turn of his.
+  const undone = await sergio.runtime.tool(mission, own, app("GMAIL_DELETE_DRAFT", { draft_id: "done" }, "own-delete"), signal());
+  assert.equal(undone.ok, true);
+  assert.equal(sergio.store.get("approvals", own.id + ":own-delete").decidedBy, "colmena");
+  // A standing rule for that change, too.
+  sergio.store.put("connectionGrants", { id: "write:vera:acc:GMAIL_CREATE_EMAIL_DRAFT", active: true });
+  await mine.end();
+  sergio.effects.length = 0;
+  // Marta's request, under «Siempre».
+  const hers = await held(() => ask(marta, room, sergio, "@Vera prepara otro borrador y borra el de antes"), "Para Marta.");
+  const theirs = hers.step;
+  assert.ok(theirs.roomAsk);
+  // A read runs: Sergio allows apps for other people's requests and reading his mail never asked.
+  const read = await sergio.runtime.tool(mission, theirs, app("GMAIL_FETCH_EMAILS", { query: "informe" }, "their-read"), signal());
+  assert.equal(read.ok, true);
+  assert.deepEqual(sergio.effects, ["p-GMAIL_FETCH_EMAILS"]);
+  // A draft (he may write, and has a standing rule), a delete of what the mission made, a send: each waits for him.
+  for (const [id, tool, args, kind] of [
+    ["their-draft", "GMAIL_CREATE_EMAIL_DRAFT", { recipient_email: "ana@lumbre.es", subject: "Hola", body: "Otro." }, "write"],
+    ["their-delete", "GMAIL_DELETE_DRAFT", { draft_id: "done" }, "write"],
+    ["their-send", "GMAIL_SEND_EMAIL", { recipient_email: "ana@lumbre.es", subject: "Hola", body: "Va." }, "send"],
+  ]) {
+    assert.deepEqual(await sergio.runtime.tool(mission, theirs, app(tool, args, id), signal()), { waiting: true }, tool);
+    const a = sergio.store.get("approvals", theirs.id + ":" + id);
+    assert.deepEqual([a.status, a.kind, a.decidedBy ?? null, a.autoSendAt ?? null], ["pending", kind, null, null], tool);
+  }
+  assert.deepEqual(sergio.effects, ["p-GMAIL_FETCH_EMAILS"], "nothing changed in Sergio's mail");
+  // His OK is what makes it happen.
+  const approval = sergio.store.get("approvals", theirs.id + ":their-draft");
+  assert.equal(approval.missionId, room.missionId);
+  for (const id of ["their-draft", "their-delete", "their-send"]) await sergio.connections.decide(theirs.id + ":" + id, { decision: "denied" });
+  await hers.end();
+  // With «apps» off for other people's requests not even a read is offered.
+  sergio.store.patch("settings", "main", { peerErrandTools: { web: true, carpetas: false, apps: false, ordenador: false } });
+  const closed = await held(() => ask(marta, room, sergio, "@Vera lee mi correo"), "Sin apps.");
+  assert.match(String((await sergio.runtime.tool(mission, closed.step, app("GMAIL_FETCH_EMAILS", { query: "x" }, "closed-read"), signal())).error), /Herramienta no disponible/);
+  await closed.end();
+  assert.deepEqual(sergio.effects, ["p-GMAIL_FETCH_EMAILS"]);
 });

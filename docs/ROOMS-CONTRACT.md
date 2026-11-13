@@ -236,8 +236,10 @@ who is not a contact is a `known` contact and has the same field, so the rule is
 and `text` (the same wrapped as outside content: every reader of the sala gets it marked).
 `origin.mjs`: `isOtherPerson`; `isPersonMessage` false, `personWords` empty, `isOutsideOrigin`
 true, and `worksFromOutside` true for any step with `roomAsk`. Send guards, `personTurnText`,
-the notes' and blocks' «the person asked» and the mission brief skip it; `Connections#request`
-auto-sends nothing in such a turn. A turn for another person never merges with one of the
+the notes' and blocks' «the person asked» and the mission brief skip it. In such a turn
+(`mission.peerErrand`) `Connections#request` approves nothing by itself except a read: no
+standing write grant, no «escribe» access of the bot, no `ownAppTarget`, no auto-send; every
+write, send and delete is a pending approval of the owner. A turn for another person never merges with one of the
 owner's (`deliverTurn`), is never routed, and a lost one is never given to Atlas.
 
 **Decision 4.** `step.capabilities` (plus `step.roomAsk`, `step.attended`) come from the message
