@@ -91,7 +91,15 @@ and the sidebar's six places name no people or channels.
   decoration or as a focus colour. (Made binding by the owner, 2026-11-12.)
 - Name and mark: «Colmena», a hexagon mark with eyes and the wordmark in Poppins ExtraBold
   (`src/components/Logo.jsx`, `public/logo-mark-*.png`, `desktop/icons/`).
-- Icons come from Lucide; icons that ship with the design canvas stay as drawn there.
+- Direction of the interface (chosen by the owner, 2026-11-13): the usability of a team chat, a mix
+  of Colmena, Slack and Discord, with agentes.chat as the reference the owner likes. Their layout
+  conventions and behaviour may inform the design; their code, assets, characters and wording may
+  not be copied (AGPL, and their pixel characters are their identity).
+- Bots are pixel-art characters of Colmena's own design, each with its shape and colour as today
+  (shapes mark the role; colours are per person). Friendlier than the current geometric shapes.
+- Light and dark themes, following the system, with a switch in Ajustes.
+- Icons come from Phosphor (MIT): regular for most, filled for the active place and selected
+  states. Never hand-drawn icons. (Replaces Lucide, 2026-11-13.)
 
 ## Evidence on Hand
 
