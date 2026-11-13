@@ -1,28 +1,26 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { AlarmClock, Archive, ArchiveRestore, BellRing, ChevronLeft, ChevronRight, ClipboardPaste, Copy, CopyPlus, Eraser, ExternalLink, ListOrdered, MessageCircle, Pause, PencilLine, Play, Scissors, TextSelect, Trash2, UserRound, FileDown } from "./Icon.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AlarmClock, Archive, ArchiveRestore, BellRing, BellSlash, Checks, ClipboardPaste, Copy, CopyPlus, DoorOpen, Eraser, ExternalLink, FileDown, MessageCircle, Pause, PencilLine, Play, Scissors, TextSelect, Trash2, UserRound } from "./Icon.js";
 import { ForgetDialog } from "./interaction/Forget.jsx";
+import { MenuSurface } from "./Menu.js";
 import { del, patch, post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { exportConversation } from "../lib/exportConversation.jsx";
 import { useStore } from "../lib/store.jsx";
-import { missionUrl, placeName, roomUrl } from "../lib/format.js";
+import { placeName, roomUrl } from "../lib/format.js";
+import { roomSnoozeChoices } from "../lib/snooze.js";
 import { later, reversible } from "../lib/undoToast.js";
 import { useDialogFocus } from "../lib/useDialogFocus.js";
 
 // Colmena's own right-click menu (the desktop window has none of its own). One listener
 // for the whole app reads what is under the pointer, so screens keep the exact markup of
-// the designs: rooms and chats (/sala/:id, /misiones/:id, /chat/:bot?c=id), bots
-// (/chat/:bot, /equipo/:bot), other links, text fields and selected text.
-// Look: a Colmena card (card, var(--c-line), radius 12) with 36px rows; destructive actions in
-// the app's error red; they take effect after a five-second «Deshacer» (src/lib/undoToast.js).
+// the designs: rooms and chats (/sala/:id, /misiones/:id, /chat/:bot?c=id), direct
+// conversations (/con/:id), bots (/chat/:bot, /equipo/:bot), other links, text fields and
+// selected text. A part of the page with a menu of its own (a message) answers first
+// (components/Menu.js › useContextMenu). Drawn by the app's one menu (components/Menu.js):
+// grouped by intent, destructive actions last in red, taking effect after a five-second
+// «Deshacer» (src/lib/undoToast.js) or asking in place when they cannot be undone.
 
 const ACTIVE = ["queued", "running", "planning", "waiting", "awaiting_plan", "awaiting_choice"];
-// Phosphor icons (the app's icon set, ./Icon.js), never hand-drawn.
-const ICONS = { export: FileDown, snooze: AlarmClock, wake: BellRing, archive: Archive, unarchive: ArchiveRestore, duplicate: CopyPlus, back: ChevronLeft, forget: Eraser, open: ExternalLink, timeline: ListOrdered, pause: Pause, play: Play, rename: PencilLine, trash: Trash2, chat: MessageCircle, profile: UserRound, cut: Scissors, copy: Copy, paste: ClipboardPaste, all: TextSelect };
-const Icon = ({ name }) => {
-  const C = ICONS[name];
-  return C ? <C size={16} strokeWidth={2} aria-hidden="true" style={{ flex: "none" }} /> : null;
-};
 
 // -------------------------------------------------------------------- what is under the pointer
 function editableOf(el) {
@@ -56,59 +54,13 @@ function linkTarget(a) {
   }
   if (url.origin !== location.origin || url.pathname.startsWith("/api/")) return null;
   const room = /^\/(?:sala|misiones)\/([^/]+)/.exec(url.pathname);
-  if (room) return { kind: "mission", id: decodeURIComponent(room[1]), href: url.pathname + url.search };
+  if (room && room[1] !== "nueva") return { kind: "mission", id: decodeURIComponent(room[1]), href: url.pathname + url.search };
+  const dm = /^\/con\/([^/]+)$/.exec(url.pathname);
+  if (dm) return { kind: "dm", id: decodeURIComponent(dm[1]), href: url.pathname };
   const chat = /^\/(?:chat|equipo)\/([^/]+)$/.exec(url.pathname);
   if (chat && url.searchParams.get("c")) return { kind: "mission", id: url.searchParams.get("c"), href: url.pathname + url.search };
   if (chat && chat[1] !== "nuevo") return { kind: "bot", id: decodeURIComponent(chat[1]) };
   return { kind: "link", href: url.pathname + url.search };
-}
-
-// «Posponer»: the same presets as the server (server/rooms.mjs snoozeUntil), with their time.
-function snoozeChoices(from = new Date()) {
-  const at = (days, h) => { const d = new Date(from); d.setDate(d.getDate() + days); d.setHours(h, 0, 0, 0); return d; };
-  const afternoon = at(0, 17);
-  const monday = at(((8 - from.getDay()) % 7) || 7, 9);
-  const hh = (d) => d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
-  return [
-    ...(afternoon > from ? [{ id: "tarde", label: "Hasta esta tarde", hint: hh(afternoon) }] : []),
-    { id: "manana", label: "Hasta mañana", hint: hh(at(1, 9)) },
-    { id: "lunes", label: "Hasta el lunes", hint: monday.toLocaleDateString("es-ES", { day: "numeric", month: "short" }) },
-  ];
-}
-
-// -------------------------------------------------------------------- confirmation dialog
-function ConfirmDialog({ eyebrow, title, text, action, onConfirm, onClose }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-  // Focus starts on «Cancelar» (data-autofocus): the safe answer.
-  const box = useDialogFocus({ onEscape: onClose });
-  const go = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await onConfirm();
-      onClose();
-    } catch (e) {
-      setError(e.message);
-      setBusy(false);
-    }
-  };
-  return (
-    <div onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }} style={{ position: "fixed", inset: 0, zIndex: 2147482000, background: "rgb(from var(--c-text) 0 0 0 / .55)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "96px 16px 16px" }}>
-      <div ref={box} role="alertdialog" aria-modal="true" aria-labelledby="confirmar-t" aria-describedby="confirmar-d" style={{ width: "min(460px, 100%)", background: "var(--c-card)", color: "var(--c-text)", border: "2px solid var(--c-text)", borderRadius: "var(--r-xl)", boxShadow: "var(--c-shadow-pop)", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "20px 22px 16px", display: "flex", flexDirection: "column", gap: "6px" }}>
-          {eyebrow ? <span style={{ font: "500 var(--t-caption)/1 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)", overflowWrap: "anywhere" }}>{eyebrow}</span> : null}
-          <h2 id="confirmar-t" style={{ margin: "0", font: "700 var(--t-heading)/1.15 'Bricolage Grotesque', sans-serif" }}>{title}</h2>
-          <p id="confirmar-d" style={{ margin: "0", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" }}>{text}</p>
-          {error ? <p role="alert" style={{ margin: "4px 0 0", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}>{error}</p> : null}
-        </div>
-        <div style={{ padding: "14px 22px 18px", borderTop: "1px solid var(--c-line)", display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "8px" }}>
-          <button type="button" data-autofocus="" onClick={onClose} disabled={busy} style={{ height: "44px", padding: "0 14px", background: "transparent", color: "var(--c-text)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-ui)" }}>{"Cancelar"}</button>
-          <button type="button" onClick={go} disabled={busy} aria-busy={busy ? "true" : undefined} style={{ height: "44px", padding: "0 16px", background: "var(--c-error)", color: "var(--c-on-accent)", border: "0", borderRadius: "var(--r-md)", cursor: busy ? "default" : "pointer", fontWeight: "600", fontSize: "var(--t-ui)", opacity: busy ? 0.7 : 1 }}>{busy ? "Borrando…" : action}</button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // -------------------------------------------------------------------- rename dialog
@@ -154,150 +106,109 @@ function RenameDialog({ current, onSave, onClose }) {
   );
 }
 
-// -------------------------------------------------------------------- the menu
-function Menu({ menu, onClose, onReplace }) {
-  const box = useRef(null);
-  const [pos, setPos] = useState({ left: menu.x, top: menu.y, ready: false });
-  const [focus, setFocus] = useState(-1);
-  const items = menu.items;
-  const actionable = items.map((it, i) => (it.separator || it.disabled ? null : i)).filter((i) => i != null);
 
-  useLayoutEffect(() => {
-    const r = box.current.getBoundingClientRect();
-    const left = Math.max(8, Math.min(menu.x, innerWidth - r.width - 8));
-    const top = menu.y + r.height > innerHeight - 8 ? Math.max(8, menu.y - r.height) : menu.y;
-    // Focus stays where it was (a text field keeps its selection); keys are read globally.
-    setPos({ left, top, ready: true });
-  }, [menu]);
-
-  useEffect(() => {
-    const away = (e) => { if (!box.current?.contains(e.target)) onClose(); };
-    const key = (e) => {
-      if (e.key === "Escape") { e.preventDefault(); onClose(); }
-      else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault();
-        const at = actionable.indexOf(focus);
-        const next = e.key === "ArrowDown" ? actionable[(at + 1) % actionable.length] : actionable[(at - 1 + actionable.length) % actionable.length];
-        setFocus(next ?? -1);
-      } else if (e.key === "Enter" && focus >= 0) { e.preventDefault(); pick(items[focus]); }
-    };
-    const close = () => onClose();
-    document.addEventListener("mousedown", away, true);
-    document.addEventListener("keydown", key, true);
-    addEventListener("blur", close);
-    addEventListener("resize", close);
-    document.addEventListener("scroll", close, true);
-    return () => {
-      document.removeEventListener("mousedown", away, true);
-      document.removeEventListener("keydown", key, true);
-      removeEventListener("blur", close);
-      removeEventListener("resize", close);
-      document.removeEventListener("scroll", close, true);
-    };
-  });
-
-  const pick = (it) => {
-    if (!it || it.disabled || it.separator) return;
-    if (it.items) {
-      setFocus(-1);
-      onReplace({ label: it.subLabel || it.label, items: [{ label: "Atrás", icon: "back", onSelect: () => onReplace({ label: menu.label, items }), keep: true }, { separator: true }, ...it.items] });
-      return;
-    }
-    if (it.keep) return it.onSelect?.();
-    onClose();
-    it.onSelect?.();
-  };
-
-  return (
-    <div ref={box} role="menu" tabIndex={-1} aria-label={menu.label || "Acciones"} onMouseDown={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}
-      style={{ animation: pos.ready ? "c-pop-in 120ms cubic-bezier(.2,.8,.2,1) both" : "none", transformOrigin: "top left", position: "fixed", left: pos.left + "px", top: pos.top + "px", zIndex: 2147483100, minWidth: "220px", maxWidth: "300px", padding: "6px", background: "var(--c-card)", color: "var(--c-text)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", boxShadow: "var(--c-shadow-pop)", visibility: pos.ready ? "visible" : "hidden", font: "400 var(--t-ui)/1.2 'Geist', sans-serif", userSelect: "none" }}>
-      {menu.label ? <div style={{ padding: "6px 10px 8px", font: "500 var(--t-micro)/1.2 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--c-text-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{menu.label}</div> : null}
-      {items.map((it, i) => it.separator
-        ? <div key={i} role="separator" style={{ height: "1px", margin: "5px 6px", background: "var(--c-line)" }} />
-        : (
-          <button key={i} type="button" role="menuitem" disabled={it.disabled} onMouseEnter={() => setFocus(i)} onMouseLeave={() => setFocus(-1)} onClick={() => pick(it)}
-            style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", border: "0", borderRadius: "var(--r-sm)", textAlign: "left", font: "inherit", cursor: it.disabled ? "default" : "pointer",
-              background: focus === i ? (it.danger ? "var(--c-error-soft)" : "var(--c-chip)") : "transparent",
-              color: it.disabled ? "var(--c-text-4)" : it.danger ? "var(--c-error)" : "var(--c-text)", fontWeight: it.danger ? "600" : "400" }}>
-            <span style={{ display: "grid", placeItems: "center", color: it.disabled ? "var(--c-text-4)" : it.danger ? "var(--c-error)" : "var(--c-text-2)" }}>{it.icon ? <Icon name={it.icon} /> : <span style={{ width: "16px" }} />}</span>
-            <span style={{ flex: "1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.label}</span>
-            {it.hint ? <span style={{ font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "var(--c-text-4)" }}>{it.hint}</span> : null}
-            {it.items ? <ChevronRight size={14} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-4)" }} /> : null}
-          </button>
-        ))}
-    </div>
-  );
-}
-
-// -------------------------------------------------------------------- provider
+// -------------------------------------------------------------------- the layer
 export default function ContextMenuLayer() {
   const store = useStore();
   const storeRef = useRef(store);
   storeRef.current = store;
   const [menu, setMenu] = useState(null);
-  const [confirm, setConfirm] = useState(null);
   const [rename, setRename] = useState(null);
   const [forget, setForget] = useState(null);
   const close = useCallback(() => setMenu(null), []);
 
+  // A room or a chat with a bot: a room of the list (with people, or a sala of your bots), or
+  // a mission alone (an older chat). Grouped by intent; what cannot be undone ends it.
   const missionItems = useCallback((target) => {
-    const { missions, bots, run } = storeRef.current;
-    const m = missions.find((x) => x.id === target.id);
-    if (!m) return null;
-    const isChat = !!m.conversation;
-    const name = isChat ? (m.title || "Conversación") : placeName(m);
-    const bot = isChat ? bots.find((b) => b.id === m.botIds?.[0]) : null;
-    const items = [{ label: isChat ? "Abrir conversación" : "Abrir sala", icon: "open", onSelect: () => navigate(roomUrl(m)) }];
-    if (!isChat) items.push({ label: "Línea de tiempo", icon: "timeline", onSelect: () => navigate(missionUrl(m)) });
-    if (!isChat) items.push({ label: "Renombrar…", icon: "rename", onSelect: () => setRename({ current: m.room || "", onSave: (room) => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, { room })) }) });
-    if (ACTIVE.includes(m.status)) items.push({ label: "Pausar", icon: "pause", onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/control`, { action: "pause" })).catch(() => {}) });
-    else if (m.status === "paused") items.push({ label: "Reanudar", icon: "play", onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/control`, { action: "resume" })).catch(() => {}) });
-    // Tidy the sidebar: snooze until later, archive when done, or copy it to try another way.
-    const room = (body) => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, body)).catch(() => {});
-    // Archiving and snoozing are made at once and undone with the opposite change (5 s notice).
-    const tidy = (body, text, back) => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, body))
-      .then(() => reversible({ id: "mission:" + m.id, text, undo: () => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, back)) }))
-      .catch(() => {});
-    const snoozed = m.snoozedUntil && Date.parse(m.snoozedUntil) > Date.now();
-    if (snoozed) items.push({ label: "Mostrar ahora", icon: "wake", hint: new Date(m.snoozedUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }), onSelect: () => room({ snoozedUntil: null }) });
-    else if (!m.archived) items.push({ label: "Posponer", icon: "snooze", subLabel: "Posponer " + name, items: snoozeChoices().map((c) => ({ label: c.label, hint: c.hint, icon: "snooze", onSelect: () => tidy({ snooze: c.id }, `${isChat ? "Conversación pospuesta" : "Sala pospuesta"} · ${c.label.toLowerCase()}`, { snoozedUntil: null }) })) });
-    if (m.archived) items.push({ label: "Desarchivar", icon: "unarchive", onSelect: () => tidy({ archived: false }, isChat ? "Conversación desarchivada" : "Sala desarchivada", { archived: true }) });
-    else if (!["queued", "running", "planning"].includes(m.status)) items.push({ label: "Archivar", icon: "archive", onSelect: () => tidy({ archived: true }, isChat ? "Conversación archivada" : "Sala archivada", { archived: false }) });
-    if (m.mode !== "debate") items.push({ label: isChat ? "Duplicar conversación" : "Duplicar sala", icon: "duplicate", onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/fork`, {})).then((copy) => copy && navigate(roomUrl(copy))).catch(() => {}) });
-    // The whole conversation as a document (OpenClaw /export).
-    items.push({ label: "Exportar", icon: "export", subLabel: "Exportar " + name, items: [
-      { label: "Documento de Word", hint: ".doc", icon: "export", onSelect: () => exportConversation(m.id, "word", { bots }).catch(() => {}) },
-      { label: "Markdown", hint: ".md", icon: "export", onSelect: () => exportConversation(m.id, "markdown", { bots }).catch(() => {}) },
-      { label: "Copiar como Markdown", icon: "copy", onSelect: () => exportConversation(m.id, "copy", { bots }).catch(() => {}) },
-    ] });
-    // What the bots learned here (memories, skills) can be seen and forgotten.
-    if (!["queued", "running", "planning"].includes(m.status)) items.push({ label: "Olvidar lo aprendido aquí…", icon: "forget", onSelect: () => setForget({ missionId: m.id, title: m.title || name }) });
-    items.push({ separator: true });
-    // No confirmation screen (v2): it leaves the list at once and is deleted after the
-    // five-second «Deshacer». A team at work here stops only when the delete goes through.
-    const working = ACTIVE.includes(m.status) && m.status !== "awaiting_choice";
-    items.push({
-      label: isChat ? "Borrar conversación" : "Borrar sala", icon: "trash", danger: true,
-      onSelect: () => {
-        later({
-          id: "mission:" + m.id, keys: ["mission:" + m.id],
-          text: (isChat ? "Conversación borrada" : "Sala borrada") + (working ? " · el equipo se detendrá" : ""),
-          error: isChat ? "No se pudo borrar la conversación" : "No se pudo borrar la sala",
-          run: () => run(() => del(`/missions/${encodeURIComponent(m.id)}`)),
-        });
-        if (location.pathname.includes(m.id) || new URLSearchParams(location.search).get("c") === m.id)
-          navigate(isChat ? `/chat/${m.botIds?.[0] || ""}` : "/", { replace: true });
-      },
-    });
-    return { label: name, items };
+    const { missions = [], rooms = [], bots, run } = storeRef.current;
+    const r = rooms.find((x) => x.id === target.id || x.missionId === target.id || x.shareId === target.id) || null;
+    const m = missions.find((x) => x.id === (r?.missionId || target.id)) || null;
+    if (!r && !m) return null;
+    const isChat = !r && !!m?.conversation;
+    const name = r ? "#" + (r.title || (m ? placeName(m) : "sala")) : isChat ? (m.title || "Conversación") : placeName(m);
+    const href = target.href || (m ? roomUrl(m) : `/sala/${encodeURIComponent(r.id)}`);
+    const word = isChat ? "Conversación" : "Sala";
+    // Changes to a room go to the room (PATCH /api/rooms/:id); a chat alone, to its mission.
+    const base = r ? `/rooms/${encodeURIComponent(r.id)}` : `/missions/${encodeURIComponent(m.id)}`;
+    const change = (body) => run(() => patch(base, body));
+    // Archiving and snoozing happen at once and are undone with the opposite change (5 s notice).
+    const tidy = (body, text, back) => change(body).then(() => reversible({ id: "mission:" + (r?.id || m.id), text, undo: () => change(back) })).catch(() => {});
+    const snoozedUntil = r?.snoozedUntil || m?.snoozedUntil;
+    const snoozed = snoozedUntil && Date.parse(snoozedUntil) > Date.now();
+    const archived = r ? !!r.archived : !!m?.archived;
+    const busy = m && ["queued", "running", "planning"].includes(m.status);
+    const shared = !!(r?.shareId);
+
+    return { label: name, items: [
+      { group: null, items: [
+        { label: isChat ? "Abrir la conversación" : "Abrir la sala", icon: ExternalLink, onSelect: () => navigate(href) },
+        r?.unread ? { label: "Marcar como leída", icon: Checks, onSelect: () => run(() => post(`/rooms/${encodeURIComponent(r.id)}/seen`)).catch(() => {}) } : null,
+        m && ACTIVE.includes(m.status) ? { label: "Pausar a los bots", icon: Pause, onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/control`, { action: "pause" })).catch(() => {}) } : null,
+        m?.status === "paused" ? { label: "Reanudar", icon: Play, onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/control`, { action: "resume" })).catch(() => {}) } : null,
+      ] },
+      { group: null, items: [
+        snoozed
+          ? { label: "Mostrar ya", icon: BellRing, meta: new Date(snoozedUntil).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }), onSelect: () => change({ snoozedUntil: null }).catch(() => {}) }
+          : archived ? null : { label: "Posponer", icon: AlarmClock, subLabel: "Posponer " + name, items: roomSnoozeChoices().map((c) => ({ label: c.label, meta: c.hint, onSelect: () => tidy({ snooze: c.id }, `${word} pospuesta · ${c.label.toLowerCase()}`, { snoozedUntil: null }) })) },
+        archived
+          ? { label: "Desarchivar", icon: ArchiveRestore, onSelect: () => tidy({ archived: false }, word + " desarchivada", { archived: true }) }
+          : busy ? null : { label: "Archivar", icon: Archive, onSelect: () => tidy({ archived: true }, word + " archivada", { archived: false }) },
+      ] },
+      m ? { group: null, items: [
+        !isChat && !shared ? { label: "Cambiar el nombre…", icon: PencilLine, onSelect: () => setRename({ current: m.room || "", onSave: (room) => run(() => patch(`/missions/${encodeURIComponent(m.id)}`, { room })) }) } : null,
+        m.mode !== "debate" && !shared ? { label: isChat ? "Duplicar la conversación" : "Duplicar la sala", icon: CopyPlus, onSelect: () => run(() => post(`/missions/${encodeURIComponent(m.id)}/fork`, {})).then((copy) => copy && navigate(roomUrl(copy))).catch(() => {}) } : null,
+        // The whole conversation as a document (OpenClaw /export).
+        { label: "Exportar", icon: FileDown, subLabel: "Exportar " + name, items: [
+          { label: "Documento de Word", meta: ".doc", icon: FileDown, onSelect: () => exportConversation(m.id, "word", { bots }).catch(() => {}) },
+          { label: "Markdown", meta: ".md", icon: FileDown, onSelect: () => exportConversation(m.id, "markdown", { bots }).catch(() => {}) },
+          { label: "Copiar como Markdown", icon: Copy, onSelect: () => exportConversation(m.id, "copy", { bots }).catch(() => {}) },
+        ] },
+        // What the bots learned here (memories, skills) can be seen and forgotten.
+        busy ? null : { label: "Olvidar lo aprendido aquí…", icon: Eraser, onSelect: () => setForget({ missionId: m.id, title: m.title || name }) },
+      ] } : null,
+      // With people: leaving asks first (it cannot be undone from here).
+      shared && !r.general ? { label: "Salir de la sala", icon: DoorOpen, danger: true, onSelect: () => run(() => post(`/rooms/${encodeURIComponent(r.id)}/leave`)).then(() => { if (location.pathname.includes(r.id)) navigate("/chats", { replace: true }); }).catch(() => {}), confirm: { title: `¿Salir de ${name}?`, text: "Dejarás de recibir lo que se escriba aquí. Lo que ya escribiste sigue en la sala de los demás.", action: "Salir" } } : null,
+      // Yours alone: it leaves the list at once and is deleted after the five-second «Deshacer».
+      // A team at work here stops only when the delete goes through.
+      m && !shared ? {
+        label: isChat ? "Borrar la conversación" : "Borrar la sala", icon: Trash2, danger: true,
+        onSelect: () => {
+          const working = ACTIVE.includes(m.status) && m.status !== "awaiting_choice";
+          later({
+            id: "mission:" + m.id, keys: ["mission:" + m.id],
+            text: (isChat ? "Conversación borrada" : "Sala borrada") + (working ? " · el equipo se detendrá" : ""),
+            error: isChat ? "No se pudo borrar la conversación" : "No se pudo borrar la sala",
+            run: () => run(() => del(`/missions/${encodeURIComponent(m.id)}`)),
+          });
+          if (location.pathname.includes(m.id) || new URLSearchParams(location.search).get("c") === m.id)
+            navigate(isChat ? `/chat/${m.botIds?.[0] || ""}` : "/", { replace: true });
+        },
+      } : null,
+    ] };
+  }, []);
+
+  // A direct conversation with a person (the «Personas» rows): the same choices as its «…».
+  const dmItems = useCallback((target) => {
+    const { peers, run } = storeRef.current;
+    const s = (peers?.shares || []).find((x) => x.id === target.id);
+    if (!s) return null;
+    const other = (s.members || []).find((p) => !p.me) || null;
+    const prefs = (body) => run(() => patch(`/peers/shares/${encodeURIComponent(s.id)}/prefs`, body)).catch(() => {});
+    return { label: s.title || other?.name || "Conversación", items: [
+      { label: "Abrir la conversación", icon: MessageCircle, onSelect: () => navigate(target.href) },
+      { group: null, items: [
+        { label: s.muted ? "Volver a avisarme" : "Silenciar", icon: s.muted ? BellRing : BellSlash, onSelect: () => prefs({ muted: !s.muted }) },
+        { label: "Archivar", icon: Archive, onSelect: () => prefs({ archived: true }).then(() => reversible({ id: "dm:" + s.id, text: "Conversación archivada", undo: () => prefs({ archived: false }) })) },
+      ] },
+    ] };
   }, []);
 
   const botItems = useCallback((target) => {
     const bot = storeRef.current.bots.find((b) => b.id === target.id);
     if (!bot) return null;
     return { label: bot.name, items: [
-      { label: "Abrir chat", icon: "chat", onSelect: () => navigate(`/chat/${bot.id}`) },
-      { label: "Ver ficha", icon: "profile", onSelect: () => navigate(`/colmena/${bot.id}`) },
+      { label: "Abrir el chat", icon: MessageCircle, onSelect: () => navigate(`/chat/${bot.id}`) },
+      { label: "Ver su ficha", icon: UserRound, onSelect: () => navigate(`/equipo/${bot.id}`) },
     ] };
   }, []);
 
@@ -315,36 +226,41 @@ export default function ContextMenuLayer() {
         const readOnly = field.readOnly || field.disabled;
         const has = fieldSelection(field).length > 0;
         const secret = field.type === "password";
-        next = { label: null, items: [
-          { label: "Cortar", icon: "cut", hint: "Ctrl+X", disabled: readOnly || !has || secret, onSelect: () => editAction("cut", field) },
-          { label: "Copiar", icon: "copy", hint: "Ctrl+C", disabled: !has || secret, onSelect: () => editAction("copy", field) },
-          { label: "Pegar", icon: "paste", hint: "Ctrl+V", disabled: readOnly, onSelect: () => editAction("paste", field) },
-          { separator: true },
-          { label: "Seleccionar todo", icon: "all", hint: "Ctrl+A", onSelect: () => editAction("selectAll", field) },
+        next = { label: "Texto", keep: true, items: [
+          { group: null, items: [
+            { label: "Cortar", icon: Scissors, shortcut: "Ctrl+X", disabled: readOnly ? "Este campo es de solo lectura" : !has ? "Selecciona texto primero" : secret ? "Una contraseña no se copia" : false, onSelect: () => editAction("cut", field) },
+            { label: "Copiar", icon: Copy, shortcut: "Ctrl+C", disabled: !has ? "Selecciona texto primero" : secret ? "Una contraseña no se copia" : false, onSelect: () => editAction("copy", field) },
+            { label: "Pegar", icon: ClipboardPaste, shortcut: "Ctrl+V", disabled: readOnly ? "Este campo es de solo lectura" : false, onSelect: () => editAction("paste", field) },
+          ] },
+          { label: "Seleccionar todo", icon: TextSelect, shortcut: "Ctrl+A", onSelect: () => editAction("selectAll", field) },
         ] };
       } else {
         const a = e.target.closest?.("a[href]");
         const target = a ? linkTarget(a) : null;
         if (target?.kind === "mission") next = missionItems(target);
+        else if (target?.kind === "dm") next = dmItems(target);
         else if (target?.kind === "bot") next = botItems(target);
-        else if (target?.kind === "link") next = { label: null, items: [{ label: "Abrir", icon: "open", onSelect: () => navigate(target.href) }] };
+        else if (target?.kind === "link") next = { label: null, items: [{ label: "Abrir", icon: ExternalLink, onSelect: () => navigate(target.href) }] };
         if (selected) {
-          const copy = { label: "Copiar", icon: "copy", hint: "Ctrl+C", onSelect: () => copyText(selected) };
-          next = next ? { ...next, items: [copy, { separator: true }, ...next.items] } : { label: null, items: [copy] };
+          const copy = { group: null, items: [{ label: "Copiar", icon: Copy, shortcut: "Ctrl+C", onSelect: () => copyText(selected) }] };
+          next = next ? { ...next, items: [copy, ...next.items] } : { label: null, items: [copy] };
         }
       }
       if (!next) return; // nothing to offer: no menu at all (as in other desktop apps)
       e.preventDefault();
-      setMenu({ ...next, x: e.clientX, y: e.clientY });
+      // The keyboard's menu key: under the focused element instead of at the pointer.
+      const keyboard = !e.clientX && !e.clientY;
+      const at = keyboard ? (e.target.closest?.("a, button, input, textarea, [tabindex]") || e.target).getBoundingClientRect() : { x: e.clientX, y: e.clientY };
+      setMenu({ ...next, anchor: at, keyboard, back: document.activeElement, n: Date.now() });
     };
     document.addEventListener("contextmenu", open);
     return () => document.removeEventListener("contextmenu", open);
-  }, [missionItems, botItems]);
+  }, [missionItems, dmItems, botItems]);
 
   return (
     <>
-      {menu ? <Menu key={menu.x + ":" + menu.y} menu={menu} onClose={close} onReplace={(next) => setMenu((m) => (m ? { ...m, ...next } : m))} /> : null}
-      {confirm ? <ConfirmDialog {...confirm} onClose={() => setConfirm(null)} /> : null}
+      {/* A text field keeps focus (and its caret) while its menu is open; keys still work. */}
+      {menu ? <MenuSurface key={menu.n} entries={menu.items} label={menu.label || "Acciones"} anchor={menu.anchor} placement={menu.keyboard ? "bottom-start" : "point"} autoFocus={!menu.keep} returnFocus={menu.back} onClose={close} /> : null}
       {rename ? <RenameDialog {...rename} onClose={() => setRename(null)} /> : null}
       {forget ? <ForgetDialog missionId={forget.missionId} title={forget.title} onClose={() => setForget(null)} /> : null}
     </>
