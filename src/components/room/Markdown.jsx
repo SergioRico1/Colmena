@@ -106,9 +106,9 @@ function CodeBlock({ text, ...props }) {
   const [copied, copy] = useCopied();
   return (
     <div className="c-md-code" style={{ position: "relative" }}>
-      <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }} {...props} />
+      <pre style={{ margin: "0", padding: "14px 16px", background: "var(--c-sunken)", color: "var(--c-text)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.7 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }} {...props} />
       <button type="button" className="rm-focus c-md-copy" onClick={() => copy(String(text || "").replace(/\n$/, ""))} aria-label={copied === "ok" ? "Código copiado" : "Copiar el código"}
-        style={{ position: "absolute", top: "8px", right: "8px", display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 9px", background: "#2B2D36", color: "#E6E8EE", border: "1px solid #3A3E4B", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)" }}>
+        style={{ position: "absolute", top: "8px", right: "8px", display: "inline-flex", alignItems: "center", gap: "5px", height: "28px", padding: "0 9px", background: "var(--c-card)", color: "var(--c-text)", border: "1px solid var(--c-line)", borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-caption)" }}>
         {copied === "ok" ? <Check size={13} strokeWidth={2.4} aria-hidden="true" /> : <Copy size={13} strokeWidth={2.2} aria-hidden="true" />}{copied === "ok" ? "Copiado" : "Copiar"}
       </button>
     </div>

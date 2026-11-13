@@ -26,7 +26,7 @@ function StoppedCard({ stopped, botName = "El bot", onContinue, onDiscard, onRea
   const [why, setWhy] = useState(stopped?.why || "");
   const [kept, setKept] = useState(stopped?.why || "");
   const r = REASONS[stopped?.reason] || REASONS.other;
-    const tone = stopped?.reason === "error" ? { bg: "#FBE7DF", fg: "#8E2A1F" } : stopped?.reason === "content-filter" ? { bg: "#FFF4D1", fg: "#8A5A00" } : { bg: "rgba(18,19,26,.06)", fg: "#3D404A" };
+    const tone = stopped?.reason === "error" ? { bg: "var(--c-error-soft)", fg: "var(--c-error)" } : stopped?.reason === "content-filter" ? { bg: "var(--c-chip)", fg: "var(--c-text-2)" } : { bg: "rgb(var(--c-ink-rgb) / .06)", fg: "var(--c-text-2)" };
   const run = (what, fn) => async () => {
     if (busy) return;
     setBusy(what);
@@ -48,7 +48,7 @@ function StoppedCard({ stopped, botName = "El bot", onContinue, onDiscard, onRea
   // Colmena 3 (design/V3ChatExperto.dc.html): one quiet grey line with what happened and the
   // two ways on — «Continuar» in ink, «Descartar» outlined.
   return (
-    <section role="status" aria-label="Se paró" style={{ display: "flex", flexDirection: "column", gap: mine ? "10px" : "6px", padding: "12px 14px 12px 16px", borderRadius: "var(--r-lg)", background: tone.bg === "rgba(18,19,26,.06)" ? "var(--c-chip)" : tone.bg, animation: "rise .3s ease-out" }}>
+    <section role="status" aria-label="Se paró" style={{ display: "flex", flexDirection: "column", gap: mine ? "10px" : "6px", padding: "12px 14px 12px 16px", borderRadius: "var(--r-lg)", background: tone.bg === "rgb(var(--c-ink-rgb) / .06)" ? "var(--c-chip)" : tone.bg, animation: "rise .3s ease-out" }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
         <span style={{ flex: "1", minWidth: "200px", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text)" }}>
           <strong style={{ fontWeight: 600 }}>{r.title(botName) + "."}</strong>{r.hint ? " " + r.hint : ""}

@@ -53,14 +53,14 @@ function SourceCard({ s }) {
   return (
     <span ref={ref} style={{ position: "relative", display: "flex", flex: "0 1 220px", maxWidth: "240px", minWidth: 0 }}>
       <button type="button" className="rm-focus c-lift" aria-expanded={open ? "true" : "false"} onClick={() => setOpen(!open)} title={s.url}
-        style={{ flex: "1", minWidth: 0, minHeight: "58px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "4px", padding: "8px 10px", background: "var(--c-card)", border: "1px solid " + (open ? "#12131A" : "#DCE0E8"), borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left" }}>
+        style={{ flex: "1", minWidth: 0, minHeight: "58px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "4px", padding: "8px 10px", background: "var(--c-card)", border: "1px solid " + (open ? "var(--c-text)" : "var(--c-line)"), borderRadius: "var(--r-md)", cursor: "pointer", textAlign: "left" }}>
         <span style={{ fontSize: "var(--t-meta)", fontWeight: "600", color: "var(--c-text)", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.3" }}>{s.title}</span>
         <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "var(--t-caption)", color: "var(--c-text-3)", minWidth: 0 }}>
           <Globe {...I} size={12} style={{ flex: "none" }} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.domain}</span>
         </span>
       </button>
       {open ? (
-        <div role="dialog" aria-label={"Fuente: " + s.domain} className="c-pop" style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: 0, width: "min(340px, 80vw)", padding: "12px 14px", background: "var(--c-card)", border: "2px solid var(--c-text)", borderRadius: "var(--r-lg)", boxShadow: "4px 4px 0 #FFC93C", display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div role="dialog" aria-label={"Fuente: " + s.domain} className="c-pop" style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: 0, width: "min(340px, 80vw)", padding: "12px 14px", background: "var(--c-card)", border: "2px solid var(--c-text)", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)", display: "flex", flexDirection: "column", gap: "8px" }}>
           <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}><Globe {...I} size={12} />{s.domain}</span>
             <button type="button" className="rm-focus" onClick={() => setOpen(false)} aria-label="Cerrar" style={{ width: "26px", height: "26px", display: "grid", placeItems: "center", background: "transparent", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer" }}><X {...I} /></button>

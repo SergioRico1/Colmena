@@ -83,7 +83,7 @@ export default function ConvList({ current = null }) {
           const line = m.narration?.text || (m.conversation ? (m.incognito ? "De incógnito · " : "") + (m.lastLine || m.title) : m.activityLine || m.title);
           return (
             <a key={m.id} href={m.conversation ? chatUrl(m) : salaUrl(m)} aria-current={on ? "page" : undefined}
-              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "var(--r-lg)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none" }}>
+              style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "var(--r-lg)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-pop)" : "none" }}>
               {bot ? (
                 <span style={{ width: "38px", height: "38px", flex: "none", display: "grid", placeItems: "center" }}><BotPresence bot={bot} size={28} state={m.status === "running" ? "work" : attention ? "wait" : "rest"} /></span>
               ) : (
@@ -96,7 +96,7 @@ export default function ConvList({ current = null }) {
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <span style={{ flex: "1", minWidth: "0", fontSize: "var(--t-meta)", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{line}</span>
-                  {attention || (unread && !on) ? <span aria-label={attention ? "Te necesita" : "Mensajes nuevos"} style={{ width: "8px", height: "8px", flex: "none", borderRadius: "var(--r-circle)", background: attention ? "var(--c-honey)" : "#12131A", boxShadow: attention ? "0 0 0 3px rgba(255,201,60,.25)" : "none" }} /> : null}
+                  {attention || (unread && !on) ? <span aria-label={attention ? "Te necesita" : "Mensajes nuevos"} style={{ width: "8px", height: "8px", flex: "none", borderRadius: "var(--r-circle)", background: attention ? "var(--c-honey)" : "var(--c-unread-bg)", boxShadow: attention ? "0 0 0 3px var(--c-honey-soft)" : "none" }} /> : null}
                 </span>
               </span>
             </a>
@@ -119,8 +119,8 @@ function ShareRow({ share, on }) {
   const unread = !on && share.unread > 0;
   return (
     <a href={shareUrl(share.id)} aria-current={on ? "page" : undefined}
-      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "var(--r-lg)", color: "var(--c-text)", textDecoration: "none", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "0 1px 2px rgba(18,19,26,.05), 0 8px 20px -10px rgba(18,19,26,.18)" : "none" }}>
-      <ShareFace share={share} ring={on ? "#FFFFFF" : "var(--c-page)"} />
+      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px", borderRadius: "var(--r-lg)", color: "var(--c-text)", textDecoration: "none", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-pop)" : "none" }}>
+      <ShareFace share={share} ring={on ? "var(--c-card)" : "var(--c-page)"} />
       <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "3px" }}>
         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <strong style={{ flex: "1", minWidth: "0", fontSize: "var(--t-ui)", fontWeight: "600", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{share.title}</strong>
@@ -193,8 +193,8 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
     else navigate(`/sala/nueva?bots=${chosen.map((b) => b.id).join(",")}&nombre=${encodeURIComponent((name || auto).slice(0, 60))}`);
   };
   return (
-    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: "0", zIndex: "70", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px 24px", background: "rgba(18,19,26,.28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
-      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "var(--c-card)", borderRadius: "var(--r-3xl)", boxShadow: "0 60px 120px -40px rgba(18,19,26,.55), 0 2px 6px rgba(18,19,26,.06)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
+    <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: "0", zIndex: "70", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "64px 20px 24px", background: "rgb(from var(--c-text) 0 0 0 / .28)", WebkitBackdropFilter: "blur(8px)", backdropFilter: "blur(8px)", animation: "fade .2s ease-out" }}>
+      <div ref={box} role="dialog" aria-modal="true" aria-labelledby="nc-t" style={{ width: "min(620px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "var(--c-card)", borderRadius: "var(--r-3xl)", boxShadow: "var(--c-shadow-pop)", animation: "sheet .4s cubic-bezier(.2,.8,.2,1)" }}>
         <div style={{ flex: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "24px 24px 6px 28px" }}>
           <h2 id="nc-t" style={{ margin: "0", font: "600 var(--t-headline)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.035em" }}>{withPeople ? (isRoom ? "Nueva conversación" : "Nuevo chat") : isRoom || (salaMode && !chosen.length) ? "Nueva sala" : "Nuevo chat"}</h2>
           <button type="button" aria-label="Cerrar" onClick={onClose} style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer" }}>
@@ -229,7 +229,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
           <span style={{ padding: "0 4px", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-text-3)" }}>{hint}</span>
           {isRoom ? (
             <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "50px", padding: "0 16px", borderRadius: "var(--r-lg)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .12)", animation: "fade .3s ease-out" }}>
-              <span aria-hidden="true" style={{ font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "#8A8D96" }}>{"#"}</span>
+              <span aria-hidden="true" style={{ font: "600 var(--t-lead)/1 'Geist', sans-serif", color: "var(--c-text-4)" }}>{"#"}</span>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Nombre de la sala"}</span>
               <input className="c-bare" type="text" value={name || auto} onChange={(e) => setName(e.target.value.toLowerCase().replace(/\s+/g, "-"))} style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-read)", fontWeight: "600" }} />
             </label>
@@ -244,13 +244,13 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                 return (
                   <button key={c.id} type="button" role="checkbox" aria-checked={on ? "true" : "false"} onClick={() => { pickPerson(c.id); setQ(""); }}
                     style={{ width: "100%", display: "flex", alignItems: "center", gap: "14px", minHeight: "58px", padding: "6px 10px", border: 0, borderRadius: "var(--r-lg)", background: on ? "rgb(var(--c-ink-rgb) / .045)" : "transparent", cursor: "pointer", textAlign: "left" }}>
-                    <PeerAvatar person={c} size={32} dot ring="#FFFFFF" />
+                    <PeerAvatar person={c} size={32} dot ring="var(--c-card)" />
                     <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
                       <strong style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{c.name}</strong>
                       <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{c.online ? "Conectada" : "En su Colmena"}</span>
                     </span>
-                    <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                      <Check size={11} weight="bold" color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
+                    <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "var(--c-btn)" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
+                      <Check size={11} weight="bold" color="var(--c-btn-text)" style={{ opacity: on ? 1 : 0 }} />
                     </span>
                   </button>
                 );
@@ -278,8 +278,8 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                   <strong style={{ fontSize: "var(--t-body)", fontWeight: "600" }}>{b.name}</strong>
                   <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{b.role}</span>
                 </span>
-                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "#12131A" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
-                  <Check size={11} weight="bold" color="#FFFFFF" style={{ opacity: on ? 1 : 0 }} />
+                <span aria-hidden="true" style={{ width: "22px", height: "22px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: on ? "var(--c-btn)" : "transparent", boxShadow: on ? "none" : "inset 0 0 0 1.5px rgb(var(--c-ink-rgb) / .2)" }}>
+                  <Check size={11} weight="bold" color="var(--c-btn-text)" style={{ opacity: on ? 1 : 0 }} />
                 </span>
               </button>
             );
@@ -290,7 +290,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
         {error ? <p role="alert" style={{ margin: "0 28px 8px", fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</p> : null}
         <div style={{ flex: "none", display: "flex", justifyContent: "flex-end", gap: "10px", padding: "14px 24px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
           <button type="button" onClick={onClose} style={{ height: "50px", padding: "0 20px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", cursor: "pointer", fontSize: "var(--t-body)", fontWeight: "600" }}>{"Cancelar"}</button>
-          <button type="button" disabled={!(chosen.length || withPeople) || busy} onClick={go} style={{ height: "50px", padding: "0 26px", border: "0", borderRadius: "var(--r-pill)", background: chosen.length || withPeople ? "var(--c-btn)" : "#C9CBD1", color: "var(--c-btn-text)", cursor: chosen.length || withPeople ? "pointer" : "default", fontSize: "var(--t-body)", fontWeight: "600" }}>
+          <button type="button" disabled={!(chosen.length || withPeople) || busy} onClick={go} style={{ height: "50px", padding: "0 26px", border: "0", borderRadius: "var(--r-pill)", background: chosen.length || withPeople ? "var(--c-btn)" : "var(--c-line-strong)", color: "var(--c-btn-text)", cursor: chosen.length || withPeople ? "pointer" : "default", fontSize: "var(--t-body)", fontWeight: "600" }}>
             {withPeople ? (isRoom ? "Crear conversación" : `Hablar con ${chosenPeople[0].name.split(" ")[0]}`) : isRoom ? "Crear sala" : chosen.length ? `Hablar con ${chosen[0].name}` : "Empezar"}
           </button>
         </div>

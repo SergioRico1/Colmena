@@ -25,13 +25,13 @@ export default function Stash({ entries = [], onRestore, onDelete, saved = false
         </span>
       ) : (
         <button type="button" className="rm-focus" aria-haspopup="dialog" aria-expanded={open ? "true" : "false"} onClick={() => setOpen((v) => !v)} title={`Lo que guardaste con ${comboLabel("mod+s")}`}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 12px 0 10px", border: 0, borderRadius: "var(--r-pill)", background: open ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: open ? "var(--c-btn-text)" : "#3D404A", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>
+          style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 12px 0 10px", border: 0, borderRadius: "var(--r-pill)", background: open ? "var(--c-btn)" : "rgb(var(--c-ink-rgb) / .06)", color: open ? "var(--c-btn-text)" : "var(--c-text-2)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>
           <Bookmark size={14} strokeWidth={2.2} aria-hidden="true" />
           {`Guardados para después · ${entries.length}`}
         </button>
       )}
       {open ? (
-        <div role="dialog" aria-label="Guardados para después" style={{ position: "absolute", right: 0, bottom: "calc(100% + 8px)", zIndex: 30, width: "min(460px, 80vw)", padding: "6px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "0 20px 40px -20px rgba(18,19,26,.35), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
+        <div role="dialog" aria-label="Guardados para después" style={{ position: "absolute", right: 0, bottom: "calc(100% + 8px)", zIndex: 30, width: "min(460px, 80vw)", padding: "6px", borderRadius: "var(--r-xl)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop), 0 0 0 1px rgb(var(--c-ink-rgb) / .06)", animation: "rise .2s ease-out" }}>
           <p style={{ margin: 0, padding: "8px 12px 6px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{`Pulsa uno para seguir escribiéndolo. ${comboLabel("mod+s")} guarda lo que tengas en el cuadro.`}</p>
           <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", maxHeight: "320px", overflowY: "auto" }}>
             {entries.map((e) => (

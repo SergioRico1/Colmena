@@ -146,7 +146,7 @@ export function ArtifactBody({ artifact, content, meta = null }) {
     return <iframe title={artifact?.title || "Vista previa"} sandbox="" srcDoc={String(content || "")} style={{ width: "100%", height: "520px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-card)" }} />;
   }
   if (kind === "code" || CODE_FORMATS.has(format) || format === "html") {
-    return <pre style={{ margin: "0", padding: "14px 16px", background: "#1D1F27", color: "#E6E8EE", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.75 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}>{content}</pre>;
+    return <pre style={{ margin: "0", padding: "14px 16px", background: "var(--c-sunken)", color: "var(--c-text)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", font: "400 var(--t-meta)/1.75 'Geist Mono', monospace", overflowX: "auto", whiteSpace: "pre" }}>{content}</pre>;
   }
   return <Markdown text={content} size={15} />;
 }

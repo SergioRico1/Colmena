@@ -125,7 +125,7 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
   let n = -1;
   return (
     <div ref={box} role="menu" aria-label="Añadir" tabIndex={-1} onKeyDown={onKeyDown}
-      style={{ position: "absolute", left: "0", bottom: "calc(100% + 10px)", zIndex: 40, width: "min(420px, 100%)", maxHeight: "min(440px, 60vh)", overflowY: "auto", padding: "6px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 24px 50px -24px rgba(18,19,26,.4), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .2s ease-out" }}>
+      style={{ position: "absolute", left: "0", bottom: "calc(100% + 10px)", zIndex: 40, width: "min(420px, 100%)", maxHeight: "min(440px, 60vh)", overflowY: "auto", padding: "6px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop), 0 0 0 1px rgb(var(--c-ink-rgb) / .06)", animation: "rise .2s ease-out" }}>
       {sections.map((s) => (
         <div key={s.title} role="group" aria-label={s.title} style={{ display: "flex", flexDirection: "column", paddingBottom: "4px" }}>
           <span style={{ padding: "10px 12px 4px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{s.title}</span>
@@ -145,7 +145,7 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
                   <span style={{ fontWeight: 500 }}>{item.label}</span>
                   {item.hint ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis" }}>{item.hint}</span> : null}
                 </span>
-                {on ? <Check size={16} strokeWidth={2.6} aria-hidden="true" style={{ flex: "none", color: "#0B8A5F" }} /> : null}
+                {on ? <Check size={16} strokeWidth={2.6} aria-hidden="true" style={{ flex: "none", color: "var(--c-ok)" }} /> : null}
               </button>
             );
           })}

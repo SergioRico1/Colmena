@@ -86,8 +86,8 @@ function QueueItem({ index, message, onRemove, onEdit, onSayNow, sayBusy, botNam
     setEditing(false);
   };
   return (
-    <li {...(editing ? {} : drag.props)} className="rm-focus" style={{ display: "flex", alignItems: editing ? "stretch" : "center", gap: "10px", minHeight: "48px", padding: "6px 6px 6px 10px", background: "var(--c-card)", borderRadius: "var(--r-xl)", boxShadow: "0 0 0 1px rgba(18,19,26,.06)", opacity: message.sending ? 0.6 : 1, transition: "opacity .2s ease, box-shadow .15s ease", animation: "rise .25s ease-out", ...drag.style }}>
-      {editing ? null : <GripVertical size={15} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: "#A3A6AE", cursor: drag.props.draggable ? "grab" : "default" }} />}
+    <li {...(editing ? {} : drag.props)} className="rm-focus" style={{ display: "flex", alignItems: editing ? "stretch" : "center", gap: "10px", minHeight: "48px", padding: "6px 6px 6px 10px", background: "var(--c-card)", borderRadius: "var(--r-xl)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .06)", opacity: message.sending ? 0.6 : 1, transition: "opacity .2s ease, box-shadow .15s ease", animation: "rise .25s ease-out", ...drag.style }}>
+      {editing ? null : <GripVertical size={15} strokeWidth={2} aria-hidden="true" style={{ flex: "none", color: "var(--c-text-4)", cursor: drag.props.draggable ? "grab" : "default" }} />}
       <span aria-hidden="true" style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", font: "600 var(--t-micro)/1 'Geist Mono', monospace", color: "var(--c-text-3)", alignSelf: editing ? "flex-start" : "center", marginTop: editing ? "9px" : 0 }}>{index + 1}</span>
       {editing ? (
         <form onSubmit={(e) => { e.preventDefault(); save(); }} style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "8px", padding: "2px 0" }}>
@@ -175,7 +175,7 @@ export default function MessageQueue({ queue, botName = "el bot", missionPaused 
     },
     style: {
       ...(dragging === m.id ? { opacity: 0.45 } : {}),
-      ...(over?.id === m.id && dragging && dragging !== m.id ? { boxShadow: over.after ? "0 0 0 1px rgba(18,19,26,.06), inset 0 -2px 0 #FFC93C" : "0 0 0 1px rgba(18,19,26,.06), inset 0 2px 0 #FFC93C" } : {}),
+      ...(over?.id === m.id && dragging && dragging !== m.id ? { boxShadow: over.after ? "0 0 0 1px rgb(var(--c-ink-rgb) / .06), inset 0 -2px 0 var(--c-accent)" : "0 0 0 1px rgb(var(--c-ink-rgb) / .06), inset 0 2px 0 var(--c-accent)" } : {}),
     },
   });
   if (!pending.length && !error && !missionPaused && !told.length && !sayError) return null;
@@ -196,7 +196,7 @@ export default function MessageQueue({ queue, botName = "el bot", missionPaused 
         {paused && pending.length ? <button type="button" onClick={queue.resume} style={{ ...pill, background: "var(--c-btn)", color: "var(--c-btn-text)" }}>{"Enviar la cola"}</button> : null}
       </div>
       {error ? (
-        <p role="alert" style={{ margin: "0", padding: "10px 14px", background: "#FBE7DF", borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "#5A1E16" }}>
+        <p role="alert" style={{ margin: "0", padding: "10px 14px", background: "var(--c-error-soft)", borderRadius: "var(--r-lg)", fontSize: "var(--t-meta)", lineHeight: "1.45", color: "var(--c-error)" }}>
           <strong>{"No se envió: "}</strong>{error}{paused ? " La cola espera; no se reenvía sola." : ""}
         </p>
       ) : null}

@@ -113,12 +113,12 @@ export default function PositionRail({ scroller, items, version = 0, locate = nu
             onMouseEnter={() => setHover(m.id)} onFocus={() => setHover(m.id)} onBlur={() => setHover(null)}
             onClick={() => jump(m.id)} onKeyDown={(e) => onKey(e, i)}
             style={{ position: "absolute", left: "1px", top: `calc(${(m.at * 100).toFixed(2)}% - 6px)`, width: "14px", height: "12px", padding: 0, background: "transparent", border: 0, cursor: "pointer", display: "grid", placeItems: "center" }}>
-            <span style={{ width: it?.mine ? "10px" : "6px", height: on ? "4px" : "3px", borderRadius: "var(--r-xs)", background: on ? "#12131A" : it?.mine ? "#8C91A0" : "#C9CCD6", transition: "width .12s ease, background .12s ease" }} />
+            <span style={{ width: it?.mine ? "10px" : "6px", height: on ? "4px" : "3px", borderRadius: "var(--r-xs)", background: on ? "var(--c-text)" : it?.mine ? "var(--c-text-4)" : "var(--c-line-strong)", transition: "width .12s ease, background .12s ease" }} />
           </button>
         );
       })}
       {shown && shownMark ? (
-        <div role="tooltip" className="c-pop" style={{ position: "absolute", right: "22px", top: `calc(${(shownMark.at * 100).toFixed(2)}% - 18px)`, width: "260px", padding: "10px 12px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", boxShadow: "0 12px 28px -16px rgba(18,19,26,.45)", pointerEvents: "none" }}>
+        <div role="tooltip" className="c-pop" style={{ position: "absolute", right: "22px", top: `calc(${(shownMark.at * 100).toFixed(2)}% - 18px)`, width: "260px", padding: "10px 12px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", boxShadow: "var(--c-shadow-pop)", pointerEvents: "none" }}>
           <strong style={{ display: "block", fontSize: "var(--t-caption)", marginBottom: "3px" }}>{shown.who}</strong>
           <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.4", color: "var(--c-text)", display: "-webkit-box", WebkitLineClamp: "3", WebkitBoxOrient: "vertical", overflow: "hidden" }}>
             {String(shown.text || "").replace(/[#*_`>|[\]()]/g, "").replace(/\s+/g, " ").trim().slice(0, PREVIEW) || "…"}

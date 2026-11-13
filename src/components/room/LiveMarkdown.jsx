@@ -25,7 +25,7 @@ export default function LiveMarkdown({ text, size = 16, mentions = NONE, caret =
     <div style={{ display: "flex", flexDirection: "column", gap: size <= 14 ? "8px" : "12px" }}>
       {stable ? <Stable text={stable} size={size} mentions={mentions} style={style} /> : null}
       {repaired.trim() ? <Markdown text={repaired} size={size} mentions={mentions} style={style} /> : null}
-      {caret ? <span aria-hidden="true" style={{ display: "inline-block", width: "2px", height: "1.1em", marginTop: stable || repaired.trim() ? "-8px" : "4px", verticalAlign: "text-bottom", background: "#12131A", animation: "caret 1s steps(1) infinite" }} /> : null}
+      {caret ? <span aria-hidden="true" style={{ display: "inline-block", width: "2px", height: "1.1em", marginTop: stable || repaired.trim() ? "-8px" : "4px", verticalAlign: "text-bottom", background: "var(--c-text)", animation: "caret 1s steps(1) infinite" }} /> : null}
     </div>
   );
 }

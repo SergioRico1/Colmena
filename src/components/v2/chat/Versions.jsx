@@ -59,7 +59,7 @@ export function EditMessage({ text, canRestore = false, onSend, onCancel }) {
     try { await onSend(body, restore); } catch (err) { setError(err?.message || "No se pudo enviar."); setBusy(false); }
   };
   return (
-    <form className="c-ring" onSubmit={send} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgba(18,19,26,.08), 0 16px 40px -24px rgba(18,19,26,.3)", animation: "rise .2s ease-out" }}>
+    <form className="c-ring" onSubmit={send} style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", borderRadius: "var(--r-2xl)", background: "var(--c-card)", boxShadow: "0 0 0 1px rgb(var(--c-ink-rgb) / .08), var(--c-shadow-pop)", animation: "rise .2s ease-out" }}>
       <label style={{ display: "flex" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Editar el mensaje"}</span>
         <textarea className="c-bare" ref={box} value={value} onChange={(e) => setValue(e.target.value)} rows={2}

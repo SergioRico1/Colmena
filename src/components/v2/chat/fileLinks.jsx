@@ -18,7 +18,7 @@ export function FileLink({ file, children }) {
   return (
     <button type="button" className="rm-focus" onClick={() => ctx?.open(file)} title={file.openable ? `Abrir ${file.path}` : `Ver qué cambió en ${file.path}`}
       {...(file.openable && ctx?.missionId ? dragOutProps(workFileUrl(ctx.missionId, file.path)) : {})}
-      style={{ display: "inline", padding: 0, border: 0, background: "transparent", cursor: "pointer", font: "inherit", color: "var(--c-accent-ink)", textDecoration: "underline", textDecorationColor: "rgba(31,79,209,.35)", textUnderlineOffset: "3px" }}>
+      style={{ display: "inline", padding: 0, border: 0, background: "transparent", cursor: "pointer", font: "inherit", color: "var(--c-accent-ink)", textDecoration: "underline", textDecorationColor: "color-mix(in oklab, var(--c-accent-ink) 35%, transparent)", textUnderlineOffset: "3px" }}>
       {children}
     </button>
   );

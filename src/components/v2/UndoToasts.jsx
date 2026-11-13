@@ -8,13 +8,13 @@ import { dismiss, setPaused, undoLast, useToasts } from "../../lib/undoToast.js"
 // countdown, as a hidden window does. A notice changes in place: waiting with «Deshacer» and
 // a line that runs out, then on its way, then done or failed. Swipe one aside to let it go.
 // Ctrl+Z outside a text field undoes the newest one.
-const INK = "#12131A";
+const INK = "var(--c-text)";
 const STEP = 62; // height of a notice plus the gap, when the stack is spread
 const SWIPE_PX = 90;
 
 function Lead({ kind }) {
   if (kind === "working") return <span aria-hidden="true" style={{ width: "16px", height: "16px", flex: "none", borderRadius: "var(--r-circle)", border: "2px solid rgb(var(--c-ink-rgb) / .15)", borderTopColor: "var(--c-text)", animation: "spin .8s linear infinite" }} />;
-  if (kind === "success") return <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "#0B8A5F", color: "#FFFFFF", animation: "pop .35s ease-out" }}><Check size={12} strokeWidth={3.2} /></span>;
+  if (kind === "success") return <span aria-hidden="true" style={{ width: "20px", height: "20px", flex: "none", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-ok)", color: "var(--c-on-accent)", animation: "pop .35s ease-out" }}><Check size={12} strokeWidth={3.2} /></span>;
   if (kind === "error") return <CircleAlert size={18} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none", color: "var(--c-error)", animation: "pop .35s ease-out" }} />;
   return null;
 }
@@ -50,7 +50,7 @@ function Toast({ toast, depth, spread, paused }) {
         transition: drag.current ? "none" : "transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s ease",
         overflow: "hidden", display: "flex", alignItems: "center", gap: "12px", minHeight: "52px",
         padding: toast.undo ? "6px 6px 6px 20px" : "6px 8px 6px 18px", borderRadius: "var(--r-pill)", background: "var(--c-card)",
-        boxShadow: "0 12px 32px -12px rgba(18,19,26,.28), 0 0 0 1px rgba(18,19,26,.06)", animation: "rise .25s ease-out",
+        boxShadow: "var(--c-shadow-pop), 0 0 0 1px rgb(var(--c-ink-rgb) / .06)", animation: "rise .25s ease-out",
         color: error ? "var(--c-error)" : "var(--c-text)", touchAction: "pan-y", cursor: "grab",
       }}>
       <Lead kind={toast.kind} />

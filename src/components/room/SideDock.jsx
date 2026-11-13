@@ -45,8 +45,8 @@ function MenuItem({ icon, label, hint, onClick, disabled }) {
 // tone «v3» (Colmena 3 chat and rooms): white panel with the boards hairlines.
 export default function SideDock({ dock, tabs, addable = [], widthKey = "room", label = "Panel lateral", tone = null }) {
   const v3 = tone === "v3";
-  const paper = v3 ? "#FFFFFF" : "#F7F8FA";
-  const hair = v3 ? "rgba(18,19,26,.07)" : "#DCE0E8";
+  const paper = v3 ? "var(--c-card)" : "var(--c-sunken)";
+  const hair = v3 ? "rgb(var(--c-ink-rgb) / .07)" : "var(--c-line)";
   const resize = usePanelWidth(widthKey, { min: 340, side: dock.dock });
   const [mounted, setMounted] = useState(() => new Set(dock.active ? [dock.active] : []));
   const [drag, setDrag] = useState(null);
@@ -82,11 +82,11 @@ export default function SideDock({ dock, tabs, addable = [], widthKey = "room", 
   return (
     <aside aria-label={label} className="c-panel" style={{ background: paper, [left ? "borderRight" : "borderLeft"]: "1px solid " + hair, display: "flex", flexDirection: "column", order: left ? -1 : 2, ...asideStyle }}>
       {dock.expanded ? null : resize.handle}
-      <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minHeight: "52px", padding: "8px 8px 8px 10px", borderBottom: "1px solid " + (v3 ? "rgba(18,19,26,.06)" : "#E6E8EE"), background: paper }}>
+      <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minHeight: "52px", padding: "8px 8px 8px 10px", borderBottom: "1px solid " + (v3 ? "rgb(var(--c-ink-rgb) / .06)" : "var(--c-line)"), background: paper }}>
         <div ref={strip} role="tablist" aria-label={label} style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "4px", overflowX: "auto", scrollbarWidth: "none" }}>
           {tabs.map((t, i) => {
             const on = t.id === active.id;
-            const dropLine = drop?.id === t.id && drag && drag !== t.id ? { boxShadow: drop.after ? "inset -2px 0 0 #FFC93C" : "inset 2px 0 0 #FFC93C" } : {};
+            const dropLine = drop?.id === t.id && drag && drag !== t.id ? { boxShadow: drop.after ? "inset -2px 0 0 var(--c-accent)" : "inset 2px 0 0 var(--c-accent)" } : {};
             return (
               <span key={t.id} className="c-dock-tab" role="presentation" aria-selected={on ? "true" : "false"}
                 draggable={tabs.length > 1}

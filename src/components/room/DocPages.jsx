@@ -40,7 +40,7 @@ export default function DocPages({ info, pageUrl, max = 200, gap = "12px", label
       {Array.from({ length: total }, (_, i) => (
         <figure key={i} style={{ margin: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
           <img loading="lazy" src={pageUrl(i + 1)} alt={`${label} ${i + 1} de ${info.pages}`}
-            style={{ width: "100%", height: "auto", minHeight: "120px", borderRadius: "var(--r-sm)", background: "var(--c-card)", border: "1px solid var(--c-line)", boxShadow: "0 10px 30px -22px rgba(18,19,26,.45)" }} />
+            style={{ width: "100%", height: "auto", minHeight: "120px", borderRadius: "var(--r-sm)", background: "var(--c-card)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)" }} />
           {info.pages > 1 ? <figcaption style={{ alignSelf: "center", font: "500 var(--t-micro)/1 'Geist Mono', monospace", color: "var(--c-text-3)" }}>{`${i + 1} / ${info.pages}`}</figcaption> : null}
         </figure>
       ))}

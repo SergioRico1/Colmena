@@ -44,8 +44,8 @@ export function CommandOutput({ stepId, callId, running, fallback = null }) {
   return (
     <pre ref={box} onScroll={(e) => { const el = e.currentTarget; atEdge.current = el.scrollHeight - el.scrollTop - el.clientHeight <= 4; }}
       aria-live={live ? "polite" : undefined} aria-label="Salida del programa"
-      style={{ ...MONO, margin: 0, maxHeight: "240px", overflow: "auto", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "#12131A", color: "#E6E7EC", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-      {text || <span style={{ color: "#8A8D96" }}>{live ? "Aún no ha escrito nada." : "No escribió nada."}</span>}
+      style={{ ...MONO, margin: 0, maxHeight: "240px", overflow: "auto", padding: "12px 14px", borderRadius: "var(--r-lg)", background: "var(--c-sunken)", color: "var(--c-text-2)", border: "1px solid var(--c-line)", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+      {text || <span style={{ color: "var(--c-text-4)" }}>{live ? "Aún no ha escrito nada." : "No escribió nada."}</span>}
       {live ? <span aria-hidden="true" style={{ display: "inline-block", width: "7px", height: "14px", marginLeft: "2px", verticalAlign: "-2px", background: "var(--c-honey)", color: "var(--c-honey-ink)", animation: "caret 1s steps(1) infinite" }} /> : null}
     </pre>
   );
@@ -129,7 +129,7 @@ function ToolRow({ tool, stepId, first }) {
       {open ? (
         tool.card?.type === "command" && running
           ? <div style={{ margin: "0 14px 12px 42px" }}><CommandOutput stepId={stepId} callId={tool.id} running /></div>
-          : <pre style={{ margin: "0 14px 12px 42px", padding: "10px 12px", borderRadius: "var(--r-md)", background: "#12131A", color: "#E6E7EC", font: "400 var(--t-caption)/1.6 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "260px", overflow: "auto" }}>{(bad && tool.error ? tool.error + "\n" : "") + (out || "Sin salida.")}</pre>
+          : <pre style={{ margin: "0 14px 12px 42px", padding: "10px 12px", borderRadius: "var(--r-md)", background: "var(--c-sunken)", color: "var(--c-text-2)", border: "1px solid var(--c-line)", font: "400 var(--t-caption)/1.6 'Geist Mono', monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: "260px", overflow: "auto" }}>{(bad && tool.error ? tool.error + "\n" : "") + (out || "Sin salida.")}</pre>
       ) : null}
     </div>
   );
@@ -169,7 +169,7 @@ export default function WorkLog({ tools = [], bots = [], stepId = null, onOpenAr
           <strong style={{ fontWeight: 600 }}>{title}</strong>
           {rest.length ? <span style={{ color: "var(--c-text-3)" }}>{" · " + rest.join(" · ")}</span> : null}
         </span>
-        <ChevronDown size={14} color="#4A4D57" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
+        <ChevronDown size={14} color="var(--c-text-3)" style={{ flex: "none", transform: open ? "rotate(180deg)" : "none", transition: "transform .2s ease" }} />
       </button>
       {open && turn && summary.text ? <p style={{ margin: 0, padding: "10px 16px 0", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", fontSize: "var(--t-ui)", lineHeight: "1.45", color: "var(--c-text-3)" }}>{summary.text}</p> : null}
       {open && expert ? <div role="group" aria-label="Herramientas" style={{ display: "flex", flexDirection: "column", borderTop: "1px solid rgb(var(--c-ink-rgb) / .06)", animation: "rise .25s ease-out" }}>{rows()}</div> : null}

@@ -97,7 +97,7 @@ export function DownReasons({ current = null, onSave, onRemove, onClose, style }
   return (
     <div ref={ref} role="dialog" aria-label="Por qué no te sirve"
       onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void save(); } }}
-      style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: "0", width: "min(340px, 86vw)", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", boxShadow: "0 14px 34px rgba(18,19,26,.16)", textAlign: "left", ...popIn("top left"), ...style }}>
+      style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", left: "0", width: "min(340px, 86vw)", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)", textAlign: "left", ...popIn("top left"), ...style }}>
       <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text)" }}>{current?.reasons?.length || current?.note ? "Cambiar por qué no sirve" : "¿Qué ha fallado?"}</strong>
         <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: "var(--c-text-3)" }}>Elige lo que aplique. Sirve para que aprenda; puedes cambiarlo luego.</span>
@@ -145,8 +145,8 @@ function grouped(list, bots) {
 
 const chip = (pressed) => ({
   display: "inline-flex", alignItems: "center", gap: "4px", height: "26px", padding: "0 8px",
-  background: pressed ? "var(--c-accent-soft)" : "var(--c-chip)", border: "1px solid " + (pressed ? "#1F4FD1" : "#EEF0F4"),
-  borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", lineHeight: "1", color: pressed ? "var(--c-accent-ink)" : "#2A2E38",
+  background: pressed ? "var(--c-accent-soft)" : "var(--c-chip)", border: "1px solid " + (pressed ? "var(--c-accent-ink)" : "var(--c-line)"),
+  borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-meta)", lineHeight: "1", color: pressed ? "var(--c-accent-ink)" : "var(--c-text-2)",
 });
 
 /** Quick palette (arrow keys move, Escape closes) and «…» for any emoji. */
@@ -177,7 +177,7 @@ export function ReactionPicker({ mine = [], onPick, onClose, style }) {
   };
   return (
     <div ref={ref} role="dialog" aria-label="Reaccionar" onKeyDown={move}
-      style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", right: "0", padding: "6px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", boxShadow: "0 14px 34px rgba(18,19,26,.16)", ...popIn("top right"), ...style }}>
+      style={{ position: "absolute", zIndex: 30, top: "calc(100% + 6px)", right: "0", padding: "6px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", boxShadow: "var(--c-shadow-pop)", ...popIn("top right"), ...style }}>
       {other ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "240px", padding: "4px" }}>
           <input ref={input} value={value} onChange={(e) => typed(e.target.value)} aria-label="Cualquier emoji" placeholder="Escribe o pega un emoji"

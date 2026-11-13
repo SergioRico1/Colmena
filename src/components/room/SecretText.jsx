@@ -46,7 +46,7 @@ function SaveKey({ secret, messageId, onClose }) {
   const field = { display: "block", width: "100%", boxSizing: "border-box", height: "34px", padding: "0 10px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-md)", background: "var(--c-card)", font: "inherit", fontSize: "var(--t-ui)", color: "var(--c-text)" };
   return (
     <span role="dialog" aria-label="Guardar en llaves" data-secret-ui="" className="c-pop" onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "Enter") save(e); }}
-      style={{ position: "absolute", zIndex: 30, bottom: "calc(100% + 6px)", right: 0, width: "300px", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)", borderRadius: "var(--r-lg)", boxShadow: "0 18px 40px -18px rgba(18,19,26,.35)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text)", textAlign: "left", whiteSpace: "normal", userSelect: "none" }}>
+      style={{ position: "absolute", zIndex: 30, bottom: "calc(100% + 6px)", right: 0, width: "300px", display: "flex", flexDirection: "column", gap: "10px", padding: "14px", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)", borderRadius: "var(--r-lg)", boxShadow: "var(--c-shadow-pop)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text)", textAlign: "left", whiteSpace: "normal", userSelect: "none" }}>
       {saved ? (
         <span role="status" style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
           <KeyRound size={15} strokeWidth={2.2} aria-hidden="true" style={{ flex: "none", marginTop: "2px", color: "var(--c-ok-ink)" }} />
