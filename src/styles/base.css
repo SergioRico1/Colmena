@@ -224,7 +224,9 @@ a,img,svg{-webkit-user-drag:none}
 .c-mi-meta{font:500 var(--t-caption)/1 'Geist',sans-serif;font-variant-numeric:tabular-nums;color:var(--c-text-3)}
 .c-menu kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:var(--r-xs);background:var(--c-sunken);border:1px solid var(--c-line);font:500 var(--t-micro)/1 'Geist Mono',ui-monospace,monospace;color:var(--c-text-3)}
 .c-mi[aria-disabled="true"]{color:var(--c-text-4);cursor:default}
-.c-mi[aria-disabled="true"] .c-mi-icon,.c-mi[aria-disabled="true"] .c-mi-hint{color:var(--c-text-4)}
+.c-mi[aria-disabled="true"] .c-mi-icon{color:var(--c-text-4)}
+/* Why it is off stays readable: the reason is information, not a dimmed control. */
+.c-mi[aria-disabled="true"] .c-mi-hint{color:var(--c-text-3)}
 .c-mi.danger,.c-mi.danger .c-mi-icon{color:var(--c-error)}
 .c-mi.danger[data-active]{background:var(--c-error-soft)}
 .c-menu-sep{flex:none;height:1px;margin:6px 0;background:var(--c-line)}

@@ -85,7 +85,7 @@ export const CODE_CSS = `
 .code-turn:hover .code-tools,.code-turn:focus-within .code-tools{opacity:1}
 .code-task .code-x{opacity:0}
 .code-task:hover .code-x,.code-task:focus-within .code-x,.code-x[aria-expanded="true"]{opacity:1}
-.code-task:hover .code-pill,.code-task:focus-within .code-pill{opacity:0}
+.code-task:hover .code-pill,.code-task:focus-within .code-pill,.code-task:has(.code-x[aria-expanded="true"]) .code-pill{opacity:0}
 .code-rows>*:first-child{border-top:0!important}
 .code-pulse{animation:colmena-pulse 1.4s ease-in-out infinite}
 @media (prefers-reduced-motion: reduce){.code-pulse{animation:none}}
