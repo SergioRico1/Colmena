@@ -168,11 +168,11 @@ test("bots: a request put off does not make its bot wait, and a paused team says
   assert.equal(paused.summary.text, "Equipo en pausa · 5 te esperan");
 });
 
-test("a circle is a person: a bot with a circle (or no shape) is drawn as a rounded square", () => {
-  assert.equal(sidebarShape("circle"), "square");
+test("a circle is a person: a bot with a circle (or no shape) is drawn as the capsule (or, unknown, a rounded square)", () => {
+  assert.equal(sidebarShape("circle"), "capsule");
   assert.equal(sidebarShape(undefined), "square");
   assert.equal(sidebarShape("hex"), "hex");
-  assert.equal(sidebarModel(snapshot(), { now: NOW }).bots.find((b) => b.id === "leo").shape, "square");
+  assert.equal(sidebarModel(snapshot(), { now: NOW }).bots.find((b) => b.id === "leo").shape, "capsule");
 });
 
 test("people: direct conversations and connected contacts, with presence, status and unread", () => {

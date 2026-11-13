@@ -29,11 +29,11 @@ const view = () => ({
   ],
 });
 
-test("circles are people: a bot that is a circle, or has no known shape, is a rounded square", () => {
-  assert.equal(botShape("circle"), "square");
+test("circles are people: a bot that is a circle, or has no known shape, is a capsule or a rounded square", () => {
+  assert.equal(botShape("circle"), "capsule", "Investigación's silhouette");
   assert.equal(botShape(undefined), "square");
   assert.equal(botShape("blob"), "square");
-  for (const s of ["hex", "diamond", "square", "leaf", "arch"]) assert.equal(botShape(s), s);
+  for (const s of ["hex", "diamond", "square", "leaf", "arch", "capsule"]) assert.equal(botShape(s), s);
   assert.equal(initialsOf("Lucía Martín Gómez"), "LM");
   assert.equal(initialsOf(""), "?");
   assert.equal(firstName("Lucía Martín"), "Lucía");

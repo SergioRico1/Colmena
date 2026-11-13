@@ -218,7 +218,8 @@ function Room({ id, query }) {
   const waitingBots = useMemo(() => [...waitingBy(waitingOf(store)).bots.keys()], [store.waiting, store.approvals, store.missions]); // eslint-disable-line react-hooks/exhaustive-deps
   const panel = useMemo(() => memberPanel(shown, {
     working: bots.filter(working).map((b) => b.id), waiting: [...waitingBots, ...asks.filter((a) => a.state === "asked").map((a) => a.bot?.id)], activity: shown?.activity || EMPTY,
-  }), [shown, bots, activity, live, waitingBots, asks]); // eslint-disable-line react-hooks/exhaustive-deps
+    selfColor: store.settings?.botLooks?.family?.tint || null,
+  }), [shown, bots, activity, live, waitingBots, asks, store.settings?.botLooks?.family?.tint]); // eslint-disable-line react-hooks/exhaustive-deps
   // A name two visible bots share reads «Vera · de Lucía» in every author line (identity.js).
   const botNames = useMemo(() => botNameLabels(shown?.bots || EMPTY), [shown]);
   const title = shown?.title || mission?.room || mission?.title || "sala";

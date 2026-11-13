@@ -12,8 +12,8 @@ import { autonomyLabel, Seg } from "../../v3/team/parts.jsx";
 // shape, colour, instructions, skills, what it can use), 3 Prueba (a private test chat;
 // nothing is saved or sent) — with «Así se verá» beside them. Honey is not offered as a
 // colour (it means «te necesita») and ink belongs to Atlas.
-// No circle: circles are people (src/lib/identity.js). A bot that already has one is drawn as a rounded square.
-const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"]];
+// No circle: circles are people (src/lib/identity.js). A bot that already has one is drawn as the capsule.
+const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"], ["capsule", "cápsula"]];
 const COLORS = [["#0E7C86", "verde azulado"], ["#2F6BFF", "azul"], ["#7B4DFF", "violeta"], ["#FF5CA8", "rosa"], ["#FF7A1A", "naranja"], ["#0B8A5F", "verde"], ["#B4236E", "frambuesa"]];
 const EXAMPLES = [
   ["Contable", "Que lea las facturas de proveedores que llegan al correo, las apunte en la hoja de gastos y me avise si alguna pasa de 500 € o vence esta semana. Que nunca pague nada."],

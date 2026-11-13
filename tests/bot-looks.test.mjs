@@ -10,8 +10,8 @@ import { createApp } from "../server/app.mjs";
 import { applyOnboarding } from "../server/onboarding.mjs";
 import { mentionedByName } from "../server/peers/bots.mjs";
 import { addressees } from "../server/roomturns.mjs";
-import { BOT_PALETTE, FACTORY, HONEY, INK, NAME_POOLS, amberish, ensureBotLooks, freeName, nextLook, seededLooks, undoBotLooks } from "../server/bot-looks.mjs";
-import { botA11yName, botNameLabels, ownerBadgeText, ownerShort } from "../src/lib/identity.js";
+import { FACTORY, FAMILIES, HONEY, INK, NAME_POOLS, amberish, contrast as ratio, ensureBotLooks, familyIndex, familyOf, freeName, hsl, nextLook, seededLooks, tonesOf, undoBotLooks } from "../server/bot-looks.mjs";
+import { botA11yName, botNameLabels, botShape, familyTint, ownerBadgeText, ownerShort } from "../src/lib/identity.js";
 import { compactBots, headerBots, memberPanel, mentionGroups, stackLabel } from "../src/lib/roomView.js";
 import { resolveMentions } from "../src/lib/mentions.js";
 
@@ -27,17 +27,38 @@ const lum = (hex) => {
 };
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
-test("the palette: twelve distinct colours, never honey nor amber, 3:1 on the light surfaces", () => {
-  assert.equal(BOT_PALETTE.length, 12);
-  assert.equal(new Set(BOT_PALETTE.map(([c]) => c.toUpperCase())).size, 12);
+const hueDistance = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const inHoneyBand = (hex) => { const { h, s } = hsl(hex); return s > 0.2 && h > 25 && h < 70; };
+
+test("the families: twelve, never honey nor amber; each one's tones distinct, of the family, 3:1 on light and dark", () => {
+  assert.equal(FAMILIES.length, 12);
+  assert.deepEqual(FAMILIES.map(([, n]) => n), ["Coral", "Teja", "Musgo", "Hoja", "Esmeralda", "Turquesa", "Cielo", "Cobalto", "Violeta", "Orquídea", "Frambuesa", "Pizarra"]);
   assert.ok(amberish(HONEY), "honey is amber");
-  for (const [hex, name] of BOT_PALETTE) {
-    assert.ok(name, "every colour has a name");
-    assert.notEqual(hex.toUpperCase(), HONEY);
-    assert.notEqual(hex.toUpperCase(), INK);
-    assert.equal(amberish(hex), false, hex + " is not of the amber family");
-    for (const surface of ["#FFFFFF", "#F5F5F2", "#F6F6F3"]) assert.ok(contrast(hex, surface) >= 3, `${hex} on ${surface}: ${contrast(hex, surface).toFixed(2)}`);
+  for (const [i, [base]] of FAMILIES.entries()) {
+    assert.equal(inHoneyBand(base), false, base);
+    const tones = tonesOf(i);
+    assert.equal(tones.length, 8);
+    assert.equal(new Set(tones).size, tones.length, "every tone its own");
+    for (const t of tones) {
+      assert.notEqual(t, HONEY);
+      assert.equal(amberish(t), false, t);
+      assert.equal(inHoneyBand(t), false, t + " stays out of 25°-70°");
+      if (hsl(base).s > 0.3) assert.ok(hueDistance(hsl(t).h, hsl(base).h) <= 13, `${t} within ±12° of ${base}`);
+      for (const surface of ["#FFFFFF", "#F5F5F2", "#F6F6F3"]) assert.ok(contrast(t, surface) >= 3, `${t} on ${surface}: ${contrast(t, surface).toFixed(2)}`);
+      for (const surface of ["#12131A"]) assert.ok(contrast(t, surface) >= 2.95, `${t} on dark ${surface}: ${contrast(t, surface).toFixed(2)}`);
+    }
+    // Side by side at 24 px: any two tones differ in lightness or in hue.
+    for (let a = 0; a < tones.length; a++) for (let b = a + 1; b < tones.length; b++) {
+      const d = Math.abs(ratio(tones[a], "#FFFFFF") - ratio(tones[b], "#FFFFFF"));
+      assert.ok(d >= 0.25 || hueDistance(hsl(tones[a]).h, hsl(tones[b]).h) >= 8 || Math.abs(hsl(tones[a]).s - hsl(tones[b]).s) >= 0.2, `${tones[a]} vs ${tones[b]}`);
+    }
   }
+  const fam = familyOf(KEY_A);
+  assert.equal(fam.index, familyIndex(KEY_A));
+  assert.equal(fam.color, FAMILIES[fam.index][0]);
+  assert.ok(/^#[0-9A-F]{6}$/.test(fam.tint) && ratio(fam.tint, "#12131A") > 12, "a light tint for the person's avatar");
+  const spread = new Set(Array.from({ length: 300 }, (_, i) => familyIndex("key-" + i)));
+  assert.equal(spread.size, 12, "every family is used");
 });
 
 test("name pools: 10-15 plain names per role, none twice, none of the factory names", () => {
@@ -57,16 +78,18 @@ test("seeded looks are the same for the same key on any machine, distinct, and t
   const ids = Object.keys(a);
   assert.equal(ids.length, 7);
   assert.equal(new Set(ids.map((id) => fold(a[id].name))).size, 7, "names distinct");
-  assert.equal(a.atlas.color, INK);
-  const colors = ids.filter((id) => id !== "atlas").map((id) => a[id].color.toUpperCase());
+  const tones = tonesOf(familyIndex(KEY_A));
+  assert.equal(a.atlas.color, tones[0], "the coordinator wears the family's deepest tone");
+  const colors = ids.map((id) => a[id].color.toUpperCase());
   assert.equal(new Set(colors).size, colors.length, "colours distinct");
-  for (const c of colors) assert.ok(BOT_PALETTE.some(([p]) => p === c) && c !== HONEY);
+  for (const c of colors) assert.ok(tones.includes(c) && c !== HONEY, c + " is a tone of the person's family");
   for (const id of ids) assert.ok(NAME_POOLS[id].includes(a[id].name), id + " name from its pool");
   // Many people: the six bots stay distinct for every one of them.
   for (let i = 0; i < 200; i++) {
     const l = seededLooks("key-" + i);
-    const six = ["nora", "tomas", "iris", "vera", "bruno"].map((x) => l[x].color);
-    assert.equal(new Set(six).size, 5);
+    const six = ["atlas", "nora", "tomas", "iris", "vera", "bruno"].map((x) => l[x].color);
+    assert.equal(new Set(six).size, 6);
+    assert.ok(six.every((c) => tonesOf(familyIndex("key-" + i)).includes(c)), "one family per person");
   }
 });
 
@@ -89,7 +112,7 @@ test("«Otro nombre» / «Otro color» walk the bot's own sequence and never lan
     cur = { ...cur, name: n.name, color: c.color, look: { name: n.look.name, color: c.look.color } };
   }
   assert.ok(seen.size >= 10, "it goes round the whole pool");
-  assert.equal(nextLook(KEY_A, bots.find((b) => b.id === "atlas"), bots, "color"), null, "the coordinator keeps its ink");
+  assert.equal(nextLook(KEY_A, bots.find((b) => b.id === "atlas"), bots, "color"), null, "the coordinator keeps the deepest tone");
   assert.equal(nextLook(KEY_A, { id: "made-by-you", name: "Pepa", color: "#2F6BFF" }, bots, "name"), null);
 });
 
@@ -128,7 +151,9 @@ test("a new installation: every built-in bot gets its own name and colour once, 
     assert.equal(b.color, want[id].color);
   }
   assert.equal(store.get("bots", "atlas").shape, "hex");
-  assert.equal(store.get("bots", "atlas").color, INK);
+  assert.equal(store.get("bots", "atlas").color, tonesOf(familyIndex(KEY_A))[0]);
+  assert.equal(store.get("bots", "nora").shape, "capsule", "Investigación is no longer a circle");
+  assert.deepEqual(store.get("settings", "main").botLooks.family, familyOf(KEY_A));
   assert.equal(store.get("settings", "main").botLooks.key, KEY_A);
   assert.equal(ensureBotLooks(store, KEY_B), null, "applied once: a later key changes nothing");
   // Leo arrives at onboarding with the look it was shown.
@@ -157,15 +182,15 @@ test("an existing installation keeps its names; factory colours become its own, 
   const looks = store.get("settings", "main").botLooks;
   assert.equal(looks.notice, true);
   for (const id of ["atlas", "nora", "tomas", "iris", "vera", "bruno"]) assert.equal(store.get("bots", id).name, FACTORY[id].name, "names kept");
-  assert.equal(store.get("bots", "atlas").color, INK);
   assert.equal(store.get("bots", "iris").color, "#0E7C86");
-  const mine = ["nora", "tomas", "vera", "bruno"].map((id) => store.get("bots", id).color);
-  for (const [i, id] of ["nora", "tomas", "vera", "bruno"].entries()) assert.notEqual(mine[i], FACTORY[id].color);
+  const tones = tonesOf(familyIndex(KEY_B));
+  const mine = ["atlas", "nora", "tomas", "vera", "bruno"].map((id) => store.get("bots", id).color);
+  for (const [i, id] of ["atlas", "nora", "tomas", "vera", "bruno"].entries()) { assert.notEqual(mine[i], FACTORY[id].color); assert.ok(tones.includes(mine[i]), id + " wears the family"); }
   const all = store.list("bots").map((b) => b.color.toUpperCase());
   assert.equal(new Set(all).size, all.length, "all distinct, including the one you chose");
   assert.ok(!all.includes(HONEY));
-  assert.equal(undoBotLooks(store), 4);
-  for (const id of ["nora", "tomas", "vera", "bruno"]) assert.equal(store.get("bots", id).color, FACTORY[id].color);
+  assert.equal(undoBotLooks(store), 5);
+  for (const id of ["atlas", "nora", "tomas", "vera", "bruno"]) assert.equal(store.get("bots", id).color, FACTORY[id].color);
   assert.equal(store.get("bots", "iris").color, "#0E7C86");
   assert.equal(store.get("settings", "main").botLooks.notice, false);
 });
@@ -223,16 +248,17 @@ test("two visible bots with one name: «Vera · de Lucía»; yours never «de ti
 test("the owner's badge and the accessible name", () => {
   assert.equal(botA11yName({ name: "Vera" }, lucia), "Vera, bot de Lucía");
   assert.equal(botA11yName({ name: "Vera" }, me), "Vera, bot tuyo");
-  assert.equal(ownerBadgeText(lucia, 20), "L");
+  assert.equal(ownerBadgeText(lucia, 18), "L");
+  assert.equal(ownerBadgeText(lucia, 20), "LM", "from 20 px two letters: Lucía and Luis are not both «L»");
   assert.equal(ownerBadgeText(lucia, 32), "LM");
 });
 
 test("member panel and header: names in sight, compact rows, «N bots» without a misleading subset", () => {
   const panel = memberPanel(view);
-  const theirs = panel.groups.find((g) => g.owner === lucia);
+  const theirs = panel.groups.find((g) => g.owner?.address === lucia.address);
   assert.equal(theirs.bots[0].shown, "Vera · de Lucía");
   assert.equal(theirs.bots[0].a11y, "Vera, bot de Lucía");
-  assert.equal(theirs.bots[0].owner, lucia);
+  assert.equal(theirs.bots[0].owner.address, lucia.address);
   assert.equal(panel.groups[0].bots[0].owner, null, "your own bots carry no badge");
   assert.equal(headerBots(panel).length, 5, "five or fewer: all of them");
   const big = memberPanel({ ...view, bots: [...view.bots, { owner: { address: "x", name: "Luis" }, bots: Array.from({ length: 6 }, (_, i) => ({ id: "b" + i, name: "B" + i })) }] });
@@ -260,4 +286,11 @@ test("«@Vera» typed in full is yours; a teammate's Vera is the second option: 
   assert.equal(items.filter((x) => x.key === items[1].key).length, 1, "not listed twice");
   // Only a partial name: no question, the usual groups.
   assert.ok(mentionGroups({ view, query: "ve" }).flatMap((g) => g.items).every((x) => !x.ask));
+});
+
+test("Investigación is a capsule, not a circle; old «circle» bots and peers draw so", () => {
+  assert.equal(botShape("circle"), "capsule");
+  assert.equal(botShape("capsule"), "capsule");
+  assert.equal(botShape("nope"), "square");
+  assert.ok(familyTint([{ id: "nora", color: "#2F6BFF" }, { id: "atlas", color: "#12131A" }]).startsWith("#"), "a person's tint from the coordinator's tone");
 });

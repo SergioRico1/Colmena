@@ -1,11 +1,24 @@
 // Person or bot, the same everywhere (docs/PLAN-equipo-y-salas.md, scope 4). Circles are people.
-// A bot keeps its shape; one whose shape is a circle (or unknown) is drawn as a rounded square,
-// so nobody takes it for a person. Pure: no React, no network.
+// A bot keeps its shape; a «circle» (what Investigación was) is drawn as the capsule and anything
+// unknown as a rounded square, so nobody takes a bot for a person. Pure: no React, no network.
 
-const BOT_SHAPES = ["hex", "diamond", "square", "leaf", "arch"];
+const BOT_SHAPES = ["hex", "diamond", "square", "leaf", "arch", "capsule"];
 
-/** The shape a bot is drawn with: its own, or a rounded square when it is a circle or unknown. */
-export const botShape = (shape) => (BOT_SHAPES.includes(shape) ? shape : "square");
+/**
+ * The shape a bot is drawn with: its own; a «circle» (what Investigación was, and what older peers
+ * still send) is the capsule; anything unknown a rounded square.
+ */
+export const botShape = (shape) => (shape === "circle" ? "capsule" : BOT_SHAPES.includes(shape) ? shape : "square");
+
+/** A light tint of a colour (a person's round avatar from their bots' family). */
+export function lightTint(hex, amount = 0.8) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return "#" + [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.round(v + (255 - v) * amount).toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+/** A person's tint from their bots: the coordinator's tone (the family's deepest), else the first. */
+export const familyTint = (bots = []) => lightTint((bots.find((b) => b?.id === "atlas") || bots[0])?.color);
 
 /** «LM» from «Lucía Martín»; «?» when there is no name. */
 export const initialsOf = (name) => String(name || "").trim().split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?";
@@ -62,5 +75,5 @@ export const botA11yName = (bot, owner = null) => `${bot?.name || "Bot"}, ${!own
 /** The text of the corner badge on someone else's bot: their initials («LM»), or one letter when small. */
 export const ownerBadgeText = (owner, size = 20) => {
   const all = initialsOf(owner?.name);
-  return size < 26 ? all.slice(0, 1) : all;
+  return size < 20 ? all.slice(0, 1) : all;
 };

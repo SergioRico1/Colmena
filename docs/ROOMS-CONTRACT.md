@@ -490,15 +490,24 @@ Bot ids never change (they are keys everywhere); names and colours are each pers
   identity cannot be loaded, a random `settings.installId` stands in. The key used is written to
   `settings.botLooks.key` and never read from the identity again, so the looks change only by the
   person's hand. Same key, same bots on any machine.
+- **Colour: a family per person, a tone per bot** (decided by the owner, 2026-11-13). The seed picks
+  one of twelve families (`FAMILIES`: Coral, Teja, Musgo, Hoja, Esmeralda, Turquesa, Cielo,
+  Cobalto, Violeta, Orquídea, Frambuesa, Pizarra; none in hues 25°-70°, honey's). `tonesOf`
+  makes eight tones of it (hue shift ≤ 12°, lightness and saturation varied, luminance between
+  0.12 and 0.27, so every tone is ≥ 3:1 on the light surfaces and on #12131A); each bot wears its
+  own. The coordinator wears the deepest tone (it was ink). `botLooks.family` keeps
+  `{index, name, color, tint}`; the tint is the person's own round avatar, and others' circles and
+  owner chips use a tint of their coordinator's tone (`identity.js › familyTint`).
 - **New installation** (`botLooks.state: "fresh"`, set by `Store#migrate`): each built-in bot gets
   a name from its role's pool (`NAME_POOLS`, 12 per role, disjoint, none of the factory names)
-  and a colour from `BOT_PALETTE` (12 colours, none honey nor amber, ≥ 3:1 on the light
-  surfaces), all distinct. The shape keeps marking the role; the coordinator (`atlas`) keeps its
-  ink and hexagon and gets a pooled name. Leo (legal) gets the look onboarding showed for it.
-- **Existing installation** (`"update"`): names are kept. Each built-in bot except the
-  coordinator still at its factory colour gets a seeded colour distinct from all your bots; a
-  colour you chose stays. `botLooks.previous` keeps the factory colours for «Deshacer» of the
-  one quiet notice (`POST /api/bots/looks/undo`, `…/seen`).
+  and a tone of the family, all distinct. The shape keeps marking the role. Leo (legal) gets the
+  look onboarding showed for it.
+- **Existing installation** (`"update"`): names are kept. Each built-in bot still at its factory
+  colour (the coordinator's ink included) gets a tone of the family; a colour you chose stays.
+  `botLooks.previous` keeps the factory colours for «Deshacer» of the one quiet notice
+  (`POST /api/bots/looks/undo`, `…/seen`).
+- **Shapes.** Investigación is a `capsule` (circles are people). `Store#migrate` turns every bot's
+  `circle` into `capsule`; `circle` is still accepted from older peers and drawn as the capsule.
 - **«Otro nombre» / «Otro color»** (`POST /api/bots/:id/look {what}`): the next one of the bot's
   own seeded sequence (`bot.look` is its position) that none of your other bots has.
 - **Unique names.** Your bots never share a name, accents and case out (create, rename,

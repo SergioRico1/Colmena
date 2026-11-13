@@ -2,7 +2,7 @@
 // how it is named, which rows group under one header, the quiet lines about other owners' bots,
 // the member panel, who can be invited and who «@» lists. Pure: no React, no network. It reads
 // the shapes of docs/CONTRACT.md §18 (`GET /api/rooms/:id`, `…/timeline`).
-import { botA11yName, botNameLabels, firstName, listNames, ownerShort } from "./identity.js";
+import { botA11yName, botNameLabels, familyTint, firstName, listNames, ownerShort } from "./identity.js";
 
 const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const byName = (a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base", numeric: true });
@@ -222,24 +222,28 @@ export function presenceWord(person) {
  * `working` / `waiting`: ids of your bots at work or waiting for you here; `activity`: the
  * room's live states of other owners' bots [{owner: {address}, bot: {id}, state}].
  */
-export function memberPanel(view, { working = [], waiting = [], activity = [] } = {}) {
+export function memberPanel(view, { working = [], waiting = [], activity = [], selfColor = null } = {}) {
   const rank = (p) => (p.you ? 0 : p.role === "owner" ? 1 : p.role === "guest" ? 3 : 2);
+  // A person's circle wears a light tint of their bots' colour family (yours: `selfColor`).
+  const tints = new Map((view?.bots || []).filter((g) => g?.owner && !g.owner.you && g.bots?.length).map((g) => [g.owner.address, familyTint(g.bots)]));
   const people = [...(view?.people || [])].sort((a, b) => rank(a) - rank(b) || byName(a, b))
-    .map((p) => ({ ...p, name: p.name || "Alguien", roleWord: roomRole(p), presenceWord: presenceWord(p) }));
+    .map((p) => ({ ...p, name: p.name || "Alguien", roleWord: roomRole(p), presenceWord: presenceWord(p), ...((p.you ? selfColor : tints.get(p.address)) ? { color: p.you ? selfColor : tints.get(p.address) } : {}) }));
   const live = (owner, bot) => activity.find((a) => a?.owner?.address === owner.address && (a.bot?.id === bot.id || a.bot?.name === bot.name))?.state || null;
   const visible = (view?.bots || []).filter((g) => g?.bots?.length);
   const names = botNameLabels(visible);
   const owners = visible.map((g) => g.owner).filter((o) => o && !o.you);
   const groups = visible.map((g) => {
     const mine = !!g.owner?.you;
+    // The owner's chip on their bots wears the same tint as their circle.
+    const owner = mine ? g.owner : { ...g.owner, color: g.owner?.color || tints.get(g.owner?.address) || undefined };
     const bots = g.bots.map((b) => {
       const state = mine
         ? (working.includes(b.id) ? "working" : waiting.includes(b.id) ? "waiting" : b.id === "atlas" && view?.private ? "coordinates" : "free")
         : live(g.owner, b) || (b.state === "working" ? "working" : "free");
       // `shown`: «Vera · de Lucía» when another visible bot is also «Vera»; `a11y`: «Vera, bot de Lucía».
-      return { ...b, state, stateWord: stateWord(state, { mine, owner: g.owner }), shown: names.label(g.owner, b), a11y: botA11yName(b, g.owner), owner: mine ? null : g.owner };
+      return { ...b, state, stateWord: stateWord(state, { mine, owner: g.owner }), shown: names.label(g.owner, b), a11y: botA11yName(b, g.owner), owner: mine ? null : owner };
     });
-    return { owner: g.owner, mine, label: mine ? "Tus bots" : "Bots de " + ownerShort(g.owner, owners), bots };
+    return { owner, mine, label: mine ? "Tus bots" : "Bots de " + ownerShort(g.owner, owners), bots };
   }).sort((a, b) => Number(b.mine) - Number(a.mine) || byName(a.owner || {}, b.owner || {}));
   return { people, groups, botCount: groups.reduce((n, g) => n + g.bots.length, 0) };
 }

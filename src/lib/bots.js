@@ -11,7 +11,7 @@ export function avatarStyle(bot, size = 24) {
   const base = portrait
     ? { background: `${color} url("${portrait}") center / cover no-repeat`, color: "transparent" }
     : { background: color, color: LIGHT_INK.has(color.toUpperCase()) ? "#12131A" : "#FFFFFF" };
-  // Circles are people: a circle (or no shape) is drawn as a rounded square (lib/identity.js).
+  // Circles are people: a circle is drawn as the capsule, no shape as a rounded square (lib/identity.js).
   switch (botShape(bot?.shape)) {
     case "hex":
       return { ...base, clipPath: "polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%)" };
@@ -21,6 +21,8 @@ export function avatarStyle(bot, size = 24) {
       const r = Math.round(size * 0.2) + "px";
       return { ...base, borderRadius: `50% 50% ${r} ${r}` };
     }
+    case "capsule":
+      return { ...base, clipPath: "inset(0 17% round 999px)" };
     case "leaf": {
       const r = Math.round(size * 0.16) + "px";
       return { ...base, borderRadius: `50% ${r} 50% ${r}` };

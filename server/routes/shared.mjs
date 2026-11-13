@@ -24,7 +24,7 @@ const SOON = "Disponible en breve.";
 const short = z.string().trim().min(1).max(100);
 const pct = z.number().min(0).max(100);
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Color no válido (#RRGGBB).");
-const shape = z.enum(["hex", "circle", "square", "diamond", "arch", "leaf"]);
+const shape = z.enum(["hex", "capsule", "circle", "square", "diamond", "arch", "leaf"]).transform((v) => (v === "circle" ? "capsule" : v));
 const access = z.enum(["none", "lee", "escribe", "pide"]);
 const toolsSchema = z.object(Object.fromEntries(TOOL_KEYS.map((k) => [k, access]))).partial().strict();
 const personality = z.object({ tono: pct, detalle: pct, riesgo: pct }).partial().strict();

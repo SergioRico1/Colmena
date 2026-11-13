@@ -28,14 +28,14 @@ export function BotMark({ bot, size = 20, state = "rest", style = null, owner = 
 }
 
 /** The size of the owner's chip on a bot of `size`, or 0 when it is too small to carry one. */
-export const badgeSize = (owner, size) => (owner && !owner.you && size >= 16 ? Math.max(11, Math.round(size * 0.52)) : 0);
+export const badgeSize = (owner, size) => (owner && !owner.you && size >= 16 ? Math.max(12, Math.round(size * 0.62)) : 0);
 
 /** The round person-chip in a bot's corner: whose bot it is (decorative; said in words elsewhere). */
 export function OwnerBadge({ owner, size = 20, ring = "#FFFFFF" }) {
   const badge = badgeSize(owner, size);
   if (!badge) return null;
   return (
-    <span aria-hidden="true" data-owner-badge="" style={{ position: "absolute", right: -Math.round(badge * 0.3) + "px", bottom: -Math.round(badge * 0.3) + "px", width: badge + "px", height: badge + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: owner.color || personTint(owner.name), color: "#12131A", boxShadow: `0 0 0 1.5px ${ring}`, font: `700 ${Math.max(7, Math.round(badge * 0.5))}px/1 'Geist', sans-serif`, letterSpacing: 0 }}>
+    <span aria-hidden="true" data-owner-badge="" style={{ position: "absolute", right: -Math.round(badge * 0.3) + "px", bottom: -Math.round(badge * 0.3) + "px", width: badge + "px", height: badge + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: owner.color || personTint(owner.name), color: "#12131A", boxShadow: `0 0 0 1.5px ${ring}`, font: `700 ${Math.max(6, Math.round(badge * 0.42))}px/1 'Geist', sans-serif`, letterSpacing: 0 }}>
       {ownerBadgeText(owner, size)}
     </span>
   );

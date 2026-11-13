@@ -10,42 +10,95 @@
 // and never read again from the identity: once applied, the looks only change by the person's hand
 // («Otro nombre», «Otro color», editing the bot).
 //
+// - Colours (decided by the owner, 2026-11-13): the seed picks ONE colour family for the person
+//   from FAMILIES (twelve, never honey nor amber: hues 25°-70° are out), and each of the person's
+//   bots gets its own TONE of that family (tonesOf: lightness, saturation and a hue shift of at
+//   most ±12°, every tone at 3:1 or more on the light and on the dark surfaces). So a person's
+//   bots are told apart from each other and read as one person's family. The coordinator gets the
+//   deepest tone (it was ink); the person's own round avatar a light tint of the family.
 // - New installation (`botLooks.state: "fresh"`, set by Store#migrate): every built-in bot gets a
-//   NAME from its role's pool and a COLOUR from BOT_PALETTE, all distinct. The shape keeps marking
-//   the role; the coordinator keeps its ink and hexagon (design rule: ink is for the coordinator,
-//   honey only means «te necesita»).
+//   NAME from its role's pool and a TONE of the family, all distinct. The shape keeps marking the
+//   role.
 // - Existing installation (`"update"`): names are kept (decided by the owner: «Solo nuevo color»).
-//   Every built-in bot, except the coordinator, whose colour is still the factory one gets a
-//   colour from the seed, distinct from all your other bots; a colour you chose is left alone. The
-//   factory colours are kept in `botLooks.previous` for «Deshacer».
+//   Every built-in bot whose colour is still the factory one gets a tone of the family; a colour
+//   you chose is left alone. The factory colours are kept in `botLooks.previous` for «Deshacer».
 //
-// Each bot has its own deterministic sequence of names and of colours (a permutation of the pool
-// and the palette seeded by key + bot id); «Otro nombre» / «Otro color» walk it (`bot.look`), so a
-// choice is reproducible, and skip what another of your bots already has.
+// Each bot has its own deterministic sequence of names and of tones (a permutation seeded by key +
+// bot id); «Otro nombre» / «Otro color» walk it (`bot.look`), so a choice is reproducible, and skip
+// what another of your bots already has.
 import { createHash, randomUUID } from "node:crypto";
 
-/** The ink of the coordinator (never in the palette) and honey, which is never a bot's colour. */
+/** The ink the coordinator was drawn in (its factory colour) and honey, never a bot's colour. */
 export const INK = "#12131A";
 export const HONEY = "#FFC93C";
 
-/**
- * Colmena's bot palette: twelve colours, none honey nor of its amber family, each at least 3:1
- * against the light surfaces where avatars sit (#FFFFFF, #F5F5F2, #F6F6F3). [hex, name in Spanish].
- */
-export const BOT_PALETTE = Object.freeze([
-  ["#2F6BFF", "azul"],
-  ["#7B4DFF", "violeta"],
-  ["#B4236E", "frambuesa"],
-  ["#0B8A5F", "verde"],
-  ["#0E7C86", "verde azulado"],
-  ["#C0392B", "teja"],
-  ["#1F5F8B", "petróleo"],
-  ["#4A7A1A", "verde hoja"],
-  ["#5B6478", "pizarra"],
-  ["#8A4B2E", "tierra"],
-  ["#B62FC4", "magenta"],
-  ["#5B2A86", "berenjena"],
+/** The twelve colour families, one per person: [hex, name]. None in hues 25°-70° (honey, amber). */
+export const FAMILIES = Object.freeze([
+  ["#E5484D", "Coral"],
+  ["#C4552B", "Teja"],
+  ["#6E8F1A", "Musgo"],
+  ["#2E9A3E", "Hoja"],
+  ["#0E8C6A", "Esmeralda"],
+  ["#0A8C9E", "Turquesa"],
+  ["#1F8FD8", "Cielo"],
+  ["#3A5BE8", "Cobalto"],
+  ["#6E48F0", "Violeta"],
+  ["#A445D6", "Orquídea"],
+  ["#D43C86", "Frambuesa"],
+  ["#5B6680", "Pizarra"],
 ]);
+
+/* ── colour arithmetic ── */
+const hexRgb = (hex) => { const n = parseInt(String(hex).replace("#", ""), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const rgbHex = (rgb) => "#" + rgb.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+export function hsl(hex) {
+  const [r, g, b] = hexRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, l = (max + min) / 2;
+  if (!d) return { h: 0, s: 0, l };
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? (((g - b) / d) % 6) * 60 : max === g ? ((b - r) / d + 2) * 60 : ((r - g) / d + 4) * 60;
+  return { h: (h + 360) % 360, s, l };
+}
+function fromHsl(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return rgbHex([(r + m) * 255, (g + m) * 255, (b + m) * 255]);
+}
+/** WCAG relative luminance. */
+export function luminance(hex) {
+  const [r, g, b] = hexRgb(hex).map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+export const contrast = (a, b) => { const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+/** Never into honey's band: a hue that a shift takes into 25°-70° stops at its edge. */
+const safeHue = (h) => { const x = ((h % 360) + 360) % 360; return x > 23 && x < 72 ? (x - 23 < 72 - x ? 23 : 72) : x; };
+/** The lightness that gives hue h and saturation s the luminance `target`. */
+function toneAt(h, s, target) {
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2; if (luminance(fromHsl(h, s, mid)) < target) lo = mid; else hi = mid; }
+  return fromHsl(h, s, (lo + hi) / 2);
+}
+// Eight tones of a family: [hue shift, saturation × , luminance]. Luminance between 0.12 and 0.27
+// keeps every tone at 3:1 or more both on the light surfaces (#F5F5F2) and on the dark (#12131A).
+// The first, the deepest, is the coordinator's.
+const TONE_RECIPES = [[0, 0.8, 0.12], [-12, 1, 0.245], [10, 1, 0.15], [0, 1, 0.2], [-6, 0.55, 0.135], [6, 0.6, 0.265], [-10, 0.7, 0.175], [12, 0.75, 0.225]];
+const toneCache = new Map();
+/** The tones of family `i` (index in FAMILIES), the deepest first. */
+export function tonesOf(i) {
+  if (toneCache.has(i)) return toneCache.get(i);
+  const { h, s } = hsl(FAMILIES[i][0]);
+  const tones = TONE_RECIPES.map(([dh, ks, target]) => toneAt(safeHue(h + dh), Math.min(1, Math.max(0.12, s * ks)), target));
+  toneCache.set(i, tones);
+  return tones;
+}
+/** A light tint of a colour (the person's round avatar): `amount` of white. */
+export const tintOf = (hex, amount = 0.8) => rgbHex(hexRgb(hex).map((v) => v + (255 - v) * amount));
+/** The family a key gives a person: its index, the same on any machine. */
+export const familyIndex = (key) => Math.floor(generator(`colmena-family-v1|${key}`)() * FAMILIES.length);
+export function familyOf(key) {
+  const i = familyIndex(key);
+  return { index: i, name: FAMILIES[i][1], color: FAMILIES[i][0], tint: tintOf(FAMILIES[i][0]) };
+}
 
 /** What every Colmena wrote before: the colours «Deshacer» restores and «factory» means. */
 export const FACTORY = Object.freeze({
@@ -114,15 +167,19 @@ export function sequence(key, botId, kind, n) {
   return out;
 }
 const namesFor = (key, botId) => (NAME_POOLS[botId] ? sequence(key, botId, "name", NAME_POOLS[botId].length).map((i) => NAME_POOLS[botId][i]) : []);
-const colorsFor = (key, botId) => sequence(key, botId, "color", BOT_PALETTE.length).map((i) => BOT_PALETTE[i][0]);
+/** The tones a bot may wear, in its own order: the coordinator its deepest one, the others a permutation of the rest. */
+const colorsFor = (key, botId) => {
+  const tones = tonesOf(familyIndex(key));
+  if (botId === COORDINATOR) return [tones[0]];
+  return sequence(key, botId, "color", tones.length - 1).map((i) => tones[i + 1]);
+};
 
 /**
  * The looks a key gives each built-in bot, all distinct: {botId: {name, color, look: {name, color}}}
- * (`look`: the position in the bot's own sequences). The coordinator keeps its ink (`look.color`
- * null). `keep` {botId: color}: colours already taken that stay as they are (only colours are
- * given then; see `ensureBotLooks`).
+ * (`look`: the position in the bot's own sequences). Every colour is a tone of the person's family.
  */
 export function seededLooks(key, ids = LOOK_ORDER, { taken = [] } = {}) {
+  // `taken`: colours your other bots keep (one you chose stays; nobody gets it twice).
   const usedColors = [...taken];
   const usedNames = [];
   const out = {};
@@ -131,7 +188,6 @@ export function seededLooks(key, ids = LOOK_ORDER, { taken = [] } = {}) {
     const ni = names.findIndex((n) => !usedNames.some((u) => sameName(u, n)));
     const name = ni >= 0 ? names[ni] : FACTORY[botId]?.name;
     usedNames.push(name);
-    if (botId === COORDINATOR) { out[botId] = { name, color: INK, look: { name: ni, color: null } }; continue; }
     const colors = colorsFor(key, botId);
     const ci = colors.findIndex((c) => !usedColors.some((u) => sameColor(u, c)));
     const color = colors[ci >= 0 ? ci : 0];
@@ -161,8 +217,8 @@ export function nextLook(key, bot, bots, what) {
     return null;
   }
   if (what === "color") {
-    if (bot.id === COORDINATOR) return null;
     const colors = colorsFor(key, bot.id);
+    if (colors.length < 2) return null; // the coordinator keeps the family's deepest tone
     const from = Number.isInteger(look.color) ? look.color : -1;
     for (let k = 1; k <= colors.length; k++) {
       const i = (from + k + colors.length) % colors.length;
@@ -237,10 +293,10 @@ export function ensureBotLooks(store, identityKey = null) {
       const looks = seededLooks(key, [...ids, ...(ids.includes("leo") ? [] : ["leo"])], { taken: bots.filter((b) => !ids.includes(b.id)).map((b) => b.color) });
       for (const botId of ids) store.patch("bots", botId, { name: looks[botId].name, color: looks[botId].color, look: looks[botId].look });
       const leo = ids.includes("leo") ? null : looks.leo;
-      store.patch("settings", "main", { botLooks: { state: "done", mode: "fresh", key, at, ...(leo ? { leo } : {}) } });
+      store.patch("settings", "main", { botLooks: { state: "done", mode: "fresh", key, at, family: familyOf(key), ...(leo ? { leo } : {}) } });
       return "fresh";
     }
-    const factory = builtin.filter((b) => b.id !== COORDINATOR && sameColor(b.color, FACTORY[b.id].color));
+    const factory = builtin.filter((b) => sameColor(b.color, FACTORY[b.id].color) || (b.id === COORDINATOR && sameColor(b.color, HONEY)));
     const ids = factory.map((b) => b.id);
     const looks = seededLooks(key, ids, { taken: bots.filter((b) => !ids.includes(b.id)).map((b) => b.color) });
     const previous = {};
@@ -248,7 +304,7 @@ export function ensureBotLooks(store, identityKey = null) {
       previous[botId] = store.get("bots", botId).color;
       store.patch("bots", botId, { color: looks[botId].color, look: { name: null, color: looks[botId].look.color } });
     }
-    store.patch("settings", "main", { botLooks: { state: "done", mode: "update", key, at, previous, notice: ids.length > 0 } });
+    store.patch("settings", "main", { botLooks: { state: "done", mode: "update", key, at, family: familyOf(key), previous, notice: ids.length > 0 } });
     return "update";
   });
 }

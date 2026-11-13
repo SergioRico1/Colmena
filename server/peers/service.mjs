@@ -55,7 +55,8 @@ const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 /** «1 persona», «3 personas»: a count with its noun in the right number. */
 export const countOf = (n, one, many) => n + " " + (n === 1 ? one : many);
 const lastLineOf = (text) => clip(String(text).replace(/[*_#>`|]+/g, ""), 140);
-const SHAPES = new Set(["hex", "circle", "square", "diamond", "leaf", "arch"]);
+// «capsule» is Investigación's shape since 2026-11-13; «circle» is still accepted from older peers (drawn as the capsule).
+const SHAPES = new Set(["hex", "circle", "capsule", "square", "diamond", "leaf", "arch"]);
 /** A bot as it travels (and as it is accepted from someone else): only these fields, checked. */
 export function cleanBot(b) {
   if (!b || typeof b.id !== "string" || !/^[a-z0-9-]{1,40}$/.test(b.id)) return null;

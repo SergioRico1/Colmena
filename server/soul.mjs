@@ -18,7 +18,7 @@ const TEMPLATES = {
 
 export const AUTONOMY_LABELS = { sugiere: "Solo sugiere", avisa: "Actúa y te avisa", solo: "Actúa solo" };
 export const THINKING_LABELS = { rapido: "Rápida", equilibrado: "Equilibrada", profundo: "Profunda" };
-const SHAPES = { hex: "hexágono", circle: "círculo", square: "cuadrado", diamond: "rombo", arch: "arco", leaf: "hoja" };
+const SHAPES = { hex: "hexágono", circle: "cápsula", capsule: "cápsula", square: "cuadrado", diamond: "rombo", arch: "arco", leaf: "hoja" };
 export const SOUL_LIMITS = { min: 20, max: 20000 };
 const MEMORY_BUDGET = 4000;
 

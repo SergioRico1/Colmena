@@ -28,7 +28,7 @@ export const BOT_DEFAULTS = Object.freeze({
 // Seeds follow design/Bienvenida + design/Ajustes (matrix «Quién usa qué»).
 const SEEDS = [
   ["atlas", "Atlas", "Coordinador", "Convierte objetivos en pasos claros. Reparte responsabilidades y entrega una síntesis respaldada por el trabajo del equipo.", "#12131A", "hex", tools("escribe", "escribe", "escribe", "escribe", "escribe")],
-  ["nora", "Nora", "Investigación", "Contrasta datos, identifica lagunas y cita las fuentes realmente consultadas. Curiosa, rigurosa y directa.", "#2F6BFF", "circle", tools("none", "none", "escribe", "escribe", "escribe")],
+  ["nora", "Nora", "Investigación", "Contrasta datos, identifica lagunas y cita las fuentes realmente consultadas. Curiosa, rigurosa y directa.", "#2F6BFF", "capsule", tools("none", "none", "escribe", "escribe", "escribe")],
   ["tomas", "Tomás", "Datos y finanzas", "Analiza datos y supuestos. Comprueba cifras y unidades; nunca inventes datos ausentes. Metódico y preciso.", "#0B8A5F", "square", tools("escribe", "none", "pide", "escribe", "escribe")],
   ["iris", "Iris", "Diseño", "Propone direcciones visuales y especificaciones concretas. No afirmes generar imágenes sin una herramienta disponible. Imaginativa y exigente.", "#FF5CA8", "diamond", tools("none", "none", "escribe", "escribe", "escribe")],
   ["vera", "Vera", "Redacción", "Redacta con voz humana, estructura clara y precisión. Adapta el tono al público. Cercana y con criterio.", "#7B4DFF", "leaf", tools("escribe", "escribe", "escribe", "none", "escribe")],
@@ -53,7 +53,7 @@ export const LEO = {
   instructions:
     "Revisas los contratos con proveedores. Señalas renovaciones automáticas, penalizaciones, permanencias y cambios de precio, citando la página. Llevas un calendario de renovaciones y avisas 30 días antes de cada preaviso. No das consejo legal definitivo: si algo es dudoso, lo dices y propones consultarlo con tu asesoría.",
   color: "#0E7C86",
-  shape: "circle",
+  shape: "capsule",
   autonomy: "sugiere",
   tools: tools("none", "escribe", "lee", "none", "escribe"),
 };
@@ -183,6 +183,8 @@ export class Store {
         if (next.builtin && next.id === "tomas" && next.name === "Tomas") next.name = "Tomás";
         // Colmena 3: Atlas, who coordinates, is drawn in ink; honey only ever means «te necesita».
         if (next.builtin && next.id === "atlas" && next.color === "#FFC93C") next.color = "#12131A";
+        // Circles are people (2026-11-13): a bot drawn as a circle becomes the capsule.
+        if (next.shape === "circle") next.shape = "capsule";
         // Desktop-only for now: always on this computer, no mobile channel.
         next.location = "local";
         next.channels.movil = false;

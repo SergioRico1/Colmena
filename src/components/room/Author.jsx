@@ -25,7 +25,7 @@ export function PersonAvatar({ person, size = 40, ring = "#F5F5F2", presence = n
   const you = !!(person?.you || person?.me);
   const dot = Math.max(8, Math.round(size / 3.6));
   return (
-    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: you ? "#12131A" : person?.color || tintOf(person?.name), color: you ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em" }}>
+    <span aria-hidden="true" style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: you ? person?.color || "#12131A" : person?.color || tintOf(person?.name), color: you && !person?.color ? "#FFFFFF" : "#12131A", font: `600 ${stepOf(Math.round(size / 3))}px/1 'Geist', sans-serif`, letterSpacing: "0.02em" }}>
       {fitInitials(you ? "TÚ" : person?.initials || initialsOf(person?.name), size)}
       {presence ? <span style={{ position: "absolute", right: "-1px", bottom: "-1px", width: dot + "px", height: dot + "px", boxSizing: "border-box", borderRadius: "var(--r-circle)", background: presence === "online" ? "#1E9E6A" : ring, border: presence === "online" ? "0" : "2px solid #8A8D96", boxShadow: `0 0 0 2px ${ring}` }} /> : null}
     </span>
