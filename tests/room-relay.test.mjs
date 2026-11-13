@@ -5,6 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { answer, settle } from "./fixtures/runtime-fixture.mjs";
 import { ROOM_WORK } from "../server/room-work.mjs";
+import { countOf } from "../server/peers/service.mjs";
 import { addr, ask, botAnswer, card, friends, lines, pause, peerRows, rule, sharedRoom, until, world } from "./fixtures/people-world.mjs";
 
 const botSaid = (p, roomId) => peerRows(p, roomId).filter((m) => m.bot).map((m) => m.text);
@@ -189,4 +190,19 @@ test("a group that arrives with the id of a private room of yours gets a room of
   const other = sergio.rooms.create({ title: "Para compartir", botIds: ["vera"] });
   await sergio.rooms.invite(other.id, { address: addr(marta) });
   assert.deepEqual([sergio.store.get("rooms", other.id).shareId, sergio.store.list("rooms").filter((r) => r.shareId === other.id).length], [other.id, 1]);
+});
+
+test("counts are said in the right number: «con 1 persona», «con 2 personas»", async (t) => {
+  assert.deepEqual([countOf(1, "persona", "personas"), countOf(2, "persona", "personas"), countOf(0, "persona", "personas")], ["1 persona", "2 personas", "0 personas"]);
+  const [sergio, marta, luis] = await world(t, ["Sergio Rico", "Marta Ruiz", "Luis Vega"]);
+  await friends(sergio, marta);
+  await friends(sergio, luis);
+  const added = (p) => p.notices.filter((n) => /te ha añadido a/.test(n.title)).map((n) => n.text);
+  // A room with one other person, then one with two.
+  const one = sergio.rooms.create({ title: "A dos", people: [addr(marta)] });
+  await until(() => marta.rooms.resolveRoom(one.id), "Marta ve la sala");
+  assert.deepEqual(added(marta), ["Una conversación con 1 persona."]);
+  const two = sergio.rooms.create({ title: "A tres", people: [addr(marta), addr(luis)] });
+  await until(() => luis.rooms.resolveRoom(two.id), "Luis ve la sala");
+  assert.deepEqual(added(luis), ["Una conversación con 2 personas."]);
 });

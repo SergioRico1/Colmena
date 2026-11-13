@@ -52,6 +52,8 @@ export const initialsOf = (name) => {
 export const colorOf = (address) => PERSON_COLORS[sha256(String(address))[0] % PERSON_COLORS.length];
 export const dmId = (a, b) => "dm-" + b64u(sha256("colmena-dm|" + [a, b].sort().join("|"))).slice(0, 24);
 const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+/** «1 persona», «3 personas»: a count with its noun in the right number. */
+export const countOf = (n, one, many) => n + " " + (n === 1 ? one : many);
 const lastLineOf = (text) => clip(String(text).replace(/[*_#>`|]+/g, ""), 140);
 const SHAPES = new Set(["hex", "circle", "square", "diamond", "leaf", "arch"]);
 /** A bot as it travels (and as it is accepted from someone else): only these fields, checked. */
@@ -1105,7 +1107,7 @@ export class Peers extends EventEmitter {
     };
     this.store.put("peerShares", record);
     this.releaseHeld(record);
-    if (!current) this.notify({ title: c.name + " te ha añadido a «" + record.title + "»", text: "Una conversación con " + (record.members.length - 1) + " personas.", shareId: record.id });
+    if (!current) this.notify({ title: c.name + " te ha añadido a «" + record.title + "»", text: "Una conversación con " + countOf(record.members.length - 1, "persona", "personas") + ".", shareId: record.id });
   }
   onMessage(c, body) {
     const s = this.memberShare(body.share, c.id);
