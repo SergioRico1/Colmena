@@ -117,6 +117,17 @@ con estas tres piezas; no hay colores, iconos ni bots dibujados a mano.
 - Ya lo usan `BotPresence`, `BotMark`, `AuthorAvatar`, las marcas de menciones, Equipo, la ficha del bot, Inicio, la barra
   lateral, Biblioteca, Código, Bienvenida y Pregunta rápida. Un retrato elegido para el bot se sigue mostrando.
 
+### Menús: `<MenuButton>`, `useContextMenu`
+- Un solo menú en toda la app: `src/components/Menu.js` (lo puro en `src/lib/menu.js`; aspecto en `base.css` › `.c-menu`,
+  el menú de perfil de `design/v4`: superficie `raised`, línea fina, `shadowPop`, filas de 32 px a 14 px).
+  `<MenuButton label="Más opciones" items={[…]}>…</MenuButton>` para un «…» o un selector; `useContextMenu(build)` para el
+  clic derecho de una parte de la página (el resto lo atiende `ContextMenu.jsx`, hecho con el mismo menú).
+- Entradas: `{ label, icon, hint, shortcut, meta, onSelect | href, disabled: "por qué", danger, checked, radio, items,
+  confirm: { title, text, action } }` o grupos `{ group: "Título" | null, items }`. Lo destructivo va siempre al final y en
+  rojo; si no se puede deshacer, `confirm` pregunta dentro del propio menú.
+- Contenido: agrupado por intención, ≤ 7 por grupo, lo que no es una acción fuera del menú, y nada que ya tenga un
+  control visible al lado (ni «Solo para mí», que vive en el chip del compositor).
+
 ## Invitar: un solo modelo y unas mismas palabras
 Traer a alguien a Colmena, a una sala o a un mensaje directo usa siempre las mismas piezas
 (`src/components/people/`, reglas puras en `src/lib/invite.js`, estilos en `src/styles/invite.css`).
