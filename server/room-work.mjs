@@ -36,10 +36,26 @@ const LIVE = new Set(["thinking", "working"]);
 const HELD = new Set(["waiting", "limited"]);
 /** Said once: a line in the conversation, and the status for a short while. */
 const ENDED = new Set(["done", "declined", "stopped", "failed", "throttled"]);
+// How much other people's requests may make your computer work. Every request that reaches your
+// rule is a `roomAsks` record with the moment it came (`t`), so the counts hold across a restart.
+//  · perHour 6: one person in one room. A person working with your bot asks a handful of things
+//    an hour; more is a loop or abuse.
+//  · personHour 12, personDay 40: the same person over ALL rooms (two busy rooms an hour, a long
+//    working day), so being in many rooms with you is not worth more.
+//  · allHour 30: everybody together. Each request is a model turn on YOUR plan: 30 an hour is one
+//    every two minutes, more than a team of 32 needs and far below what would use up a plan.
+//  · open 5: cards of one person waiting for your answer at once («Pregúntame»). A sixth says
+//    nothing new to you; they are told your bot is not taking more for now.
+//  · replies 3: turns a request may start after its own (answers to ask_room), one per question.
+// A request in a room somebody else made, where you have never taken part, asks you whatever
+// your rule says (RoomWork#takesPart): being put in a room is not agreeing to work in it.
 export const ROOM_WORK = Object.freeze({
   perHour: ERRAND_LIMITS.perHour, // requests of one person in one room that reach your bots, per hour
+  personHour: 12, personDay: 40, // requests of one person in all rooms, per hour and per day
+  allHour: 30, // requests of everybody, per hour
+  open: 5, // requests of one person waiting for your OK at the same time
   text: 4000, // characters of a request
-  question: 2000, questions: 3, // ask_room: characters, and how many per request
+  question: 2000, questions: 3, replies: 3, // ask_room: characters, how many per request, and how many answers start a turn
   replyMs: 10 * 60000, // how long an unlinked message of the requester counts as the reply to ask_room
   liveMs: 90000, // «thinking» / «working» without a refresh
   refreshMs: 30000, // how often the owner's Colmena refreshes them
@@ -104,7 +120,7 @@ export class RoomWork {
     this.sent = new Map(); // step id → { state, shareId, botId, missionId }: what the others were last told of it
     this.fresh = new Map(); // status id → when it was last heard (this Colmena's clock)
     this.told = new Map(); // status id → when a live status of yours last went out
-    this.asked = new Map(); // shareId:address → [times] of requests that reached your bots
+    this.taking = new Set(); // shareIds of rooms you are known to take part in (takesPart)
     this.passed = new Map(); // shareId:a:b → when that hand-off was last said
     this.shown = new Map(); // room id → signature of the activity last announced
     this.sharing = new Set(); // deliverables on their way to a room
@@ -174,21 +190,51 @@ export class RoomWork {
     const rule = this.ruleFor(message.from);
     if (rule === "nunca") return false;
     if (this.store.where("roomAsks", "shareId", share.id).some((a) => a.peerId === message.id && a.botId === bot.id)) return true;
-    // At most N an hour from one person in one room, whatever the rule.
-    const key = share.id + ":" + message.from, t = this.clock();
-    const recent = (this.asked.get(key) || []).filter((x) => t - x < 3600000);
-    if (recent.length >= ROOM_WORK.perHour) {
+    // The limits (ROOM_WORK), whatever the rule: over any of them the request is not taken.
+    const t = this.clock();
+    if (this.overLimit(share, message.from, t)) {
       this.say(share, bot.id, "throttled");
       return true;
     }
-    this.asked.set(key, [...recent, t]);
+    // «Siempre» reaches the rooms you take part in. In one somebody else made and where you have
+    // done nothing yet, the request asks you (as «Pregúntame»).
+    const held = rule === "siempre" && !this.takesPart(share);
     const ask = this.store.put("roomAsks", {
       id: randomUUID(), roomId: room.id, shareId: share.id, from: message.from, fromName: this.nameOf(message.from), botId: bot.id, peerId: message.id,
-      text: String(message.text || "").slice(0, ROOM_WORK.text), ...(message.thread ? { peerThread: message.thread } : {}), rule, state: "asked", at: now(),
+      text: String(message.text || "").slice(0, ROOM_WORK.text), ...(message.thread ? { peerThread: message.thread } : {}), rule: held ? "pregunta" : rule, ...(held ? { held: true } : {}), state: "asked", at: now(), t,
     });
-    if (rule === "siempre") this.begin(ask.id, { attended: false });
+    if (rule === "siempre" && !held) this.begin(ask.id, { attended: false });
     else this.askOwner(ask, room, share, bot);
     return true;
+  }
+  /**
+   * Which limit a new request of `from` in `share` would pass, or null: «room» (that person in
+   * that room this hour), «person» (that person in all rooms, this hour or today), «open» (their
+   * requests already waiting for you) or «all» (everybody this hour). Read from the requests
+   * kept (`roomAsks`), so a restart forgets nothing.
+   */
+  overLimit(share, from, t = this.clock()) {
+    const HOUR = 3600000, DAY = 24 * HOUR;
+    const when = (a) => (Number.isFinite(a.t) ? a.t : Date.parse(a.at) || 0);
+    const within = (list, ms) => list.filter((a) => t - when(a) < ms).length;
+    const theirs = this.store.where("roomAsks", "from", from);
+    if (within(theirs.filter((a) => a.shareId === share.id), HOUR) >= ROOM_WORK.perHour) return "room";
+    if (within(theirs, HOUR) >= ROOM_WORK.personHour || within(theirs, DAY) >= ROOM_WORK.personDay) return "person";
+    if (theirs.filter((a) => a.state === "asked").length >= ROOM_WORK.open) return "open";
+    return within(this.store.list("roomAsks"), HOUR) >= ROOM_WORK.allHour ? "all" : null;
+  }
+  /**
+   * Whether you take part in a room: you made it, it is the «general» of a team you joined, you
+   * wrote in it yourself, or you already said yes by hand to a request there. Nobody accepts a
+   * room in Colmena (its owner puts you in), so this is what stands for it.
+   */
+  takesPart(share) {
+    const p = this.peers;
+    if (!p || share.owner === p.address || share.general || this.taking.has(share.id)) return true;
+    const yes = this.store.where("roomAsks", "shareId", share.id).some((a) => a.attended)
+      || this.store.where("peerMessages", "shareId", share.id).some((m) => m.from === p.address && !m.bot && !m.local && !m.card);
+    if (yes) this.taking.add(share.id);
+    return yes;
   }
   /** «Pregúntame»: a card that waits for you, and a neutral line for everyone else. */
   askOwner(ask, room, share, bot) {
@@ -338,6 +384,13 @@ export class RoomWork {
     const plain = !message.mentions?.length && !message.people?.length && !message.thread && t - q.at < ROOM_WORK.replyMs;
     if (!linked && !named && !plain) return false;
     if (this.ruleFor(message.from) === "nunca" || (p.contact(message.from)?.asks?.bots || "mencion") === "nunca") return false;
+    // A reply belongs to its request (it is not counted as a new one) and has a cap of its own:
+    // one turn per question, a few per request.
+    if ((ask.replies || 0) >= ROOM_WORK.replies) {
+      this.store.patch("roomAsks", ask.id, { question: null });
+      return false;
+    }
+    this.store.patch("roomAsks", ask.id, { replies: (ask.replies || 0) + 1 });
     this.begin(ask.id, { attended: false, reply: { peerId: message.id, question: q.text } });
     return true;
   }

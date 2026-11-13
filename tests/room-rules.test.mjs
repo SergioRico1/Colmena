@@ -5,7 +5,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { answer, call, settle } from "./fixtures/runtime-fixture.mjs";
-import { addr, ask, asks, botAnswer, friends, pause, peerRows, rule, sharedRoom, until, world } from "./fixtures/people-world.mjs";
+import { addr, ask, asks, botAnswer, card, friends, lines, pause, peerRows, rule, sharedRoom, until, world } from "./fixtures/people-world.mjs";
+import { ROOM_WORK } from "../server/room-work.mjs";
 import { REQUEST_ALWAYS, REQUEST_BY_CAPABILITY, requestCapability, requestToolAllowed } from "../server/request-turn.mjs";
 import { canCreateImages } from "../server/images.mjs";
 import { createPage } from "../server/wiki.mjs";
@@ -401,4 +402,124 @@ test("in a request turn every change in an app asks the owner: no standing rule,
   assert.match(String((await sergio.runtime.tool(mission, closed.step, app("GMAIL_FETCH_EMAILS", { query: "x" }, "closed-read"), signal())).error), /Herramienta no disponible/);
   await closed.end();
   assert.deepEqual(sergio.effects, ["p-GMAIL_FETCH_EMAILS"]);
+});
+
+/** `who` asks and `owner`'s Colmena has had the message and done whatever it does with it. */
+async function asked(who, room, owner, text) {
+  const sent = await ask(who, room, owner, text);
+  await until(() => peerRows(owner, room.id).some((m) => m.id === sent.message.id), owner.name + " recibe «" + text + "»");
+  await owner.bots.idle();
+  await settle(owner.runtime);
+  return sent;
+}
+
+test("request limits: per person over all rooms, per day, for everybody, and cards waiting; kept across a restart", async (t) => {
+  const people = await world(t);
+  let [sergio] = people;
+  const marta = people[1];
+  await friends(sergio, marta);
+  assert.deepEqual([ROOM_WORK.perHour, ROOM_WORK.personHour, ROOM_WORK.personDay, ROOM_WORK.allHour, ROOM_WORK.open, ROOM_WORK.questions, ROOM_WORK.replies], [6, 12, 40, 30, 5, 3, 3]);
+  const a = await sharedRoom(sergio, marta, "Ventas"), b = await sharedRoom(sergio, marta, "Compras"), c = await sharedRoom(sergio, marta, "Legal");
+  rule(sergio, marta, "siempre");
+  sergio.reply = () => answer("Hecho.");
+  // Six in one room, six in another: twelve in the hour. The thirteenth, in a third room, is not taken.
+  for (const room of [a, b]) for (let i = 1; i <= 6; i++) await asked(marta, room, sergio, "@Vera petición " + i);
+  assert.deepEqual([asks(sergio).length, sergio.calls.length], [12, 12]);
+  assert.equal(sergio.rooms.work.overLimit(sergio.store.get("peerShares", c.id), addr(marta)), "person");
+  await asked(marta, c, sergio, "@Vera una más en otra sala");
+  assert.deepEqual([asks(sergio).length, sergio.calls.length], [12, 12], "over the hourly limit of one person");
+  await until(() => lines(marta, c).includes("Vera no atiende más peticiones por ahora"), "Marta lee el límite");
+  // Colmena is closed and opened again: the count is still there.
+  sergio = await people.reopen(sergio);
+  await until(() => marta.peers.online(addr(sergio)) || sergio.peers.relayStatus.status === "online", "Sergio vuelve");
+  sergio.reply = () => answer("Hecho.");
+  await asked(marta, c, sergio, "@Vera ¿y después de reiniciar?");
+  assert.deepEqual([asks(sergio).length, sergio.calls.length], [12, 0], "a restart does not give the hour back");
+  // An hour later she may ask again…
+  sergio.skew = 3600000 + 1000;
+  await asked(marta, c, sergio, "@Vera una hora después");
+  assert.deepEqual([asks(sergio).length, sergio.calls.length], [13, 1]);
+  // …until the day's limit: forty in twenty-four hours, over all rooms.
+  const at = new Date().toISOString(), clock = sergio.peers.clock();
+  for (let i = 0; i < 27; i++) sergio.store.put("roomAsks", { id: "old-" + i, roomId: a.id, shareId: i % 2 ? a.id : b.id, from: addr(marta), fromName: "Marta Ruiz", botId: "vera", peerId: "peer-old-" + i, text: "antes", rule: "siempre", state: "done", at, t: clock - 5 * 3600000 });
+  assert.equal(sergio.rooms.work.overLimit(sergio.store.get("peerShares", c.id), addr(marta)), "person");
+  await asked(marta, c, sergio, "@Vera la cuarenta y uno");
+  assert.deepEqual([asks(sergio).length, sergio.calls.length], [40, 1], "over the daily limit of one person");
+  // Everybody together: thirty an hour, whoever asks.
+  sergio.skew += 25 * 3600000;
+  assert.equal(sergio.rooms.work.overLimit(sergio.store.get("peerShares", c.id), addr(marta)), null);
+  const now2 = sergio.peers.clock();
+  for (let i = 0; i < 30; i++) sergio.store.put("roomAsks", { id: "all-" + i, roomId: "otra", shareId: "otra-" + (i % 7), from: "A".repeat(42) + (i % 6), fromName: "Otra persona", botId: "vera", peerId: "peer-all-" + i, text: "de otros", rule: "siempre", state: "done", at, t: now2 - 60000 });
+  assert.equal(sergio.rooms.work.overLimit(sergio.store.get("peerShares", c.id), addr(marta)), "all");
+  await asked(marta, c, sergio, "@Vera cuando ya hay treinta");
+  assert.deepEqual([asks(sergio).length, sergio.calls.length], [70, 1], "over the hourly limit of everybody");
+});
+
+test("request limits: at most five cards of one person wait for the owner, and a reply to ask_room starts a few turns at most", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const a = await sharedRoom(sergio, marta, "Ventas"), b = await sharedRoom(sergio, marta, "Compras");
+  // «Pregúntame»: five cards wait (three in one room, two in another); the sixth is not taken.
+  for (const [room, n] of [[a, 3], [b, 2]]) for (let i = 1; i <= n; i++) await asked(marta, room, sergio, "@Vera petición " + i);
+  assert.equal(sergio.store.list("approvals").filter((x) => x.roomRequest && x.status === "pending").length, 5);
+  await asked(marta, b, sergio, "@Vera la sexta");
+  assert.deepEqual([asks(sergio).length, sergio.store.list("approvals").filter((x) => x.roomRequest && x.status === "pending").length, sergio.calls.length], [5, 5, 0]);
+  // Once he answers some, she may ask again.
+  for (const x of sergio.store.list("approvals").filter((y) => y.roomRequest && y.status === "pending").slice(0, 2)) sergio.runtime.answer(x.id, { optionId: "later" });
+  await until(() => asks(sergio).filter((x) => x.state === "asked").length === 3, "dos decididas");
+  await asked(marta, b, sergio, "@Vera ahora sí");
+  assert.equal(asks(sergio).length, 6);
+  // A request that already had its answers to ask_room: one more message of hers starts nothing.
+  rule(sergio, marta, "siempre");
+  let round = 0;
+  sergio.reply = () => (++round === 1 ? call("ask_room", { question: "¿De qué mes?" }, "r1") : answer("Vale."));
+  const before = asks(sergio).length;
+  await asked(marta, a, sergio, "@Vera dame las ventas");
+  await botAnswer(marta, a, "¿De qué mes?");
+  await settle(sergio.runtime);
+  const request = asks(sergio).at(-1);
+  assert.ok(request.question);
+  sergio.store.patch("roomAsks", request.id, { replies: ROOM_WORK.replies });
+  const calls = sergio.calls.length;
+  await marta.rooms.send(a.id, { text: "De marzo" });
+  await until(() => peerRows(sergio, a.id).some((m) => m.text === "De marzo"), "Sergio lo recibe");
+  await sergio.bots.idle();
+  await settle(sergio.runtime);
+  assert.deepEqual([sergio.calls.length, asks(sergio).length, sergio.store.get("roomAsks", request.id).question], [calls, before + 1, null]);
+});
+
+test("a room somebody else made, where you have done nothing yet: a request there asks you even with «Siempre»", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  rule(sergio, marta, "siempre");
+  // Marta makes a room with Sergio in it. Nobody accepts a room: he is simply there.
+  const room = marta.rooms.create({ title: "Idea de Marta", people: [addr(sergio)] });
+  await until(() => sergio.rooms.resolveRoom(room.id), "Sergio ve la sala");
+  const share = () => sergio.store.get("peerShares", room.id);
+  assert.equal(sergio.rooms.work.takesPart(share()), false);
+  sergio.reply = () => answer("Hecho en la sala de Marta.");
+  await asked(marta, room, sergio, "@Vera busca esto");
+  const first = await until(() => card(sergio), "la tarjeta de Sergio");
+  assert.deepEqual([sergio.calls.length, asks(sergio)[0].rule, asks(sergio)[0].held, first.status], [0, "pregunta", true, "pending"]);
+  assert.equal(sergio.peers.contact(addr(marta)).asks.encargos, "siempre", "his rule for her is untouched");
+  // He says yes by hand: from then on he takes part in that room, and his rule applies there.
+  sergio.runtime.answer(first.id, { optionId: "go" });
+  await botAnswer(marta, room, "Hecho en la sala de Marta.");
+  await settle(sergio.runtime);
+  assert.equal(sergio.rooms.work.takesPart(share()), true);
+  sergio.reply = () => answer("Otra vez.");
+  await asked(marta, room, sergio, "@Vera otra");
+  await botAnswer(marta, room, "Otra vez.");
+  assert.equal(card(sergio), undefined);
+  // Writing in a room is taking part in it too.
+  const other = marta.rooms.create({ title: "Otra de Marta", people: [addr(sergio)] });
+  await until(() => sergio.rooms.resolveRoom(other.id), "Sergio ve la otra sala");
+  await sergio.rooms.send(other.id, { text: "Aquí estoy." });
+  assert.equal(sergio.rooms.work.takesPart(sergio.store.get("peerShares", other.id)), true);
+  sergio.reply = () => answer("En la otra.");
+  await asked(marta, other, sergio, "@Vera aquí también");
+  await botAnswer(marta, other, "En la otra.");
+  assert.equal(card(sergio), undefined);
+  // In a room of his own it never asked.
+  assert.equal(sergio.rooms.work.takesPart(sergio.store.get("peerShares", (await sharedRoom(sergio, marta)).id)), true);
 });

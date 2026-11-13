@@ -287,8 +287,16 @@ message of the bot addressed to the requester and the step ends without relaying
 line. The requester's reply (linked, a mention of that bot, or their next plain message within
 10 minutes) starts a new turn of the same request, outside content again; at most 3 per request.
 
-**Limits.** 6 requests per person, room and hour (`ERRAND_LIMITS.perHour`), counted when they
-reach a rule other than `nunca`; over it the requester gets `throttled`. A message signed by a
+**Limits** (`ROOM_WORK`, `RoomWork#overLimit`). Counted over the stored `roomAsks` (each keeps
+`t`, the clock when it came), so they survive a restart: 6 per person, room and hour (`perHour`);
+12 per person and hour and 40 per day over all rooms (`personHour`, `personDay`); 30 per hour for
+everybody (`allHour`); 5 requests of one person in state `asked` at once (`open`). A request
+counts when it reaches a rule other than `nunca`; over a limit it is not taken and the requester
+gets `throttled`. A reply to `ask_room` is not a request: it adds to `roomAsks.replies`, at most
+3 (`replies`) start a turn. In a room made by someone else where the owner of the bot has not
+taken part (`RoomWork#takesPart`: owns it, it is a team's «general», wrote there, or approved a
+request there by hand) a `siempre` request is stored with `rule: "pregunta", held: true` and
+asks. A message signed by a
 bot, a card or a guest's message never gets here. Admission: a `siempre` request is `long` work
 (parked when the plan window is almost used: status `limited`); one approved just now is
 `attended` and counts as the owner's turn. Brakes for self-started work do not apply; the step's
