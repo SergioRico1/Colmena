@@ -1,8 +1,11 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files as FilesIcon } from "../components/Icon.js";
+import { Check, Target, Pause, Play, X, Ellipsis, Maximize2, Minimize2, ExternalLink, PanelRight, GitBranch, GitPullRequest, UploadCloud, ShieldCheck, RefreshCw, Columns3, Keyboard, GitMerge, GitPullRequestArrow, Files as FilesIcon, FolderOpen, SquareArrowOutUpRight, Stop } from "../components/Icon.js";
 import { useRevealMessage } from "../lib/reveal.js";
 import Shell from "../components/v2/Shell.jsx";
-import { whenLabel, useMenu, MenuSheet, Item, Rule, TaskActions } from "../components/v2/code/ProjectList.jsx";
+import { whenLabel, useMenu, MenuSheet, Item, Rule, Heading, TaskActions, CiChip } from "../components/v2/code/ProjectList.jsx";
+import PrPanel from "../components/v2/code/PrPanel.jsx";
+import { nextAction } from "../components/v2/code/flow.js";
+import { TERM } from "../lib/palette4.js";
 import CodeHome from "../components/v2/code/CodeHome.jsx";
 import Composer from "../components/v2/code/Composer.jsx";
 import { EngineMark } from "../components/v2/code/EngineModels.jsx";
@@ -33,13 +36,13 @@ const command = (name) => window.dispatchEvent(new CustomEvent("colmena:code-com
 const WIDE_KEY = "colmena:code-panel-wide";
 const readWide = () => { try { return localStorage.getItem(WIDE_KEY) === "1"; } catch { return false; } };
 
-// Colmena 3 · Código (design/V3Codigo.dc.html, V3CodigoTarea.dc.html, V3CodigoComparar.dc.html):
-// the place with the box to start and the tasks by state; a task with Bruno's conversation on the
-// left and its workspace (plan, changes, terminal, preview) on the right; and the comparison of
-// several engines. Bruno works with Claude Code, Codex or OpenCode of this computer
-// (server/code/), in a copy of the project when it uses Git.
+// Código (v4): the place with the box to start and the tasks by what they need; a task with Bruno's
+// conversation on the left (resizable, remembered) and its workspace on the right (changes, PR,
+// plan, terminal, files, processes, preview), with ONE primary button in the header for the next
+// step (flow.js nextAction); and the comparison of several engines. Bruno works with Claude Code,
+// Codex or OpenCode of this computer (server/code/), in a copy of the project when it uses Git.
 
-const TABS = [["plan", "Plan"], ["cambios", "Cambios"], ["archivos", "Archivos"], ["terminal", "Terminal"], ["procesos", "Procesos"], ["vista", "Vista previa"]];
+const TABS = [["cambios", "Cambios"], ["pr", "PR"], ["plan", "Plan"], ["terminal", "Terminal"], ["archivos", "Archivos"], ["procesos", "Procesos"], ["vista", "Vista previa"]];
 
 /**
  * Saving a task: «Fusionar en main» goes through a review first (OpenClaw autoreview: P0–P1
@@ -170,12 +173,12 @@ function prDecision(pr) {
 }
 
 /** The chips under the title: branch → base, the PR, CI and where the task stands. */
-function TaskChips({ task, project, running, onMergePr = null }) {
+function TaskChips({ task, project, running }) {
   const pr = task.pr;
   const base = task.base || project?.base || "main";
   const decision = prDecision(pr);
-  const ci = !pr || pr.state === "CLOSED" ? null : pr.state === "MERGED" ? SIGNAL("var(--c-ok-soft)", C.greenText) : pr.mergeable === "CONFLICTING" ? SIGNAL("var(--c-warn-soft)", "var(--c-warn)") : pr.checks === "failing" ? SIGNAL(C.redSoft, C.red) : pr.checks === "passing" ? SIGNAL("var(--c-ok-soft)", C.greenText) : pr.checks === "pending" ? SIGNAL("var(--c-chip)", C.text2) : null;
-  const ciText = !ci ? null : pr.state === "MERGED" ? <><GitMerge size={12} aria-hidden="true" />Fusionada</> : pr.mergeable === "CONFLICTING" ? "Conflictos con " + base : pr.checks === "failing" ? <><X size={12} weight="bold" aria-hidden="true" />CI: falla</> : pr.checks === "passing" ? <><Check size={12} weight="bold" aria-hidden="true" />CI: pasa</> : "CI en curso";
+  const merged = pr?.state === "MERGED";
+  const conflict = pr?.state === "OPEN" && pr.mergeable === "CONFLICTING";
   const wake = () => post("/code/tasks/" + task.id + (task.archived ? "/archive" : "/snooze"), task.archived ? { archived: false } : { until: null }).catch((e) => failure(task.archived ? "No se pudo desarchivar la tarea" : "No se pudo reanudar la tarea", e.message));
   return (
     <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", font: `400 var(--t-meta)/1 ${MONO}`, color: C.text2 }}>
@@ -184,14 +187,9 @@ function TaskChips({ task, project, running, onMergePr = null }) {
       ) : project ? <span style={CHIP} title="Bruno trabaja en la carpeta del proyecto">{project.root}</span> : null}
       {pr?.number ? <a href={pr.url || undefined} target="_blank" rel="noreferrer" style={{ ...SIGNAL(...(PR_LOOK[pr.state] || PR_LOOK.OPEN)), ...(pr.isDraft ? { background: "var(--c-chip)", color: C.text2 } : {}) }} title={pr.watching ? "Colmena sigue esta PR con gh: si falla el CI, hay conflictos o comentan, Bruno se pone con ello (subir sigue pidiendo tu OK)." : undefined}><GitPullRequest size={12} aria-hidden="true" />{(pr.isDraft ? "Borrador · " : "") + "PR #" + pr.number}</a>
         : pr?.watching ? <span style={CHIP}>PR · esperando…</span> : null}
-      {ci ? <span style={ci}>{ciText}</span> : null}
+      {merged ? <span style={SIGNAL("var(--c-ok-soft)", C.greenText)}><GitMerge size={12} aria-hidden="true" />Fusionada</span> : conflict ? <span style={SIGNAL("var(--c-warn-soft)", "var(--c-warn)")}>Conflictos con {base}</span> : <CiChip task={task} />}
       {decision ? <span style={decision[1]} title={decision[2]}>{decision[0]}</span> : null}
-      {onMergePr ? (
-        <button type="button" onClick={onMergePr} title="Fusiona en GitHub el último commit que has visto de la PR. Si alguien sube algo después, GitHub no la fusiona." style={{ ...SIGNAL("var(--c-chip)", C.blue), cursor: "pointer" }}>
-          <GitMerge size={12} strokeWidth={2.2} aria-hidden="true" />Fusionar en GitHub
-        </button>
-      ) : null}
-      {running ? <span style={SIGNAL("var(--c-chip)", C.blue)}><span aria-hidden="true" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: C.blue }} />Trabajando</span>
+      {running ? <span style={SIGNAL("var(--c-accent-soft)", C.blue)}><span aria-hidden="true" className="code-pulse" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: C.blue }} />Trabajando</span>
         : task.status === "waiting" || task.status === "planned" ? <span style={SIGNAL(C.honey, "var(--c-honey-ink)")}>Te espera</span>
           : task.status === "error" ? <span style={SIGNAL(C.redSoft, C.red)}>Atascada</span> : null}
       {task.saved ? <span style={SIGNAL("var(--c-ok-soft)", C.greenText)}><Check size={12} weight="bold" aria-hidden="true" />Guardada en {base}</span> : null}
@@ -291,6 +289,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     return () => window.removeEventListener("keydown", on);
   }, [btw.handleKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const commandRef = useRef(() => {});
+  const runNextRef = useRef(() => {}); // the primary button, for its shortcut
   useEffect(() => {
     const on = (e) => commandRef.current(e.detail);
     window.addEventListener("colmena:code-command", on);
@@ -324,7 +323,6 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     post("/code/tasks/" + task.id + "/pr/" + kind, {}).catch((e) => saving.setError(e.message)).finally(() => { setPrBusy(null); reload(); });
   };
   const ghOff = github && (!github.installed || !github.authed) ? (github.installed ? "GitHub CLI no tiene sesión en este ordenador: para subir y seguir la PR, ejecuta «gh auth login» en una terminal." : "GitHub CLI (gh) no está instalado: para subir a GitHub y seguir la PR, instálalo y ejecuta «gh auth login».") : null;
-  const fixable = !running && (findings.length > 0 || ciFailing);
   const fix = () => act(async () => {
     const parts = [];
     if (findings.length) parts.push(findingsText(findings));
@@ -340,6 +338,17 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     onAnswer: (item, body) => act(() => post("/code/tasks/" + task.id + "/asks/" + item.id, body)),
     onEditFrom: (item) => act(async () => { const r = await post("/code/tasks/" + task.id + "/edit-from", { item: item.id }); setDraft({ text: r.text }); }),
     onFinding: (f) => addContext(task.id, findingContext(f)),
+    // A finding's «archivo:línea» opens the diff on that line.
+    onShowFinding: (f) => {
+      setTurn(null); setTab("cambios"); onPanel(true);
+      let tries = 0;
+      const look = () => {
+        const el = document.querySelector(`[data-finding="${CSS.escape(f.file + ":" + f.line)}"]`);
+        if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("code-flash"); return; }
+        if (++tries < 20) setTimeout(look, 100);
+      };
+      setTimeout(look, 50);
+    },
     pr: openPr ? { number: openPr.number } : null,
     onPublish: (item) => act(() => post("/code/tasks/" + task.id + "/reviews/" + item.id + "/publish", {})),
     onPlan: (item, action) => {
@@ -357,7 +366,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     if (cmd === "plan-toggle") setMode((m) => (m === "plan" ? "build" : "plan"));
     else if (cmd === "parar") act(() => post("/code/tasks/" + task.id + "/stop", {}));
     else if (cmd === "compactar") act(() => post("/code/tasks/" + task.id + "/compact", {}));
-    else if (cmd === "guardar" && canSave) saving.save(task.isolated ? "base" : "branch");
+    else if (cmd === "guardar") runNextRef.current();
   };
   const goal = (action, text) => act(() => post("/code/tasks/" + task.id + "/goal", { action, ...(text ? { text } : {}) }));
   const send = (text, when, how = "build", files = [], contexts = []) => act(async () => {
@@ -381,67 +390,102 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     } finally { setBusy(false); }
     return true;
   });
-  // The merge button: primary unless something needs fixing first; dashed while that is so.
+  // Saving into the base waits while the review or the CI says something serious («… igualmente» in «Más»).
   const blockedWhy = ciFailing ? "Falla el CI: arréglalo antes de fusionar" : serious ? (serious === 1 ? "La revisión encontró un problema importante" : "La revisión encontró " + serious + " problemas importantes") + ": arréglalo antes de fusionar" : null;
-  const mergeLabel = saving.label || (task.isolated ? "Fusionar en " + base : "Guardar");
-  const mergeDisabled = !!saving.busy || running || !!task.merging;
-  // Ink only when it is the next step: there are changes and nothing else waits for you first.
-  const waitingYou = ["waiting", "planned"].includes(task.status) || !!openPlan || items.some((i) => i.kind === "ask" && i.status === "pending");
-  const mergeMain = !fixable && !waitingYou && !!(task.add || task.del || task.lastChanged);
-  const merge = !canSave || task.saved ? null : blockedWhy && !saving.busy ? (
-    <button type="button" disabled title={blockedWhy} style={BTN.blocked}>{mergeLabel}</button>
-  ) : (
-    <button type="button" disabled={mergeDisabled} onClick={() => saving.save(task.isolated ? "base" : "branch")} title={task.isolated ? "Revisión, commit en " + task.branch + " y merge en tu carpeta" : "Commit con el mensaje que escribe Bruno"}
-      style={{ ...(mergeMain ? BTN.primary : BTN.outline), opacity: mergeDisabled ? 0.55 : 1, cursor: mergeDisabled ? "default" : "pointer" }}>
-      {mergeMain && task.isolated ? <GitMerge size={15} strokeWidth={2.2} aria-hidden="true" /> : null}{mergeLabel}
+  const pendingAsk = items.find((i) => i.kind === "ask" && i.status === "pending") || null;
+  // The ONE primary button of the header: the next step for the person (flow.js).
+  const next = nextAction(task, { pendingAsk, openPlan, findings, canSave: !!canSave });
+  const runNext = () => {
+    if (!next) return;
+    const id = next.id;
+    if (id === "answer") {
+      const card = document.querySelector("[data-pending-ask]");
+      card?.scrollIntoView({ block: "center", behavior: "smooth" });
+      card?.querySelector("button")?.focus({ preventScroll: true });
+    } else if (id === "implement") ctx.onPlan(openPlan, "implement");
+    else if (id === "write") document.querySelector("[data-code-composer]")?.focus();
+    else if (id === "fix") fix();
+    else if (id === "catchup") saving.save("catchup");
+    else if (id === "pr-ready") prAction("ready");
+    else if (id === "merge-pr") prAction("merge");
+    else if (id === "open-pr") window.open(task.pr.url, "_blank", "noopener");
+    else if (id === "save") saving.save(task.isolated ? "base" : "branch");
+  };
+  runNextRef.current = runNext;
+  const nextBusy = !!saving.busy || !!prBusy || (next?.id === "save" && !!task.merging && running);
+  const nextIcon = { save: GitMerge, "merge-pr": GitMerge, "pr-ready": GitPullRequestArrow, "open-pr": ExternalLink, catchup: RefreshCw, fix: ShieldCheck }[next?.id] || null;
+  const NextIcon = nextIcon;
+  const primary = next ? (
+    <button type="button" disabled={nextBusy} onClick={runNext} title={next.id === "save" ? (task.isolated ? "Revisión, commit en " + task.branch + " y merge en tu carpeta" : "Commit con el mensaje que escribe " + name) : undefined}
+      style={{ ...BTN.primary, opacity: nextBusy ? 0.6 : 1, cursor: nextBusy ? "default" : "pointer" }}>
+      {NextIcon ? <NextIcon size={16} aria-hidden="true" /> : null}{(next.id === "save" || next.id === "catchup") && saving.label ? saving.label : prBusy === "merge" && next.id === "merge-pr" ? "Fusionando en GitHub…" : next.label}
     </button>
-  );
+  ) : running ? (
+    <button type="button" onClick={() => act(() => post("/code/tasks/" + task.id + "/stop", {}))} title={"Para a " + name + " al acabar el paso en curso (Ctrl+.)"} style={BTN.outline}>
+      <Stop size={16} aria-hidden="true" />Parar
+    </button>
+  ) : null;
   const saveItems = canSave && !task.saved ? [
+    ...(task.isolated ? [["base", GitMerge, "Fusionar en " + base, blockedWhy]] : [["branch", GitBranch, "Guardar (commit)", blockedWhy]]),
     ...(task.isolated ? [["branch", GitBranch, "Guardar solo en su rama"]] : []),
     ["push", UploadCloud, "Guardar y subir a GitHub"],
     ["pr", GitPullRequest, "Guardar, subir y abrir PR"],
-    ["review", ShieldCheck, "Revisar los cambios"],
-    ...(task.isolated ? [["catchup", RefreshCw, "Ponerse al día con " + base]] : []),
   ] : [];
   const openEditor = () => act(async () => { const r = await post("/code/tasks/" + task.id + "/open-editor", { path: ".", line: 1 }); if (!r.editor) setProblem("No encuentro VS Code, Cursor ni Windsurf: se abre la carpeta."); });
   const openFolder = () => act(() => revealInTask(task.id, ""));
   const showChat = !(panel && wide);
-  const tabLabel = (id, text) => (id === "cambios" && count ? text + " · " + count : text);
+  const points = items.filter((i) => i.kind === "turn").map((i) => ({ n: i.n, add: i.add, del: i.del, files: (i.files || []).length }));
+  const tabLabel = (id, text) => (id === "cambios" && count ? text + " · " + count : id === "pr" && task.pr?.number ? "PR #" + task.pr.number : text);
+  const shownTabs = TABS.filter(([id]) => id !== "pr" || canSave || task.pr?.number);
+  const tabDot = (id) => (id === "pr" && ciFailing ? "var(--c-error)" : id === "cambios" && findings.length ? "var(--c-error)" : null);
   return (
     <div ref={sectionRef} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", flexDirection: "column" }}>
-      <header style={{ position: "relative", flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px 16px", padding: "18px 28px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
+      <header style={{ position: "relative", flex: "none", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 16px", padding: "14px 24px 12px", borderBottom: "1px solid var(--c-line)" }}>
         <div style={{ flex: "1 1 380px", minWidth: 0, display: "flex", flexDirection: "column", gap: "6px" }}>
           <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: C.muted }}>
             <a href="/codigo" style={{ color: C.muted }}>Código</a><span aria-hidden="true">›</span><span style={{ fontFamily: MONO }}>{project?.name || "proyecto"}</span>
           </nav>
-          <h1 title={task.title} style={{ margin: 0, font: `600 var(--t-headline)/1.05 ${HEAD}`, letterSpacing: "-0.025em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.title}</h1>
-          <TaskChips task={task} project={project} running={running} onMergePr={openPr?.reviewDecision === "APPROVED" && !prMergeWhy && !prBusy && !running ? () => prAction("merge") : null} />
+          <h1 title={task.title} style={{ margin: 0, font: `600 var(--t-title)/1.2 ${HEAD}`, letterSpacing: "-0.015em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{task.title}</h1>
+          <TaskChips task={task} project={project} running={running} />
         </div>
         <div style={{ position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           <TaskPeople taskId={task.id} project={project ? { id: project.id, name: project.name } : null} look={{ ...BTN.outline, fontSize: "var(--t-ui)", fontWeight: 400 }} />
-          <button type="button" onClick={openEditor} title={"Abre la copia de la tarea en VS Code, Cursor o Windsurf: " + task.cwd} style={BTN.outline}>Abrir en el editor</button>
-          {merge}
-          {fixable ? <button type="button" onClick={fix} title={"Le pasa a " + name + (findings.length ? " lo que encontró la revisión" : "") + (ciFailing ? (findings.length ? " y" : "") + " lo que falla en el CI" : "")} style={BTN.primary}>Que {name} lo arregle</button> : null}
-          <button type="button" onClick={more.open} aria-haspopup="menu" aria-expanded={!!more.at} aria-label="Más" title="Más: guardar de otras formas, posponer, archivar…" style={{ width: "40px", height: "40px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: more.at ? C.track : "transparent", color: C.text2, cursor: "pointer" }}>
-            <Ellipsis size={18} strokeWidth={2.2} aria-hidden="true" />
+          <button type="button" onClick={openEditor} title={"Abre la copia de la tarea en VS Code, Cursor o Windsurf: " + task.cwd} style={BTN.outline}><SquareArrowOutUpRight size={16} aria-hidden="true" />Abrir en el editor</button>
+          {primary}
+          <button type="button" onClick={more.open} aria-haspopup="menu" aria-expanded={!!more.at} aria-label="Más acciones" title="Más: guardar de otras formas, la PR, posponer, archivar…" style={{ width: "36px", height: "36px", display: "grid", placeItems: "center", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: more.at ? C.track : "var(--c-raised)", color: C.text, cursor: "pointer" }}>
+            <Ellipsis size={18} aria-hidden="true" />
           </button>
-          <MenuSheet menu={more} label="Más" width={300}>
-            {saveItems.map(([to, Icon, text]) => {
-              const signIn = ghOff && (to === "push" || to === "pr") ? ghOff : null;
-              return <span key={to} title={signIn || undefined} style={{ display: "block" }}><Item icon={Icon} text={text} note={signIn ? "gh sin sesión" : null} disabled={!!saving.busy || running} onClick={() => { more.close(); saving.save(to); }} /></span>;
-            })}
-            {blockedWhy && canSave && !task.saved ? <Item icon={GitMerge} text={(task.isolated ? "Fusionar en " + base : "Guardar") + " igualmente"} disabled={!!saving.busy || running} onClick={() => { more.close(); saving.save(task.isolated ? "base" : "branch", { force: true }); }} /> : null}
-            {openPr?.isDraft ? <Item icon={GitPullRequestArrow} text={prBusy === "ready" ? "Marcando como lista…" : "Marcar la PR como lista"} disabled={!!prBusy} onClick={() => { more.close(); prAction("ready"); }} /> : null}
-            {openPr ? (
-              <span title={prMergeWhy || "Fusiona en GitHub el último commit que has visto de la PR. Si alguien sube algo después, GitHub no la fusiona."} style={{ display: "block" }}>
-                <Item icon={GitMerge} text={prBusy === "merge" ? "Fusionando en GitHub…" : "Fusionar la PR #" + openPr.number + " en GitHub"} disabled={!!prMergeWhy || !!prBusy || running} onClick={() => { more.close(); prAction("merge"); }} />
-              </span>
+          <MenuSheet menu={more} label="Más acciones" width={320}>
+            {saveItems.length ? (
+              <>
+                <Heading>Guardar</Heading>
+                {saveItems.map(([to, Icon, text, blocked]) => {
+                  const why = running ? name + " está trabajando: espera a que acabe" : blocked || (ghOff && (to === "push" || to === "pr") ? "GitHub CLI sin sesión: ejecuta «gh auth login»" : null);
+                  return <Item key={to + text} icon={Icon} text={text} why={why} disabled={!!saving.busy} onClick={() => { more.close(); saving.save(to); }} />;
+                })}
+                {blockedWhy && !running ? <Item icon={GitMerge} text={(task.isolated ? "Fusionar en " + base : "Guardar") + " igualmente"} disabled={!!saving.busy} confirm="Pulsa otra vez: se fusiona con los avisos" onClick={() => { more.close(); saving.save(task.isolated ? "base" : "branch", { force: true }); }} /> : null}
+                <Rule />
+              </>
             ) : null}
-            {saveItems.length || openPr ? <Rule /> : null}
+            {openPr ? (
+              <>
+                <Heading>{"PR #" + openPr.number}</Heading>
+                {openPr.isDraft ? <Item icon={GitPullRequestArrow} text={prBusy === "ready" ? "Marcando como lista…" : "Marcar la PR como lista"} disabled={!!prBusy} onClick={() => { more.close(); prAction("ready"); }} /> : null}
+                <Item icon={GitMerge} text={prBusy === "merge" ? "Fusionando en GitHub…" : "Fusionar en GitHub"} why={prMergeWhy || (running ? name + " está trabajando" : null)} disabled={!!prBusy} onClick={() => { more.close(); prAction("merge"); }} />
+                {openPr.url ? <Item icon={ExternalLink} text="Abrir en GitHub" onClick={() => { more.close(); window.open(openPr.url, "_blank", "noopener"); }} /> : null}
+                <Rule />
+              </>
+            ) : null}
+            <Heading>Revisar</Heading>
+            {canSave && !task.saved ? <Item icon={ShieldCheck} text="Revisar los cambios" why={running ? name + " está trabajando" : null} disabled={!!saving.busy} onClick={() => { more.close(); saving.save("review"); }} /> : null}
+            {task.isolated && !task.saved ? <Item icon={RefreshCw} text={"Ponerse al día con " + base} why={running ? name + " está trabajando" : null} disabled={!!saving.busy} onClick={() => { more.close(); saving.save("catchup"); }} /> : null}
             {task.group ? <Item icon={Columns3} text="Comparar con los otros motores" onClick={() => { more.close(); navigate("/codigo/comparar/" + task.group); }} /> : null}
-            <Item icon={PanelRight} text={panel ? "Ocultar plan, cambios y vista previa" : "Mostrar plan, cambios y vista previa"} onClick={() => { more.close(); onPanel(!panel); }} />
-            <Item icon={ExternalLink} text="Abrir la carpeta de la copia" onClick={() => { more.close(); openFolder(); }} />
-            <Item icon={Keyboard} text="Atajos de teclado" onClick={() => { more.close(); window.dispatchEvent(new Event("colmena:code-shortcuts")); }} />
+            <Item icon={FilesIcon} text="Ver los cambios" note="Ctrl 1" onClick={() => { more.close(); onPanel(true); setTab("cambios"); }} />
+            <Rule />
+            <Heading>Ver</Heading>
+            <Item icon={PanelRight} text="Panel de trabajo" checked={!!panel} note="Ctrl J" onClick={() => { more.close(); onPanel(!panel); }} />
+            <Item icon={FolderOpen} text="Abrir la carpeta de la copia" onClick={() => { more.close(); openFolder(); }} />
+            <Item icon={Keyboard} text="Atajos de teclado" note="F1" onClick={() => { more.close(); window.dispatchEvent(new Event("colmena:code-shortcuts")); }} />
             <Rule />
             <TaskActions task={task} current done={more.close} />
           </MenuSheet>
@@ -465,7 +509,7 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
       <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
         {showChat ? (
           <section aria-label={"Conversación con " + name} className={panel ? "code-chat" : undefined}
-            style={{ position: "relative", ...(panel ? (chat.width ? { flex: `0 0 ${chat.width}px`, width: chat.width + "px" } : { flex: "1 1 340px", maxWidth: "440px" }) : { flex: 1 }), minWidth: 0, display: "flex", flexDirection: "column", borderRight: panel ? "1px solid rgb(var(--c-ink-rgb) / .07)" : 0 }}>
+            style={{ position: "relative", ...(panel ? { flex: `0 0 ${chat.width || 400}px`, width: (chat.width || 400) + "px" } : { flex: 1 }), minWidth: 0, display: "flex", flexDirection: "column", borderRight: panel ? "1px solid var(--c-line)" : 0 }}>
             {panel ? chat.handle : null}
             <PeerComments taskId={task.id} />
             <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", display: "flex", flexDirection: "column-reverse" }}>
@@ -513,22 +557,36 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
 
         {panel ? (
           <section data-codepanel="" aria-label="Espacio de trabajo" style={{ flex: "999 1 480px", minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div role="tablist" aria-label="Vista" style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", padding: "10px 20px 0", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
-              {TABS.map(([id, text]) => {
+            <div role="tablist" aria-label="Espacio de trabajo" onKeyDown={(e) => {
+              if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+              const ids = shownTabs.map(([id]) => id);
+              const k = ids.indexOf(tab);
+              const nextTab = ids[(k + (e.key === "ArrowRight" ? 1 : ids.length - 1)) % ids.length];
+              e.preventDefault(); setTab(nextTab);
+              requestAnimationFrame(() => e.currentTarget.querySelector(`[data-tab="${nextTab}"]`)?.focus());
+            }} style={{ flex: "none", display: "flex", alignItems: "center", gap: "2px", padding: "4px 12px 0", borderBottom: "1px solid var(--c-line)", overflowX: "auto", overflowY: "hidden", scrollbarWidth: "none" }}>
+              {shownTabs.map(([id, text]) => {
                 const on = tab === id;
-                return <button key={id} type="button" role="tab" aria-selected={on} onClick={() => setTab(id)} style={{ flex: "none", whiteSpace: "nowrap", height: "42px", padding: "0 12px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "var(--t-ui)", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>{tabLabel(id, text)}</button>;
+                const dot = tabDot(id);
+                return (
+                  <button key={id} data-tab={id} type="button" role="tab" aria-selected={on} tabIndex={on ? 0 : -1} onClick={() => setTab(id)}
+                    style={{ flex: "none", display: "inline-flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap", height: "40px", padding: "0 10px", border: 0, borderBottom: "2px solid " + (on ? C.ink : "transparent"), marginBottom: "-1px", background: "transparent", fontSize: "var(--t-meta)", fontWeight: on ? 600 : 500, color: on ? C.ink : C.text2, cursor: "pointer" }}>
+                    {tabLabel(id, text)}{dot ? <span aria-label="necesita atención" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: dot }} /> : null}
+                  </button>
+                );
               })}
               <span style={{ flex: 1 }} />
-              <button type="button" onClick={() => onWide(!wide)} aria-pressed={wide} aria-label={wide ? "Volver a ver la conversación" : "Ampliar el espacio de trabajo"} title={wide ? "Volver a ver la conversación" : "Ampliar (la conversación se oculta)"} style={{ width: "32px", height: "32px", marginBottom: "6px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: wide ? C.track : "transparent", cursor: "pointer", color: C.muted }}>
-                {wide ? <Minimize2 size={15} strokeWidth={2} aria-hidden="true" /> : <Maximize2 size={15} strokeWidth={2} aria-hidden="true" />}
+              <button type="button" onClick={() => onWide(!wide)} aria-pressed={wide} aria-label={wide ? "Volver a ver la conversación" : "Ampliar el espacio de trabajo"} title={(wide ? "Volver a ver la conversación" : "Ampliar (la conversación se oculta)") + " · Ctrl ⇧ J"} style={{ width: "32px", height: "32px", marginBottom: "4px", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-sm)", background: wide ? C.track : "transparent", cursor: "pointer", color: C.muted }}>
+                {wide ? <Minimize2 size={16} aria-hidden="true" /> : <Maximize2 size={16} aria-hidden="true" />}
               </button>
             </div>
             {tab === "plan" ? <PlanTab plan={plan} name={name} />
-              : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "var(--r-lg)", overflow: "hidden", border: "1px solid rgb(var(--c-ink-rgb) / .1)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
-                : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "16px 20px 20px", borderRadius: "var(--r-lg)", overflow: "hidden", background: C.ink }}><Suspense fallback={null}><TerminalPanel task={task} /></Suspense></div>
-                  : tab === "archivos" ? <Files task={task} />
-                    : tab === "procesos" ? <Processes task={task} name={name} />
-                      : <Changes task={task} turn={turn} onTurn={setTurn} onCount={setCount} />}
+              : tab === "pr" ? <PrPanel task={task} name={name} running={running} ghOff={ghOff} mergeWhy={prMergeWhy} busy={saving.busy || prBusy} onSaveTo={(to) => saving.save(to)} onPrAction={prAction} onFix={ciFailing ? fix : null} />
+                : tab === "vista" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "12px 14px 14px", borderRadius: "var(--r-md)", overflow: "hidden", border: "1px solid var(--c-line)", background: C.white }}><Preview task={task} project={project} onAsk={(text) => post("/code/tasks/" + task.id + "/messages", { text, when: "queue" }).catch(() => {})} /></div>
+                  : tab === "terminal" ? <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", margin: "12px 14px 14px", borderRadius: "var(--r-md)", overflow: "hidden", border: "1px solid var(--c-line)", background: TERM.bg }}><Suspense fallback={null}><TerminalPanel task={task} /></Suspense></div>
+                    : tab === "archivos" ? <Files task={task} />
+                      : tab === "procesos" ? <Processes task={task} name={name} />
+                        : <Changes task={task} turn={turn} onTurn={setTurn} onCount={setCount} points={points} findings={findings} onFinding={ctx.onFinding} onRestore={(n) => ctx.onRestore(n)} />}
           </section>
         ) : null}
       </div>

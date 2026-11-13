@@ -2,6 +2,7 @@ import { stepOf } from "../../../lib/type.js";
 import BotFace from "../../BotFace.jsx";
 import { useClickAway } from "../../../lib/useClickAway.js";
 import { useRef, useState } from "react";
+import { menuKey, useFocusFirst } from "./menuKeys.js";
 import { Check, ChevronDown } from "../../Icon.js";
 
 // Small pieces shared by the «Código» screen (design/V2Codigo.dc.html).
@@ -45,16 +46,20 @@ export function Seg({ options, value, onChange, small = false, label }) {
 export function MenuChip({ label, icon = null, title, children, up = true, width = 320, align = "left", chevron = true, className = "", keepLabel = false, look = null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const pop = useRef(null);
+  const btn = useRef(null);
   useClickAway(open, ref, () => setOpen(false));
+  useFocusFirst(pop, open);
+  const close = (back = false) => { setOpen(false); if (back) btn.current?.focus(); };
   return (
     <div ref={ref} className={className} style={{ position: "relative", minWidth: 0 }}>
-      <button type="button" title={title} aria-label={label ? undefined : title} aria-expanded={open} onClick={() => setOpen(!open)}
+      <button ref={btn} type="button" title={title} aria-label={label ? undefined : title} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}
         style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "100%", height: "32px", padding: label ? "0 10px" : "0", width: label ? undefined : "34px", justifyContent: "center", border: 0, borderRadius: "var(--r-sm)", background: open ? C.soft : "transparent", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 500, color: C.text, whiteSpace: "nowrap", ...look }}>
         {icon}{label ? <span className={icon && !keepLabel ? "code-chip-label code-chip-label--icon" : "code-chip-label"}>{label}</span> : null}{chevron ? <ChevronDown size={12} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} /> : null}
       </button>
       {open ? (
-        <div role="menu" style={{ position: "absolute", zIndex: 40, [up ? "bottom" : "top"]: "42px", [align]: 0, width: width + "px", maxHeight: "min(70vh, 560px)", overflowY: "auto", overscrollBehavior: "contain", padding: "8px", borderRadius: "var(--r-2xl)", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
-          {children(() => setOpen(false))}
+        <div ref={pop} role="menu" aria-label={title} onKeyDown={(e) => menuKey(e, close)} style={{ position: "absolute", zIndex: 40, [up ? "bottom" : "top"]: "42px", [align]: 0, width: width + "px", maxHeight: "min(70vh, 560px)", overflowY: "auto", overscrollBehavior: "contain", padding: "8px", borderRadius: "var(--r-2xl)", background: C.white, boxShadow: SHEET, animation: "rise .2s ease-out" }}>
+          {children(() => close(true))}
         </div>
       ) : null}
     </div>
@@ -62,10 +67,11 @@ export function MenuChip({ label, icon = null, title, children, up = true, width
 }
 
 /** A row of a menu: title, optional note, a tick when chosen. */
-export function MenuItem({ title, text, on = false, onClick, right = null }) {
+export function MenuItem({ title, text, on = false, onClick, right = null, icon = null }) {
   return (
-    <button type="button" role="menuitemradio" aria-checked={on} onClick={onClick} className="code-hover"
+    <button type="button" role="menuitemradio" aria-checked={on} onClick={onClick} className="code-hover" data-label={typeof title === "string" ? title : undefined}
       style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "10px 12px", border: 0, borderRadius: "var(--r-lg)", background: on ? C.soft : "transparent", cursor: "pointer", textAlign: "left" }}>
+      {icon ? <span aria-hidden="true" style={{ flex: "none", display: "inline-flex", color: C.text, alignSelf: "flex-start", marginTop: "1px" }}>{icon}</span> : null}
       <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
         <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: C.ink }}>{title}</strong>
         {text ? <span style={{ fontSize: "var(--t-caption)", lineHeight: 1.45, color: C.muted }}>{text}</span> : null}
@@ -123,7 +129,15 @@ export const CODE_CSS = `
 .code-turn:hover .code-tools,.code-turn:focus-within .code-tools{opacity:1}
 .code-task .code-x{opacity:0}
 .code-task:hover .code-x,.code-task:focus-within .code-x{opacity:1}
-.code-task:hover .code-stat,.code-task:focus-within .code-stat,.code-task:hover .code-pill,.code-task:focus-within .code-pill{opacity:0}
+.code-task:hover .code-pill,.code-task:focus-within .code-pill{opacity:0}
+.code-rows>*:first-child{border-top:0!important}
+.code-danger:hover{background:var(--c-error-soft)!important}
+.code-pulse{animation:colmena-pulse 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.code-pulse{animation:none}}
+@media (max-width: 1280px){.code-engine-name{display:none}}
+.code-hunk-on{box-shadow:inset 2px 0 0 var(--c-focus)}
+.code-flash{animation:c-reveal 1.6s ease-out}
+.code-chat>.c-panel-resize::before{content:"";position:absolute;top:0;bottom:0;left:-7px;width:24px}
 .code-chip-label{overflow:hidden;text-overflow:ellipsis}
 @media (max-width: 1100px){[data-codepanel]{display:none!important}.code-chat{flex:1 1 auto!important;width:auto!important;max-width:none!important;border-right:0!important}}
 `;

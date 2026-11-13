@@ -80,7 +80,7 @@ export default function Compare({ group, projects = [] }) {
     : `Al elegir uno, su rama pasa a ser la tarea. ${rest === 1 ? "El otro se archiva; no se borra." : "Los otros " + (WORDS[rest] || rest) + " se archivan; no se borran."}`;
   return (
     <section aria-label="Comparar motores" style={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto", overscrollBehavior: "contain", animation: "fade .3s ease-out" }}>
-      <main style={{ maxWidth: "1180px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 44px) 56px", display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div style={{ maxWidth: "1180px", margin: "0 auto", padding: "36px clamp(20px, 4vw, 44px) 56px", display: "flex", flexDirection: "column", gap: "24px" }}>
         <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: C.muted }}>
           <a href="/codigo" style={{ color: C.muted }}>Código</a><span aria-hidden="true">›</span>
           {project ? <><a href={"/codigo?proyecto=" + project.id} style={{ fontFamily: MONO, color: C.muted }}>{project.name}</a><span aria-hidden="true">›</span></> : null}
@@ -152,7 +152,7 @@ export default function Compare({ group, projects = [] }) {
           {chosenTask ? <a href={"/codigo/" + chosenTask.id} onClick={(e) => { e.preventDefault(); navigate("/codigo/" + chosenTask.id); }} style={{ fontSize: "var(--t-ui)", fontWeight: 500, color: C.blue }}>Abrir la tarea</a> : null}
           <a href="/ajustes/ia" onClick={(e) => { e.preventDefault(); navigate("/ajustes/ia"); }} style={{ fontSize: "var(--t-ui)", color: C.blue }}>Motores y modelos por defecto</a>
         </div>
-      </main>
+      </div>
     </section>
   );
 }

@@ -1,22 +1,22 @@
-import { useClickAway } from "../../../lib/useClickAway.js";
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { Ellipsis, Pin, PinOff, AlarmClock, Archive, ArchiveRestore, Trash2, ChevronRight, Sun, CalendarClock, Search, X, Files, MessageSquareText } from "../../Icon.js";
+import { useEffect, useState } from "react";
+import { Ellipsis, Pin, PinOff, AlarmClock, Archive, ArchiveRestore, Trash2, ChevronRight, Sun, CalendarClock, Search, X, Files, MessageSquareText, Hourglass, GitPullRequest, Settings2, Check, CircleX, LoaderCircle, Columns3 } from "../../Icon.js";
 import { navigate } from "../../../lib/router.jsx";
 import { del, get, patch, post } from "../../../lib/api.js";
 import { withMessage } from "../../../lib/reveal.js";
 import { Highlight } from "../../home/shared.jsx";
 import { failure, later, reversible, useHidden } from "../../../lib/undoToast.js";
 import { useStore } from "../../../lib/store.jsx";
-import { C, MONO, SHEET, BotShape, botOf, Pill, SR, timeAgo } from "./parts.jsx";
-import { GROUPS, groupOf, snoozePresets, whenLabel, pillOf, homeSections } from "./model.js";
+import { C, MONO, BotShape, botOf, SR, timeAgo } from "./parts.jsx";
+import { EngineMark, ENGINE_NAME } from "./EngineModels.jsx";
+import { GROUPS, groupOf, snoozePresets, whenLabel } from "./model.js";
+import { listSections, needOf, stateText, ciOf } from "./flow.js";
+import { useMenu, MenuSheet, Item, Rule, Heading } from "./menu.jsx";
 
-// «Tareas» of Código (design/V3Codigo.dc.html): what waits for you, what is moving, and what is
-// put off or done, each task with its state in words. Each task has a «…» menu (T3 Code thread
-// actions): pin, snooze until a time, archive (settle) or keep it out of automatic archiving,
-// and delete. The archived ones wait folded at the end.
+// «Tareas» of Código: one list in the order a developer works it — what needs you (the only honey),
+// what is working, what is ready to save, what is done; put-off and archived folded at the end.
+// Each row says the engine, the branch, +/− and the CI; its «…» pins, puts off, archives or deletes.
 
-export { GROUPS, groupOf, whenLabel };
+export { GROUPS, groupOf, whenLabel, useMenu, MenuSheet, Item, Rule, Heading };
 
 const SHELF_KEY = "colmena:code-shelves";
 const readShelves = () => { try { return JSON.parse(localStorage.getItem(SHELF_KEY) || "{}"); } catch { return {}; } };
@@ -24,51 +24,6 @@ const readShelves = () => { try { return JSON.parse(localStorage.getItem(SHELF_K
 // A change that fails says so in a notice (the app's toasts), never in a system dialog.
 const act = (fn) => fn().catch((e) => failure("No se pudo hacer el cambio", e.message));
 const toLocalInput = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-
-/** A menu anchored to a button, drawn above the list (fixed), closed by a click outside or Esc. */
-export function useMenu(width = 280) {
-  const [at, setAt] = useState(null);
-  const ref = useRef(null);
-  useClickAway(!!at, ref, () => setAt(null));
-  useEffect(() => {
-    if (!at) return undefined;
-    const shut = () => setAt(null);
-    window.addEventListener("resize", shut, { once: true });
-    return () => window.removeEventListener("resize", shut);
-  }, [at]);
-  const open = (e) => {
-    e.preventDefault(); e.stopPropagation();
-    if (at) { setAt(null); return; }
-    const r = e.currentTarget.getBoundingClientRect();
-    setAt({ left: Math.min(r.right - width, window.innerWidth - width - 12), top: r.bottom + 6, up: r.bottom + 360 > window.innerHeight, bottom: window.innerHeight - r.top + 6 });
-  };
-  return { at, ref, open, close: () => setAt(null) };
-}
-
-export function MenuSheet({ menu, label, children, width = 280 }) {
-  if (!menu.at) return null;
-  // Drawn in <body>: inside the task's link, a click on a field would open the task.
-  return createPortal(
-    <div ref={menu.ref} role="menu" aria-label={label} onClick={(e) => e.stopPropagation()}
-      style={{ position: "fixed", zIndex: 60, left: Math.max(8, menu.at.left) + "px", ...(menu.at.up ? { bottom: menu.at.bottom + "px" } : { top: menu.at.top + "px" }), width: width + "px", maxHeight: "min(76vh, 620px)", overflowY: "auto", padding: "6px", borderRadius: "var(--r-xl)", background: C.white, boxShadow: SHEET, animation: "rise .18s ease-out" }}>
-      {children}
-    </div>,
-    document.body,
-  );
-}
-
-export function Item({ icon: Icon, text, note = null, onClick, tone = null, on = false, disabled = false }) {
-  return (
-    <button type="button" role="menuitem" disabled={disabled} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClick(); }} className="code-hover"
-      style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", minHeight: "36px", padding: "0 10px", border: 0, borderRadius: "var(--r-md)", background: on ? C.soft : "transparent", cursor: disabled ? "default" : "pointer", textAlign: "left", fontSize: "var(--t-meta)", fontWeight: 500, color: disabled ? C.quiet : tone || C.ink }}>
-      {Icon ? <Icon size={14} strokeWidth={2.1} aria-hidden="true" style={{ flex: "none" }} /> : <span style={{ width: "14px", flex: "none" }} />}
-      <span style={{ flex: 1 }}>{text}</span>
-      {note ? <span style={{ font: `400 var(--t-micro)/1 ${MONO}`, color: C.quiet, whiteSpace: "nowrap" }}>{note}</span> : null}
-    </button>
-  );
-}
-export const Rule = () => <span aria-hidden="true" style={{ display: "block", height: "1px", margin: "4px 8px", background: C.rule }} />;
-export const Heading = ({ children }) => <span style={{ display: "block", padding: "8px 10px 4px", font: `500 var(--t-micro)/1.3 ${MONO}`, letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{children}</span>;
 
 /** Pin, snooze, archive, delete: the items of a task's «…» (the list and the task's «Más»). */
 export function TaskActions({ task, current, done }) {
@@ -102,32 +57,34 @@ export function TaskActions({ task, current, done }) {
   };
   return (
     <>
-      {!task.archived ? (task.pinned ? <Item icon={PinOff} text="Quitar de fijadas" onClick={() => pin(false)} /> : <Item icon={Pin} text="Fijar arriba" onClick={() => pin(true)} />) : null}
+      <Heading>Organizar</Heading>
+      {task.archived ? <Item icon={ArchiveRestore} text="Desarchivar" onClick={() => archive(false)} />
+        : task.pinned ? <Item icon={PinOff} text="Quitar de fijadas" onClick={() => pin(false)} /> : <Item icon={Pin} text="Fijar arriba" onClick={() => pin(true)} />}
+      {!task.archived ? <Item icon={Hourglass} text="Archivar sola si se queda quieta" checked={task.autoArchive !== false} onClick={() => auto(task.autoArchive === false)} /> : null}
       {task.snoozed ? <Item icon={Sun} text="Despertar ahora" note={whenLabel(task.snoozed.until)} onClick={wake} /> : null}
       {!task.archived && !task.snoozed ? (
         <>
-          <Heading>Posponer</Heading>
+          <Rule />
+          <Heading>Posponer hasta</Heading>
           {snoozePresets().map((p) => <Item key={p.id} icon={AlarmClock} text={p.label} note={whenLabel(p.until)} onClick={() => snooze(p.until)} />)}
           {custom ? (
             <form onSubmit={(e) => { e.preventDefault(); const d = new Date(when); if (d > new Date()) snooze(d.toISOString()); }} style={{ display: "flex", gap: "6px", padding: "6px 8px" }}>
-              <input type="datetime-local" value={when} min={toLocalInput(new Date())} onChange={(e) => setWhen(e.target.value)} aria-label="Hasta cuándo" style={{ flex: 1, minWidth: 0, height: "32px", padding: "0 8px", border: 0, borderRadius: "var(--r-md)", background: C.soft, font: `400 var(--t-caption)/1 ${MONO}` }} />
-              <button type="submit" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: C.ink, color: C.white, cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Posponer</button>
+              <input type="datetime-local" value={when} min={toLocalInput(new Date())} onChange={(e) => setWhen(e.target.value)} aria-label="Hasta cuándo" style={{ flex: 1, minWidth: 0, height: "32px", padding: "0 8px", border: 0, borderRadius: "var(--r-sm)", background: C.soft, font: `400 var(--t-caption)/1 ${MONO}` }} />
+              <button type="submit" style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-caption)", fontWeight: 600 }}>Posponer</button>
             </form>
           ) : <Item icon={CalendarClock} text="Elegir día y hora…" onClick={() => setCustom(true)} />}
-          <Rule />
         </>
       ) : null}
-      {task.archived ? <Item icon={ArchiveRestore} text="Desarchivar" onClick={() => archive(false)} /> : <Item icon={Archive} text="Archivar" note={task.running ? "trabaja" : null} onClick={() => archive(true)} />}
-      {!task.archived ? <Item text="Archivar sola" note={task.autoArchive === false ? "desactivado" : "activado"} onClick={() => auto(task.autoArchive === false)} /> : null}
       <Rule />
-      <Item icon={Trash2} text="Borrar la tarea" tone={C.red} onClick={remove} />
+      {!task.archived ? <Item icon={Archive} text="Archivar" danger note={task.running ? "trabaja" : null} onClick={() => archive(true)} /> : null}
+      <Item icon={Trash2} text="Borrar la tarea" danger confirm="Pulsa otra vez: borra su copia" onClick={remove} />
     </>
   );
 }
 
 function TaskMenu({ task, current, menu }) {
   return (
-    <MenuSheet menu={menu} label={"Acciones de «" + task.title + "»"}>
+    <MenuSheet menu={menu} label={"Acciones de «" + task.title + "»"} width={290}>
       <TaskActions task={task} current={current} done={menu.close} />
     </MenuSheet>
   );
@@ -140,43 +97,65 @@ export function ProjectMenu({ project, menu }) {
   const days = [[null, "Según Ajustes"], [0, "Nunca"], [1, "Tras 1 día"], [3, "Tras 3 días"], [7, "Tras 7 días"], [14, "Tras 14 días"], [30, "Tras 30 días"]];
   return (
     <MenuSheet menu={menu} label={"Archivado de " + project.name} width={262}>
-      <Heading>Archivar las inactivas</Heading>
-      {days.map(([d, label]) => <Item key={String(d)} text={label} on={(own.idleDays ?? null) === d} onClick={() => set({ idleDays: d })} />)}
+      <Heading>Archivar las tareas quietas</Heading>
+      {days.map(([d, label]) => <Item key={String(d)} icon={d === null ? Settings2 : Hourglass} text={label} on={(own.idleDays ?? null) === d} onClick={() => set({ idleDays: d })} />)}
       <Rule />
       <Heading>Si tienen una PR abierta</Heading>
-      {[[null, "Según Ajustes"], [true, "Conservarlas"], [false, "Archivarlas igual"]].map(([v, label]) => <Item key={String(v)} text={label} on={(own.keepWithPr ?? null) === v} onClick={() => set({ keepWithPr: v })} />)}
+      {[[null, "Según Ajustes", Settings2], [true, "Conservarlas", GitPullRequest], [false, "Archivarlas igual", Archive]].map(([v, label, icon]) => <Item key={String(v)} icon={icon} text={label} on={(own.keepWithPr ?? null) === v} onClick={() => set({ keepWithPr: v })} />)}
       <Rule />
-      <Item text="Más en Ajustes" note="›" onClick={() => { menu.close(); navigate("/ajustes/autonomia#codigo-archivar"); }} />
+      <Item icon={Settings2} text="Más en Ajustes" onClick={() => { menu.close(); navigate("/ajustes/autonomia#codigo-archivar"); }} />
     </MenuSheet>
   );
 }
 
-/** The mono line under a task: project · branch · PR, or when it comes back. */
+const ROW = { position: "relative", display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 14px 8px 16px", borderTop: "1px solid var(--c-line)", color: C.ink, textDecoration: "none" };
+const META = { font: `400 var(--t-caption)/1.3 ${MONO}`, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const TITLE = { fontSize: "var(--t-ui)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const SMALL = { display: "inline-flex", alignItems: "center", gap: "5px", height: "22px", padding: "0 7px", borderRadius: "var(--r-xs)", fontSize: "var(--t-caption)", fontWeight: 500, whiteSpace: "nowrap" };
+const TONE = {
+  honey: { background: C.honey, color: "var(--c-honey-ink)" }, error: { background: "var(--c-error-soft)", color: "var(--c-error)" },
+  warn: { background: "var(--c-warn-soft)", color: "var(--c-warn)" }, run: { background: "var(--c-accent-soft)", color: "var(--c-accent-ink)" },
+};
+
+/** «CI pasa / falla / en curso» with its mark (colour is never the only cue). */
+export function CiChip({ task }) {
+  const ci = ciOf(task);
+  if (!ci) return null;
+  const look = ci.state === "failing" ? TONE.error : ci.state === "passing" ? { background: "var(--c-ok-soft)", color: "var(--c-ok-ink)" } : { background: C.track, color: C.text2 };
+  const Mark = ci.state === "failing" ? CircleX : ci.state === "passing" ? Check : LoaderCircle;
+  return <span style={{ ...SMALL, ...look }} title={"PR #" + task.pr.number + " · " + ci.text}><Mark size={12} weight="bold" aria-hidden="true" />{ci.text}</span>;
+}
+
+/** «+12 −3» in the code font. */
+const Diffstat = ({ add, del: d }) => (add || d ? (
+  <span style={{ font: `500 var(--t-caption)/1 ${MONO}`, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }} aria-label={`${add || 0} líneas añadidas, ${d || 0} quitadas`}>
+    <span style={{ color: C.greenText }}>+{add || 0}</span> <span style={{ color: C.red }}>−{d || 0}</span>
+  </span>
+) : null);
+
+/** The quiet line under the title: project · branch, or when it comes back. */
 function metaOf(task, project) {
   const parts = [project?.name];
   if (task.snoozed) parts.push("vuelve " + whenLabel(task.snoozed.until));
   else if (task.archived) parts.push("archivada " + timeAgo(task.archived.at));
   else {
     if (task.branch && !task.saved) parts.push(task.branch);
-    if (task.pr?.number) parts.push("PR #" + task.pr.number);
-    if (task.saved || task.merged || !task.branch) parts.push(timeAgo(task.updatedAt));
+    parts.push(timeAgo(task.updatedAt));
   }
   return parts.filter(Boolean).join(" · ");
 }
 
-const ROW = { position: "relative", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", minHeight: "64px", padding: "10px 18px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", color: C.ink };
-const META = { font: `400 var(--t-meta)/1.3 ${MONO}`, color: C.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-const TITLE = { fontSize: "var(--t-body)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-
 function TaskRow({ task, project, bots }) {
-  const menu = useMenu();
-  const pill = pillOf(task);
+  const menu = useMenu(290);
+  const need = needOf(task);
+  const running = task.running || task.status === "working";
+  const pr = task.pr?.number && task.pr.state !== "CLOSED" ? task.pr : null;
   return (
     <a href={"/codigo/" + task.id} className="code-hover code-task" style={{ ...ROW, opacity: task.archived ? 0.75 : 1 }}>
-      <BotShape bot={botOf(bots, task)} size={16} state={pill.tone === "run" ? "work" : "rest"} />
-      <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+      <BotShape bot={botOf(bots, task)} size={20} state={running ? "work" : "rest"} />
+      <span style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
         <span style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-          {task.pinned ? <Pin size={12} strokeWidth={2.4} color={C.faint} aria-label="Fijada" style={{ flex: "none" }} /> : null}
+          {task.pinned ? <Pin size={12} color={C.faint} aria-label="Fijada" style={{ flex: "none" }} /> : null}
           <span style={TITLE}>{task.title}</span>
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
@@ -184,11 +163,20 @@ function TaskRow({ task, project, bots }) {
           {task.overlaps?.length ? <OverlapChip overlap={task.overlaps[0]} more={task.overlaps.length - 1} /> : null}
         </span>
       </span>
-      {task.add || task.del ? <span style={{ font: `500 var(--t-meta)/1 ${MONO}`, whiteSpace: "nowrap" }}><span style={{ color: C.greenText }}>{task.add ? "+" + task.add : ""}</span> <span style={{ color: C.red }}>{task.del ? "−" + task.del : ""}</span></span> : null}
-      <span className="code-pill" style={{ display: "flex" }}><Pill pill={pill} /></span>
+      <span className="code-chips" style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px" }}>
+        <span style={{ ...SMALL, padding: 0 }} title={ENGINE_NAME[task.engine] || "Claude Code"}><EngineMark engine={task.engine} size={16} /><span style={SR}>{ENGINE_NAME[task.engine] || "Claude Code"}</span></span>
+        <Diffstat add={task.add} del={task.del} />
+        {pr ? <span style={{ ...SMALL, background: C.track, color: C.text2 }}><GitPullRequest size={12} aria-hidden="true" />#{pr.number}</span> : null}
+        {need && ciOf(task)?.state === "failing" ? null : <CiChip task={task} />}
+      </span>
+      <span className="code-pill" style={{ flex: "none", width: "168px", display: "flex", justifyContent: "flex-end" }}>
+        {need ? <span style={{ ...SMALL, height: "24px", padding: "0 9px", fontWeight: 600, borderRadius: "var(--r-pill)", ...TONE[need.tone] }}>{need.text}</span>
+          : running ? <span style={{ ...SMALL, height: "24px", padding: "0 9px", fontWeight: 600, borderRadius: "var(--r-pill)", ...TONE.run }}><span aria-hidden="true" className="code-pulse" style={{ width: "6px", height: "6px", borderRadius: "var(--r-circle)", background: "currentColor" }} />Trabajando</span>
+            : <span style={{ fontSize: "var(--t-caption)", color: C.muted, whiteSpace: "nowrap" }}>{stateText(task)}</span>}
+      </span>
       <button type="button" className={menu.at ? undefined : "code-x"} onClick={menu.open} aria-label={"Acciones de la tarea " + task.title} aria-haspopup="menu" aria-expanded={!!menu.at} title="Fijar, posponer, archivar o borrar"
-        style={{ position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", padding: 0, display: "grid", placeItems: "center", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-pill)", background: C.white, color: C.text, cursor: "pointer" }}>
-        <Ellipsis size={15} strokeWidth={2.4} aria-hidden="true" />
+        style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", width: "30px", height: "30px", padding: 0, display: "grid", placeItems: "center", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: C.text, cursor: "pointer" }}>
+        <Ellipsis size={16} aria-hidden="true" />
       </button>
       <TaskMenu task={task} current={false} menu={menu} />
     </a>
@@ -200,8 +188,8 @@ function OverlapChip({ overlap, more = 0 }) {
   const open = (e) => { e.preventDefault(); e.stopPropagation(); navigate("/codigo/" + overlap.task); };
   return (
     <button type="button" onClick={open} title={`También los cambia «${overlap.title}»: ${overlap.files.join(", ")}${overlap.count > overlap.files.length ? "…" : ""}. Al fusionar pueden chocar.`}
-      style={{ flex: "0 1 auto", minWidth: 0, display: "inline-flex", alignItems: "center", gap: "5px", height: "20px", padding: "0 8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-honey-soft)", color: C.honeyText, cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-      <Files size={11} strokeWidth={2.4} aria-hidden="true" style={{ flex: "none" }} />
+      style={{ flex: "0 1 auto", minWidth: 0, display: "inline-flex", alignItems: "center", gap: "5px", height: "20px", padding: "0 8px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-warn-soft)", color: "var(--c-warn)", cursor: "pointer", font: `500 var(--t-caption)/1 ${MONO}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <Files size={11} aria-hidden="true" style={{ flex: "none" }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>mismos archivos que «{overlap.title}»{more > 0 ? " y " + (more === 1 ? "otra" : more + " más") : ""}</span>
     </button>
   );
@@ -230,12 +218,12 @@ function useConversationHits(q) {
 /** A match inside a task's conversation: the task, its project, the words around the match and when. */
 function HitRow({ hit, query }) {
   return (
-    <a href={withMessage("/codigo/" + hit.taskId, hit.itemId)} className="code-hover" style={{ ...ROW, minHeight: "58px", alignItems: "flex-start", flexWrap: "nowrap", opacity: hit.archived ? 0.8 : 1 }}>
-      <MessageSquareText size={15} strokeWidth={2.1} color={C.faint} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
+    <a href={withMessage("/codigo/" + hit.taskId, hit.itemId)} className="code-hover" style={{ ...ROW, minHeight: "58px", alignItems: "flex-start" }}>
+      <MessageSquareText size={16} color={C.faint} aria-hidden="true" style={{ flex: "none", marginTop: "2px" }} />
       <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
         <span style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-          <span style={{ ...TITLE, fontSize: "var(--t-ui)" }}>{hit.title}</span>
-          {hit.archived ? <span style={{ flex: "none", height: "18px", padding: "0 7px", display: "inline-flex", alignItems: "center", borderRadius: "var(--r-pill)", background: C.track, font: `500 var(--t-micro)/1 ${MONO}`, color: C.muted }}>archivada</span> : null}
+          <span style={TITLE}>{hit.title}</span>
+          {hit.archived ? <span style={{ ...SMALL, height: "18px", background: C.track, color: C.muted }}>archivada</span> : null}
         </span>
         <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: C.text2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", wordBreak: "break-word" }}>
           {hit.who ? <span style={{ fontWeight: 600, color: C.ink }}>{hit.who}: </span> : null}<Highlight text={hit.snippet} query={query} />
@@ -247,24 +235,45 @@ function HitRow({ hit, query }) {
 }
 
 /** Several engines with the same request: one row that opens the comparison. */
-function CompareRow({ row, project, bots }) {
-  const working = row.section === "work";
-  const pill = working ? pillOf({ running: true }) : pillOf({ turns: 1 });
+function CompareRow({ group, tasks, project, bots }) {
+  const working = tasks.some((t) => t.running || t.status === "working");
+  const title = String(tasks[0].title).replace(/ · [^·]+(?: · [^·]+)?$/, "");
   return (
-    <a href={"/codigo/comparar/" + row.group} className="code-hover" style={ROW}>
-      <BotShape bot={botOf(bots, row.tasks[0])} size={16} state={working ? "work" : "rest"} />
-      <span style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
-        <span style={TITLE}>{row.title}</span>
-        <span style={META}>{[project?.name, row.tasks.length + " propuestas para comparar"].filter(Boolean).join(" · ")}</span>
+    <a href={"/codigo/comparar/" + group} className="code-hover code-task" style={ROW}>
+      <BotShape bot={botOf(bots, tasks[0])} size={20} state={working ? "work" : "rest"} />
+      <span style={{ flex: "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
+        <span style={TITLE}>{title}</span>
+        <span style={META}>{[project?.name, tasks.length + " motores con la misma petición"].filter(Boolean).join(" · ")}</span>
       </span>
-      <Pill pill={pill} />
+      <span className="code-chips" style={{ flex: "none", display: "flex", alignItems: "center", gap: "6px" }}>
+        {tasks.map((t) => <span key={t.id} title={t.label || ENGINE_NAME[t.engine]} style={{ display: "inline-flex" }}><EngineMark engine={t.engine} size={14} /></span>)}
+      </span>
+      <span className="code-pill" style={{ flex: "none", width: "168px", display: "flex", justifyContent: "flex-end" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-caption)", color: C.muted }}><Columns3 size={14} aria-hidden="true" />{working ? "Trabajando" : "Comparar y elegir"}</span>
+      </span>
     </a>
   );
 }
 
+/** Tasks started together with several engines collapse into one comparison row (2+ still open). */
+function rowsOf(tasks) {
+  const groups = new Map();
+  for (const t of tasks) if (t.group && !t.archived) groups.set(t.group, [...(groups.get(t.group) || []), t]);
+  const seen = new Set();
+  const out = [];
+  for (const t of tasks) {
+    const list = t.group && !t.archived ? groups.get(t.group) : null;
+    if (!list || list.length < 2) { out.push({ key: t.id, task: t }); continue; }
+    if (seen.has(t.group)) continue;
+    seen.add(t.group);
+    out.push({ key: t.group, group: t.group, tasks: list });
+  }
+  return out;
+}
+
 /**
- * «Tareas»: three parts (te esperan, en marcha, pospuestas y hechas) and the archived ones folded
- * at the end. `filter` is a project id (from «Proyectos») or null; `onClearFilter` drops it.
+ * «Tareas»: the groups of flow.js (needs you · working · ready · done; put off and archived folded).
+ * `filter` is a project id (from «Proyectos») or null; `onClearFilter` drops it.
  */
 export default function TaskSections({ projects = [], filter = null, onClearFilter }) {
   const { bots } = useStore();
@@ -276,59 +285,68 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
   const byId = new Map(projects.map((p) => [p.id, p]));
   const all = projects.flatMap((p) => p.tasks).filter((t) => !hiddenTask(t.id) && (!filter || t.projectId === filter) && (!query || fold(t.title).includes(query)));
   const total = projects.reduce((n, p) => n + p.tasks.length, 0);
-  const sections = homeSections(all);
+  // A comparison goes where its most urgent task goes.
+  const sections = listSections(all);
   const filtered = filter ? byId.get(filter) : null;
   // «Buscar en las tareas» also finds what was said in them (archived tasks too).
   const found = useConversationHits(q);
   const said = found.list.filter((h) => !hiddenTask(h.taskId) && (!filter || h.projectId === filter));
   return (
-    <section aria-labelledby="tasks-t" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", minHeight: "22px" }}>
-        <h2 id="tasks-t" style={{ margin: 0, font: "600 var(--t-read)/1.3 'Geist', sans-serif" }}>Tareas</h2>
+    <section aria-labelledby="tasks-t" style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", minHeight: "32px" }}>
+        <h2 id="tasks-t" style={{ margin: 0, fontSize: "var(--t-read)", fontWeight: 600 }}>Tareas</h2>
         {filtered ? (
           <button type="button" onClick={onClearFilter} title="Ver las tareas de todos los proyectos" style={{ display: "inline-flex", alignItems: "center", gap: "6px", height: "26px", padding: "0 8px 0 11px", border: 0, borderRadius: "var(--r-pill)", background: C.track, cursor: "pointer", font: `500 var(--t-meta)/1 ${MONO}`, color: C.ink }}>
-            {filtered.name}<X size={13} strokeWidth={2.4} aria-label="Quitar el filtro" />
+            {filtered.name}<X size={14} aria-label="Quitar el filtro" />
           </button>
         ) : null}
         <span style={{ flex: 1 }} />
         {total || query ? (
-          <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "240px", padding: "0 12px", borderRadius: "var(--r-pill)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .1)", color: C.muted }}>
-            <Search size={14} strokeWidth={2.2} aria-hidden="true" />
+          <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "260px", padding: "0 10px", borderRadius: "var(--r-sm)", background: "var(--c-card)", border: "1px solid var(--c-line)", color: C.muted }}>
+            <Search size={16} aria-hidden="true" />
             <span style={SR}>Buscar en las tareas</span>
             <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)" }} />
           </label>
         ) : null}
       </div>
       {!sections.length && !said.length && found.answered ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "20px", borderRadius: "var(--r-xl)", background: C.white }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "20px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-card)" }}>
           <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{query ? "Ninguna tarea coincide" : filtered ? "Este proyecto aún no tiene tareas" : "Aún no hay tareas"}</span>
-          <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2 }}>{query ? "Prueba con otras palabras." : "Cuenta arriba qué quieres construir y pulsa «Empezar». Bruno trabaja en una copia aparte y aquí verás cómo va."}</span>
+          <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2 }}>{query ? "Prueba con otras palabras." : "Escribe arriba qué quieres construir y pulsa «Empezar». Bruno trabaja en una copia aparte; aquí verás en qué está y qué te necesita."}</span>
         </div>
       ) : null}
       {sections.map((g) => {
-        const shelf = g.key === "archived";
-        const open = !shelf || !!query || !!shelves.archived;
+        const shelf = g.key === "archived" || g.key === "snoozed";
+        const open = !shelf || !!query || !!shelves[g.key];
+        const rows = rowsOf(g.tasks);
+        const head = { display: "flex", alignItems: "center", gap: "8px", padding: "0 2px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.text2 };
         return (
-          <div key={g.key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          <div key={g.key} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {shelf ? (
-              <button type="button" onClick={() => toggleShelf("archived")} aria-expanded={open} style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "6px", padding: "0 4px", border: 0, background: "transparent", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>
-                <ChevronRight size={13} strokeWidth={2.6} aria-hidden="true" style={{ transition: "transform .2s ease", transform: open ? "rotate(90deg)" : "none" }} />{g.title} · {g.rows.length}
+              <button type="button" onClick={() => toggleShelf(g.key)} aria-expanded={open} style={{ ...head, alignSelf: "flex-start", minHeight: "28px", border: 0, background: "transparent", cursor: "pointer", color: C.muted }}>
+                <ChevronRight size={14} weight="bold" aria-hidden="true" style={{ transition: "transform .2s ease", transform: open ? "rotate(90deg)" : "none" }} />{g.title}<span style={{ fontWeight: 400 }}>{g.tasks.length}</span>
               </button>
-            ) : <h3 style={{ margin: 0, padding: "0 4px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>{g.title}</h3>}
+            ) : (
+              <h3 style={{ ...head, margin: 0 }}>
+                {g.title}
+                {g.key === "needs" ? <span style={{ minWidth: "20px", height: "20px", padding: "0 6px", display: "inline-grid", placeItems: "center", borderRadius: "var(--r-pill)", background: C.honey, color: "var(--c-honey-ink)", fontSize: "var(--t-micro)", fontWeight: 600 }}>{g.tasks.length}</span>
+                  : <span style={{ fontWeight: 400, color: C.muted }}>{g.tasks.length}</span>}
+              </h3>
+            )}
             {open ? (
-              <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: C.white, overflow: "hidden" }}>
-                {g.rows.map((r) => r.kind === "compare"
-                  ? <CompareRow key={r.group} row={r} project={byId.get(r.tasks[0].projectId)} bots={bots} />
-                  : <TaskRow key={r.task.id} task={r.task} project={byId.get(r.task.projectId)} bots={bots} />)}
+              <div style={{ display: "flex", flexDirection: "column", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-card)", overflow: "hidden" }} className="code-rows">
+                {rows.map((r) => r.group
+                  ? <CompareRow key={r.key} group={r.group} tasks={r.tasks} project={byId.get(r.tasks[0].projectId)} bots={bots} />
+                  : <TaskRow key={r.key} task={r.task} project={byId.get(r.task.projectId)} bots={bots} />)}
               </div>
             ) : null}
           </div>
         );
       })}
       {said.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <h3 style={{ margin: 0, padding: "0 4px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.muted }}>En las conversaciones · {said.length}</h3>
-          <div style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-xl)", background: C.white, overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <h3 style={{ margin: 0, padding: "0 2px", fontSize: "var(--t-meta)", fontWeight: 600, color: C.text2 }}>En las conversaciones · {said.length}</h3>
+          <div style={{ display: "flex", flexDirection: "column", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-card)", overflow: "hidden" }} className="code-rows">
             {said.map((h) => <HitRow key={h.itemId} hit={h} query={q.trim()} />)}
           </div>
         </div>

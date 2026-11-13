@@ -54,7 +54,7 @@ export function SharedTask({ id }) {
             <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 12px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>
               <span style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 600, color: "var(--c-text)" }}><span aria-hidden="true" style={{ width: "8px", height: "8px", borderRadius: "var(--r-circle)", background: st.dot, animation: s.running ? "breathe 1.4s ease-in-out infinite" : "none" }} />{st.text}</span>
               {s.branch ? <span title={s.branch} style={{ display: "flex", alignItems: "center", gap: "5px", fontFamily: MONO, fontSize: "var(--t-caption)", maxWidth: "280px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><GitBranch size={13} strokeWidth={2} aria-hidden="true" />{s.branch}</span> : null}
-              {s.add || s.del ? <span style={{ fontFamily: MONO, fontSize: "var(--t-caption)" }}><span style={{ color: C.ok }}>{"+" + s.add}</span>{" "}<span style={{ color: "var(--c-error)" }}>{"−" + s.del}</span></span> : null}
+              {s.add || s.del ? <span style={{ fontFamily: MONO, fontSize: "var(--t-caption)" }}><span style={{ color: "var(--c-ok-ink)" }}>{"+" + s.add}</span>{" "}<span style={{ color: "var(--c-error)" }}>{"−" + s.del}</span></span> : null}
             </span>
           </div>
           {looking.length ? (
@@ -183,7 +183,7 @@ function Changes({ item, asked, onAsk, onComment, first, reviewing = false }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-        <strong style={{ flex: 1, font: "600 var(--t-lead)/1.2 'Bricolage Grotesque', sans-serif" }}>{"Cambios"}{diff ? <span style={{ marginLeft: "10px", font: "500 var(--t-meta)/1 'Geist Mono', monospace" }}><span style={{ color: C.ok }}>{"+" + diff.add}</span>{" "}<span style={{ color: "var(--c-error)" }}>{"−" + diff.del}</span></span> : null}</strong>
+        <strong style={{ flex: 1, font: "600 var(--t-lead)/1.2 'Bricolage Grotesque', sans-serif" }}>{"Cambios"}{diff ? <span style={{ marginLeft: "10px", font: "500 var(--t-meta)/1 'Geist Mono', monospace" }}><span style={{ color: "var(--c-ok-ink)" }}>{"+" + diff.add}</span>{" "}<span style={{ color: "var(--c-error)" }}>{"−" + diff.del}</span></span> : null}</strong>
         <button type="button" onClick={onAsk} disabled={asked && !diff} style={{ display: "flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: diff ? "rgb(var(--c-ink-rgb) / .06)" : "var(--c-btn)", color: diff ? C.text : "var(--c-btn-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}><FileDiff size={14} strokeWidth={2.2} aria-hidden="true" />{asked && !diff ? "Pidiéndoselos a " + first + "…" : diff ? "Actualizar" : "Ver los cambios"}</button>
       </span>
       {diff?.tooBig ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-honey-text)" }}>{"Son demasiados para enviarlos aquí: solo la lista de archivos. Míralos en vuestro repositorio."}</span> : null}
@@ -192,7 +192,7 @@ function Changes({ item, asked, onAsk, onComment, first, reviewing = false }) {
         <div key={file.path} style={{ borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .06)", font: "500 var(--t-meta)/1.3 'Geist Mono', monospace" }}>
             <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.path}</span>
-            <span style={{ color: C.ok }}>{"+" + file.add}</span><span style={{ color: "var(--c-error)" }}>{"−" + file.del}</span>
+            <span style={{ color: "var(--c-ok-ink)" }}>{"+" + file.add}</span><span style={{ color: "var(--c-error)" }}>{"−" + file.del}</span>
           </div>
           {file.binary ? <p style={{ margin: 0, padding: "10px 14px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Archivo binario"}</p> : (
             <div style={{ overflowX: "auto", font: "400 var(--t-caption)/1.6 'Geist Mono', monospace" }}>

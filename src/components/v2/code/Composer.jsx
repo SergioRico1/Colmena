@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUp, Ellipsis, X } from "../../Icon.js";
+import { ArrowUp, Ellipsis, X, Wrench, ListChecks, Lightning, FolderCode, ShieldCheck, LockOpen } from "../../Icon.js";
 import { C, Seg, MenuChip, MenuItem, MODEL_LABEL, EFFORT_LABEL, ACCESS_INFO, SR } from "./parts.jsx";
 import { useComposerExtras } from "./Extras.jsx";
 import EngineModelMenu, { ENGINE_NAME, EngineMark, modelNote } from "./EngineModels.jsx";
@@ -129,8 +129,8 @@ export default function Composer({ task = null, models = [], busy = false, runni
                   {onMode ? (
                     <>
                       <MenuHeading>Modo</MenuHeading>
-                      <MenuItem title="Construir" text="Bruno hace los cambios." on={mode === "build"} onClick={() => { onMode("build"); close(); }} />
-                      <MenuItem title="Plan" text="Primero un plan; nada cambia hasta «Implementar»." on={mode === "plan"} onClick={() => { onMode("plan"); close(); }} />
+                      <MenuItem icon={<Wrench size={16} />} title="Construir" text="Bruno hace los cambios." on={mode === "build"} onClick={() => { onMode("build"); close(); }} />
+                      <MenuItem icon={<ListChecks size={16} />} title="Plan" text="Primero un plan; nada cambia hasta «Implementar»." on={mode === "plan"} onClick={() => { onMode("plan"); close(); }} />
                     </>
                   ) : null}
                   <MenuHeading>{"Motor y modelo · " + engineLabel}</MenuHeading>
@@ -138,7 +138,7 @@ export default function Composer({ task = null, models = [], busy = false, runni
                     <EngineModelMenu engines={engines} current={{ engine: task.engine, model: task.model }} close={close}
                       onPick={(engine, model) => onChange(engine === task.engine ? { model } : { engine, model })}
                       switchNote={running ? "Si eliges otro motor, sigue con él al acabar este turno." : "Otro motor sigue en la misma copia, con lo hablado hasta ahora."} />
-                  ) : shown.map((m) => <MenuItem key={m.id} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
+                  ) : shown.map((m) => <MenuItem key={m.id} icon={<EngineMark engine={task.engine} size={16} />} title={(ENGINE_NAME[task.engine] || "Claude Code") + " · " + m.label} text={modelNote(m)} on={task.model === m.id} onClick={() => { onChange({ model: m.id }); close(); }} />)}
                   <MenuHeading>{"Esfuerzo · " + (EFFORT_LABEL[task.effort] || task.effort)}</MenuHeading>
                   <EffortItems task={task} onChange={onChange} close={close} />
                   <MenuHeading>{"Qué puede hacer Bruno · " + (ACCESS_INFO[task.access]?.label || "Su copia")}</MenuHeading>
@@ -160,17 +160,17 @@ export default function Composer({ task = null, models = [], busy = false, runni
 
 // The same choices inline and inside «…».
 function EffortItems({ task, onChange, close }) {
-  return Object.entries(EFFORT_LABEL).map(([id, label]) => <MenuItem key={id} title={label} on={task.effort === id} onClick={() => { onChange({ effort: id }); close(); }} />);
+  return Object.entries(EFFORT_LABEL).map(([id, label]) => <MenuItem key={id} icon={<Lightning size={16} />} title={label} on={task.effort === id} onClick={() => { onChange({ effort: id }); close(); }} />);
 }
 function AccessItems({ task, onChange, close }) {
   return (
     <>
-      {Object.entries(ACCESS_INFO).map(([id, a]) => <MenuItem key={id} title={a.title} text={a.text} on={task.access === id} onClick={() => { onChange({ access: id }); close(); }} />)}
+      {Object.entries(ACCESS_INFO).map(([id, a]) => <MenuItem key={id} icon={id === "full" ? <LockOpen size={16} /> : id === "ask" ? <ShieldCheck size={16} /> : <FolderCode size={16} />} title={a.title} text={a.text} on={task.access === id} onClick={() => { onChange({ access: id }); close(); }} />)}
       <p style={{ margin: "6px 12px 6px", fontSize: "var(--t-caption)", lineHeight: 1.5, color: C.faint }}>Siempre te pregunta antes de publicar, subir a GitHub, borrar fuera del proyecto o instalar programas en Windows.</p>
     </>
   );
 }
-const MenuHeading = ({ children }) => <span style={{ display: "block", padding: "10px 12px 4px", font: "500 var(--t-micro)/1.3 'Geist Mono', monospace", letterSpacing: "0.06em", textTransform: "uppercase", color: C.faint }}>{children}</span>;
+const MenuHeading = ({ children }) => <span role="presentation" style={{ display: "block", padding: "10px 12px 4px", fontSize: "var(--t-caption)", fontWeight: 600, color: C.muted }}>{children}</span>;
 
 export const modelLabel = (models, id) => models.find((m) => m.id === id)?.label || MODEL_LABEL[id] || id;
 
