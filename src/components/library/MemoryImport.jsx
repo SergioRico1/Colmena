@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ClipboardPaste, FileJson, ShieldCheck, X } from "../Icon.js";
 import { post } from "../../lib/api.js";
+import { isCloud } from "../../lib/cloud.js";
 import { IMPORT_LIMITS, parseConversations, parseMemoryText } from "../../lib/chatgptImport.js";
 
 // «Traer lo que ChatGPT sabe de ti»: choose where from → review every line (keep, edit, «Sobre
@@ -139,7 +140,7 @@ export default function MemoryImport({ onClose, onDone }) {
               </div>
               <p style={{ margin: 0, display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-2)" }}>
                 <ShieldCheck size={16} strokeWidth={2} aria-hidden="true" style={{ flex: "none", marginTop: "1px", color: "var(--c-ok-ink)" }} />
-                {"Se lee en este ordenador: el archivo no se modifica ni se envía a ningún sitio. Nunca se guardan claves, teléfonos ni datos de pago."}
+                {isCloud() ? "Se lee en tu navegador: el archivo no se modifica y solo se guarda lo que elijas. Nunca se guardan claves, teléfonos ni datos de pago." : "Se lee en este ordenador: el archivo no se modifica ni se envía a ningún sitio. Nunca se guardan claves, teléfonos ni datos de pago."}
               </p>
             </>
           ) : null}

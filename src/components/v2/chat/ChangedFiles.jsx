@@ -6,6 +6,7 @@ import DocPages, { VisualNotes, useVisual } from "../../room/DocPages.jsx";
 import { CHANGE_WORD, deltaLabel, fileOfLink, fileTypeOf, sizeLabel, turnChanges } from "../../../lib/turnFiles.js";
 import { dragOutProps, workFileUrl } from "../../../lib/dragOut.js";
 import { plural } from "../../../lib/undo.js";
+import { isCloud } from "../../../lib/cloud.js";
 
 // «Archivos cambiados» (server/turn-changes.mjs): the turn of a bot that changed files ends with
 // this card — each file with what changed (+lines −lines, or its size) — and each one opens
@@ -198,7 +199,9 @@ export function CompareDialog({ missionId, cpId, file, onClose }) {
   }, [base, file.path, file.scope]);
   const rows = useMemo(() => (diff?.patch ? parsePatch(diff.patch) : []), [diff?.patch]);
   const textual = diff && (diff.mode === "text" || diff.mode === "document");
-  const showPages = diff?.mode === "visual" || (diff?.mode === "document" && diff.visual && look === "pages");
+  // Hosted (src/lib/cloud.js): no Office to turn a document into pages.
+  const officePages = !!diff?.visual && !isCloud();
+  const showPages = diff?.mode === "visual" || (diff?.mode === "document" && officePages && look === "pages");
   const d = deltaLabel(file);
   const seg = (on) => ({ display: "inline-flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", color: on ? "var(--c-text)" : "var(--c-text-2)" });
   const fileForVisual = { ...file, kind: diff?.mode === "document" ? "office" : file.kind, before: diff?.before ?? (file.before != null ? { size: file.before } : null), after: diff?.after ?? (file.after != null ? { size: file.after } : null) };
@@ -213,7 +216,7 @@ export function CompareDialog({ missionId, cpId, file, onClose }) {
               {[file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/")) : null, file.folder ? `en «${file.folder}»` : null, CHANGE_WORD[file.change], d.text].filter(Boolean).join(" · ")}
             </span>
           </span>
-          {diff?.mode === "document" && diff.visual ? (
+          {diff?.mode === "document" && officePages ? (
             <span role="group" aria-label="Cómo compararlo" style={{ display: "inline-flex", padding: "3px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)" }}>
               <button type="button" aria-pressed={look === "text" ? "true" : "false"} onClick={() => setLook("text")} style={seg(look === "text")}>{"Texto"}</button>
               <button type="button" aria-pressed={look === "pages" ? "true" : "false"} onClick={() => setLook("pages")} style={seg(look === "pages")}>{"Con formato"}</button>
@@ -246,7 +249,7 @@ export function CompareDialog({ missionId, cpId, file, onClose }) {
             </div>
           ) : textual ? (
             <>
-              {diff.mode === "document" ? <p style={{ margin: "0 0 10px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{"Se compara su texto" + (diff.visual ? "; «Con formato» muestra sus páginas antes y después." : ".")}</p> : null}
+              {diff.mode === "document" ? <p style={{ margin: "0 0 10px", fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{"Se compara su texto" + (officePages ? "; «Con formato» muestra sus páginas antes y después." : ".")}</p> : null}
               {diff.same ? <p style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{"Su texto no cambió (cambió el formato u otra cosa del archivo)."}</p> : (
                 <div style={{ borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)", overflow: "hidden", font: `400 var(--t-meta)/1.75 ${MONO}` }}>
                   {split ? <Split rows={rows} /> : <Unified rows={rows} />}

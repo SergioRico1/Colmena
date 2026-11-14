@@ -4,6 +4,7 @@
 import { useEffect, useId, useRef } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import { PersonAvatar } from "../components/room/Author.jsx";
+import BotFace from "../components/BotFace.jsx";
 import { X } from "../components/Icon.js";
 import { useTopTitle } from "./title.js";
 import { personOf, useChat } from "./store.js";
@@ -32,6 +33,8 @@ export function ChatPage({ title, top = null, icon = null, sub = null, actions =
 export function Avatar({ id, size = 32, presence = true }) {
   const s = useChat();
   const p = personOf(id, s) || { name: "?" };
+  // A bot of the company (Phase 3): its pixel character, from its id and name.
+  if (p.bot && p.botId) return <BotFace bot={{ id: p.botId, name: p.name }} size={size} decorative />;
   const online = presence && !p.ghost ? (s.presence.get(p.id) === "active" ? "online" : s.presence.get(p.id) === "away" ? "away" : null) : null;
   return <PersonAvatar person={{ name: p.name, color: p.color || null }} size={size} presence={online === "online" ? "online" : online ? "offline" : null} ring="var(--c-app)" />;
 }

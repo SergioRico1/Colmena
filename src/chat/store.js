@@ -9,7 +9,7 @@ import { isCloud, sendLive } from "../lib/cloud.js";
 
 const listeners = new Set();
 const eventListeners = new Set();
-let state = { ready: false, error: null, me: null, people: new Map(), ghosts: new Map(), channels: new Map(), presence: new Map(), typing: new Map(), settings: {}, push: {}, workspace: null };
+let state = { ready: false, error: null, me: null, people: new Map(), bots: new Map(), ghosts: new Map(), channels: new Map(), presence: new Map(), typing: new Map(), settings: {}, push: {}, workspace: null };
 let loading = null;
 let openChannel = null;
 let away = false;
@@ -31,6 +31,8 @@ export function loadChat({ force = false } = {}) {
     set({
       ready: true, error: null, me: b.me, workspace: b.workspace, settings: b.settings || {}, push: b.push || {},
       people: new Map(b.people.map((p) => [p.id, p])),
+      // The company's bots (Phase 3): named in text as <@bot:<id>>, they answer as author "bot:<id>".
+      bots: new Map((b.bots || []).map((x) => ["bot:" + x.id, { ...x, id: "bot:" + x.id, botId: x.id, bot: true }])),
       channels: new Map(b.channels.map((c) => [c.id, c])),
       presence: new Map(b.people.filter((p) => p.presence !== "offline").map((p) => [p.id, p.presence])),
     });
@@ -55,6 +57,7 @@ export function personOf(id, s = state) {
   if (!id) return null;
   const p = s.people.get(id);
   if (p) return p;
+  if (String(id).startsWith("bot:")) return s.bots?.get(id) || { id, name: "Bot", bot: true, botId: String(id).slice(4) };
   const g = s.ghosts.get(id);
   if (g?.person && s.people.get(g.person)) return s.people.get(g.person);
   if (g) return { id, name: g.name, title: g.title, ghost: true, bot: g.bot, color: g.color };

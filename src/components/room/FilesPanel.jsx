@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, ChevronRight, Copy, Download, File, FileImage, FileSpreadsheet, FileText, Pencil, RotateCcw, Save, Search, X } from "../Icon.js";
 import { api } from "../../lib/api.js";
+import { isCloud } from "../../lib/cloud.js";
 import { ago } from "../../lib/format.js";
 import { copyText, ErrorLine } from "./common.jsx";
 import Markdown from "./Markdown.jsx";
@@ -206,7 +207,8 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
   const type = file?.type;
   const page = /[.]html?$/i.test(path);
   // PDFs, and Office files once converted, are seen as their pages (the text one click away).
-  const visualUrl = file?.visual ? `/api/missions/${encodeURIComponent(missionId)}/workfiles/visual?path=${encodeURIComponent(path)}` : null;
+  // Hosted (src/lib/cloud.js): no Office to convert a document, so Office files show as text.
+  const visualUrl = file?.visual && !(file.visual === "office" && isCloud()) ?`/api/missions/${encodeURIComponent(missionId)}/workfiles/visual?path=${encodeURIComponent(path)}` : null;
   const visual = useVisual(visualUrl, file ? file.size + ":" + file.modifiedAt : "");
   const pages = file?.visual && visual.state === "ready";
   const pageUrl = (n) => `/api/missions/${encodeURIComponent(missionId)}/workfiles/page/${n}?path=${encodeURIComponent(path)}&width=1200&v=${visual.info?.version || ""}`;

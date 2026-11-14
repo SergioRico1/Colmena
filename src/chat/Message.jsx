@@ -84,7 +84,9 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   const [error, setError] = useState(null);
   const [picker, setPicker] = useState(false);
   const author = personOf(m.author, s);
-  const name = m.botName ? m.botName : m.author === me ? s.me?.name : author?.name || "Alguien";
+  // A bot of the company answers as "bot:<id>" (Phase 3); an imported integration only has botName.
+  const isBot = String(m.author || "").startsWith("bot:");
+  const name = isBot ? m.botName || author?.name || "Bot" : m.botName ? m.botName : m.author === me ? s.me?.name : author?.name || "Alguien";
   const react = (emoji, on = true) => chat.post(`/messages/${m.id}/reactions`, { emoji, on }).catch((e) => setError(e.message));
   if (m.deleted) {
     return (
@@ -115,7 +117,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
         {compact ? null : (
           <div className="ms-head">
             <span className="ms-name">{name}</span>
-            {m.botName ? <span className="ch-chip">Integración</span> : author?.ghost && !m.botName ? <span className="ch-chip" title="Aún no ha entrado en Colmena">Importado</span> : null}
+            {isBot ? <span className="ch-chip">Bot</span> : m.botName ? <span className="ch-chip">Integración</span> : author?.ghost && !m.botName ? <span className="ch-chip" title="Aún no ha entrado en Colmena">Importado</span> : null}
             <time className="ms-time" dateTime={new Date(m.at).toISOString()} title={new Date(m.at).toLocaleString("es-ES")}>{whenOf(m.at)}</time>
             {m.pinned ? <span className="ms-pinned"><Pin size={12} /> Fijado</span> : null}
           </div>

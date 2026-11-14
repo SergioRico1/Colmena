@@ -1,3 +1,4 @@
+import { isCloud } from "../../../lib/cloud.js";
 import { AddressBook, Archive, ArrowsClockwise, Bell, ChartColumn, Laptop, Lock, Plug, ShieldCheck, Sparkles, SquareTerminal, Stethoscope, UserRound } from "../../Icon.js";
 
 // Ajustes by what people think about (Colmena 4): thirteen sections in six groups — «Tú», «Tu
@@ -190,6 +191,22 @@ export const SECTIONS = [
     ],
   },
 ];
+
+// Hosted (src/lib/cloud.js): each person connects their own account (CloudAccount.jsx).
+if (isCloud()) {
+  Object.assign(SECTIONS.find((s) => s.id === "ia"), {
+    label: "Tu cuenta de IA",
+    lead: "La cuenta con la que piensan los bots cuando les pides algo tú.",
+    items: [
+      ["chatgpt", "OpenAI", "openai chatgpt clave api código iniciar sesión gpt"],
+      ["claude", "Claude", "anthropic clave api token suscripción setup-token"],
+      ["opencode", "OpenCode Go", "opencode clave"],
+      ["otra-ia", "Conectar otra IA", "gemini google openrouter deepseek kimi moonshot servidor propio clave api"],
+    ],
+  });
+  const apps = SECTIONS.find((s) => s.id === "apps");
+  Object.assign(apps, { lead: "Las apps con las que trabajan tus bots.", items: apps.items.filter(([anchor]) => anchor !== "carpetas") });
+}
 
 /**
  * The groups of the section list, in order, each with why it holds what it holds:

@@ -6,6 +6,7 @@ import { useAction, useStore } from "../../../lib/store.jsx";
 import { patch, post } from "../../../lib/api.js";
 import { reversible } from "../../../lib/undoToast.js";
 import { ENGINE_NAMES, KEY_ENGINES } from "../../../lib/engineNames.js";
+import { isCloud } from "../../../lib/cloud.js";
 import { LINE, UNDO_MS, anchorOf, btn, mono, select } from "./v3.jsx";
 
 // Ajustes › Cuentas de IA › «Conectar otra IA»: Gemini, OpenRouter, DeepSeek, Kimi and a
@@ -120,14 +121,16 @@ export function KeyPanel({ engine, mode = "connect", info = null, catalog = [], 
       {!manage ? (
         <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.6, color: "var(--c-text-3)" }}>
           {engine === "custom"
-            ? "La dirección de tu servidor, normalmente acabada en /v1. En tu ordenador o tu red vale http://; fuera de ella, https://. Colmena solo llama a esa dirección."
-            : <>Crea una clave en <a href={k.url} target="_blank" rel="noopener noreferrer" style={link}>{k.site}</a>. Se guarda cifrada en este ordenador y solo se ven sus últimos 4 caracteres.</>}
+            ? (isCloud()
+              ? "La dirección de tu servidor, normalmente acabada en /v1. Desde la nube tiene que ser pública y con https://. Colmena solo llama a esa dirección."
+              : "La dirección de tu servidor, normalmente acabada en /v1. En tu ordenador o tu red vale http://; fuera de ella, https://. Colmena solo llama a esa dirección.")
+            : <>Crea una clave en <a href={k.url} target="_blank" rel="noopener noreferrer" style={link}>{k.site}</a>. {isCloud() ? "Se guarda cifrada en la nube de tu empresa" : "Se guarda cifrada en este ordenador"} y solo se ven sus últimos 4 caracteres.</>}
         </p>
       ) : null}
       {engine === "custom" && !manage ? (
         <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           <span style={label}>Dirección</span>
-          <input ref={first} className="c-quiet" type="url" inputMode="url" autoComplete="off" spellCheck="false" value={baseUrl} onChange={(e) => { setBaseUrl(e.target.value); setModels(null); }} placeholder="http://localhost:11434/v1" style={input} />
+          <input ref={first} className="c-quiet" type="url" inputMode="url" autoComplete="off" spellCheck="false" value={baseUrl} onChange={(e) => { setBaseUrl(e.target.value); setModels(null); }} placeholder={isCloud() ? "https://modelos.ejemplo.com/v1" : "http://localhost:11434/v1"} style={input} />
         </label>
       ) : null}
       {!manage ? (

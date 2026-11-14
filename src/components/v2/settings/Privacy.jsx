@@ -8,6 +8,7 @@ import DocHistory from "../team/DocHistory.jsx";
 import { Alert, Confirm, Go, LINE, Row, Switch, UNDO_MS, anchorOf, btn, danger, h3, useSettings } from "./v3.jsx";
 import { forgetAllText } from "./effects.js";
 import { C } from "../../../lib/theme.js";
+import { isCloud } from "../../../lib/cloud.js";
 
 // Ajustes › Memoria y privacidad: where your data lives and what leaves this computer, what the
 // bots remember and learn (an incognito chat never learns), the web passwords, the log of what
@@ -60,7 +61,9 @@ export default function PrivacySection() {
     <>
       <Alert>{error}</Alert>
       <section aria-label="Dónde están tus datos" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(240px, 100%), 1fr))", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
-        <Fact anchor="privado" k="Dónde viven tus datos" v="En este ordenador" dot={s?.encrypted ? C.okInk : C.text4} n={s?.encrypted ? "Cifrados en el disco. Colmena no tiene servidores propios." : <>Colmena no tiene servidores propios. <Go to="/ajustes/copias#cifrado">Cifrarlos</Go></>} />
+        {isCloud()
+          ? <Fact anchor="privado" k="Dónde viven tus datos" v="En la nube de tu empresa" dot={C.okInk} n="Cifrados, en el espacio de tu empresa. Solo lo ven las personas que tienen acceso." />
+          : <Fact anchor="privado" k="Dónde viven tus datos" v="En este ordenador" dot={s?.encrypted ? C.okInk : C.text4} n={s?.encrypted ? "Cifrados en el disco. Colmena no tiene servidores propios." : <>Colmena no tiene servidores propios. <Go to="/ajustes/copias#cifrado">Cifrarlos</Go></>} />}
         <Fact k="Qué sale de aquí" v="Solo lo que pides" dot={C.text4} n="Lo que escribes pasa por tu cuenta de IA para que te respondan. Enviar o publicar siempre te pregunta." />
       </section>
 

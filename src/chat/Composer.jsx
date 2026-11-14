@@ -57,9 +57,13 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
     const people = [...s.people.values()].filter((p) => !p.deactivated && p.id !== s.me?.id && (!q || fold(p.name).split(/\s+/).some((w) => w.startsWith(q)) || fold(p.email).startsWith(q)))
       .sort((a, b) => (members.has(b.id) ? 1 : 0) - (members.has(a.id) ? 1 : 0) || a.name.localeCompare(b.name, "es")).slice(0, 7)
       .map((p) => ({ id: p.id, label: "@" + p.name, name: p.name, sub: p.title || p.email }));
+    // The company's bots (Phase 3): «@Nora» is stored as <@bot:nora>, like a person.
+    const bots = [...(s.bots?.values() || [])].filter((b) => !q || fold(b.name).split(/\s+/).some((w) => w.startsWith(q)))
+      .sort((a, b) => a.name.localeCompare(b.name, "es")).slice(0, 5)
+      .map((b) => ({ id: b.id, label: "@" + b.name, name: b.name, sub: "Bot" + (b.title ? " · " + b.title : "") }));
     const special = ch && ch.kind !== "dm" ? [{ id: "channel", label: "@canal", name: "canal", sub: "Avisa a todo el canal" }, { id: "here", label: "@aquí", name: "aquí", sub: "Avisa a quien esté conectado" }].filter((x) => !q || x.name.startsWith(q)) : [];
-    return [...people, ...special];
-  }, [pick, s.people, s.me, ch]);
+    return [...people, ...bots, ...special];
+  }, [pick, s.people, s.bots, s.me, ch]);
 
   const onChange = (e) => {
     const value = e.target.value;

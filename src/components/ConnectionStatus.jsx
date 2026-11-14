@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store.jsx";
+import { isCloud } from "../lib/cloud.js";
 
 // What you see when the app cannot reach its local service (Colmena 3, design/V3Estados.dc.html):
 //  - before the first data arrives: «Arrancando Colmena…» with the breathing mark, no fake
@@ -25,7 +26,7 @@ export function StartingUp({ slow = false, onRetry = () => location.reload(), on
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", textAlign: "center" }}>
           <img src="/colmena-icon-128.png" alt="" width="56" height="56" style={{ display: "block", width: "56px", height: "56px", animation: "breathe 2.4s ease-in-out infinite" }} />
           <span style={{ font: "600 var(--t-heading)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Arrancando Colmena…"}</span>
-          <span style={{ fontSize: "var(--t-ui)", color: "#C9CBD3" }}>{"Despertando a tu equipo en este ordenador."}</span>
+          <span style={{ fontSize: "var(--t-ui)", color: "#C9CBD3" }}>{isCloud() ? "Despertando a tu equipo en la nube." : "Despertando a tu equipo en este ordenador."}</span>
         </div>
       )}
     </div>

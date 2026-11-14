@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { navigate } from "../lib/router.jsx";
 import { chat } from "../chat/api.js";
+import { get, put } from "../lib/api.js";
 import { directory } from "../chat/adminApi.js";
 import { nameOf, useChat } from "../chat/store.js";
 import { ChatPage, Dialog, Empty, Tabs, ROLE_LABEL, ago, dayLabel, sizeOf, timeOf, whenOf } from "../chat/ui.jsx";
@@ -19,6 +20,7 @@ const TABS = [
   { id: "personas", label: "Personas" },
   { id: "canales", label: "Canales" },
   { id: "ajustes", label: "Ajustes" },
+  { id: "ia", label: "IA y apps" },
   { id: "importar", label: "Importar de Slack" },
   { id: "registro", label: "Registro" },
 ];
@@ -56,6 +58,7 @@ export default function AdminEmpresa({ params = {} }) {
           {tab === "personas" ? <People /> : null}
           {tab === "canales" ? <Channels /> : null}
           {tab === "ajustes" ? <Settings /> : null}
+          {tab === "ia" ? <AiPolicy /> : null}
           {tab === "importar" ? <SlackImport /> : null}
           {tab === "registro" ? <AuditLog /> : null}
         </div>
@@ -525,6 +528,94 @@ function Settings() {
         </>}>
           <p style={{ margin: "0 0 8px" }}>A partir de ahora, los mensajes y archivos de más de {days} días se borran para siempre en todos los canales y conversaciones. Los que ya tienen esa edad empiezan a borrarse hoy.</p>
           <p style={{ margin: 0, color: "var(--c-text-3)" }}>No hay forma de recuperarlos. Exporta antes si quieres una copia.</p>
+        </Dialog>
+      ) : null}
+    </>
+  );
+}
+
+/* ── IA y apps ────────────────────────────────────────────────────────────────────────────── */
+// The company's AI rules (docs/CLOUD.md › Phase 3; server/cloud/ai.mjs): each person thinks with
+// their own account; signing in with a consumer subscription (ChatGPT by code, the Claude
+// setup-token) stays off unless an owner or admin turns it on after reading the providers' terms.
+// And the company's Composio key for the apps, written here and never shown back.
+
+const SUBSCRIPTIONS = [
+  { key: "chatgptLogin", warn: "chatgpt", title: "Iniciar sesión con ChatGPT", hint: "Cada persona puede conectar su plan de ChatGPT con un código, en lugar de una clave de API de OpenAI." },
+  { key: "claudeToken", warn: "claude", title: "Token de suscripción de Claude", hint: "Cada persona puede pegar un token de su plan de Claude (claude setup-token), en lugar de una clave de API de Anthropic." },
+];
+
+function AiPolicy() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState(null); // one of SUBSCRIPTIONS
+  const [key, setKey] = useState("");
+  const [keyState, setKeyState] = useState(null); // "saved" | {error}
+
+  useEffect(() => { get("/cloud/ai").then(setData, (e) => setError(e.message)); }, []);
+
+  const set = async (which, on) => {
+    setBusy(true); setError(null);
+    try { const r = await put("/cloud/ai/policy", { [which]: on }); setData((d) => ({ ...d, policy: r.policy, warnings: r.warnings || d.warnings })); }
+    catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+  const saveKey = async (e) => {
+    e.preventDefault();
+    if (!key.trim()) return;
+    setBusy(true); setKeyState(null);
+    try { await put("/cloud/apps/key", { key: key.trim() }); setKey(""); setKeyState("saved"); }
+    catch (err) { setKeyState({ error: err.message }); }
+    finally { setBusy(false); }
+  };
+
+  if (!data) return error ? <p className="ch-error" role="alert">{error}</p> : <p className="ad-loading" role="status">Cargando…</p>;
+  const policy = data.policy || {};
+  const warnings = data.warnings || {};
+
+  return (
+    <>
+      <h2 className="ch-section-title">Cuentas de IA</h2>
+      <p className="ch-hint">Cada persona conecta su propia cuenta de IA en Ajustes › Tu cuenta de IA, y los bots usan la de quien les pide algo. Lo seguro es una clave de API (OpenAI, Anthropic u otra).</p>
+
+      <h2 className="ch-section-title">Cuentas de suscripción</h2>
+      <p className="ch-hint">Apagadas salvo que las actives. Lee antes lo que dicen las condiciones de cada proveedor.</p>
+      {SUBSCRIPTIONS.map((s) => {
+        const on = !!policy[s.key];
+        return (
+          <div key={s.key} className="ad-block">
+            <div className="ad-inline" style={{ alignItems: "center" }}>
+              <div className="ad-grow">
+                <strong id={"ad-ai-" + s.key}>{s.title}</strong>
+                <p className="ch-hint" style={{ margin: "2px 0 0" }}>{s.hint}</p>
+              </div>
+              <button type="button" role="switch" className="ad-switch" aria-checked={on} aria-labelledby={"ad-ai-" + s.key} disabled={busy}
+                onClick={() => (on ? set(s.key, false) : setConfirm(s))} />
+            </div>
+            {warnings[s.warn] ? <p className="ad-danger-note">{warnings[s.warn]}</p> : null}
+          </div>
+        );
+      })}
+      {error ? <p className="ch-error" role="alert">{error}</p> : null}
+
+      <h2 className="ch-section-title">Clave de Composio de la empresa</h2>
+      <p className="ch-hint">Con ella, los bots se conectan a las apps de la empresa (Gmail, Calendar, Slack…). Se guarda cifrada y no se vuelve a mostrar: para cambiarla, escribe otra.</p>
+      <form className="ad-inline" onSubmit={saveKey}>
+        <label className="ch-field">Clave de Composio
+          <input className="ch-input" type="password" autoComplete="off" spellCheck={false} placeholder="Pega la clave nueva" value={key} onChange={(e) => { setKey(e.target.value); setKeyState(null); }} />
+        </label>
+        <button type="submit" className="ch-btn is-primary" disabled={busy || !key.trim()}>Guardar</button>
+      </form>
+      {keyState?.error ? <p className="ch-error" role="alert">{keyState.error}</p> : keyState === "saved" ? <p className="ad-saved" role="status">Clave guardada.</p> : null}
+
+      {confirm ? (
+        <Dialog title={`¿Activar «${confirm.title}»?`} onClose={() => setConfirm(null)} footer={<>
+          <button type="button" className="ch-btn" onClick={() => setConfirm(null)}>Cancelar</button>
+          <button type="button" className="ch-btn is-danger" disabled={busy} onClick={() => { const s = confirm; setConfirm(null); set(s.key, true); }}>Entiendo el riesgo, activar</button>
+        </>}>
+          <p style={{ margin: "0 0 8px" }}>{warnings[confirm.warn]}</p>
+          <p style={{ margin: 0, color: "var(--c-text-3)" }}>Puedes apagarlo cuando quieras: las cuentas conectadas así dejan de funcionar al momento.</p>
         </Dialog>
       ) : null}
     </>

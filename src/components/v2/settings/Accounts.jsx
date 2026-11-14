@@ -11,6 +11,8 @@ import { Advanced, Alert, BotMark, Card, Choices, Chip, Go, LINE, Meter, Panel, 
 import { disconnectAiText } from "./effects.js";
 import { ConnectOther, KeyPanel } from "./OtherAis.jsx";
 import { ENGINE_NAMES, KEY_ENGINES } from "../../../lib/engineNames.js";
+import { isCloud } from "../../../lib/cloud.js";
+import CloudAccount from "./CloudAccount.jsx";
 
 // Ajustes › Cuentas de IA (design/V3AjustesIA.dc.html): the three accounts Colmena thinks with
 // (ChatGPT; Claude through Claude Code, a setup-token or an API key; OpenCode Go), which one
@@ -130,7 +132,12 @@ function PerBot({ bots, engines, team, busy, setBot }) {
   );
 }
 
+/** Hosted (src/lib/cloud.js): «Tu cuenta de IA», the signed-in person's own accounts. */
 export default function AccountsSection() {
+  return isCloud() ? <CloudAccount /> : <DesktopAccounts />;
+}
+
+function DesktopAccounts() {
   const { ai = null, provider, authError, models = [], bots = [], planLimits = null, run } = useStore();
   const { settings, save, error } = useSettings();
   const [expert] = useExpert();

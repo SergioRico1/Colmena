@@ -3,6 +3,7 @@
 // the member panel and who «@» lists (who can be invited: lib/invite.js). Pure: no React, no network. It reads
 // the shapes of docs/CONTRACT.md §18 (`GET /api/rooms/:id`, `…/timeline`).
 import { botA11yName, botNameLabels, familyTint, firstName, listNames, ownerShort } from "./identity.js";
+import { isCloud } from "./cloud.js";
 
 const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 const byName = (a, b) => String(a.name || "").localeCompare(String(b.name || ""), "es", { sensitivity: "base", numeric: true });
@@ -327,7 +328,7 @@ export function stackLabel(panel) {
  * the room's sala on this computer (`POST /api/rooms/:id/aside`). {label, hint, available, needsSala}.
  */
 export const ONLY_ME = "Solo para mí";
-export const ONLY_ME_HINT = "No se envía a nadie: te contestan solo tus bots y se queda en tu ordenador.";
+export const ONLY_ME_HINT = isCloud() ? "No se envía a nadie: te contestan solo tus bots y no lo ve nadie más." : "No se envía a nadie: te contestan solo tus bots y se queda en tu ordenador.";
 export function onlyMe({ mission = null, shared = false, gone = false } = {}) {
   return { label: ONLY_ME, hint: ONLY_ME_HINT, available: !gone && (!!mission || shared), needsSala: !mission && shared };
 }

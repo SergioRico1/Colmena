@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import { Eye, EyeOff, KeyRound } from "../Icon.js";
 import { post } from "../../lib/api.js";
+import { isCloud } from "../../lib/cloud.js";
 import { useResource } from "../../lib/store.jsx";
 import { maskSecret, secretSegments, suggestKey } from "../../lib/secretMask.js";
 
@@ -54,7 +55,7 @@ function SaveKey({ secret, messageId, onClose }) {
         </span>
       ) : (<>
         <span style={{ display: "block", fontWeight: 600, fontSize: "var(--t-ui)" }}>{"Guardar en llaves"}</span>
-        <span style={{ display: "block", color: "var(--c-text-2)" }}>{messageId ? "Se guarda cifrada en este ordenador y en el mensaje queda solo su nombre." : "Se guarda cifrada en este ordenador."}</span>
+        <span style={{ display: "block", color: "var(--c-text-2)" }}>{`Se guarda cifrada en ${isCloud() ? "la nube de tu empresa" : "este ordenador"}${messageId ? " y en el mensaje queda solo su nombre." : "."}`}</span>
         <label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Nombre"}</span>
           <input value={name} onChange={(e) => setName(e.target.value)} spellCheck={false} autoFocus style={{ ...field, fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace", textTransform: "uppercase" }} />

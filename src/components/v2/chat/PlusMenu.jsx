@@ -6,6 +6,7 @@ import WindowPicker, { captureFile } from "../../interaction/WindowPicker.jsx";
 import { APPS, appName, loadAccounts } from "../../settings/connections.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { navigate } from "../../../lib/router.jsx";
+import { isCloud } from "../../../lib/cloud.js";
 
 // «+» in the composer (Codex's «Añadir» menu): add files, choose what the bot should use for
 // this message (think harder, the web, the browser, the terminal, one of your apps) or turn
@@ -34,8 +35,8 @@ function useConnectedApps(open) {
 const TOOL_ITEMS = [
   { key: "deep", label: "Pensar a fondo", hint: "Razona más antes de responder", Icon: Brain },
   { key: "web", label: "Buscar en la web", hint: "Con fuentes actuales", Icon: Globe },
-  { key: "navegador", label: "Usar el navegador", hint: "Abre páginas y las usa por ti", Icon: AppWindow, desktop: true },
-  { key: "terminal", label: "Usar la terminal", hint: "Comandos en tu ordenador, con tu permiso", Icon: SquareTerminal },
+  { key: "navegador", label: "Usar el navegador", hint: "Abre páginas y las usa por ti", Icon: AppWindow, desktop: true, local: true },
+  { key: "terminal", label: "Usar la terminal", hint: "Comandos en tu ordenador, con tu permiso", Icon: SquareTerminal, local: true },
 ];
 
 /** Chips for what was chosen: [{key, label}] (the composer shows them above the text). */
@@ -81,7 +82,8 @@ export default function PlusMenu({ open, onClose, onFiles, onCapture = null, onE
           ] : []),
         ],
       },
-      { title: "Para este mensaje", items: TOOL_ITEMS.filter((t) => !t.desktop || computer?.available).map((t) => ({ ...t, toggle: true })) },
+      // Hosted (src/lib/cloud.js): no computer to use, no terminal to run.
+      { title: "Para este mensaje", items: TOOL_ITEMS.filter((t) => (!t.desktop || computer?.available) && !(t.local && isCloud())).map((t) => ({ ...t, toggle: true })) },
       {
         title: "Convertir en",
         items: [

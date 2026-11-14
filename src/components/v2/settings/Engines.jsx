@@ -4,6 +4,7 @@ import ProviderMark from "../ProviderMark.jsx";
 import { useAction } from "../../../lib/store.jsx";
 import { post } from "../../../lib/api.js";
 import { C } from "../../../lib/theme.js";
+import { isCloud } from "../../../lib/cloud.js";
 
 // Ajustes › Inteligencia (v2): the accounts Colmena thinks with besides ChatGPT — Claude,
 // connected the three ways OpenClaw offers, and OpenCode Go — plus which one the team
@@ -44,6 +45,11 @@ function SecretForm({ placeholder, label, busy, onSubmit }) {
   );
 }
 
+/** The providers' terms, said before a subscription sign-in (hosted; server/cloud/ai.mjs › SUBSCRIPTION_WARNING). */
+export function Warning({ text, style = null }) {
+  return <p role="note" style={{ margin: 0, padding: "10px 12px", borderRadius: "var(--r-md)", background: "var(--c-error-soft)", fontSize: "var(--t-ui)", lineHeight: 1.5, color: "var(--c-text)", ...style }}>{text}</p>;
+}
+
 // OpenClaw's Anthropic choices (extensions/anthropic/openclaw.plugin.json), in its order.
 const CLAUDE_WAYS = [
   { id: "cli", title: "Claude Code de este ordenador", sub: "Usa la sesión de Claude Code que ya tienes iniciada aquí." },
@@ -52,14 +58,19 @@ const CLAUDE_WAYS = [
 ];
 const PLAN_NOTE = "Con tu suscripción, lo que hacen Claude Code y las apps de terceros descuenta de los límites de tu plan, y Anthropic puede cambiar estas condiciones. Para un uso continuo o compartido, la clave de API es la vía más predecible.";
 
-export function ClaudePanel({ onDone, style = null }) {
+/**
+ * `ways`: which of CLAUDE_WAYS to offer (hosted: no «Claude Code de este ordenador», the token
+ * only when the company allows it). `warning`: said above the token's form (hosted).
+ */
+export function ClaudePanel({ onDone, style = null, ways = null, warning = null }) {
   const act = useAction();
-  const [way, setWay] = useState("cli");
+  const offered = ways ? CLAUDE_WAYS.filter((w) => ways.includes(w.id)) : CLAUDE_WAYS;
+  const [way, setWay] = useState(offered[0]?.id || "api_key");
   const connect = (body) => act.act(() => post("/auth/anthropic", body)).then((r) => { if (r?.ok) onDone(); return !!r?.ok; });
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "2px 20px 20px 76px", borderBottom: LINE, animation: "rise .25s ease-out", ...style }}>
       <div role="radiogroup" aria-label="Cómo conectar Claude" style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "6px", borderRadius: "var(--r-xl)", background: "var(--c-sunken)" }}>
-        {CLAUDE_WAYS.map((w) => {
+        {offered.map((w) => {
           const on = way === w.id;
           return (
             <button key={w.id} type="button" role="radio" aria-checked={on} onClick={() => { act.setError(null); setWay(w.id); }} style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "56px", padding: "8px 14px", border: 0, borderRadius: "var(--r-lg)", cursor: "pointer", textAlign: "left", color: "var(--c-text)", background: on ? "var(--c-card)" : "transparent", boxShadow: on ? "var(--c-shadow-lift)" : "none", transition: "background .2s ease" }}>
@@ -84,6 +95,7 @@ export function ClaudePanel({ onDone, style = null }) {
       ) : null}
       {way === "token" ? (
         <>
+          {warning ? <Warning text={warning} /> : null}
           <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.6, color: "var(--c-text-3)" }}>
             En una terminal, escribe <Command text="claude setup-token" /> y pega aquí el token que empieza por <span style={{ font: "500 var(--t-meta) 'Geist Mono', monospace", color: "var(--c-text)" }}>sk-ant-oat01-</span>.
           </span>
@@ -93,7 +105,7 @@ export function ClaudePanel({ onDone, style = null }) {
       {way === "api_key" ? (
         <>
           <span style={{ fontSize: "var(--t-ui)", lineHeight: 1.6, color: "var(--c-text-3)" }}>
-            Créala en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-text)", fontWeight: 600 }}>console.anthropic.com</a>. Se guarda cifrada en este ordenador.
+            Créala en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" style={{ color: "var(--c-text)", fontWeight: 600 }}>console.anthropic.com</a>. {isCloud() ? "Se guarda cifrada en la nube de tu empresa." : "Se guarda cifrada en este ordenador."}
           </span>
           <SecretForm label="Clave de API de Anthropic" placeholder="sk-ant-api03-…" busy={act.busy} onSubmit={(secret) => connect({ method: "api_key", secret })} />
         </>

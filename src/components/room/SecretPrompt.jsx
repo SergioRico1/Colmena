@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck } from "../Icon.js";
 import { post } from "../../lib/api.js";
+import { isCloud } from "../../lib/cloud.js";
 import { ago } from "../../lib/format.js";
 import { useCountdown } from "./Dots.jsx";
 import { BotAvatar, ErrorLine, findBot } from "./common.jsx";
@@ -89,7 +90,7 @@ export default function SecretPrompt({ approval, bots = [], compact = false }) {
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
         <button type="submit" disabled={busy || !value.trim() || left === 0} className="c-press" style={{ height: "40px", padding: "0 16px", background: "var(--c-btn)", color: "var(--c-btn-text)", border: "2px solid var(--c-text)", borderRadius: "var(--r-md)", cursor: "pointer", fontWeight: "700", fontSize: "var(--t-ui)", opacity: busy || !value.trim() ? 0.55 : 1 }}>{busy ? "Guardando…" : "Guardar la clave"}</button>
         <button type="button" disabled={busy} onClick={decline} style={{ height: "40px", padding: "0 14px", background: "transparent", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", cursor: "pointer", fontSize: "var(--t-ui)" }}>Ahora no</button>
-        <span style={{ flex: "1 1 220px", fontSize: "var(--t-caption)", lineHeight: "1.4", color: "var(--c-text-3)" }}>{`Se guarda cifrada en este ordenador. ${bot.name} nunca la ve: solo sabrá que está guardada.`}</span>
+        <span style={{ flex: "1 1 220px", fontSize: "var(--t-caption)", lineHeight: "1.4", color: "var(--c-text-3)" }}>{`Se guarda cifrada en ${isCloud() ? "la nube de tu empresa" : "este ordenador"}. ${bot.name} nunca la ve: solo sabrá que está guardada.`}</span>
       </div>
       <ErrorLine>{error}</ErrorLine>
     </form>

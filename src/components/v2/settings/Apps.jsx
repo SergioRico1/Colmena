@@ -11,6 +11,7 @@ import { appName, linkUrl, loadAccounts, loadCatalogue, loadStatus, pendingLink,
 import { Alert, BotMark, Confirm, Go, LINE, Term, UNDO_MS, anchorOf, btn, danger, h3, mono, select, srOnly } from "./v3.jsx";
 import { KIND_OF, disconnectAppText } from "./effects.js";
 import { C } from "../../../lib/theme.js";
+import { isCloud } from "../../../lib/cloud.js";
 
 // Ajustes › Apps y carpetas (design/V3Conexiones.dc.html): the apps your bots work with —
 // direct MCP connections first, the rest (Google, Microsoft, Slack…) through Composio —, the
@@ -364,7 +365,7 @@ export default function AppsSection({ query = {} }) {
         </ul>
       </section>
       <Catalogue c={c} initialQuery={query.q || ""} />
-      <Folders />
+      {isCloud() ? null : <Folders />}
     </>
   );
 }

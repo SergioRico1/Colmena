@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { del, get, post, put } from "../../lib/api.js";
 import { ago } from "../../lib/format.js";
+import { isCloud } from "../../lib/cloud.js";
 
 // «Cuando avise otra app» in the routine builder (server/webhooks.mjs): which service, how its
 // requests are signed, the filters, and — once the routine is saved — its secret address at
@@ -70,7 +71,7 @@ export default function WebhookPanel({ hook, onChange, ruleId, onCreate, busy })
         <Field title="Tipos que te interesan, separados por comas" value={hook.eventos} onChange={(v) => onChange({ eventos: v })} placeholder="pull_request, push" />
       </div>
       <div role="group" aria-label="Filtros" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <span style={label}>Solo si (se comprueba en tu ordenador, sin gastar IA)</span>
+        <span style={label}>{isCloud() ? "Solo si (se comprueba en Colmena, sin gastar IA)" : "Solo si (se comprueba en tu ordenador, sin gastar IA)"}</span>
         {filtros.map((f, i) => (
           <div key={i} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
             <input className="c-quiet" type="text" aria-label={`Campo del filtro ${i + 1}`} value={f.ruta} onChange={(e) => setFilter(i, { ruta: e.target.value })} placeholder="pull_request.base.ref" spellCheck={false} style={{ ...input, flex: "1 1 180px", height: "38px" }} />
@@ -129,7 +130,9 @@ function Address({ ruleId, signed, steps }) {
         ) : (
           <span role="status" style={{ fontSize: "var(--t-ui)", lineHeight: 1.45, color: view.error ? "var(--c-error)" : "var(--c-text-2)" }}>{revoked ? "Anulaste la dirección: ahora no llega nada. Crea otra cuando quieras." : view.error || "Preparando la dirección…"}</span>
         )}
-        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Quien tenga esta dirección puede poner en marcha la rutina, así que no la compartas. El buzón de Colmena cifra cada aviso para este ordenador nada más llegar y lo guarda 3 días como mucho, hasta que Colmena esté abierta.</span>
+        <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{isCloud()
+          ? "Quien tenga esta dirección puede poner en marcha la rutina, así que no la compartas. Colmena la atiende en la nube de tu empresa, aunque nadie la tenga abierta."
+          : "Quien tenga esta dirección puede poner en marcha la rutina, así que no la compartas. El buzón de Colmena cifra cada aviso para este ordenador nada más llegar y lo guarda 3 días como mucho, hasta que Colmena esté abierta."}</span>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           {confirm ? (
             <>
@@ -157,8 +160,8 @@ function Address({ ruleId, signed, steps }) {
               <button type="button" disabled={working || !secret.trim()} onClick={() => run(async () => { const v = await put(`${path}/secret`, { value: secret }); setSecret(""); return v; })} style={quiet(working)}>Guardar</button>
               {view.secret ? <button type="button" disabled={working} onClick={() => run(() => del(`${path}/secret`))} style={quiet(working)}>Quitar</button> : null}
             </div>
-          ) : <span style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>En este ordenador no puedo guardar el secreto de forma segura, así que no puedo comprobar firmas.</span>}
-          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Se guarda cifrado en este ordenador y no sale de él: la firma se comprueba aquí.</span>
+          ) : <span style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{isCloud() ? "Ahora no puedo guardar el secreto de forma segura, así que no puedo comprobar firmas." : "En este ordenador no puedo guardar el secreto de forma segura, así que no puedo comprobar firmas."}</span>}
+          <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{isCloud() ? "Se guarda cifrado en la nube de tu empresa y no sale de ella: la firma se comprueba allí." : "Se guarda cifrado en este ordenador y no sale de él: la firma se comprueba aquí."}</span>
         </div>
       ) : (
         <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>Sin firma, cualquiera que conozca la dirección puede mandar un aviso. Si esa app sabe firmarlos, elige cómo arriba.</span>

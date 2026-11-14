@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { del, post } from "../../lib/api.js";
+import { isCloud } from "../../lib/cloud.js";
 import { later, useHidden } from "../../lib/undoToast.js";
 import { WORDS, askedLine, expiresText, pendingCodes, roomOwner } from "../../lib/invite.js";
 import { useAction, useStore } from "../../lib/store.jsx";
@@ -98,7 +99,7 @@ function OwnerBots({ group, onOpen }) {
   );
 }
 
-const AUTONOMY = { sugiere: ["Solo sugiere", "Te propone cada paso y espera tu OK"], avisa: ["Hace y avisa", "Lo que sale de tu ordenador te lo pregunta"], solo: ["Hace solo", "Solo te pregunta las líneas rojas"] };
+const AUTONOMY = { sugiere: ["Solo sugiere", "Te propone cada paso y espera tu OK"], avisa: ["Hace y avisa", isCloud() ? "Lo que sale de Colmena te lo pregunta" : "Lo que sale de tu ordenador te lo pregunta"], solo: ["Hace solo", "Solo te pregunta las líneas rojas"] };
 const TOOL_WORD = { correo: "Correo", calendario: "Calendario", carpeta: "Carpeta", hojas: "Hojas", chat: "Chat", erp: "ERP", web: "Web", navegador: "Navegador" };
 const ASK_WORD = { pregunta: "Pregúntame", siempre: "Siempre", nunca: "Nunca" };
 
@@ -222,7 +223,7 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
                   ))}
                 </div>
               ) : null}
-              {!view.private ? <span style={{ ...small, display: "block", lineHeight: 1.45, paddingTop: "6px" }}>{"Trabajan en tu ordenador, con tu cuenta. Nómbralos con @ para que contesten aquí."}</span> : null}
+              {!view.private ? <span style={{ ...small, display: "block", lineHeight: 1.45, paddingTop: "6px" }}>{isCloud() ? "Trabajan en la nube de tu empresa, con la cuenta de IA de quien les pide algo. Nómbralos con @ para que contesten aquí." : "Trabajan en tu ordenador, con tu cuenta. Nómbralos con @ para que contesten aquí."}</span> : null}
             </section>
           ) : <OwnerBots key={g.owner?.address || g.label} group={g} onOpen={open} />))}
           {panel.groups.length ? null : (

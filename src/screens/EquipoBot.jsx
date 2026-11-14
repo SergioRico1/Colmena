@@ -22,6 +22,7 @@ import { formatTokens } from "../components/settings/format.jsx";
 import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { useActivity } from "../lib/liveStore.js";
 import { del, get, patch, pickTextFiles, post } from "../lib/api.js";
+import { isCloud } from "../lib/cloud.js";
 import { navigate } from "../lib/router.jsx";
 import { missionUrl, placeName, roomUrl, shortDate } from "../lib/format.js";
 import { isSala } from "../lib/rooms.js";
@@ -55,6 +56,8 @@ const APP_HINT = {
   chat: { lee: "Lee el chat del equipo.", escribe: "Lee y prepara mensajes. Publicar te lo pregunta.", pide: "Lee y te pide permiso antes de escribir." },
   erp: { lee: "Consulta el ERP.", escribe: "Consulta y prepara cambios en el ERP. Lo que mueve dinero te lo pregunta.", pide: "Consulta y te pide permiso antes de cambiar nada." },
 };
+// Hosted (src/lib/cloud.js): no folders of a computer and no computer to use.
+const HOSTED_OFF = new Set(["carpetas", "ordenador"]);
 const CAPABILITIES = [["apps", "Usar las apps conectadas", "Según el acceso de cada una, arriba."], ["web", "Buscar en la web", "Leer páginas públicas de internet."], ["carpetas", "Carpetas de este ordenador", "Las que le hayas dado."], ["ordenador", "Usar el ordenador", "Ver la pantalla y usar programas, con tu permiso."]];
 const CHANNELS = [["correo", "Correo", "correo"], ["chat", "Chat del equipo", "chat"], ["movil", "Mensajes del móvil", null]];
 const SOURCE = { importado: "De ChatGPT", dijiste: "Se lo dijiste", dedujo: "Lo dedujo", acuerdo: "Lo acordasteis", documento: "De un documento" };
@@ -412,7 +415,7 @@ function Apps({ bot, connectors, learning, setLearning, expert, busy, change }) 
       </div>
       <span style={subhead}>{"También puede"}</span>
       <div style={{ display: "flex", flexDirection: "column", marginTop: "-10px" }}>
-        {CAPABILITIES.map(([key, label, desc]) => {
+        {CAPABILITIES.filter(([key]) => !(isCloud() && HOSTED_OFF.has(key))).map(([key, label, desc]) => {
           const soon = key === "ordenador" && !computerReady;
           const on = !soon && caps[key] !== false;
           return (

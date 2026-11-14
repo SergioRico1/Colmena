@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Check, FilePen, FilePlus2, FileX2, Undo2, X } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
+import { isCloud } from "../../../lib/cloud.js";
 import { cancel, schedule, useUndoable } from "../../../lib/undoable.js";
 import { changesSummary, libraryLine, plural } from "../../../lib/undo.js";
 
@@ -125,7 +126,7 @@ function UndoSheet({ cp, missionId, name, working, later, onClose, undoKey }) {
           {[...new Set(plan.skipped.map((s) => (s.folder ? `«${s.folder}»` : "la carpeta del chat")))].join(", ") + ": no se guardó un punto de restauración (demasiado grande o no se pudo leer), así que sus archivos se quedan como están."}
         </span>
       ) : null}
-      <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{plan?.outside || "Solo vuelven atrás los archivos de este ordenador: lo que salió fuera (correos, eventos, mensajes, cambios en tus apps) no se deshace."}</span>
+      <span style={{ fontSize: "var(--t-meta)", lineHeight: "1.5", color: "var(--c-text-3)" }}>{plan?.outside || (isCloud() ? "Solo vuelven atrás los archivos de Colmena: lo que salió fuera (correos, eventos, mensajes, cambios en tus apps) no se deshace." : "Solo vuelven atrás los archivos de este ordenador: lo que salió fuera (correos, eventos, mensajes, cambios en tus apps) no se deshace.")}</span>
       {busy ? <span role="status" style={{ fontSize: "var(--t-ui)", fontWeight: 500, color: "var(--c-text-2)" }}>{busy}</span> : null}
       {waiting ? (
         <Countdown id={undoKey} text={mode === "point" ? "Vuelve a este punto en" : "Se deshace en"} onUndo={() => cancel(undoKey)} />

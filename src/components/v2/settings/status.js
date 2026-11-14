@@ -26,6 +26,8 @@ export function agoWord(iso, now = Date.now()) {
 /** Cuentas de IA: who thinks, and how much of the plan is gone. */
 export function aiStatus(ai, planLimits = null) {
   if (!ai) return null;
+  // Hosted (/api/state › ai: {policy, mine, fake}): whether the person signed in has an account.
+  if (typeof ai.mine === "boolean" && !ai.engines) return ai.mine ? { text: "Conectada", tone: "ok", label: "Tu cuenta de IA está conectada" } : { text: "Sin conectar", tone: "error", label: "Conecta tu cuenta de IA para que los bots trabajen para ti." };
   const live = (ai.engines || []).filter((e) => e.connected);
   if (!live.length) return { text: "Sin conectar", tone: "error", label: "Ninguna cuenta de IA conectada: tus bots no pueden pensar." };
   const primary = live.find((e) => e.id === ai.primary) || live[0];

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { post } from "../../lib/api.js";
 import BotFace from "../BotFace.jsx";
-import { Desktop } from "../Icon.js";
+import { Cloud, Desktop } from "../Icon.js";
+import { isCloud } from "../../lib/cloud.js";
 import { askChoices } from "../../lib/roomView.js";
 import { PersonAvatar } from "./Author.jsx";
 import { WaitPill } from "./InlineApprovals.jsx";
@@ -42,7 +43,9 @@ export default function RoomAsks({ roomId, asks = [], onDecided = null }) {
               </span>
             </div>
             {ask.text ? <p className="v4-need-q" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{`«${ask.text}»`}</p> : null}
-            <div className="v4-need-w"><Desktop size={16} style={{ flex: "none", color: "var(--c-text-3)" }} />{`Trabajará en tu ordenador, con tu cuenta. ${first} solo verá la respuesta.`}</div>
+            {isCloud()
+              ? <div className="v4-need-w"><Cloud size={16} style={{ flex: "none", color: "var(--c-text-3)" }} />{`Trabajará en la nube de tu empresa, con tu cuenta de IA. ${first} solo verá la respuesta.`}</div>
+              : <div className="v4-need-w"><Desktop size={16} style={{ flex: "none", color: "var(--c-text-3)" }} />{`Trabajará en tu ordenador, con tu cuenta. ${first} solo verá la respuesta.`}</div>}
             <div className="v4-need-f">
               {choices.map(([decision, label], i) => (
                 <span key={decision} style={{ display: "contents" }}>

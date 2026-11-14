@@ -4,6 +4,7 @@ import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import BotFace from "../components/BotFace.jsx";
 import { get, patch, post } from "../lib/api.js";
+import { isCloud } from "../lib/cloud.js";
 import { InteractiveContext } from "../components/room/Interactive.jsx";
 import { useFollow } from "../lib/useStickToBottom.js";
 import { comboLabel, useDock, usePanelShortcuts } from "../lib/useDock.js";
@@ -144,7 +145,7 @@ function Room({ id, query }) {
     catch (e) { setError(e.message); setSharedOut((x) => ({ ...x, [artifact.id]: undefined })); }
   };
   const shareSlot = (artifact) => (
-    <button type="button" disabled={!!sharedOut[artifact.id]} onClick={() => shareArtifact(artifact)} title="Las personas de la sala podrán abrirlo. Sale cifrado de tu ordenador."
+    <button type="button" disabled={!!sharedOut[artifact.id]} onClick={() => shareArtifact(artifact)} title={isCloud() ? "Las personas de la sala podrán abrirlo." : "Las personas de la sala podrán abrirlo. Sale cifrado de tu ordenador."}
       style={{ alignSelf: "flex-start", minHeight: "32px", padding: "0 12px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-pill)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: sharedOut[artifact.id] ? "default" : "pointer" }}>
       {sharedOut[artifact.id] === "done" ? "Compartido en la sala" : sharedOut[artifact.id] === "busy" ? "Compartiendo…" : "Compartir en la sala"}
     </button>
