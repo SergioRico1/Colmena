@@ -63,10 +63,12 @@ export async function fakeRespond({ instructions = "", input = [], tools = [], s
     const steps = [...said.matchAll(/\[\[tool:([a-z_]{3,40})\|(\{.*?\})\]\]/g)].map((m) => ({ name: m[1], args: m[2] }));
     const done = outputsOf(input, "fake-tool");
     const next = steps[done.length];
-    if (next && names.has(next.name)) {
+    if (next && (names.has(next.name) || names.has("use_tool"))) {
       let args = {};
       try { args = JSON.parse(next.args); } catch {}
-      result = call(next.name, args, "fake-tool-" + done.length + "-" + randomUUID().slice(0, 8));
+      // A long tool list hides some behind use_tool (server/tool-search.mjs): the same call, through it.
+      result = names.has(next.name) ? call(next.name, args, "fake-tool-" + done.length + "-" + randomUUID().slice(0, 8))
+        : call("use_tool", { name: next.name, arguments: args }, "fake-tool-" + done.length + "-" + randomUUID().slice(0, 8));
     } else {
       const last = done.length ? textOf(done.at(-1).output) || String(done.at(-1).output || "") : "";
       result = answer(botNameOf(instructions) + " (modelo de prueba): " + (next ? "no tengo la herramienta " + next.name + "." : "resultado: " + last.replace(/\s+/g, " ").slice(0, 600)));
