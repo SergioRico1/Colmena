@@ -10,9 +10,11 @@
 // the rows per kind, the order fingerprint and that every row decrypts to exactly what it was.
 // Any difference rolls everything back and the database stays as it was. Never VACUUM.
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-import { existsSync } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
 
+// node:sqlite and node:fs only for the file-level functions below (the desktop): loaded on use,
+// so the store (which imports this module) also loads in workerd (store-driver.mjs).
+const sqlite = () => process.getBuiltinModule("node:sqlite");
+const existsSync = (file) => process.getBuiltinModule("node:fs").existsSync(file);
 export const ENCRYPTION = "aes-256-gcm-v1";
 const VERSION_BYTE = 1;
 // Fields kept readable in `meta` so where()/columns() and the mission index work without decrypting.
@@ -58,7 +60,7 @@ export const eventAad = (mission) => "event\u0000" + (mission ?? "");
 /** The encryption a database file says it has ("aes-256-gcm-v1"), or null for a plain (or missing) one. */
 export function encryptionOf(file) {
   if (!existsSync(file)) return null;
-  const db = new DatabaseSync(file, { readOnly: true });
+  const db = new (sqlite().DatabaseSync)(file, { readOnly: true });
   try {
     const has = db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='colmena_meta'").get();
     return has ? db.prepare("SELECT value FROM colmena_meta WHERE key='encryption'").get()?.value || null : null;
@@ -69,6 +71,22 @@ export function checkKey(db, cipher) {
   const row = db.prepare("SELECT value FROM colmena_meta WHERE key='canary'").get();
   if (!row) return false;
   try { return cipher.decrypt(Buffer.from(row.value, "base64"), "canary") === CANARY; } catch { return false; }
+}
+/**
+ * The encrypted layout on an empty database (the cloud, where every workspace is encrypted from
+ * its first row): the same tables, indexes and marks encryptDatabase leaves. `db` is a store
+ * driver (store-driver.mjs); the caller runs this inside a transaction.
+ */
+export function initEncrypted(db, cipher) {
+  db.exec("CREATE TABLE records (kind TEXT NOT NULL, id TEXT NOT NULL, data BLOB NOT NULL, meta TEXT, PRIMARY KEY(kind,id));" +
+    "CREATE TABLE events (seq INTEGER PRIMARY KEY AUTOINCREMENT, mission TEXT, data BLOB NOT NULL, at TEXT);" +
+    "CREATE INDEX records_mission ON records(kind, json_extract(meta,'$.missionId')); CREATE INDEX events_mission ON events(mission, seq);" +
+    "CREATE INDEX records_share ON records(kind, json_extract(meta,'$.shareId'), json_extract(meta,'$.at'));" +
+    "CREATE TABLE colmena_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);");
+  const meta = db.prepare("INSERT INTO colmena_meta(key, value) VALUES(?,?)");
+  meta.run("encryption", ENCRYPTION);
+  meta.run("canary", cipher.encrypt(CANARY, "canary").toString("base64"));
+  meta.run("encryptedAt", new Date().toISOString());
 }
 
 /** Rows per kind, insertion-order fingerprint and integrity of an open database. */
@@ -88,7 +106,7 @@ export function fingerprint(db) {
  */
 export function encryptDatabase(file, key, { checkpoint = true, beforeChecks = null } = {}) {
   const cipher = recordCipher(key);
-  const db = new DatabaseSync(file);
+  const db = new (sqlite().DatabaseSync)(file);
   const started = Date.now();
   try {
     db.exec("PRAGMA busy_timeout=5000; PRAGMA secure_delete=ON;");

@@ -594,20 +594,17 @@ function syncFts(db) {
   const rows = db.prepare("SELECT rowid AS r, data FROM records WHERE kind='messages' AND rowid > ? ORDER BY rowid LIMIT 20000").all(last);
   if (!rows.length) return;
   const insert = db.prepare(`INSERT INTO ${FTS}(text, missionId, msgId) VALUES(?,?,?)`);
-  // Join an outer store transaction if there is one; never roll back someone else's.
-  const own = !db.isTransaction;
-  if (own) db.exec("BEGIN");
-  try {
+  const write = () => {
     for (const row of rows) {
       const m = JSON.parse(row.data);
       if (typeof m.text === "string" && m.text.trim()) insert.run(m.text.slice(0, 20000), m.missionId || "", m.id);
     }
     db.prepare("INSERT INTO colmena_history_sync(id,last) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET last=excluded.last").run(rows.at(-1).r);
-    if (own) db.exec("COMMIT");
-  } catch (error) {
-    if (own) db.exec("ROLLBACK");
-    throw error;
-  }
+  };
+  // Join an outer transaction if there is one; never roll back someone else's. Otherwise the
+  // driver's own transaction (store-driver.mjs: a Durable Object refuses SQL BEGIN).
+  if (db.isTransaction) write();
+  else db.transaction(write);
 }
 
 function snippetAround(text, tokens) {

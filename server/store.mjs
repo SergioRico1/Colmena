@@ -1,8 +1,6 @@
-import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { checkKey, eventAad, isMetaField, metaOf, recordAad, recordCipher } from "./db-crypto.mjs";
+import { checkKey, eventAad, initEncrypted, isMetaField, metaOf, recordAad, recordCipher } from "./db-crypto.mjs";
+import { defaultDriver } from "./store-driver.mjs";
 
 export const now = () => new Date().toISOString();
 export const id = () => randomUUID();
@@ -107,16 +105,34 @@ export class StoreKeyError extends Error {
 }
 
 export class Store {
-  /** `key`: the 32-byte key of an encrypted database (ignored for a plain one). */
-  constructor(directory, { key = null } = {}) {
-    mkdirSync(directory, { recursive: true });
-    this.directory = directory;
-    this.db = new DatabaseSync(path.join(directory, "colmena.sqlite"));
+  /**
+   * `key`: the 32-byte key of an encrypted database (ignored for a plain one).
+   * `keyProvider`: () => that key, for a host whose key is a secret of its own (the cloud: one per
+   * workspace, no DPAPI). With it a new database is created encrypted, and a plain one refuses to open.
+   * `driver`: the SQL driver (store-driver.mjs); by default node:sqlite on `directory`. With a
+   * driver of its own, `directory` may be null (a Durable Object has no data folder).
+   */
+  constructor(directory, { key = null, keyProvider = null, driver = null } = {}) {
+    this.directory = directory ?? null;
+    this.db = driver || defaultDriver(directory);
     // Encrypted (db-crypto.mjs): every record's data and every event is AES-256-GCM; kind, id
     // and a few index fields (`meta`) stay readable.
     this.cipher = null;
-    const marked = this.db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='colmena_meta'").get() &&
+    let marked = this.db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='colmena_meta'").get() &&
       this.db.prepare("SELECT value FROM colmena_meta WHERE key='encryption'").get()?.value;
+    // New = no `records` yet (every store has it from its first open). Not «no table at all»: a
+    // Durable Object's database is never empty, the platform keeps tables of its own there.
+    const fresh = !this.db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' AND name='records'").get();
+    if (keyProvider) {
+      key = keyProvider();
+      if (fresh) {
+        this.db.transaction(() => initEncrypted(this.db, recordCipher(key)));
+        marked = true;
+      } else if (!marked) {
+        this.db.close();
+        throw new StoreKeyError("This database is not encrypted, and its host requires encryption.");
+      }
+    }
     if (marked) {
       if (!key) { this.db.close(); throw new StoreKeyError("La base de datos de Colmena está cifrada y no encuentro su clave en este ordenador. Restaura una copia de seguridad para recuperar tus datos."); }
       const cipher = recordCipher(key);
@@ -124,15 +140,10 @@ export class Store {
       this.cipher = cipher;
     }
     this.encrypted = !!this.cipher;
-    // T3 Code's set: WAL with synchronous=NORMAL (FULL waits for the disk on every commit and
-    // stalls the event loop; in WAL a crash can lose the last commit, never corrupt the file),
-    // the WAL file kept under 32 MB, and space handed back in steps (incremental auto_vacuum,
-    // which only a new database takes: see maintain).
-    const fresh = !this.db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='table' LIMIT 1").get();
-    if (fresh) this.db.exec("PRAGMA auto_vacuum=INCREMENTAL;");
+    // WAL and friends on the desktop (store-driver.mjs › NodeDriver.setup); nothing on a DO.
+    this.db.setup({ fresh });
     this.db.exec(
-      "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=5000; PRAGMA journal_size_limit=33554432;" +
-        "CREATE TABLE IF NOT EXISTS records (kind TEXT NOT NULL,id TEXT NOT NULL,data TEXT NOT NULL, PRIMARY KEY(kind,id));" +
+      "CREATE TABLE IF NOT EXISTS records (kind TEXT NOT NULL,id TEXT NOT NULL,data TEXT NOT NULL, PRIMARY KEY(kind,id));" +
         "CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT,mission TEXT,data TEXT NOT NULL);" +
         "CREATE INDEX IF NOT EXISTS events_mission ON events(mission, seq);" +
         "CREATE INDEX IF NOT EXISTS records_mission ON records(kind, json_extract(data,'$.missionId'));",
@@ -192,7 +203,7 @@ export class Store {
       }
     });
   }
-  /** Runs `fn` atomically (BEGIN IMMEDIATE). Nested calls join the outer transaction. */
+  /** Runs `fn` atomically (BEGIN IMMEDIATE, or the DO's transactionSync). Nested calls join the outer transaction. */
   tx(fn) {
     if (this.depth > 0) {
       this.depth++;
@@ -202,16 +213,12 @@ export class Store {
         this.depth--;
       }
     }
-    this.db.exec("BEGIN IMMEDIATE");
     this.depth = 1;
     let result;
     try {
-      result = this.check(fn());
-      this.db.exec("COMMIT");
+      // BEGIN IMMEDIATE … COMMIT on node:sqlite; transactionSync on a Durable Object.
+      result = this.db.transaction(() => this.check(fn()));
     } catch (error) {
-      try {
-        this.db.exec("ROLLBACK");
-      } catch {}
       this.queued = [];
       throw error;
     } finally {
@@ -417,7 +424,7 @@ export class Store {
     const removed = { events: this.purgeEvents(undefined, time), receipts: this.pruneReceipts(undefined, time) };
     // Never VACUUM: it may renumber the rowids of `records`, and the store keeps insertion
     // order with ORDER BY rowid. A database made before auto_vacuum just reuses its free pages.
-    try { this.db.exec("PRAGMA incremental_vacuum(1024); PRAGMA wal_checkpoint(PASSIVE);"); } catch {}
+    try { this.db.maintain(); } catch {}
     return removed;
   }
   close() {

@@ -159,7 +159,9 @@ export async function createBackup({ store, target, key, kdf, identity = null, a
   let handle;
   try {
     // 1. The database, online: SQLite copies its pages (rowids and order untouched).
-    await sqliteBackup(store.db, temp);
+    // node:sqlite's own handle (store-driver.mjs › NodeDriver.native); a cloud store has none.
+    if (!store.db.native) throw new BackupError("Esta base de datos no admite copias de seguridad de archivo.");
+    await sqliteBackup(store.db.native, temp);
     const db = inspectDatabase(temp);
     if (db.integrity !== "ok") throw new BackupError("La copia de la base de datos no pasó la comprobación de integridad: " + db.integrity);
     const files = await collectFiles(directory);
