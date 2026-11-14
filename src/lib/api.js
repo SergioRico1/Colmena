@@ -16,6 +16,8 @@ async function csrf() {
 
 export async function api(path, method = "GET", body) {
   const headers = {};
+  // Hosted: the browser's zone, so a new company starts in its first owner's time (server/cloud/bots-host.mjs).
+  if (isCloud()) { try { headers["X-Colmena-Time-Zone"] = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch {} }
   if (method !== "GET") {
     headers["Content-Type"] = "application/json";
     headers["X-Colmena-Token"] = await csrf();

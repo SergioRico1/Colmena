@@ -7,6 +7,8 @@
 //   [[plan:nora,tomas]]  the coordinator proposes a plan with those bots (default: Nora and Tomás);
 //   [[app:SLUG]]         the bot proposes that action in the test app (FakeApps below);
 //   [[slow:4000]]        it takes that long to answer (abortable), to test concurrency and eviction;
+//   [[tool:NAME|{json}]] it calls that tool with those arguments (several: one after another), then
+//                        answers with the last result (Phase 4: browser_* and run_command);
 //   anything else        «<Bot> (modelo de prueba): <the first words of what you wrote>».
 import { randomUUID } from "node:crypto";
 
@@ -54,6 +56,20 @@ export async function fakeRespond({ instructions = "", input = [], tools = [], s
     const bots = (/\[\[plan:([a-z0-9_,-]+)\]\]/i.exec(said)?.[1] || "nora,tomas").split(",").filter(Boolean).slice(0, 4);
     result = outputsOf(input, "fake-plan").length ? answer("Plan en marcha: " + bots.join(" y ") + ".")
       : call("propose_plan", { summary: "Reparto de prueba", assignments: bots.map((botId, i) => ({ botId, task: "Parte " + (i + 1) + " de prueba" })) }, "fake-plan-" + randomUUID().slice(0, 8));
+  } else if (/\[\[tool:/.test(said)) {
+    // [[tool:NAME|{json}]] … one call each, in order (Phase 4: the browser and run_command), then an
+    // answer that quotes the last result so a test can read it.
+    const steps = [...said.matchAll(/\[\[tool:([a-z_]{3,40})\|(\{.*?\})\]\]/g)].map((m) => ({ name: m[1], args: m[2] }));
+    const done = outputsOf(input, "fake-tool");
+    const next = steps[done.length];
+    if (next && names.has(next.name)) {
+      let args = {};
+      try { args = JSON.parse(next.args); } catch {}
+      result = call(next.name, args, "fake-tool-" + done.length + "-" + randomUUID().slice(0, 8));
+    } else {
+      const last = done.length ? textOf(done.at(-1).output) || String(done.at(-1).output || "") : "";
+      result = answer(botNameOf(instructions) + " (modelo de prueba): " + (next ? "no tengo la herramienta " + next.name + "." : "resultado: " + last.replace(/\s+/g, " ").slice(0, 600)));
+    }
   } else {
     const app = /\[\[app:([A-Z0-9_]{3,80})\]\]/.exec(said)?.[1];
     const done = outputsOf(input, "fake-app");

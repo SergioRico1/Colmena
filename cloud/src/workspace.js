@@ -17,6 +17,11 @@ import { R2Files, SqlFiles } from "../../server/file-store.mjs";
 import { R2Blobs, SqlBlobs } from "../../server/cloud/blobs.mjs";
 import { uploadFile, fileHeaders } from "../../server/cloud/chat-routes.mjs";
 import { sendMail } from "./mail.js";
+import { machineClient } from "../../server/machine/seam.mjs";
+import { renderingDriver } from "./browser.js";
+
+const CODE = /^\/api\/code(\/|$)/;
+const PREVIEW = /^\/__preview\/([A-Za-z0-9_-]{32})(\/.*)?$/;
 
 const UPLOAD = /^\/api\/chat\/files$/;
 const IMPORT_PART = /^\/api\/chat\/import\/([0-9a-f-]{36})\/parts\/(\d{1,4})$/;
@@ -63,7 +68,14 @@ export class Workspace extends DurableObject {
       // Team messaging's files and import parts: R2 (EU) when bound, else this object's SQLite.
       const blobs = this.env.FILES ? new R2Blobs(this.env.FILES, "workspaces/" + workspaceId) : new SqlBlobs(this.ctx.storage.sql);
       const vapid = this.env.VAPID_PUBLIC_KEY && this.env.VAPID_PRIVATE_KEY ? { publicKey: this.env.VAPID_PUBLIC_KEY, privateKey: this.env.VAPID_PRIVATE_KEY, subject: this.env.VAPID_SUBJECT || "mailto:avisos@colmena.invalid" } : null;
-      const host = hostWorkspace({ store, workspace: { id: workspaceId, name: mark?.title || "" }, masters, files, blobs, vapid,
+      // Phase 4: the company's machine (a container behind the Machine DO) and Browser Rendering.
+      const env = this.env;
+      const machine = env.MACHINE ? machineClient({
+        fetch: (url, init) => this.machineStub(workspaceId).fetch(new Request(url, init)),
+        headers: () => ({ "X-Machine-Workspace": workspaceId, "X-Machine-Quota": String(store.get("settings", "main")?.machineMinutes || "") }),
+      }) : null;
+      const browserDriver = env.BROWSER ? renderingDriver(env.BROWSER, { onLaunch: (ms) => { this.browserLaunches = [...(this.browserLaunches || []), ms].slice(-20); } }) : null;
+      const host = hostWorkspace({ machine, browserDriver, machineInfo: env.MACHINE ? () => this.machineStatus(workspaceId) : null, store, workspace: { id: workspaceId, name: mark?.title || "" }, masters, files, blobs, vapid,
         // Phase 3: webhook addresses and MCP callbacks on the public site; the fake model only
         // when the Worker has the test secret (each workspace still needs its own flag).
         publicUrl: this.env.PUBLIC_URL || "", testing: !!this.env.FAKE_MODEL_TOKEN,
@@ -96,6 +108,13 @@ export class Workspace extends DurableObject {
     }
   }
 
+  /** The company's Machine DO (one container): in the EU jurisdiction when the Worker says so. */
+  machineStub(workspaceId) {
+    const j = this.env.MACHINE_JURISDICTION;
+    const n = j ? this.env.MACHINE.jurisdiction(j) : this.env.MACHINE;
+    return n.get(n.idFromName("machine:" + workspaceId));
+  }
+
   attach(ws) {
     if (this.feeds.has(ws)) return;
     const { person } = ws.deserializeAttachment() || {};
@@ -117,6 +136,23 @@ export class Workspace extends DurableObject {
       return Response.json({ error: "El espacio no se pudo abrir. Prueba en unos segundos." }, { status: 503 });
     }
     const url = new URL(request.url);
+    // A task's dev server (the Worker's /vista/<workspace>/<token>/…): the token is the capability.
+    const preview = PREVIEW.exec(url.pathname);
+    if (preview) {
+      const headers = Object.fromEntries([...request.headers].map(([k, v]) => [k.toLowerCase(), v]));
+      return this.host.preview(preview[1], preview[2] || "/", { method: request.method, headers, search: url.search, body: ["GET", "HEAD"].includes(request.method) ? null : await request.arrayBuffer() });
+    }
+    // «Código»: straight to the company's machine, streams included (live events, terminals).
+    if (CODE.test(url.pathname)) {
+      const headers = Object.fromEntries([...request.headers].map(([k, v]) => [k.toLowerCase(), v]));
+      const body = ["GET", "HEAD"].includes(request.method) ? null : await request.arrayBuffer();
+      try {
+        return await this.host.machineProxy({ method: request.method, path: url.pathname, search: url.search, headers, body, person });
+      } catch (error) {
+        console.error("workspace code: " + (error?.stack || error));
+        return json({ error: "La máquina de tu empresa no responde. Prueba en un minuto." }, 502);
+      }
+    }
     // Team messaging's uploads and downloads stream straight to and from R2 (no body in memory).
     const streamed = await this.streamed(request, url, person);
     if (streamed) return streamed;
@@ -237,6 +273,27 @@ export class Workspace extends DurableObject {
     await this.boot(workspaceId);
     await this.schedule(Date.now() + 2000);
     this.ctx.abort("test eviction");
+  }
+
+  /** Phase 4, the e2e and Empresa › Máquina: the machine's state, its cold starts and minutes. */
+  async machineStatus(workspaceId) {
+    await this.boot(workspaceId);
+    if (!this.env.MACHINE) return { configured: false };
+    const r = await this.machineStub(workspaceId).fetch(new Request("http://machine/__status", { headers: { "X-Machine-Workspace": workspaceId } }));
+    return { configured: true, ...(await r.json()), minutesPerMonth: this.host.store.get("settings", "main")?.machineMinutes || Number(this.env.MACHINE_MINUTES_PER_MONTH || 600), browserLaunches: this.browserLaunches || [], browserPages: this.host.browser?.open() || 0 };
+  }
+  /** Test only: the machine sleeps now (its work packed to R2 first), as the idle alarm would. */
+  async machineSleep(workspaceId) {
+    await this.boot(workspaceId);
+    const r = await this.machineStub(workspaceId).fetch(new Request("http://machine/__sleep", { headers: { "X-Machine-Workspace": workspaceId } }));
+    return r.json();
+  }
+  /** Test only: this company's machine minutes per month (null: the deployment's default). */
+  async setMachineQuota(workspaceId, minutes) {
+    const host = await this.boot(workspaceId);
+    const settings = host.store.get("settings", "main") || { id: "main" };
+    host.store.put("settings", { ...settings, id: "main", machineMinutes: minutes == null ? null : Math.max(0.01, Number(minutes)) });
+    return { machineMinutes: host.store.get("settings", "main").machineMinutes };
   }
 
   /** Someone left or was taken out: their open screens close now. */

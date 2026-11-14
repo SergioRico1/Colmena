@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, MonitorSmartphone, RefreshCw, MessageSquarePlus, Check, CircleAlert, Server, ChevronDown } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
+import { isCloud } from "../../../lib/cloud.js";
 import { C, MONO, SHEET, timeAgo } from "./parts.jsx";
 import { MenuButton } from "../../Menu.js";
 import { addContext } from "./Extras.jsx";
@@ -54,7 +55,17 @@ export default function Preview({ task, onAsk = null }) {
     if (!ports?.length) return;
     if (!port || !ports.some((p) => p.port === port)) setPort(ports[0].port);
   }, [ports]);
-  const url = port ? "http://127.0.0.1:" + port + "/" : null;
+  // Hosted: the server runs in the company's machine; the page arrives through a link of its own
+  // (/vista/…, made per task and port, served sandboxed) instead of this computer's 127.0.0.1.
+  const [cloudUrl, setCloudUrl] = useState(null);
+  useEffect(() => {
+    setCloudUrl(null);
+    if (!isCloud() || !port || !task) return undefined;
+    let alive = true;
+    post("/code/tasks/" + task.id + "/preview-link", { port }).then((d) => { if (alive) setCloudUrl(d.url); }, (e) => alive && setProblem(e.message));
+    return () => { alive = false; };
+  }, [task?.id, port]);
+  const url = port ? (isCloud() ? cloudUrl : "http://127.0.0.1:" + port + "/") : null;
   const current = ports?.find((p) => p.port === port) || null;
   useEffect(() => { if (!current?.source) setAsked(false); }, [current?.source]);
   useEffect(() => { setBox(null); setMarking(false); }, [task?.id, url, phone]);
@@ -134,7 +145,7 @@ export default function Preview({ task, onAsk = null }) {
       {marking ? <div role="status" style={{ flex: "none", padding: "8px 14px", background: C.ink, color: "var(--c-line)", fontSize: "var(--t-caption)" }}>Arrastra sobre la página para marcar una zona y escribe qué cambiarías. Esc para salir.</div> : null}
       <div ref={area} style={{ position: "relative", flex: 1, minHeight: 0, background: "var(--c-sunken)", display: "flex", justifyContent: "center" }}>
         {url ? (
-          <iframe key={url + reload} src={url} title="Vista previa" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+          <iframe key={url + reload} src={url} title="Vista previa" sandbox={isCloud() ? "allow-scripts allow-forms allow-popups allow-modals" : "allow-scripts allow-same-origin allow-forms allow-popups allow-modals"}
             style={{ width: phone ? "390px" : "100%", maxWidth: "100%", height: "100%", border: 0, background: C.white, boxShadow: phone ? "0 0 0 1px rgb(var(--c-ink-rgb) / .08), var(--c-shadow-pop)" : "none", animation: "develop .6s ease-out" }} />
         ) : (
           <div style={{ alignSelf: "center", padding: "28px", maxWidth: "340px", textAlign: "center", display: "flex", flexDirection: "column", gap: "8px" }}>

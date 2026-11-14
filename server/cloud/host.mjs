@@ -23,11 +23,20 @@ import { sendPush } from "./webpush.mjs";
 import { fetchPreview } from "./link-preview.mjs";
 import { cloudBots } from "./bots-host.mjs";
 import { ChannelBots } from "./channel-bots.mjs";
+import { cloudBrowser } from "./browser-cloud.mjs";
+import { dohLookup } from "./web-cloud.mjs";
+import { assertPublicUrl } from "../computer/tools.mjs";
+import { randomBytes } from "node:crypto";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
 export const CLOUD_HIDDEN = Object.freeze(["codigo", "ordenador", "dictado", "voz", "gestores", "copias", "cifrado", "carpetas", "personas-buzon"]);
 /** API areas that need the person's computer or the desktop's mailbox: «not in the cloud». */
 const DESKTOP_ONLY = /^\/api\/(peers|teams|code|computer|projects|voice|voice-live|dictation|backup|backups|encryption|password-managers|browser-sessions|vault|logins|sign-in-grants|folders|diagnostics|drag)(\/|$)/;
+/** With a machine and a browser (Phase 4) «Código» and the bots' browser work here; apps of a computer never do. */
+const DESKTOP_ONLY_P4 = /^\/api\/(peers|teams|computer\/apps|projects|voice|voice-live|dictation|backup|backups|encryption|password-managers|browser-sessions|vault|logins|sign-in-grants|folders|diagnostics|drag)(\/|$)/;
+/** «Código» requests that may carry the person's engine keys to the machine (they can start a turn). */
+const ENGINE_CALLS = /^\/api\/code\/tasks(\/[^/]+\/(messages|goal|review|compact|plans\/[^/]+|asks\/[^/]+|edit-from|catch-up))?$|^\/api\/code\/compare\//;
+const PREVIEW_TTL_MS = 12 * 3600 * 1000;
 /** What a guest may change: talking in the conversations they can see, and their own read marks. */
 const GUEST_WRITES = [/^\/api\/chat\//, /^\/api\/missions\/[^/]+\/messages$/, /^\/api\/rooms\/[^/]+\/(messages|seen)$/, /^\/api\/notifications(\/|$)/, /^\/api\/messages\/[^/]+\/reactions$/];
 const MISSION_PATH = /^\/api\/(missions|rooms)\/([^/]+)/;
@@ -42,7 +51,9 @@ const noSession = () => ({ status: () => null, models: [], start: async () => { 
  * envelope vault (none: secrets unavailable); `files`: where mission files live (SqlFiles or
  * R2Files, server/file-store.mjs); `log`.
  */
-export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m), publicUrl = "", testing = false, fetchImpl = undefined }) {
+export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m), publicUrl = "", testing = false, fetchImpl = undefined, machine = null, browserDriver = null, machineInfo = null }) {
+  // Phase 4: `machine` (server/machine/seam.mjs › machineClient, the company's container: «Código»,
+  // run_command, Office previews) and `browserDriver` (Browser Rendering pages: browser-cloud.mjs).
   // Phase 3 (bots): `publicUrl` (webhook addresses, MCP sign-in callbacks), `testing` (the Worker
   // allows the fake model; each workspace still needs its test flag), `fetchImpl` (tests).
   // Team messaging (Phase 2): `blobs` (server/cloud/blobs.mjs: uploads, import parts), `vapid`
@@ -98,7 +109,13 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
 
   // Bots (Phase 3): runtime, scheduler, connections and per-person AI accounts (bots-host.mjs).
   let appRef = null, pushRef = null;
+  // The bots' browser (Phase 4): Browser Rendering pages, cookie jars sealed in the vault.
+  const browser = browserDriver ? cloudBrowser({
+    driver: browserDriver, vault: (ns) => (masters.length ? vault(ns) : null), log,
+    checkUrl: async (u) => { await assertPublicUrl(u, { resolve: dohLookup(fetchImpl || fetch) }); },
+  }) : null;
   const bots = cloudBots({
+    computer: browser, machine,
     store, workspace, vault: (ns) => (masters.length ? vault(ns) : null), memberOf, members, publicUrl, testing, fetchImpl, log,
     push: (personId, payload) => pushRef?.(personId, payload), rooms: () => appRef?.locals?.rooms,
   });
@@ -114,13 +131,15 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     if (!known || known.removedAt || known.deactivated) return res.status(403).json({ error: "Ya no perteneces a este espacio." });
     const write = !["GET", "HEAD"].includes(req.method);
     if (req.path.startsWith("/api/") && write && req.is("application/json") === false && !(req.method === "PUT" && BINARY_WRITES.some((re) => re.test(req.path)))) return res.status(415).json({ error: "Se requiere JSON." });
-    if (DESKTOP_ONLY.test(req.path)) return res.status(404).json({ error: "Esto solo está en la aplicación de escritorio por ahora.", desktopOnly: true });
+    if ((machine || browser ? DESKTOP_ONLY_P4 : DESKTOP_ONLY).test(req.path) || (!machine && /^\/api\/code(\/|$)/.test(req.path)) || (!browser && /^\/api\/computer(\/|$)/.test(req.path))) return res.status(404).json({ error: "Esto solo está en la aplicación de escritorio por ahora.", desktopOnly: true });
     if (person.role === "guest" && write && !GUEST_WRITES.some((re) => re.test(req.path))) return res.status(403).json({ error: "Como invitado puedes leer y escribir en las conversaciones, no cambiar el espacio." });
     const target = MISSION_PATH.exec(req.path);
     if (target && !["", "new"].includes(target[2])) {
       const mission = missionOf(decodeURIComponent(target[2]));
       if (mission && !canSee(mission, person)) return res.status(404).json({ error: "No existe esa conversación." });
     }
+    // The company's zone defaults to the first owner's browser (bots-host.mjs › adoptTimeZone).
+    if (req.headers["x-colmena-time-zone"]) { try { bots.adoptTimeZone(req.headers["x-colmena-time-zone"], person); } catch {} }
     asPerson({ id: person.id, name: person.name || known.name || null, email: person.email || known.email || null, role: person.role }, next);
   };
   /** After the body is read: what this person may do with bots and approvals (bots-host.mjs). */
@@ -147,7 +166,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       // The company is the one team the sidebar names (rooms carry no teamId: they show in it).
       teams: [{ id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "Empresa", people: members().length, bots: store.list("bots").filter((b) => b.enabled !== false).length, admin: ["owner", "admin"].includes(me.role), current: true }],
       teamsPending: [],
-      cloud: { workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, me: { id: me.id, name: me.name, email: me.email, role: me.role }, members: members(), hidden: CLOUD_HIDDEN },
+      cloud: { workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, timezone: bots.timeZone(), me: { id: me.id, name: me.name, email: me.email, role: me.role }, members: members(), hidden: machine ? CLOUD_HIDDEN.filter((h) => h !== "codigo") : CLOUD_HIDDEN, machine: !!machine, browser: !!browser, apiKeysOnly: true },
     }, me);
   };
 
@@ -165,7 +184,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   const blobStore = blobs || new MemoryBlobs({ max: 32 * 1024 * 1024 });
   const chat = new TeamChat({
     store, people: { list: everyone, get: (id) => { const m = store.get("members", id); return m && !m.removedAt ? MEMBER_FIELDS(m) : null; } },
-    emit: chatEmit, presence, blobs: blobStore, defer, log,
+    emit: chatEmit, presence, blobs: blobStore, defer, log, zone: () => bots.timeZone(),
     bots: () => channelBots.list(), onPost: (person, view, row) => channelBots.onPost(person, view, row),
     previews: previews === false ? null : previews || ((url) => fetchPreview(url)),
   });
@@ -209,14 +228,85 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     res.status(201).json({ missionId: mission.id, href: "/sala/" + mission.id });
   });
   app.get("/api/cloud/me", (_req, res) => res.json({ person: currentPerson(), workspace: state({}).cloud.workspace }));
+  // The machine's state for Empresa › Hora y máquina (the Machine DO: running, minutes, cold starts).
+  app.get("/api/cloud/machine", async (_req, res) => { try { res.json(machineInfo ? await machineInfo() : { configured: false }); } catch (error) { res.status(502).json({ error: "La máquina no responde ahora." }); log("machine status: " + (error?.message || error)); } });
+  // «Tomar el control» from the web (Phase 4): the person's clicks, typing and keys on the live
+  // frame reach the bots' cloud browser while they have the control (browser-cloud.mjs › input).
+  if (browser) app.post("/api/computer/input", async (req, res) => {
+    const b = req.body || {};
+    const missionId = String(b.missionId || "").slice(0, 200);
+    const mission = store.get("missions", missionId);
+    if (!mission || !canSee(mission)) return res.status(404).json({ error: "No existe esa conversación." });
+    if (!["click", "type", "key", "scroll", "open"].includes(b.kind)) return res.status(400).json({ error: "Acción no válida." });
+    try {
+      res.json(await browser.call("input", { missionId, kind: b.kind, x: Number(b.x) || 0, y: Number(b.y) || 0, text: typeof b.text === "string" ? b.text.slice(0, 2000) : "", key: typeof b.key === "string" ? b.key.slice(0, 20) : "", up: !!b.up, url: typeof b.url === "string" ? b.url.slice(0, 2000) : "" }));
+    } catch (error) { res.status(409).json({ error: error.message }); }
+  });
   bots.routes(app);
   };
-  const app = createApp({ store, runtime, session: noSession(), scheduler: bots.scheduler, connections: bots.connections, getOrigin: () => "https://colmena.invalid", computer: null, hosted: { guard, afterBody, state, rooms, routes, approvers: bots.approvers } });
+  const app = createApp({ store, runtime, session: noSession(), scheduler: bots.scheduler, connections: bots.connections, getOrigin: () => "https://colmena.invalid", computer: browser, ...(machine ? { office: machine.office() } : {}), hosted: { guard, afterBody, state, rooms, routes, approvers: bots.approvers } });
   appRef = app;
+  // Takeovers of the cloud browser reach the open screens over the live socket (app.mjs › openFeed).
+  browser?.onEvent((e) => { for (const fn of [...store.listeners]) { try { fn({ type: "computer_" + e.event, mission: e.missionId, botId: e.botId }); } catch {} } });
   app.locals.webhooks = bots.webhooks;
 
+  // ---- «Código» and previews through the company's machine (Phase 4)
+  const jsonResponse = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+  const b64url = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  /**
+   * A request of the app under /api/code, as `person` (the Worker's word): members and admins
+   * only. A call that can start a turn carries the person's API keys to the machine; a
+   * preview link is made here (POST /api/code/tasks/:id/preview-link {port}).
+   */
+  async function machineProxy({ method = "GET", path, search = "", headers = {}, body = null, person }) {
+    if (!machine) return jsonResponse({ error: "Esto solo está en la aplicación de escritorio por ahora.", desktopOnly: true }, 404);
+    const who = person?.id ? memberOf(person.id) : null;
+    if (!who) return jsonResponse({ error: "Ya no perteneces a este espacio." }, 403);
+    if (who.role === "guest") return jsonResponse({ error: "Como invitado no puedes usar «Código»." }, 403);
+    const link = /^\/api\/code\/tasks\/([^/]+)\/preview-link$/.exec(path);
+    if (link && method === "POST") {
+      let port = 0;
+      try { port = Number(JSON.parse(Buffer.from(body || []).toString("utf8") || "{}").port); } catch {}
+      if (!Number.isInteger(port) || port < 1024 || port > 65535 || port === 8080) return jsonResponse({ error: "Puerto no válido." }, 400);
+      const check = await machine.request("/api/code/tasks/" + encodeURIComponent(link[1]), { headers: { "X-Colmena-Person": JSON.stringify(who) } });
+      if (!check.ok) return jsonResponse({ error: "No existe esa tarea." }, 404);
+      const token = randomBytes(24).toString("base64url");
+      const at = Date.now();
+      for (const old of store.list("previewLinks")) if (Date.parse(old.expiresAt) < at) store.remove("previewLinks", old.id);
+      store.put("previewLinks", { id: token, taskId: link[1], port, personId: who.id, createdAt: new Date(at).toISOString(), expiresAt: new Date(at + PREVIEW_TTL_MS).toISOString() }, { silent: true });
+      return jsonResponse({ url: "/vista/" + workspace.id + "/" + token + "/", expiresAt: new Date(at + PREVIEW_TTL_MS).toISOString() });
+    }
+    const out = { "X-Colmena-Person": JSON.stringify({ id: who.id, name: who.name, email: who.email, role: who.role }) };
+    // Tests: the fake Claude Code, only under the workspace's test flag (and the Worker's test secret).
+    if (bots.fakeOn()) out["X-Colmena-Fake-Engine"] = "1";
+    if (method !== "GET" && ENGINE_CALLS.test(path)) out["X-Colmena-Engine-Keys"] = b64url(await bots.engineKeys(who.id));
+    for (const h of ["content-type", "accept", "last-event-id"]) if (headers[h]) out[h] = headers[h];
+    // GitHub: the person's own token, else the company's (Empresa › IA y apps), else none.
+    out["X-Colmena-GitHub-Token"] = (await bots.githubToken(who.id).catch(() => null)) || "";
+    return machine.request(path + (search || ""), { method, headers: out, body: ["GET", "HEAD"].includes(method) ? null : body });
+  }
+  /**
+   * /vista/<workspace>/<token>/… → a task's dev server. The token is the capability (unguessable,
+   * one task and port, 12 h); the page runs sandboxed (an opaque origin): it can never read or act
+   * on the app with the session of whoever opens it.
+   */
+  async function preview(token, rest = "/", { method = "GET", headers = {}, body = null, search = "" } = {}) {
+    const link = /^[A-Za-z0-9_-]{32}$/.test(token || "") ? store.get("previewLinks", token) : null;
+    if (!machine || !link || Date.parse(link.expiresAt) < Date.now() || !memberOf(link.personId)) return new Response("Esta vista previa ha caducado. Ábrela otra vez desde «Código».", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+    const out = {};
+    for (const h of ["accept", "content-type", "accept-language", "if-none-match", "if-modified-since"]) if (headers[h]) out[h] = headers[h];
+    const r = await machine.request("/machine/port/" + link.port + (rest.startsWith("/") ? rest : "/" + rest) + (search || ""), { method, headers: out, body: ["GET", "HEAD"].includes(method) ? null : body });
+    const h = new Headers(r.headers);
+    for (const k of ["set-cookie", "content-security-policy", "x-frame-options", "strict-transport-security"]) h.delete(k);
+    h.set("Content-Security-Policy", "sandbox allow-scripts allow-forms allow-popups allow-modals; frame-ancestors 'self'");
+    h.set("X-Content-Type-Options", "nosniff");
+    h.set("Cache-Control", "no-store");
+    h.set("Referrer-Policy", "no-referrer");
+    return new Response(r.body, { status: r.status, headers: h });
+  }
+
   return {
-    app, store, runtime, bots, channelBots,
+    app, store, runtime, bots, channelBots, browser, machine, machineProxy, preview,
     /** Replaces the workspace's list of people (the directory's, after any change). */
     syncMembers(list, { name = null } = {}) {
       const at = now();

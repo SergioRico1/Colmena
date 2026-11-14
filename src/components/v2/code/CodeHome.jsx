@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, FolderOpen, FolderCode, GitBranch, Sparkles, Ellipsis } from "../../Icon.js";
 import { post } from "../../../lib/api.js";
+import { isCloud } from "../../../lib/cloud.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { useHandoffs, useSharedTasks } from "../../../lib/codeshare.js";
@@ -115,6 +116,7 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
   const bruno = botOf(bots, { botId: "bruno" });
   const handoffs = useHandoffs();
   const shared = useSharedTasks() || [];
+  const cloud = isCloud();
   const [mode, setMode] = useState(null); // 'clone' | 'new'
   const [how, setHowState] = useState(readMode); // «Plan primero» or «Directo»
   const setHow = (v) => { setHowState(v); try { localStorage.setItem(MODE_KEY, v); } catch {} };
@@ -179,12 +181,18 @@ export default function CodeHome({ projects = [], selected = null, onSelect, eng
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <h1 style={{ margin: 0, font: `700 var(--t-headline)/1.15 ${HEAD}`, letterSpacing: "-0.015em" }}>Código</h1>
             <p style={{ margin: 0, maxWidth: "680px", fontSize: "var(--t-read)", lineHeight: 1.5, color: C.text2 }}>Tus bots programan en una copia aparte de tu proyecto. Ves cada cambio, lo pruebas en la vista previa y decides qué se queda.</p>
+            {cloud ? (
+              <p style={{ margin: 0, maxWidth: "680px", fontSize: "var(--t-ui)", lineHeight: 1.5, color: C.text2 }}>
+                Aquí trabajan en la máquina de tu empresa en la nube, con tu propia clave de API de Anthropic, OpenAI u OpenCode (Ajustes › Tu cuenta de IA). Las suscripciones de Claude y ChatGPT no se pueden usar en un servicio alojado.
+              </p>
+            ) : null}
           </div>
           <MenuButton menuLabel="Abrir un proyecto" showTitle={false} disabled={busy} openStyle={{ background: C.track }} style={{ ...BTN.outline, height: "44px", padding: "0 18px", fontSize: "var(--t-body)", fontWeight: 500 }}
             items={[
-              { label: "Abrir una carpeta del ordenador", icon: FolderOpen, onSelect: openFolder },
+              // Hosted: there is no folder of a computer, only the company's machine in the cloud.
+              ...(cloud ? [] : [{ label: "Abrir una carpeta del ordenador", icon: FolderOpen, onSelect: openFolder }]),
               { label: "Clonar de GitHub", icon: GitBranch, onSelect: () => { setMode("clone"); setValue(""); } },
-              { label: "Empezar de cero", icon: Sparkles, hint: "En Documentos › Colmena", onSelect: () => { setMode("new"); setValue(""); } },
+              { label: "Empezar de cero", icon: Sparkles, hint: cloud ? "En la máquina de tu empresa" : "En Documentos › Colmena", onSelect: () => { setMode("new"); setValue(""); } },
             ]}>
             Abrir un proyecto
           </MenuButton>

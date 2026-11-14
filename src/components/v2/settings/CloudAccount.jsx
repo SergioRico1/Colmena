@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ProviderMark from "../ProviderMark.jsx";
 import { Check, Copy, ExternalLink } from "../../Icon.js";
 import { useAction, useResource, useStore } from "../../../lib/store.jsx";
-import { del, post } from "../../../lib/api.js";
+import { del, post, put } from "../../../lib/api.js";
 import { later } from "../../../lib/undoToast.js";
 import { ENGINE_NAMES, KEY_ENGINES } from "../../../lib/engineNames.js";
 import { Alert, Chip, LINE, UNDO_MS, anchorOf, btn, danger, field, mono } from "./v3.jsx";
@@ -179,6 +179,51 @@ export default function CloudAccount() {
         ))}
         <ConnectOther engines={engines} catalog={{}} />
       </div>
+      <CodeAndApps />
     </>
+  );
+}
+
+/**
+ * Phase 4: «Código» in the cloud runs with your API key (never a subscription), your GitHub token
+ * (or the company's) and, if you turn it on, your own connected apps instead of the company's.
+ */
+function CodeAndApps() {
+  const { data: gh } = useResource("/cloud/github");
+  const { data: apps } = useResource("/cloud/apps/mine");
+  const act = useAction();
+  const [token, setToken] = useState("");
+  const [saved, setSaved] = useState(null);
+  const [mineOn, setMineOn] = useState(null);
+  const on = mineOn ?? !!apps?.on;
+  const saveToken = (e) => {
+    e.preventDefault();
+    setSaved(null);
+    act.act(() => put("/cloud/github", { scope: "mine", token: token.trim() })).then((r) => { if (!r?.ok) return; setSaved(token.trim() ? "Token guardado." : "Token quitado."); setToken(""); }, () => {});
+  };
+  const flip = () => act.act(() => put("/cloud/apps/mine", { on: !on })).then((r) => { if (r) setMineOn(!!r.on); }, () => {});
+  return (
+    <section aria-labelledby="ca-code" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}>
+      <h3 id="ca-code" style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>Código y apps en la nube</h3>
+      <p style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.55, color: "var(--c-text-2)" }}>
+        «Código» trabaja en la máquina de tu empresa con tu clave de API de Anthropic, OpenAI u OpenCode. Las suscripciones de Claude y ChatGPT no se pueden usar en un servicio alojado: sus condiciones lo prohíben.
+      </p>
+      <form onSubmit={saveToken} style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-end" }}>
+        <label style={{ ...field, flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
+          Tu token de GitHub {gh?.mine ? "(guardado)" : gh?.company ? "(si no pones uno, se usa el de la empresa)" : ""}
+          <input type="password" autoComplete="off" spellCheck={false} value={token} onChange={(e) => { setToken(e.target.value); setSaved(null); }} placeholder={gh?.mine ? "Pega otro para cambiarlo, o guarda vacío para quitarlo" : "ghp_… o github_pat_…"} style={{ ...mono, height: "40px", padding: "0 12px", border: LINE, borderRadius: "var(--r-sm)", background: "var(--c-card)", color: "var(--c-text)" }} />
+        </label>
+        <button type="submit" disabled={act.busy || (!token.trim() && !gh?.mine)} style={btn("dark", 40)}>{token.trim() || !gh?.mine ? "Guardar" : "Quitar"}</button>
+      </form>
+      {saved ? <p role="status" style={{ margin: 0, fontSize: "var(--t-meta)", color: "var(--c-ok-ink)" }}>{saved}</p> : null}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between", flexWrap: "wrap" }}>
+        <div style={{ flex: "1 1 260px" }}>
+          <strong id="ca-apps" style={{ fontSize: "var(--t-ui)" }}>Mis propias apps</strong>
+          <p style={{ margin: "2px 0 0", fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-2)" }}>Activado, tus bots usan las cuentas que conectes tú (tu Gmail, tu calendario…) en vez de las de la empresa.</p>
+        </div>
+        <button type="button" role="switch" aria-checked={on} aria-labelledby="ca-apps" disabled={act.busy} onClick={flip} style={btn(on ? "dark" : "ghost", 36)}>{on ? "Activado" : "Desactivado"}</button>
+      </div>
+      <Alert>{act.error}</Alert>
+    </section>
   );
 }

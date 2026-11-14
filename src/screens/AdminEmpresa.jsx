@@ -21,6 +21,7 @@ const TABS = [
   { id: "canales", label: "Canales" },
   { id: "ajustes", label: "Ajustes" },
   { id: "ia", label: "IA y apps" },
+  { id: "maquina", label: "Hora y máquina" },
   { id: "importar", label: "Importar de Slack" },
   { id: "registro", label: "Registro" },
 ];
@@ -59,6 +60,7 @@ export default function AdminEmpresa({ params = {} }) {
           {tab === "canales" ? <Channels /> : null}
           {tab === "ajustes" ? <Settings /> : null}
           {tab === "ia" ? <AiPolicy /> : null}
+          {tab === "maquina" ? <MachineAndTime /> : null}
           {tab === "importar" ? <SlackImport /> : null}
           {tab === "registro" ? <AuditLog /> : null}
         </div>
@@ -618,6 +620,83 @@ function AiPolicy() {
           <p style={{ margin: 0, color: "var(--c-text-3)" }}>Puedes apagarlo cuando quieras: las cuentas conectadas así dejan de funcionar al momento.</p>
         </Dialog>
       ) : null}
+    </>
+  );
+}
+
+/* ── Hora y máquina ───────────────────────────────────────────────────────────────────────── */
+// The company's time zone (routines at the hour people mean, across summer time; «no molestar» of
+// whoever set none) and its machine in the cloud (docs/CLOUD.md › Phase 4): «Código», commands and
+// Office previews run there; it sleeps when idle and has minutes per month. GitHub for «Código».
+
+const zones = () => { try { return Intl.supportedValuesOf("timeZone"); } catch { return ["Europe/Madrid", "Europe/London", "America/New_York", "America/Mexico_City", "UTC"]; } };
+const browserZone = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; } };
+const clockIn = (tz) => { try { return new Date().toLocaleTimeString("es-ES", { timeZone: tz, hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
+
+function MachineAndTime() {
+  const [tz, setTz] = useState(null);
+  const [machine, setMachine] = useState(null);
+  const [github, setGithub] = useState(null);
+  const [token, setToken] = useState("");
+  const [state, setState] = useState(null); // {saved: what} | {error}
+  const [busy, setBusy] = useState(false);
+  const list = useMemo(zones, []);
+
+  useEffect(() => {
+    get("/cloud/timezone").then((d) => setTz(d.timezone || browserZone()), (e) => setState({ error: e.message }));
+    get("/cloud/machine").then(setMachine, () => setMachine({ configured: false }));
+    get("/cloud/github").then(setGithub, () => setGithub({}));
+  }, []);
+  const saveZone = async (value) => {
+    setBusy(true); setState(null);
+    try { const r = await put("/cloud/timezone", { timezone: value }); setTz(r.timezone); setState({ saved: "zone" }); }
+    catch (e) { setState({ error: e.message }); }
+    finally { setBusy(false); }
+  };
+  const saveToken = async (e) => {
+    e.preventDefault();
+    setBusy(true); setState(null);
+    try { await put("/cloud/github", { scope: "company", token: token.trim() }); setToken(""); setGithub((g) => ({ ...g, company: !!token.trim() })); setState({ saved: "github" }); }
+    catch (err) { setState({ error: err.message }); }
+    finally { setBusy(false); }
+  };
+  if (!tz) return state?.error ? <p className="ch-error" role="alert">{state.error}</p> : <p className="ad-loading" role="status">Cargando…</p>;
+  const last = machine?.starts?.at(-1) || null;
+
+  return (
+    <>
+      <h2 className="ch-section-title">Zona horaria de la empresa</h2>
+      <p className="ch-hint">Las rutinas se ponen en marcha a la hora de esta zona, también cuando cambia la hora en verano e invierno. «No molestar» la usa para quien no ha elegido la suya en su perfil.</p>
+      <div className="ad-inline">
+        <div className="ch-field ad-narrow"><span>Zona</span>
+          <Select aria-label="Zona horaria de la empresa" value={tz} disabled={busy} options={list.map((z) => [z, z.replace(/_/g, " ")])} onChange={(e) => saveZone(e.target.value)} />
+        </div>
+        <p className="ch-hint" style={{ margin: 0 }}>Ahora allí son las {clockIn(tz)}.</p>
+      </div>
+      {state?.saved === "zone" ? <p className="ad-saved" role="status">Guardado. Las rutinas ya cuentan con esta zona.</p> : null}
+
+      <h2 className="ch-section-title">Máquina en la nube</h2>
+      {machine?.configured ? (
+        <>
+          <p className="ch-hint">«Código», las órdenes de los bots y las vistas de Word, Excel y PowerPoint se ejecutan en una máquina de tu empresa. Se enciende cuando hace falta y se apaga tras {Math.round((machine.sleepAfterS || 600) / 60)} minutos sin uso, guardando su trabajo.</p>
+          <dl className="ad-facts">
+            <div><dt>Ahora</dt><dd>{machine.running ? "Encendida" : "Apagada"}</dd></div>
+            <div><dt>Este mes</dt><dd>{machine.usedMinutes ?? 0} de {machine.minutesPerMonth} minutos</dd></div>
+            {last ? <div><dt>Último arranque</dt><dd>{(last.readyMs / 1000).toFixed(1)} s{last.restored ? ", con su trabajo recuperado" : ""}</dd></div> : null}
+          </dl>
+        </>
+      ) : <p className="ch-hint">Esta instalación no tiene máquina en la nube: «Código» y las órdenes solo están en la aplicación de escritorio.</p>}
+
+      <h2 className="ch-section-title">GitHub para «Código»</h2>
+      <p className="ch-hint">Un token de la empresa (de una GitHub App o un token de acceso con permiso sobre sus repositorios) para clonar, subir ramas y abrir pull requests. Cada persona puede poner el suyo en Ajustes, y entonces se usa el suyo. Se guarda cifrado y no se vuelve a mostrar.</p>
+      <form className="ad-inline" onSubmit={saveToken}>
+        <label className="ch-field">Token de GitHub {github?.company ? "(hay uno guardado)" : ""}
+          <input className="ch-input" type="password" autoComplete="off" spellCheck={false} placeholder={github?.company ? "Pega otro para cambiarlo, o deja vacío y guarda para quitarlo" : "ghp_… o github_pat_…"} value={token} onChange={(e) => { setToken(e.target.value); setState(null); }} />
+        </label>
+        <button type="submit" className="ch-btn is-primary" disabled={busy || (!token.trim() && !github?.company)}>{token.trim() || !github?.company ? "Guardar" : "Quitar"}</button>
+      </form>
+      {state?.saved === "github" ? <p className="ad-saved" role="status">Guardado.</p> : null}
+      {state?.error ? <p className="ch-error" role="alert">{state.error}</p> : null}
     </>
   );
 }

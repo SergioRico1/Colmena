@@ -111,3 +111,4 @@
 .ad-stats dt{font-size:var(--t-meta);color:var(--c-text-3)}
 .ad-stats dd{margin:0;font:600 var(--t-ui)/1.3 'Geist',sans-serif;color:var(--c-text);font-variant-numeric:tabular-nums}
 .ad-errors{margin:0 0 14px;padding:0 0 0 18px;font-size:var(--t-meta);line-height:1.45;color:var(--c-text-3)}
+.ad-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px 16px;margin:4px 0 8px}.ad-facts div{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:var(--r-md);background:var(--c-card);border:1px solid var(--c-line)}.ad-facts dt{font-size:var(--t-meta);color:var(--c-text-3)}.ad-facts dd{margin:0;font-weight:600}

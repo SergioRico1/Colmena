@@ -14,11 +14,13 @@
 //   /hooks/<workspace>/h/<id>  a routine's public webhook address (Phase 3)
 import { Directory } from "./directory.js";
 import { Workspace } from "./workspace.js";
+import { Machine } from "./machine.js";
+import { testPage } from "./test-pages.js";
 import { hasMail, isTestAddress, sendMail } from "./mail.js";
 import { OAuthError, authorizationUrl, bindingCookie, bindingFromRequest, enabledProviders, exchangeCode, providerConfig } from "./oauth.js";
 import { SECURITY_HEADERS, csrfOk, fail, json, pagePolicy, sameOrigin, sameSecret, sessionCookie, sessionToken, withHeaders } from "./http.js";
 
-export { Directory, Workspace };
+export { Directory, Workspace, Machine };
 
 const CLOUD_PAGES = /^\/(entrar|entrar\/verificar|empresa|empresa\/nueva|invitacion)\/?$/;
 const ID = /^[0-9a-f-]{36}$/;
@@ -50,10 +52,13 @@ export default {
 
 async function route(request, env, ctx) {
   const url = new URL(request.url);
-  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 3 });
+  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 4 });
   if (!env.WORKSPACE_KEYS) return fail(503, "Colmena en la nube no está configurada todavía.");
   if (url.pathname.startsWith("/auth/")) return auth(request, env, url, ctx);
   if (url.pathname.startsWith("/hooks/")) return hook(request, env, url);
+  if (url.pathname.startsWith("/vista/")) return vista(request, env, url);
+  // Tests only (FAKE_MODEL_TOKEN): public fixture pages the cloud browser reads and fills.
+  if (url.pathname.startsWith("/prueba/") && env.FAKE_MODEL_TOKEN) return testPage(request, url);
   if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return api(request, env, url);
   return page(request, env, url);
 }
@@ -350,7 +355,7 @@ async function api(request, env, url) {
   if (!workspaceId) return finish(fail(409, "Elige una empresa.", { choose: "/empresa" }), me);
   const headers = new Headers(request.headers);
   // Only the Worker says who is asking: whatever a browser sent under these names goes.
-  for (const name of [...headers.keys()]) if (name.toLowerCase().startsWith("x-colmena-") && name.toLowerCase() !== "x-colmena-token") headers.delete(name);
+  for (const name of [...headers.keys()]) if (name.toLowerCase().startsWith("x-colmena-") && !["x-colmena-token", "x-colmena-time-zone"].includes(name.toLowerCase())) headers.delete(name);
   headers.delete("Cookie");
   headers.set("X-Colmena-Workspace", workspaceId);
   headers.set("X-Colmena-Person", JSON.stringify(personOf(me)));
@@ -403,7 +408,29 @@ async function devTest(request, env, url) {
     try { await stub.evict(id); } catch {}
     return json({ ok: true, evictedAt: Date.now() });
   }
+  // Phase 4: the machine's state and cold starts, putting it to sleep now, a tiny monthly quota.
+  if (what === "machine" && request.method === "GET") return json(await stub.machineStatus(id));
+  if (what === "machine/sleep" && request.method === "POST") return json(await stub.machineSleep(id));
+  if (what === "machine/quota" && request.method === "POST") return json(await stub.setMachineQuota(id, data.minutes ?? null));
   throw new HttpError(404, "No encontrado.");
+}
+
+// ------------------------------------------------------------------ /vista (Phase 4: previews)
+const VISTA = /^\/vista\/([0-9a-f-]{36})\/([A-Za-z0-9_-]{32})(\/.*)?$/;
+/**
+ * /vista/<workspace>/<token>/…: a «Código» task's dev server. The token (made by a member for one
+ * task and port, 12 hours) is what lets it through; no session or cookie is forwarded, and the
+ * workspace serves the page sandboxed (an opaque origin) so it cannot act as whoever opens it.
+ */
+async function vista(request, env, url) {
+  const m = VISTA.exec(url.pathname);
+  if (!m) return fail(404, "No encontrado.");
+  if (!m[3]) return new Response(null, { status: 302, headers: { Location: url.pathname + "/" + url.search, ...SECURITY_HEADERS } });
+  const headers = new Headers();
+  for (const h of ["Accept", "Accept-Language", "Content-Type", "If-None-Match", "If-Modified-Since"]) if (request.headers.get(h)) headers.set(h, request.headers.get(h));
+  headers.set("X-Colmena-Workspace", m[1]);
+  const inner = new URL("/__preview/" + m[2] + m[3] + url.search, url.origin);
+  return workspaceStub(env, m[1]).fetch(new Request(inner, { method: request.method, headers, body: ["GET", "HEAD"].includes(request.method) ? null : request.body }));
 }
 
 // ------------------------------------------------------------------ pages

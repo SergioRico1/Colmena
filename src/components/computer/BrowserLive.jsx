@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Globe, Lock, LockOpen } from "../Icon.js";
 import { BotPresence } from "../v2/Presence.jsx";
 import { post } from "../../lib/api.js";
+import { isCloud } from "../../lib/cloud.js";
 import { avatarStyle, initial } from "../../lib/bots.js";
 import { useBrowserFrames } from "./useBrowserFrames.js";
 import { ReturnNote, WatchedView, returnBody } from "./takeover.jsx";
@@ -73,6 +74,16 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
   const takeControl = () => run("take", () => post("/computer/takeover", { missionId, action: "take", ...(frame?.botId ? { botId: frame.botId } : {}) }));
   const giveBack = () => run("return", async () => { await post("/computer/takeover", returnBody(missionId, frame?.botId, note)); setNote(""); });
   const stop = () => run("stop", () => post("/missions/" + encodeURIComponent(missionId) + "/control", { action: "pause" }));
+  // Hosted: the browser is in the cloud, so the person's hands reach it through the frame itself
+  // (a click where they click, what they type, a key); each answer brings a fresh frame.
+  const cloud = isCloud();
+  const [typed, setTyped] = useState("");
+  const remote = (body) => run("input", () => post("/computer/input", { missionId, ...body }));
+  const clickAt = (e) => {
+    if (!cloud || !takeover) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    remote({ kind: "click", x: Math.round(((e.clientX - r.left) / r.width) * 1280), y: Math.round(((e.clientY - r.top) / r.height) * 800) });
+  };
 
   if (!frame) {
     const desktopOnly = available === false;
@@ -135,14 +146,30 @@ export default function BrowserLive({ missionId, bot, verb = null, missionActive
         <img
           src={frame.image}
           alt={"Lo que ve " + name + ": " + (frame.title || host || "página web")}
-          style={{ display: "block", width: "100%", height: "auto", maxHeight: "70vh", objectFit: "contain" }}
+          onClick={clickAt}
+          style={{ display: "block", width: "100%", height: "auto", maxHeight: "70vh", objectFit: "contain", cursor: cloud && takeover ? "pointer" : undefined }}
         />
       </WatchedView>
 
       {takeover ? (
         <p style={{ margin: 0, padding: "12px 16px", borderTop: "1px solid var(--c-line)", background: "var(--c-honey-soft)", fontSize: "var(--t-ui)", lineHeight: 1.5 }}>
-          <strong>Tienes el control.</strong> {name} espera sin tocar nada. Usa la ventana «Colmena · Navegador de {name}» y pulsa «Devolver» cuando termines.
+          <strong>Tienes el control.</strong> {name} espera sin tocar nada. {cloud ? "Pulsa sobre la imagen para hacer clic donde quieras y escribe abajo; " : "Usa la ventana «Colmena · Navegador de " + name + "» y "}pulsa «Devolver» cuando termines.
         </p>
+      ) : null}
+      {cloud && takeover ? (
+        <form onSubmit={(e) => { e.preventDefault(); if (typed) remote({ kind: "type", text: typed }).then(() => setTyped("")); }}
+          style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", padding: "10px 16px", borderTop: "1px solid var(--c-line)" }}>
+          <label style={{ flex: "1 1 220px", display: "flex" }}>
+            <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Escribir en la página</span>
+            <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Escribe aquí y pulsa Escribir" autoComplete="off"
+              style={{ flex: 1, minWidth: 0, height: "40px", padding: "0 12px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-card)", color: "var(--c-text)", font: "inherit" }} />
+          </label>
+          <button type="submit" className="colmena-live-btn" disabled={!!busy || !typed} style={BUTTON_LIGHT}>Escribir</button>
+          {["Enter", "Tab", "Escape"].map((k) => (
+            <button key={k} type="button" className="colmena-live-btn" disabled={!!busy} onClick={() => remote({ kind: "key", key: k })} style={BUTTON_LIGHT}>{k === "Enter" ? "Intro" : k === "Escape" ? "Esc" : k}</button>
+          ))}
+          <button type="button" className="colmena-live-btn" disabled={!!busy} onClick={() => remote({ kind: "scroll" })} style={BUTTON_LIGHT}>Bajar</button>
+        </form>
       ) : null}
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "8px", padding: "12px 16px", borderTop: "1px solid var(--c-line)" }}>

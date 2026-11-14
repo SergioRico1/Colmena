@@ -30,6 +30,13 @@ PUBLIC_URL = "https://app.colmena.team"
 # Web Push (server/cloud/webpush.mjs): the VAPID pair is the secrets VAPID_PUBLIC_KEY and
 # VAPID_PRIVATE_KEY (cloud/scripts/vapid-keys.mjs); this is who push services may contact.
 VAPID_SUBJECT = "https://app.colmena.team"
+# Phase 4 (docs/CLOUD.md): each company's machine (a container behind the Machine DO) sleeps after
+# this many quiet seconds, may run this many minutes a month, and has this size.
+MACHINE_SLEEP_AFTER_S = "600"
+MACHINE_MINUTES_PER_MONTH = "600"
+MACHINE_INSTANCE = "standard-1"
+# The Machine DOs live in the EU like the workspaces (containers are placed in the EU too).
+MACHINE_JURISDICTION = "eu"
 
 [[send_email]]
 name = "SEND_EMAIL"
@@ -64,6 +71,30 @@ new_sqlite_classes = ["Workspace"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["Directory"]
+
+# Phase 4: one machine (container) per company, started on demand and stopped when idle
+# (cloud/src/machine.js, the Durable Object Container API). The image is built from the
+# repository root: cloud/container/Dockerfile (+ Dockerfile.dockerignore). DO-managed containers take
+# no placement constraints: the container runs beside its Machine DO (EU jurisdiction).
+[[durable_objects.bindings]]
+name = "MACHINE"
+class_name = "Machine"
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["Machine"]
+
+[[containers]]
+class_name = "Machine"
+scheduling_policy = "durable_object"
+
+[containers.images.base]
+dockerfile = "./container/Dockerfile"
+build_context = ".."
+
+# The bots' browser (server/cloud/browser-cloud.mjs): Cloudflare Browser Rendering.
+[browser]
+binding = "BROWSER"
 
 [observability]
 enabled = false

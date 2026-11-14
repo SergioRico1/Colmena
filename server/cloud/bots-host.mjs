@@ -31,7 +31,11 @@ import { now } from "../store.mjs";
 import { SYSTEM_PERSON, asPerson, currentPerson, isPerson } from "../identity.mjs";
 import { personalProviders, aiPolicy, setAiPolicy, SUBSCRIPTION_WARNING } from "./ai.mjs";
 import { fakeApps } from "./fake-model.mjs";
-import { cloudWebFetch } from "./web-cloud.mjs";
+import { cloudWebFetch, dohLookup } from "./web-cloud.mjs";
+import { computerExtraTools } from "../computer/wire.mjs";
+import { BROWSER_TOOLS } from "../computer/policy.mjs";
+import { cleanTimeZone } from "../timezone.mjs";
+import { randomUUID } from "node:crypto";
 
 export const TEST_FLAGS_ID = "test-flags";
 const ACTIVE = new Set(["queued", "planning", "running"]);
@@ -48,14 +52,24 @@ const refuse = (status, error) => ({ status, error });
  * `vault(namespace)` (envelope vault or null), `memberOf(id)` → a member or null, `members()`,
  * `push(personId, payload)` or null, `publicUrl`, `testing` (the Worker allows the fake model).
  */
-export function cloudBots({ store, workspace, rooms = () => null, vault = () => null, memberOf, members, push = null, publicUrl = "", testing = false, fetchImpl = undefined, log = () => {} }) {
+export function cloudBots({ store, workspace, rooms = () => null, vault = () => null, memberOf, members, push = null, publicUrl = "", testing = false, fetchImpl = undefined, log = () => {}, computer = null, machine = null }) {
+  // Phase 4: `computer`, the cloud browser (browser-cloud.mjs); `machine`, the company's container
+  // (server/machine/seam.mjs) where run_command runs.
   const fakeOn = () => !!testing && store.get("cloud", TEST_FLAGS_ID)?.fakeModel === true;
   const provider = personalProviders({ store, vaultFor: vault, fake: fakeOn, ...(fetchImpl ? { fetchImpl } : {}) });
 
   // ---- apps (Composio) for the company: its key in the vault; the test app under the flag.
   const composio = new ComposioHub({ vault: vault("connections") });
   const testApps = fakeApps();
-  const connections = new Connections(store, { dispatch: (...args) => (fakeOn() ? testApps : composio).dispatch(...args) });
+  // Phase 4: apps per person. Someone who turns on «mis apps» gets a Composio profile of their own
+  // (the company's key, their own Composio user): the accounts they connect are theirs, and their
+  // bots' turns and routines use them. Everyone else keeps using the company's apps.
+  const personalApps = (id) => !!id && store.get("cloud", "apps-mine:" + id)?.on === true;
+  const appProfile = () => {
+    const p = currentPerson();
+    return isPerson(p) && personalApps(p.id) ? personProfile(p.id) : "default";
+  };
+  const connections = new Connections(store, { dispatch: (profile, ...rest) => (fakeOn() ? testApps : composio).dispatch(profile === "default" ? appProfile() : profile, ...rest) });
 
   const web = cloudWebFetch(fetchImpl ? { fetchImpl } : {});
   const runtime = new Runtime(store, provider, connections, {
@@ -67,7 +81,14 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   runtime.appTools = new AppTools(connections);
   const mcpTools = mcpExtraTools(runtime, runtime.mcp);
   const secretTools = secretsExtraTools(runtime, runtime.secrets);
-  runtime.extraTools = (bot, mission) => [...mcpTools(bot, mission), ...secretTools(bot, mission), ...runtime.appTools.list(bot, mission, runtime)];
+  // The browser and run_command (Phase 4). Opening files and apps of a computer stays on the
+  // desktop; without a machine there is no run_command either.
+  runtime.machine = machine || null;
+  runtime.resolveHost = dohLookup(fetchImpl || fetch);
+  const CLOUD_COMPUTER = new Set([...(computer ? BROWSER_TOOLS : []), ...(machine ? ["run_command"] : [])]);
+  const computerTools = computer || machine ? computerExtraTools(runtime, { computer: computer || { available: false, call: async () => { throw Error("Sin navegador."); }, onFrame: () => () => {}, onEvent: () => () => {}, lastFrame: () => null } }) : () => [];
+  const cloudComputer = (bot, mission) => computerTools(bot, mission).filter((t) => CLOUD_COMPUTER.has(t.name));
+  runtime.extraTools = (bot, mission) => [...mcpTools(bot, mission), ...secretTools(bot, mission), ...runtime.appTools.list(bot, mission, runtime), ...cloudComputer(bot, mission)];
 
   // ---- whose account: the person who asked (a message, a mention), or the routine's owner
   const ownerOf = (mission) => {
@@ -216,8 +237,49 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
       admin(req);
       const key = String(req.body?.key || "").trim();
       if (!/^[A-Za-z0-9_-]{16,200}$/.test(key)) throw Object.assign(Error("Esa clave no tiene el formato de una clave de Composio."), { status: 400 });
-      await connections.manage("configure", { key });
+      await asPerson(SYSTEM_PERSON, () => connections.manage("configure", { key }));
+      // People with apps of their own keep their Composio user; only the key changes.
+      for (const r of store.list("cloud").filter((x) => String(x.id).startsWith("apps-mine:") && x.on)) await linkPersonalApps(r.id.slice(10)).catch((e) => log("apps: " + (e?.message || e)));
       return { ok: true };
+    }));
+    // GitHub for «Código» (Phase 4): a token of the company (admins) or of a person, in the vault.
+    app.get("/api/cloud/github", wrap(async () => {
+      const me = currentPerson();
+      const v = vault("github");
+      return { mine: !!(await v?.load({ profile: personProfile(me.id) }).catch(() => null))?.token, company: !!(await v?.load({ profile: "company" }).catch(() => null))?.token };
+    }));
+    app.put("/api/cloud/github", wrap(async (req) => {
+      const me = currentPerson();
+      const scope = req.body?.scope === "company" ? "company" : "mine";
+      if (scope === "company") admin(req);
+      if (me.role === "guest") throw Object.assign(Error("Los invitados no conectan GitHub."), { status: 403 });
+      const token = String(req.body?.token || "").trim();
+      const v = vault("github");
+      if (!v) throw Object.assign(Error("GitHub necesita el almacén cifrado de la empresa."), { status: 503 });
+      const binding = { profile: scope === "company" ? "company" : personProfile(me.id) };
+      if (!token) { await v.remove(binding.profile); return { ok: true, removed: true }; }
+      if (!/^(gh[pousr]_[A-Za-z0-9]{20,251}|github_pat_[A-Za-z0-9_]{20,240})$/.test(token)) throw Object.assign(Error("Eso no parece un token de GitHub (ghp_…, github_pat_… o el de una GitHub App)."), { status: 400 });
+      await v.save(binding, { token, at: now(), by: me.id });
+      return { ok: true, scope };
+    }));
+    // «Mis apps» (Phase 4): this person's own connected accounts instead of the company's.
+    app.get("/api/cloud/apps/mine", wrap(() => ({ on: personalApps(currentPerson().id) })));
+    app.put("/api/cloud/apps/mine", wrap(async (req) => {
+      const me = currentPerson();
+      if (me.role === "guest") throw Object.assign(Error("Los invitados no conectan apps."), { status: 403 });
+      const on = req.body?.on === true;
+      if (on) await linkPersonalApps(me.id);
+      store.put("cloud", { id: "apps-mine:" + me.id, on, at: now() }, { silent: true });
+      for (const fn of store.listeners) try { fn({ type: "changed-local", kinds: ["account"] }); } catch {}
+      return { on };
+    }));
+    // The company's time zone (routines, «no molestar» of people with none of their own).
+    app.get("/api/cloud/timezone", wrap(() => ({ timezone: timeZone() })));
+    app.put("/api/cloud/timezone", wrap((req) => {
+      admin(req);
+      const tz = cleanTimeZone(String(req.body?.timezone || ""));
+      if (!tz) throw Object.assign(Error("Esa zona horaria no existe."), { status: 400 });
+      return { timezone: setTimeZone(tz) };
     }));
     // The browser back from an MCP server's sign-in (a public redirect instead of a loopback one).
     app.get("/api/mcp/oauth/callback", async (req, res) => {
@@ -226,6 +288,63 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
       try { ok = await runtime.mcp.publicCallback({ state: String(q.state || ""), code: q.code ? String(q.code) : null, error: q.error ? String(q.error) : null }); } catch (e) { log("mcp: " + (e?.message || e)); }
       res.redirect(302, "/ajustes/conexiones?mcp=" + (ok ? "ok" : "error"));
     });
+  }
+
+  // ---------------------------------------------------------------- apps per person
+  function personProfile(id) { return "p-" + String(id).replace(/[^A-Za-z0-9]/g, "").slice(0, 40); }
+  /** The person's Composio profile: the company's key, a Composio user of their own (kept on key changes). */
+  async function linkPersonalApps(id) {
+    const v = vault("connections");
+    if (!v) throw Object.assign(Error("Las apps necesitan el almacén cifrado de la empresa."), { status: 503 });
+    const company = await v.load({ profile: "default" });
+    if (!company?.apiKey) throw Object.assign(Error("Primero, quien administra la empresa conecta las apps (Empresa › IA y apps)."), { status: 409 });
+    const binding = { profile: personProfile(id) };
+    const mine = (await v.load(binding)) || {};
+    await v.save(binding, { ...mine, apiKey: company.apiKey, userId: mine.userId || "colmena_p_" + randomUUID().replaceAll("-", ""), sessionId: mine.apiKey === company.apiKey ? mine.sessionId || null : null });
+  }
+
+  /** The GitHub token «Código» uses for this person: theirs, else the company's, else null. */
+  async function githubToken(personId) {
+    const v = vault("github");
+    if (!v) return null;
+    return (await v.load({ profile: personProfile(personId) }))?.token || (await v.load({ profile: "company" }))?.token || null;
+  }
+
+  // ---------------------------------------------------------------- «Código» engines
+  /**
+   * The API keys a person's «Código» engines run with in the machine: Anthropic, OpenAI and
+   * OpenCode keys only. A subscription (Claude setup-token, ChatGPT sign-in) never goes there:
+   * the providers' terms forbid using them in a hosted service (docs/CLOUD.md › Phase 3).
+   */
+  async function engineKeys(personId) {
+    const hub = provider.hub(personId);
+    const c = hub.config();
+    return {
+      anthropic: c.anthropic?.method === "api_key" ? await hub.secret("anthropic-apikey").catch(() => null) : null,
+      openai: c.apikey ? await hub.loadKey().catch(() => null) : null,
+      opencode: c.opencode ? await hub.secret("opencode-apikey").catch(() => null) : null,
+    };
+  }
+
+  // ---------------------------------------------------------------- time zone
+  const timeZone = () => store.get("settings", "main")?.timezone || null;
+  /** Sets the company's zone and moves every timed routine's next run to it. */
+  function setTimeZone(tz) {
+    const settings = store.get("settings", "main") || { id: "main" };
+    if (settings.timezone === tz) return tz;
+    store.put("settings", { ...settings, id: "main", timezone: tz });
+    const at = new Date();
+    for (const rule of store.list("automations")) {
+      if (rule.enabled === false || !rule.trigger || !["dia", "semana", "vez"].includes(rule.trigger.type)) continue;
+      store.patch("automations", rule.id, { nextRun: scheduler.next({ ...rule }, at) });
+    }
+    return tz;
+  }
+  /** The first owner's browser names the zone until an admin chooses one (X-Colmena-Time-Zone). */
+  function adoptTimeZone(value, person) {
+    if (timeZone() || !MANAGERS.has(person?.role)) return null;
+    const tz = cleanTimeZone(String(value || "").trim());
+    return tz ? setTimeZone(tz) : null;
   }
 
   // ---------------------------------------------------------------- alarms
@@ -262,7 +381,7 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   }
 
   return {
-    runtime, provider, connections, scheduler, webhooks, testApps, fakeOn, guard, filterState, routes, tick, nextAlarm, resume, mayDecide, approversOf,
+    runtime, provider, connections, scheduler, webhooks, testApps, fakeOn, guard, filterState, routes, tick, nextAlarm, resume, mayDecide, approversOf, timeZone, setTimeZone, adoptTimeZone, engineKeys, githubToken, appProfile, linkPersonalApps,
     approvers: () => members().filter((m) => m.role !== "guest" && m.id !== currentPerson().id).map((m) => ({ id: m.id, name: m.name })),
     setTestFlags(flags = {}) {
       if (!testing) throw Error("Las pruebas no están permitidas en este despliegue.");

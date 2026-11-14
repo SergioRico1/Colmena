@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "assets": "node scripts/gen-assets.mjs",
-    "dev": "node scripts/gen-assets.mjs && wrangler dev --local --port 8790 --ip 127.0.0.1 --persist-to ../.local/cloud-state --env-file ../.local/cloud.env --var JURISDICTION:",
+    "dev": "node scripts/gen-assets.mjs && wrangler dev --local --port 8790 --ip 127.0.0.1 --persist-to ../.local/cloud-state --env-file ../.local/cloud.env --var JURISDICTION: --var MACHINE_JURISDICTION:",
     "deploy": "node scripts/gen-assets.mjs && wrangler deploy",
     "e2e": "node scripts/e2e.mjs"
   },
   "devDependencies": {
     "wrangler": "4.150.0"
+  },
+  "dependencies": {
+    "@cloudflare/puppeteer": "2.0.0"
   }
 }
