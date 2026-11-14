@@ -32,6 +32,7 @@ const SCROLL_STEP_PX = 60;
 const SCROLL_GAP_MS = 350;
 const DRAG_PX = 36;
 const ZOOM = 2;
+const MIN_ZOOM = 1.3;
 
 export const STAGE_CSS = `
 .bl-stage{position:relative;display:block;width:100%;max-width:100%;margin:0 auto;overflow:hidden;background:var(--c-sunken);border-radius:var(--r-sm);outline:none;box-shadow:0 0 0 1px var(--c-line)}
@@ -42,8 +43,8 @@ export const STAGE_CSS = `
 .bl-fill{flex:1 1 auto;min-height:0;display:grid;place-items:center;container-type:size;padding:4px}
 .bl-fill>.bl-stage{width:min(100cqw,calc(100cqh * var(--bl-ratio)));height:auto}
 .bl-pan{overflow:auto;overscroll-behavior:contain;max-height:min(70vh,560px);padding:4px;border-radius:var(--r-sm);scrollbar-width:thin;scrollbar-color:var(--c-scroll) transparent}
-.bl-fill.bl-pan{display:block;max-height:none}
-.bl-pan>.bl-stage{width:calc(var(--bl-zoom) * 100%);max-width:none;margin:0}
+.bl-pan--fill{flex:1 1 auto;min-height:0;max-height:none}
+.bl-pan>.bl-stage{width:var(--bl-zoom-w,200%);max-width:none;margin:0}
 .bl-pan>.bl-stage[data-control]{touch-action:pan-x pan-y;box-shadow:none}
 .bl-pan:has(>.bl-stage[data-control]){outline:1px solid var(--c-accent);outline-offset:0}
 .bl-pan:has(>.bl-stage:focus-visible){outline:2px solid var(--c-focus)}
@@ -92,6 +93,8 @@ export default function LiveStage({ frame, alt, label, control = false, onInput,
   const wheel = useRef({ acc: 0, last: 0 });
   const hintId = useId();
   const zoom = control && zoomed ? ZOOM : 1;
+  const panRef = useRef(null);
+  const [zoomW, setZoomW] = useState(0);
 
   // One input at a time, in order: the page answers each with a fresh frame.
   const send = useCallback((body) => {
@@ -120,9 +123,9 @@ export default function LiveStage({ frame, alt, label, control = false, onInput,
 
   // The drawn width, for a column that lines up with the frame (BrowserLive's enlarged view).
   useEffect(() => {
-    const el = stage.current;
+    const el = zoom > 1 ? panRef.current : stage.current;
     if (!el || !onWidth || typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(() => onWidth(Math.round(el.getBoundingClientRect().width / zoom)));
+    const ro = new ResizeObserver(() => onWidth(Math.round(el.getBoundingClientRect().width)));
     ro.observe(el);
     return () => ro.disconnect();
   }, [onWidth, zoom]);
@@ -233,11 +236,29 @@ export default function LiveStage({ frame, alt, label, control = false, onInput,
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); capture(); }
   };
 
-  // Zoomed in, the view opens on the middle of the page (where pages put their content).
+  // Zoomed in, the page is drawn at a measured width: twice the box, or (in the enlarged view)
+  // as tall as the free height allows when that is less, so the view fills the box without
+  // cropping more page than needed. It opens on the middle of the page, where pages put their
+  // content; a finger or the wheel pans from there.
   useEffect(() => {
-    const pan = zoom > 1 ? stage.current?.parentElement : null;
-    if (pan) pan.scrollLeft = Math.max(0, (pan.scrollWidth - pan.clientWidth) / 2);
-  }, [zoom]);
+    const pan = panRef.current;
+    if (zoom === 1 || !pan || typeof ResizeObserver === "undefined") { setZoomW(0); return undefined; }
+    const fit = () => {
+      const cs = getComputedStyle(pan);
+      const w = pan.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const h = pan.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      const byHeight = fill && h > 0 ? (h * size.w) / size.h : Infinity;
+      setZoomW(Math.round(Math.max(w * MIN_ZOOM, Math.min(w * ZOOM, byHeight))));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(pan);
+    return () => ro.disconnect();
+  }, [zoom, fill, size.w, size.h]);
+  useEffect(() => {
+    const pan = panRef.current;
+    if (pan && zoomW) pan.scrollLeft = Math.max(0, (pan.scrollWidth - pan.clientWidth) / 2);
+  }, [zoomW]);
 
   const caption = hint || (typing ? "Lo que escribes va a la página. Esc dos veces para volver a Colmena." : "Haz clic en la página donde quieras pulsar; luego escribe.")
     + (zoom > 1 && !hint ? " Desliza la vista para ver el resto." : "");
@@ -253,7 +274,7 @@ export default function LiveStage({ frame, alt, label, control = false, onInput,
       onPointerMove={onPointerMove}
       onPointerCancel={() => { drag.current = null; }}
       onKeyDown={onStageKey}
-      style={{ aspectRatio: `${size.w} / ${size.h}`, "--bl-ratio": size.w / size.h, "--bl-zoom": zoom }}
+      style={{ aspectRatio: `${size.w} / ${size.h}`, "--bl-ratio": size.w / size.h, ...(zoom > 1 && zoomW ? { "--bl-zoom-w": zoomW + "px" } : {}) }}
     >
       <img src={frame.image} alt={alt} draggable={false}
         onLoad={(e) => { const { naturalWidth: w, naturalHeight: h } = e.currentTarget; if (w && h && (w !== size.w || h !== size.h)) setSize({ w, h }); }} />
@@ -268,7 +289,7 @@ export default function LiveStage({ frame, alt, label, control = false, onInput,
       ) : null}
     </div>
   );
-  const area = zoom > 1 ? <div className={"bl-pan" + (fill ? " bl-fill" : "")}>{box}</div> : fill ? <div className="bl-fill">{box}</div> : box;
+  const area = zoom > 1 ? <div ref={panRef} className={"bl-pan" + (fill ? " bl-pan--fill" : "")}>{box}</div> : fill ? <div className="bl-fill">{box}</div> : box;
 
   return (
     <>
