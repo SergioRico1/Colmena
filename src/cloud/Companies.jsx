@@ -34,6 +34,7 @@ export function Companies() {
       <h1 className="cl-title">{hasAny ? "Tus empresas" : "Crea tu empresa"}</h1>
       <p className="cl-lead">{hasAny ? "Elige dónde trabajar o crea otra. Cada empresa tiene sus propias salas, personas y bots." : "Un espacio para tu equipo: salas, mensajes directos y, pronto, los bots de todos. Si te han invitado, abre el enlace de tu invitación."}</p>
       <Problem text={error} />
+      <ForYou onError={setError} />
       {hasAny ? (
         <ul className="cl-list" aria-label="Tus empresas">
           {who.workspaces.map((w) => (
@@ -54,6 +55,39 @@ export function Companies() {
       <CreateCompany first={!hasAny} onError={setError} />
       {who.current ? <Manage who={who} onChanged={load} /> : null}
     </Shell>
+  );
+}
+
+/** «Invitaciones para ti»: open invitations to my address (imported ones too), joined with one press. */
+function ForYou({ onError }) {
+  const [list, setList] = useState([]);
+  const [busy, setBusy] = useState(null);
+  useEffect(() => { let live = true; auth.myInvitations().then((r) => { if (live) setList(r?.invitations || []); }, () => {}); return () => { live = false; }; }, []);
+  if (!list.length) return null;
+  const join = async (id) => {
+    setBusy(id);
+    onError(null);
+    try { await auth.acceptInviteById(id); location.assign("/"); } catch (e) { setBusy(null); onError(e.message); }
+  };
+  return (
+    <section aria-labelledby="for-you-head" style={{ marginBottom: 32 }}>
+      <h2 className="cl-h2" id="for-you-head">Invitaciones para ti</h2>
+      <p className="cl-sub">{list.length === 1 ? "Una empresa te espera." : `${list.length} empresas te esperan.`}</p>
+      <ul className="cl-list" aria-label="Invitaciones para ti">
+        {list.map((i) => (
+          <li key={i.id} className="cl-item">
+            <span className="cl-avatar" aria-hidden="true">{initials(i.workspace)}</span>
+            <span className="cl-item-main">
+              <span className="cl-item-name">{i.workspace}</span>
+              <span className="cl-item-meta">{i.inviter} te invita · {ROLE_LABEL[i.role] || i.role}</span>
+            </span>
+            <span className="cl-item-actions">
+              <button type="button" className="cl-btn small" onClick={() => join(i.id)} disabled={busy !== null}>{busy === i.id ? "Uniéndote…" : "Unirme"}{busy === i.id ? null : <ArrowRight size={14} />}</button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -90,6 +124,7 @@ function Manage({ who, onChanged }) {
   useEffect(() => { void refresh(); }, [refresh]);
   if (!data) return error ? <Problem text={error} /> : null;
   const manager = ["owner", "admin"].includes(data.role);
+  const active = data.members.filter((m) => !m.deactivated).length;
   const act = async (fn, after = refresh) => {
     setError(null);
     try { await fn(); await after(); } catch (e) { setError(e.message); }
@@ -101,26 +136,26 @@ function Manage({ who, onChanged }) {
   return (
     <section aria-labelledby="people-head" id="personas" style={{ display: "flex", flexDirection: "column", marginTop: 48, paddingTop: 8, borderTop: "1px solid var(--c-line)" }}>
       <h2 className="cl-h2" id="people-head" style={{ marginTop: 24 }}>Personas de {data.workspace?.name}</h2>
-      <p className="cl-sub">{data.members.length === 1 ? "Solo estás tú. Invita a tu equipo." : `${data.members.length} personas`}</p>
+      <p className="cl-sub">{active === 1 ? "Solo estás tú. Invita a tu equipo." : `${active} personas`}</p>
       <Problem text={error} />
       {notice ? <p className="cl-ok" role="status"><Check size={16} />{notice}</p> : null}
       <ul className="cl-list" aria-label="Personas de la empresa">
         {data.members.map((m) => {
           const self = m.id === data.me.id;
           return (
-            <li key={m.id} className="cl-item">
+            <li key={m.id} className={"cl-item" + (m.deactivated ? " off" : "")}>
               <span className="cl-avatar" aria-hidden="true">{initials(m.name)}</span>
               <span className="cl-item-main">
                 <span className="cl-item-name">{m.name}{self ? " (tú)" : ""}</span>
                 <span className="cl-item-meta">{m.email}</span>
               </span>
               <span className="cl-item-actions">
-                {manager && !self ? (
+                {m.deactivated ? <span className="cl-tag off">Desactivada</span> : manager && !self ? (
                   <select className="cl-select small" aria-label={"Papel de " + m.name} value={m.role} onChange={(e) => act(() => auth.setRole(m.id, e.target.value))}>
                     {Object.entries(ROLE_LABEL).filter(([r]) => data.role === "owner" || !["owner", "admin"].includes(r) || r === m.role).map(([r, label]) => <option key={r} value={r}>{label}</option>)}
                   </select>
                 ) : <span className="cl-tag">{ROLE_LABEL[m.role]}</span>}
-                {self ? null : <button type="button" className="cl-btn ghost small" onClick={() => write(m)}><ChatCircleText size={14} />Escribir</button>}
+                {self || m.deactivated ? null : <button type="button" className="cl-btn ghost small" onClick={() => write(m)}><ChatCircleText size={14} />Escribir</button>}
                 {manager && !self ? <button type="button" className="cl-iconbtn" aria-label={"Sacar a " + m.name + " de la empresa"} title="Sacar de la empresa"
                   onClick={() => { if (confirm(`¿Sacar a ${m.name} de ${data.workspace?.name}? Se cerrarán sus sesiones.`)) act(() => auth.remove(m.id)); }}><X size={16} /></button> : null}
               </span>

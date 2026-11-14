@@ -6,10 +6,13 @@
 //             company; /entrar, /empresa and /invitacion (cloud.html) for everyone
 // Secrets: WORKSPACE_KEYS (64 hex: the master of the per-workspace database keys),
 // VAULT_MASTER_KEY (the master of the secrets' envelope encryption), ADMIN_BOOTSTRAP_TOKEN
-// (reads the dev mail while there is no mail provider), RESEND_API_KEY (optional: real mail).
+// (reads the dev mail while there is no mail provider), RESEND_API_KEY (optional: real mail),
+// GOOGLE_CLIENT_ID/SECRET, MICROSOFT_CLIENT_ID/SECRET (+ var MICROSOFT_TENANT), GITHUB_CLIENT_ID/
+// SECRET (optional: each pair turns on «Continuar con …» on /entrar; cloud/src/oauth.js).
 import { Directory } from "./directory.js";
 import { Workspace } from "./workspace.js";
 import { hasMail, sendMail } from "./mail.js";
+import { OAuthError, authorizationUrl, bindingCookie, bindingFromRequest, enabledProviders, exchangeCode, providerConfig } from "./oauth.js";
 import { SECURITY_HEADERS, csrfOk, fail, json, pagePolicy, sameOrigin, sameSecret, sessionCookie, sessionToken, withHeaders } from "./http.js";
 
 export { Directory, Workspace };
@@ -69,10 +72,10 @@ async function must(request, env, url, { write = false, origin = false } = {}) {
   if (write && !csrfOk(request, me.session.csrf)) throw new HttpError(403, "Tu sesión ha cambiado. Recarga la página.");
   return me;
 }
-async function body(request) {
+async function body(request, max = 20000) {
   if (!(request.headers.get("Content-Type") || "").includes("application/json")) throw new HttpError(415, "Se requiere JSON.");
   const text = await request.text();
-  if (text.length > 20000) throw new HttpError(413, "La petición es demasiado grande.");
+  if (text.length > max) throw new HttpError(413, "La petición es demasiado grande.");
   try { return text ? JSON.parse(text) : {}; } catch { throw new HttpError(400, "La petición no es un JSON válido."); }
 }
 const ipOf = (request) => request.headers.get("CF-Connecting-IP") || "local";
@@ -86,6 +89,81 @@ async function syncWorkspace(env, workspaceId) {
 }
 async function mailOut(env, mail) {
   return sendMail(env, mail, { keep: (m) => dir(env, "keepDevMail", m) });
+}
+/** The company's own record of what its admins did (Workspace#audit); a failure never undoes the action. */
+async function audit(env, workspaceId, me, action, target, details = {}) {
+  try {
+    await workspaceStub(env, workspaceId).audit(workspaceId, { actor: { id: me.user.id, name: me.user.name, email: me.user.email }, action, target, details });
+  } catch (error) {
+    console.error(`audit ${action}: ${error?.message || error}`);
+  }
+}
+const personTarget = (members, id) => {
+  const m = (members || []).find((x) => x.id === id);
+  return { type: "person", id, name: m?.name || null, email: m?.email || null };
+};
+/** Syncs each company once; a failure is logged (the sign-in itself already happened). */
+async function syncAll(env, ids) {
+  for (const id of new Set(ids.filter(Boolean))) {
+    try { await syncWorkspace(env, id); } catch (error) { console.error(`sync ${id}: ${error?.message || error}`); }
+  }
+}
+
+// ------------------------------------------------------------------ /auth/oauth (Google, Microsoft, GitHub)
+function redirect(to, cookies = []) {
+  const headers = new Headers({ Location: to, "Cache-Control": "no-store", ...SECURITY_HEADERS });
+  for (const c of cookies) headers.append("Set-Cookie", c);
+  return new Response(null, { status: 302, headers });
+}
+/** GET /auth/oauth/:provider?next=/x → the provider, with the browser-binding cookie. */
+async function oauthStart(request, env, url, id) {
+  if (!providerConfig(env, id)) throw new HttpError(404, "No encontrado.");
+  let flow;
+  try {
+    flow = await dir(env, "startOAuth", { provider: id, next: url.searchParams.get("next") || "/", ip: ipOf(request) });
+  } catch (error) {
+    if (error instanceof HttpError) return redirect("/entrar?error=" + (error.extra?.code === "rate" ? "rate" : "provider"));
+    throw error;
+  }
+  const to = authorizationUrl(env, id, { origin: url.origin, state: flow.state, verifier: flow.verifier, nonce: flow.nonce });
+  return redirect(to, [bindingCookie(url, flow.binding)]);
+}
+/**
+ * GET /auth/oauth/:provider/callback?code&state: the flow (single use, same browser), the code for
+ * who it is, the person, the session cookie as /auth/verify sets it. Any failure → /entrar?error=.
+ */
+async function oauthCallback(request, env, url, id) {
+  if (!providerConfig(env, id)) throw new HttpError(404, "No encontrado.");
+  const q = url.searchParams;
+  const clear = bindingCookie(url, null);
+  const back = (code, next = "/") => redirect("/entrar?error=" + code + (next && next !== "/" ? "&next=" + encodeURIComponent(next) : ""), [clear]);
+  if (q.get("error")) return back(q.get("error") === "access_denied" ? "denied" : "provider");
+  let flow;
+  try {
+    flow = await dir(env, "finishOAuth", { provider: id, state: q.get("state") || "", binding: bindingFromRequest(request) || "" });
+  } catch (error) {
+    if (error instanceof HttpError) return back("state");
+    throw error;
+  }
+  let person;
+  try {
+    person = await exchangeCode(env, id, { code: q.get("code") || "", verifier: flow.verifier, nonce: flow.nonce, origin: url.origin, fetchImpl: (u, init) => fetch(u, init) });
+  } catch (error) {
+    if (!(error instanceof OAuthError)) throw error;
+    console.error(`oauth ${id}: ${error.code}: ${error.message}`);
+    return back(error.code, flow.next);
+  }
+  let done;
+  try {
+    done = await dir(env, "signInWith", { ...person, agent: request.headers.get("User-Agent") });
+  } catch (error) {
+    if (error instanceof HttpError) return back(error.extra?.code === "unverified" ? "unverified" : error.extra?.code === "rate" ? "rate" : "account", flow.next);
+    throw error;
+  }
+  await syncAll(env, [...(done.joined || []), done.session.workspaceId]);
+  const next = flow.next || "/";
+  const to = next.startsWith("/invitacion") ? next : done.session.workspaceId ? next : "/empresa";
+  return redirect(to, [sessionCookie(url, done.session.token, done.session.expiresAt - Date.now()), clear]);
 }
 
 // ------------------------------------------------------------------ /auth
@@ -103,9 +181,16 @@ async function auth(request, env, url) {
     if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
     const data = await body(request);
     const done = await dir(env, "verifyLink", { token: String(data.token || ""), agent: request.headers.get("User-Agent"), ip: ipOf(request) });
-    if (done.session.workspaceId) await syncWorkspace(env, done.session.workspaceId);
+    await syncAll(env, [...(done.joined || []), done.session.workspaceId]);
     return json({ ok: true, user: done.user, next: done.next, isNew: done.isNew, workspaceId: done.session.workspaceId }, 200, { "Set-Cookie": sessionCookie(url, done.session.token, done.session.expiresAt - Date.now()) });
   }
+  // Sign-in with Google, Microsoft or GitHub: which are configured, then the round trip.
+  if (p === "/auth/providers" && m === "GET") {
+    if (!sameOrigin(request)) throw new HttpError(403, "Petición externa no permitida.");
+    return json({ providers: enabledProviders(env) });
+  }
+  const oauth = /^\/auth\/oauth\/([a-z]{2,20})(\/callback)?$/.exec(p);
+  if (oauth && m === "GET") return oauth[2] ? oauthCallback(request, env, url, oauth[1]) : oauthStart(request, env, url, oauth[1]);
   // What an invitation shows before signing in (the token in the body, never in a URL).
   if (p === "/auth/invitations/preview" && m === "POST") {
     if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
@@ -158,6 +243,15 @@ async function auth(request, env, url) {
     await syncWorkspace(env, accepted.workspaceId);
     return reply(accepted);
   }
+  // Open invitations to my address (also imported ones, which carry no link), and taking one.
+  if (p === "/auth/invitations/mine" && m === "GET") return reply({ invitations: await dir(env, "invitationsForEmail", me.user.id) });
+  const mine = /^\/auth\/invitations\/([0-9a-f-]{36})\/accept$/.exec(p);
+  if (mine && m === "POST") {
+    const accepted = await dir(env, "acceptInvitationById", mine[1], me.user.id);
+    await dir(env, "selectWorkspace", me.token, accepted.workspaceId);
+    await syncWorkspace(env, accepted.workspaceId);
+    return reply(accepted);
+  }
 
   // ---- the current company (owners and admins manage it; everyone sees who is in it)
   const workspaceId = me.session.workspaceId;
@@ -171,6 +265,12 @@ async function auth(request, env, url) {
   if (p === "/auth/workspace" && m === "PATCH") {
     const workspace = await dir(env, "renameWorkspace", workspaceId, me.user.id, (await body(request)).name);
     await syncWorkspace(env, workspaceId);
+    await audit(env, workspaceId, me, "rename", { type: "workspace", id: workspaceId }, { name: workspace?.name || null });
+    return reply({ workspace });
+  }
+  if (p === "/auth/workspace/domains" && m === "PUT") {
+    const workspace = await dir(env, "setDomains", workspaceId, me.user.id, (await body(request)).domains);
+    await audit(env, workspaceId, me, "domains", { type: "workspace", id: workspaceId }, { domains: workspace?.domains || [] });
     return reply({ workspace });
   }
   if (p === "/auth/workspace/invitations" && m === "POST") {
@@ -179,21 +279,44 @@ async function auth(request, env, url) {
     const link = url.origin + "/invitacion#t=" + made.token;
     const workspace = await dir(env, "workspace", workspaceId);
     const sent = await mailOut(env, { to: made.invitation.email, kind: "invite", url: link, workspace: workspace?.name, inviter: me.user.name });
+    await audit(env, workspaceId, me, "invite", { type: "invitation", id: made.invitation.id, email: made.invitation.email }, { role: made.invitation.role });
     // Whoever invites may pass the link on themselves: it only works for that address, signed in.
     return reply({ invitation: made.invitation, link, delivery: sent.sent ? "email" : "dev" }, 201);
   }
+  // People from an import (a Slack export): invitations without mail or link, up to 5000 at once.
+  if (p === "/auth/workspace/invitations/import" && m === "POST") {
+    const result = await dir(env, "importInvitations", workspaceId, me.user.id, (await body(request, 2_000_000)).people);
+    await audit(env, workspaceId, me, "invitations.import", { type: "workspace", id: workspaceId }, { created: result.created, existing: result.existing, skipped: result.skipped });
+    return reply(result);
+  }
   let r = /^\/auth\/workspace\/invitations\/([0-9a-f-]{36})$/.exec(p);
-  if (r && m === "DELETE") return reply(await dir(env, "revokeInvitation", workspaceId, me.user.id, r[1]));
+  if (r && m === "DELETE") {
+    const revoked = await dir(env, "revokeInvitation", workspaceId, me.user.id, r[1]);
+    await audit(env, workspaceId, me, "invitation.revoke", { type: "invitation", id: r[1] });
+    return reply(revoked);
+  }
+  r = /^\/auth\/workspace\/members\/([0-9a-f-]{36})\/(deactivate|reactivate)$/.exec(p);
+  if (r && m === "POST") {
+    const deactivate = r[2] === "deactivate";
+    const done = await dir(env, deactivate ? "deactivateMember" : "reactivateMember", workspaceId, me.user.id, r[1]);
+    const members = await syncWorkspace(env, workspaceId);
+    if (deactivate) await workspaceStub(env, workspaceId).revokePerson(workspaceId, r[1]);
+    await audit(env, workspaceId, me, r[2], personTarget(members, r[1]));
+    return reply(done);
+  }
   r = /^\/auth\/workspace\/members\/([0-9a-f-]{36})$/.exec(p);
   if (r && m === "PATCH") {
     const changed = await dir(env, "setRole", workspaceId, me.user.id, r[1], String((await body(request)).role || ""));
-    await syncWorkspace(env, workspaceId);
+    const members = await syncWorkspace(env, workspaceId);
+    await audit(env, workspaceId, me, "role", personTarget(members, r[1]), { role: changed.role });
     return reply(changed);
   }
   if (r && m === "DELETE") {
+    const before = await dir(env, "members", workspaceId);
     const removed = await dir(env, "removeMember", workspaceId, me.user.id, r[1]);
     await syncWorkspace(env, workspaceId);
     await workspaceStub(env, workspaceId).revokePerson(workspaceId, r[1]);
+    await audit(env, workspaceId, me, "remove", personTarget(before, r[1]));
     return reply(removed);
   }
   if (p === "/auth/workspace/leave" && m === "POST") {

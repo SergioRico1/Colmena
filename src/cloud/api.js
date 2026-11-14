@@ -54,6 +54,14 @@ export const auth = {
   leave: () => call("/auth/workspace/leave", "POST", {}),
   previewInvite: (token) => call("/auth/invitations/preview", "POST", { token }),
   acceptInvite: (token) => call("/auth/invitations/accept", "POST", { token }),
+  /** Sign-in providers configured on this deployment: [{id, name}] (none when it fails). */
+  providers: () => call("/auth/providers").then((r) => (Array.isArray(r?.providers) ? r.providers : []), () => []),
+  myInvitations: () => call("/auth/invitations/mine"),
+  acceptInviteById: (id) => call("/auth/invitations/" + id + "/accept", "POST", {}),
+  deactivate: (id) => call("/auth/workspace/members/" + id + "/deactivate", "POST", {}),
+  reactivate: (id) => call("/auth/workspace/members/" + id + "/reactivate", "POST", {}),
+  setDomains: (domains) => call("/auth/workspace/domains", "PUT", { domains }),
+  importInvitations: (people) => call("/auth/workspace/invitations/import", "POST", { people }),
   /** A direct message with someone of the company: its address in the app. */
   directMessage: async (person) => {
     const { csrf: token } = await call("/api/bootstrap");

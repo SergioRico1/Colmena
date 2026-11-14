@@ -9,6 +9,8 @@ const METHODS = new Set([
   "user", "rename", "roleOf", "workspace", "workspacesOf", "createWorkspace", "renameWorkspace",
   "members", "setRole", "removeMember", "invite", "invitations", "revokeInvitation",
   "previewInvitation", "acceptInvitation", "keepDevMail", "devMail",
+  "signInWith", "startOAuth", "finishOAuth", "deactivateMember", "reactivateMember", "setDomains",
+  "importInvitations", "invitationsForEmail", "acceptInvitationById",
 ]);
 const HOUR = 3600 * 1000;
 
