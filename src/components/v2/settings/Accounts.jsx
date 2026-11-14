@@ -104,7 +104,7 @@ function PerBot({ bots, engines, team, busy, setBot }) {
         <h3 style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>Qué usa cada bot</h3>
         <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Cambia uno solo si lo necesita.</span>
       </div>
-      <div role="table" aria-label="Qué usa cada bot" style={{ display: "flex", flexDirection: "column", overflowX: "auto" }}>
+      <div role="table" aria-label="Qué usa cada bot" className="r-rtable r-xbox" style={{ display: "flex", flexDirection: "column", overflowX: "auto" }}>
         <div role="row" style={{ display: "grid", gridTemplateColumns: COLS, gap: "12px", minWidth: "560px", padding: "8px 0", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-3)" }}>
           <span role="columnheader">Bot</span><span role="columnheader">Cuenta</span><span role="columnheader">Modelo</span><span role="columnheader">Piensa</span>
         </div>
@@ -113,13 +113,13 @@ function PerBot({ bots, engines, team, busy, setBot }) {
           return (
             <div role="row" key={b.id} style={{ display: "grid", gridTemplateColumns: COLS, gap: "12px", alignItems: "center", minWidth: "560px", minHeight: "44px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .05)", fontSize: "var(--t-ui)" }}>
               <span role="rowheader" style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}><BotMark bot={b} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}</span></span>
-              <span role="cell">
+              <span role="cell" data-label="Cuenta">
                 {live.length > 1 ? (
                   <Select aria-label={"Cuenta de " + b.name} disabled={busy} value={own?.id || ""} onChange={(e) => setBot(b, { engine: e.target.value || null }, "cuenta")} style={small} options={[["", team ? `Como el equipo (${team.label})` : "Como el equipo"], ...live.map((e) => [e.id, e.label])]} />
                 ) : own?.label || team?.label || "—"}
               </span>
-              <span role="cell" title={b.model?.reason ? "Elegido porque " + b.model.reason : undefined} style={{ font: `400 var(--t-meta)/1.2 ${mono}`, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.model?.slug ? String(b.model.slug).replace(/^[a-z-]+\//, "") : "Sin modelo todavía"}</span>
-              <span role="cell">
+              <span role="cell" data-label="Modelo" title={b.model?.reason ? "Elegido porque " + b.model.reason : undefined} style={{ font: `400 var(--t-meta)/1.2 ${mono}`, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.model?.slug ? String(b.model.slug).replace(/^[a-z-]+\//, "") : "Sin modelo todavía"}</span>
+              <span role="cell" data-label="Piensa">
                 <Select aria-label={"Cuánto piensa " + b.name} disabled={busy} value={b.thinking || "equilibrado"} onChange={(e) => setBot(b, { thinking: e.target.value }, "piensa")} style={{ ...small, color: "var(--c-text-2)" }} options={THINK} />
               </span>
             </div>

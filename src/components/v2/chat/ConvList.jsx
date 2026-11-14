@@ -69,7 +69,7 @@ export default function ConvList({ current = null }) {
       <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "40px", margin: "0 4px", padding: "0 12px", background: "rgb(var(--c-ink-rgb) / .045)", borderRadius: "var(--r-md)", color: "var(--c-text-3)" }}>
         <Search size={15} />
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar chats y salas"}</span>
-        <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
+        <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" style={{ flex: "1", minWidth: "0", border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
       </label>
       <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
         {shown.length === 0 ? <p style={{ margin: "8px 10px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{q.trim() ? "Ningún chat ni sala coincide." : "Aún no hay chats. Pulsa «Nueva» para empezar."}</p> : null}
@@ -222,7 +222,7 @@ export function NewConversation({ onClose, preset = [], onPeople = null, mode = 
                 </button>
               </span>
             ))}
-            <input className="c-bare" autoFocus type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chosen.length ? "Añadir otro bot" : withPeople ? "Añadir otra persona" : "Escribe un nombre"} aria-label="Buscar bots y personas"
+            <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" autoFocus type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder={chosen.length ? "Añadir otro bot" : withPeople ? "Añadir otra persona" : "Escribe un nombre"} aria-label="Buscar bots y personas"
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (q.trim() && !withPeople && items[0]) { pick(items[0].id); setQ(""); } else if (q.trim() && peopleItems[0]) { pickPerson(peopleItems[0].id); setQ(""); } else go(); } }}
               style={{ flex: "1 1 160px", minWidth: "0", height: "36px", border: "0", background: "transparent", fontSize: "var(--t-body)" }} />
           </div>

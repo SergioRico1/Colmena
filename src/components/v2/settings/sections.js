@@ -153,7 +153,8 @@ export const SECTIONS = [
     ],
   },
   {
-    id: "actualizaciones", group: "ordenador", label: "Actualizaciones", icon: SECTION_ICONS.actualizaciones,
+    // desktopOnly: the desktop app downloads and installs new versions; a browser has nothing to update.
+    id: "actualizaciones", group: "ordenador", label: "Actualizaciones", icon: SECTION_ICONS.actualizaciones, desktopOnly: true,
     lead: "Qué versión de Colmena tienes y cómo llegan las nuevas.",
     items: [
       ["version", "Versión de Colmena", "versión acerca de"],
@@ -211,9 +212,10 @@ export const GROUPS = [
 export const SECTION_OF = Object.fromEntries(SECTIONS.map((s) => [s.id, s]));
 export const DEFAULT_SECTION = "general";
 
-/** The sections a person sees in the list, by group (Servidores y claves only in expert mode). */
-export function groupedSections(expert = false) {
-  return GROUPS.map((g) => ({ ...g, sections: SECTIONS.filter((s) => s.group === g.id && (!s.expert || expert)) })).filter((g) => g.sections.length);
+/** The sections a person sees in the list, by group (Servidores y claves only in expert mode;
+ *  Actualizaciones only in the desktop app: pass desktop false in a browser). */
+export function groupedSections(expert = false, { desktop = true } = {}) {
+  return GROUPS.map((g) => ({ ...g, sections: SECTIONS.filter((s) => s.group === g.id && (!s.expert || expert) && (!s.desktopOnly || desktop)) })).filter((g) => g.sections.length);
 }
 
 // Detail pages (one click below a section): which section they belong to.

@@ -186,7 +186,7 @@ export default function Tareas({ query = {} }) {
           <label className="c-ring" style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 10px", borderRadius: "var(--r-sm)", background: C.card, border: line() }}>
             <Search size={16} color={C.text3} />
             <span style={ZERO_WIDTH}>Buscar tareas</span>
-            <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: C.text }} />
+            <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: C.text }} />
           </label>
           <span style={{ position: "relative" }}>
             <button type="button" aria-haspopup="listbox" aria-expanded={menu} onClick={() => setMenu((o) => !o)} className="u4-sec" style={{ ...B.secondary, fontWeight: 500 }}>

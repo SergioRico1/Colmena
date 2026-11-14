@@ -6,6 +6,7 @@ import { useExpert } from "../../../lib/expert.js";
 import { SECTION_OF, groupedSections, searchSettings, settingsIndex } from "./sections.js";
 import { srOnly } from "./v3.jsx";
 import { C } from "../../../lib/theme.js";
+import { isDesktopApp } from "../../../lib/breakpoint.js";
 
 // Ajustes (Colmena 4): on the left «Ajustes», a search box and the sections in six groups by what
 // people think about («Tú», «Tu equipo y tus contactos»…), each with its status at a glance
@@ -21,7 +22,7 @@ const STYLE = `
 .st-nav-item[aria-current="page"],.st-result[data-on="1"]{background:var(--c-card);box-shadow:0 1px 2px rgb(var(--c-ink-rgb) / .08)}
 [data-setting]{transition:background .6s ease}
 [data-setting][data-lit="1"]{background:rgb(var(--c-ink-rgb) / .045)!important}
-.st-back{display:none}
+.st-back,.st-back-h{display:none}
 @media (max-width:${NARROW}px){
   .st-wrap{flex-direction:column!important}
   .st-nav{position:static!important;width:auto!important;flex:none!important;height:auto!important;min-height:0!important;padding:32px clamp(16px,4vw,28px) 20px!important}
@@ -29,6 +30,7 @@ const STYLE = `
   .st-wrap[data-open="0"] .st-body{display:none!important}
   .st-wrap[data-open="0"] .st-nav-item[aria-current="page"]{background:transparent;box-shadow:none;font-weight:500!important}
   .st-back{display:inline-flex}
+  .st-back-h{display:block}
   .st-body{padding-top:24px!important;max-width:none!important}
 }
 @media (prefers-reduced-motion: reduce){[data-setting]{transition:none}}
@@ -114,14 +116,14 @@ function Nav({ active, tags }) {
     else if (e.key === "ArrowUp") { e.preventDefault(); setAt((i) => (i - 1 + results.length) % results.length); }
     else if (e.key === "Enter") { e.preventDefault(); open(results[at] || results[0]); }
   };
-  const groups = groupedSections(expert);
+  const groups = groupedSections(expert, { desktop: isDesktopApp() });
   return (
     <nav className="st-nav" aria-label="Secciones de Ajustes" style={{ flex: "0 0 300px", minWidth: 0, position: "sticky", top: 0, display: "flex", flexDirection: "column", gap: "4px", minHeight: "100vh", padding: "40px 14px 24px 22px", boxSizing: "border-box" }}>
       <h1 style={{ margin: "0 0 14px 8px", font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>Ajustes</h1>
       <label style={{ flex: "none", display: "flex", alignItems: "center", gap: "8px", height: "40px", marginBottom: "10px", padding: "0 12px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
         <Search size={15} color={C.text3} />
         <span style={srOnly}>Buscar un ajuste</span>
-        <input className="c-bare" ref={box} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} placeholder="Buscar un ajuste" role="combobox" aria-expanded={!!q} aria-controls="st-results" aria-activedescendant={q && results[at] ? "st-r-" + at : undefined} autoComplete="off" spellCheck={false}
+        <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" ref={box} type="text" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={onKeyDown} placeholder="Buscar un ajuste" role="combobox" aria-expanded={!!q} aria-controls="st-results" aria-activedescendant={q && results[at] ? "st-r-" + at : undefined} autoComplete="off" spellCheck={false}
           style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />
         {q ? (
           <button type="button" aria-label="Borrar la búsqueda" onClick={() => { setQ(""); box.current?.focus(); }} style={{ width: "22px", height: "22px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "rgb(var(--c-ink-rgb) / .06)", cursor: "pointer", color: "var(--c-text-3)" }}>
@@ -192,9 +194,10 @@ export default function SettingsLayout({ active, open = true, back = null, tags 
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />{parent.label}
             </a>
           ) : (
-            <a className="st-back" href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
+            // Narrow, the list and its «Ajustes» heading give way to the section: the way back is the page heading.
+            <h1 className="st-back-h" style={{ alignSelf: "flex-start", margin: 0, font: "inherit" }}><a className="st-back" href="/ajustes" onClick={(e) => { e.preventDefault(); navigate("/ajustes"); }} style={{ alignSelf: "flex-start", alignItems: "center", gap: "4px", height: "32px", padding: "0 12px 0 6px", borderRadius: "var(--r-sm)", background: "rgb(var(--c-ink-rgb) / .05)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, textDecoration: "none" }}>
               <ChevronLeft size={15} strokeWidth={2.2} aria-hidden="true" />Ajustes
-            </a>
+            </a></h1>
           )}
           {head || sub ? (
             <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: "12px", marginBottom: "6px" }}>

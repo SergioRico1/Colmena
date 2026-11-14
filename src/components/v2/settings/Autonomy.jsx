@@ -126,7 +126,7 @@ export default function AutonomySection() {
       </Panel>
 
       <Panel big anchor="que-app" title="Qué app usa cada bot" sub={<>Toca una casilla para cambiarla: No → Lee → Escribe. Las apps se conectan en <Go to="/ajustes/apps">Apps y carpetas</Go>; enviar, pagar o publicar te pregunta igual.</>}>
-        <div role="table" aria-label="Qué app usa cada bot" style={{ display: "flex", flexDirection: "column", overflowX: "auto" }}>
+        <div role="table" aria-label="Qué app usa cada bot" className="r-rtable r-xbox" style={{ display: "flex", flexDirection: "column", overflowX: "auto" }}>
           <div role="row" style={{ display: "grid", gridTemplateColumns: `minmax(120px, 1.3fr) repeat(${apps.length}, minmax(84px, 1fr))`, gap: "6px", alignItems: "center", minWidth: "560px", padding: "4px 0 8px", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text-3)" }}>
             <span role="columnheader">Bot</span>
             {apps.map(([k, label]) => (
@@ -142,7 +142,7 @@ export default function AutonomySection() {
                 const v = b.tools?.[k] || "none";
                 const [text, bg, ink] = CELL[v] || CELL.none;
                 return (
-                  <span key={k} role="cell" style={{ display: "grid", placeItems: "center" }}>
+                  <span key={k} role="cell" data-label={label} style={{ display: "grid", placeItems: "center" }}>
                     <button type="button" onClick={() => cycle(b, k)} disabled={act.busy} aria-label={`${b.name} en ${label}: ${text}. Pulsa para cambiar a ${CELL[NEXT[v] || "lee"][0]}.`}
                       style={{ width: "100%", maxWidth: "92px", height: "32px", padding: "0 10px", border: 0, borderRadius: "var(--r-sm)", background: bg, color: ink, fontSize: "var(--t-meta)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", opacity: pending === b.id + k ? 0.5 : 1 }}>{text}</button>
                   </span>

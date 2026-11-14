@@ -133,12 +133,12 @@ export function Choices({ label, items, value, onPick, busy = false, min = 200 }
 }
 
 /** A text setting saved when you leave the field or press Enter. */
-export function TextInput({ label, value, onSave, max = 80, placeholder, list, width = "240px" }) {
+export function TextInput({ label, value, onSave, max = 80, placeholder, list, width = "240px", autoComplete = "off" }) {
   const [draft, setDraft] = useState(value || "");
   useEffect(() => { setDraft(value || ""); }, [value]);
   const keep = () => { const v = draft.trim(); if (v && v !== (value || "")) onSave(v); else setDraft(value || ""); };
   return (
-    <input type="text" aria-label={label} value={draft} maxLength={max} placeholder={placeholder} list={list}
+    <input type="text" aria-label={label} value={draft} maxLength={max} placeholder={placeholder} list={list} autoComplete={autoComplete} enterKeyHint="done"
       onChange={(e) => setDraft(e.target.value)} onBlur={keep}
       onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { setDraft(value || ""); e.currentTarget.blur(); } }}
       style={{ ...field, width }} />

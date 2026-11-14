@@ -180,6 +180,7 @@ export const LockOpen = /* @__PURE__ */ icon(G.LockOpen, "LockOpen");
 export const LogOut = /* @__PURE__ */ icon(G.SignOut, "LogOut");
 export const Mail = /* @__PURE__ */ icon(G.Envelope, "Mail");
 export const Maximize2 = /* @__PURE__ */ icon(G.ArrowsOut, "Maximize2");
+export const Menu = /* @__PURE__ */ icon(G.List, "Menu"); // the phone top bar: opens the sidebar drawer
 export const MessageCircle = /* @__PURE__ */ icon(G.ChatCircle, "MessageCircle");
 export const MessageCircleQuestion = /* @__PURE__ */ icon(G.ChatCircleDots, "MessageCircleQuestion"); // â‰ˆ chat with dots
 export const MessageSquare = /* @__PURE__ */ icon(G.ChatCenteredText, "MessageSquare");

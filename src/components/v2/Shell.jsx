@@ -18,7 +18,8 @@ export default function Shell({ active, children, background = "var(--c-page)", 
   useLayoutEffect(() => {
     const el = content.current;
     if (!el) return;
-    if (el.querySelector("main")) el.removeAttribute("role");
+    // A <main> that is drawn (Ajustes on a phone hides its own while you pick a section).
+    if ([...el.querySelectorAll("main")].some((m) => m.getClientRects().length)) el.removeAttribute("role");
     else el.setAttribute("role", "main");
   });
   const desktop = typeof window !== "undefined" && !!window.colmenaWindow;
@@ -26,7 +27,9 @@ export default function Shell({ active, children, background = "var(--c-page)", 
     <>
       <style>{css}</style>
       {extraCss ? <style>{extraCss}</style> : null}
-      <div style={{ position: "relative", display: "flex", height: "100vh", overflow: "hidden", background }}>
+      {/* .c-shell (styles/responsive.css): on a phone the bar becomes a drawer and a top bar sits
+          above the content; below a laptop's width the height follows the visible viewport. */}
+      <div className="c-shell" style={{ position: "relative", display: "flex", height: "100vh", overflow: "hidden", background }}>
         <Sidebar active={active} />
         <div ref={content} id="contenido" data-v2-content="" style={{ position: "relative", flex: "1", minWidth: "0", height: "100%", overflowY: scroll ? "auto" : "hidden", overscrollBehavior: "contain", background }}>
           {children}

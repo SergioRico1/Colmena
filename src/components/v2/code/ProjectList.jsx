@@ -301,7 +301,7 @@ export default function TaskSections({ projects = [], filter = null, onClearFilt
           <label title="Busca en los títulos y en lo que se ha dicho en cada tarea, también en las archivadas" style={{ display: "flex", alignItems: "center", gap: "8px", height: "32px", width: "260px", padding: "0 10px", borderRadius: "var(--r-sm)", background: "var(--c-card)", border: "1px solid var(--c-line)", color: C.muted }}>
             <Search size={16} aria-hidden="true" />
             <span style={SR}>Buscar en las tareas</span>
-            <input className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)" }} />
+            <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); setQ(""); } }} placeholder="Buscar en las tareas" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)" }} />
           </label>
         ) : null}
       </div>

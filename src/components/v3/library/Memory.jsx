@@ -219,7 +219,7 @@ export default function Memory({ memories, bots, missions = [], expert }) {
           <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{tier === "core" ? "Lo tienen delante en cada conversación. Si se llena, lo que menos se usa pasa al archivo." : "No lo llevan siempre encima: lo recuerdan cuando viene a cuento."}</span>
         </div>
         {tier === "archive" && (count.archive > 0 || query) ? (
-          <input className="c-quiet" type="search" aria-label="Buscar en el archivo" value={find} maxLength={200} onChange={(e) => { setFind(e.target.value); setShown(ARCHIVE_PAGE); }} placeholder="Buscar en el archivo"
+          <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-quiet" type="search" aria-label="Buscar en el archivo" value={find} maxLength={200} onChange={(e) => { setFind(e.target.value); setShown(ARCHIVE_PAGE); }} placeholder="Buscar en el archivo"
             style={{ height: "40px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-md)", background: "var(--c-card)", fontSize: "var(--t-body)" }} />
         ) : null}
         {archive.error && tier === "archive" ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{"No se pudo leer el archivo. " + archive.error}</p> : null}

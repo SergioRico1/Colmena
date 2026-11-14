@@ -333,7 +333,7 @@ export default function Changes({ task, turn, onTurn, onCount = null, points = [
           {files.length > 6 ? (
             <label style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 8px", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", color: C.muted }}>
               <Search size={14} aria-hidden="true" /><span style={SR}>Filtrar archivos</span>
-              <input className="c-bare" type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />
+              <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filtrar archivos" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />
             </label>
           ) : null}
         </div>
@@ -373,7 +373,7 @@ export default function Changes({ task, turn, onTurn, onCount = null, points = [
           <label style={{ flex: "1 1 180px", display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 10px", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", color: C.muted }}>
             <Search size={14} aria-hidden="true" />
             <span style={SR}>Buscar en los cambios</span>
-            <input ref={searchRef} className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)}
+            <input inputMode="search" enterKeyHint="search" autoComplete="off" ref={searchRef} className="c-bare" type="search" value={q} onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && hits.length) { e.preventDefault(); setHit((x) => (x + (e.shiftKey ? hits.length - 1 : 1)) % hits.length); } if (e.key === "Escape") { e.preventDefault(); if (q) setQ(""); else e.currentTarget.blur(); } }}
               placeholder="Buscar en los cambios  /" style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-meta)" }} />
             {query ? <span style={{ font: `500 var(--t-caption)/1 ${MONO}`, color: C.quiet }}>{hits.length ? hit + 1 + "/" + hits.length : "0"}</span> : null}

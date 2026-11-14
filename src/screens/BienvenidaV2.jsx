@@ -185,8 +185,9 @@ export default function BienvenidaV2({ query = {} }) {
         {desktop ? <div aria-hidden="true" style={{ position: "fixed", top: 0, left: "110px", right: 0, height: "26px", zIndex: 5, WebkitAppRegion: "drag" }} /> : null}
         <div style={{ minHeight: "100vh", display: "flex", flexWrap: "wrap", background: "var(--c-app)", color: "var(--c-text)" }}>
           {/* The rail: the sidebar's ground, the steps as its rows (the one you are on is the selected row). */}
-          <aside style={{ flex: "0 1 320px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "28px", padding: "16px 14px 24px", background: "var(--c-sidebar)", borderRight: "1px solid var(--c-line)", color: "var(--c-text)" }}>
-            <div style={{ height: "20px", display: "flex", alignItems: "center", paddingLeft: "6px" }}><WindowDots inline /></div>
+          {/* On a phone the steps step aside (styles/responsive.css › .r-hide-phone): each step has its own Seguir / Atrás. */}
+          <aside className="r-hide-phone" style={{ flex: "0 1 320px", minWidth: "260px", display: "flex", flexDirection: "column", gap: "28px", padding: "16px 14px 24px", background: "var(--c-sidebar)", borderRight: "1px solid var(--c-line)", color: "var(--c-text)" }}>
+            {desktop ? <div style={{ height: "20px", display: "flex", alignItems: "center", paddingLeft: "6px" }}><WindowDots inline /></div> : null}
             <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingLeft: "8px" }}>
               <img src="/colmena-icon-128.png" alt="" width="28" height="28" style={{ display: "block", width: "28px", height: "28px" }} />
               <span style={{ font: "800 var(--t-read)/1 'Poppins', 'Geist', sans-serif", letterSpacing: "-0.02em" }}>{"Colmena"}</span>

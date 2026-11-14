@@ -89,7 +89,7 @@ function Viewer({ task, file, changed, onNote }) {
           {data ? <span style={{ color: C.quiet, fontWeight: 400 }}> · {sizeLabel(data.size)}</span> : null}
         </span>
         <button type="button" onClick={editor} title={line ? "Abre el archivo en la línea " + line : "Abre el archivo en VS Code, Cursor o Windsurf"} style={tool}><SquareArrowOutUpRight size={13} strokeWidth={2.2} aria-hidden="true" />Abrir en el editor</button>
-        <button type="button" onClick={reveal} style={tool}><FolderOpen size={13} strokeWidth={2.2} aria-hidden="true" />{REVEAL_LABEL}</button>
+        <button type="button" onClick={reveal} style={tool} data-desktop-only=""><FolderOpen size={13} strokeWidth={2.2} aria-hidden="true" />{REVEAL_LABEL}</button>
       </div>
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-lg)", background: C.white, border: "1px solid rgb(var(--c-ink-rgb) / .08)", overflow: "hidden" }}>
         {error ? <p style={{ margin: 0, padding: "14px 16px", fontSize: "var(--t-meta)", color: C.red }}>{error}</p>
@@ -162,7 +162,7 @@ export default function Files({ task }) {
         <div style={{ flex: "none", display: "flex", flexDirection: "column", gap: "8px", padding: "14px 10px 8px" }}>
           <div className="code-turn" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 4px" }}>
             <span title={task.cwd} style={{ flex: 1, minWidth: 0, fontSize: "var(--t-meta)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{folderName}</span>
-            <button type="button" onClick={() => revealInTask(task.id, "").then(() => setNote(null), (e) => setNote(e.message))} aria-label={"Abrir la carpeta de la tarea"} title={"Abrir la carpeta de la tarea: " + task.cwd}
+            <button type="button" data-desktop-only="" onClick={() => revealInTask(task.id, "").then(() => setNote(null), (e) => setNote(e.message))} aria-label={"Abrir la carpeta de la tarea"} title={"Abrir la carpeta de la tarea: " + task.cwd}
               style={{ width: "28px", height: "28px", flex: "none", display: "grid", placeItems: "center", border: 0, borderRadius: "var(--r-circle)", background: "transparent", cursor: "pointer", color: C.muted }}>
               <FolderOpen size={14} strokeWidth={2.2} aria-hidden="true" />
             </button>

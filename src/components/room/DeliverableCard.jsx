@@ -34,9 +34,9 @@ export default function DeliverableCard({ artifact, onOpen, pressed }) {
   // Text deliverables can be read aloud («Escuchar»), among its actions.
   const spoken = (artifact.kind || "document") === "document" && SPOKEN.has(String(artifact.format || "md").toLowerCase());
   return (
-    <div style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "12px", width: "min(100%, 540px)", padding: "10px 10px 10px 12px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-raised)", boxSizing: "border-box" }}>
+    <div className="r-wrap" style={{ alignSelf: "flex-start", display: "flex", alignItems: "center", gap: "12px", width: "min(100%, 540px)", padding: "10px 10px 10px 12px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-raised)", boxSizing: "border-box" }}>
       <span aria-hidden="true" style={{ width: "40px", height: "40px", flex: "none", borderRadius: "var(--r-md)", background: "var(--c-accent-soft)", display: "grid", placeItems: "center" }}>{artifactIcon(artifact, 22)}</span>
-      <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
+      <span className="r-grow" style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
         <strong style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text)", overflowWrap: "anywhere" }}>{artifact.title}</strong>
         <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{artifactMeta(artifact)}</span>
       </span>
