@@ -12,6 +12,8 @@ import { Store } from "../server/store.mjs";
 import { DoDriver } from "../server/store-driver.mjs";
 import { FakeDurableStorage } from "../server/do-sql-fake.mjs";
 import { hostWorkspace } from "../server/cloud/host.mjs";
+import { SqlFiles } from "../server/file-store.mjs";
+import { existsSync } from "node:fs";
 import { asPerson, currentPerson, DESKTOP_PERSON, personalFields } from "../server/identity.mjs";
 
 const ANA = { id: "11111111-1111-4111-8111-111111111111", name: "Ana", email: "ana@example.com", role: "owner" };
@@ -22,8 +24,9 @@ const CORA = { id: "44444444-4444-4444-8444-444444444444", name: "Cora", email: 
 async function company(t, name, people) {
   const dir = await mkdtemp(path.join(os.tmpdir(), "colmena-host-"));
   const key = randomBytes(32);
-  const store = new Store(dir, { driver: new DoDriver(new FakeDurableStorage(path.join(dir, "do.sqlite"))), keyProvider: () => key });
-  const host = hostWorkspace({ store, workspace: { id: randomBytes(16).toString("hex"), name }, masters: [{ kid: "m1", secret: randomBytes(32).toString("hex") }], log: () => {} });
+  const storage = new FakeDurableStorage(path.join(dir, "do.sqlite"));
+  const store = new Store(path.join(dir, "virtual-root"), { driver: new DoDriver(storage), keyProvider: () => key });
+  const host = hostWorkspace({ store, workspace: { id: randomBytes(16).toString("hex"), name }, masters: [{ kid: "m1", secret: randomBytes(32).toString("hex") }], files: new SqlFiles(storage.sql), log: () => {} });
   host.syncMembers(people, { name });
   const server = http.createServer(host.app);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
@@ -165,6 +168,20 @@ test("two companies share nothing", async (t) => {
   assert.equal((await two.as(ANA)("GET", "/state")).status, 403, "Ana is not in Dos");
   one.host.syncMembers([ANA]);
   assert.equal((await one.as(BETO)("GET", "/state")).status, 403, "removed from Uno");
+});
+
+test("a hosted workspace keeps its files in its own storage, not on a disk", async (t) => {
+  const { as, store } = await company(t, "Norte", [ANA, BETO]);
+  const room = await as(ANA)("POST", "/rooms", { title: "General" });
+  const missionId = room.data.missionId;
+  const sent = await as(ANA)("POST", `/missions/${missionId}/messages`, { text: "Os dejo el acta", attachments: [{ name: "acta.txt", content: "Acta de la reunión" }] });
+  assert.equal(sent.status, 200, JSON.stringify(sent.data));
+  assert.ok(!existsSync(path.join(store.directory, "workspaces")), "nothing was written to a folder");
+  const list = await as(BETO)("GET", `/missions/${missionId}/workfiles`);
+  assert.deepEqual(list.data.files.map((f) => f.path), ["acta.txt"]);
+  const file = await as(BETO)("GET", `/missions/${missionId}/workfiles/file?path=acta.txt`);
+  assert.equal(file.data.text, "Acta de la reunión");
+  assert.equal((await as(BETO)("GET", `/missions/${missionId}/workfiles/file?path=../x`)).status, 404);
 });
 
 test("secrets go through the envelope vault, sealed per secret", async (t) => {

@@ -140,6 +140,10 @@ const detailA = await A.req(`/api/missions/${missionId}`);
 const mine = (detailA.data?.messages || []).find((m) => m.text === "Hola equipo " + run);
 check("to its writer it is «Tú»", mine?.author?.you === true, JSON.stringify(mine?.author));
 check("no bot took a turn", !(detailA.data?.steps || []).length);
+const attached = await A.req(`/api/missions/${missionId}/messages`, { method: "POST", body: { text: "El acta", attachments: [{ name: "acta.txt", content: "Acta " + run }] } });
+check("send a file", attached.status === 200, attached.status + " " + JSON.stringify(attached.data)?.slice(0, 200));
+const raw = await B.req(`/api/missions/${missionId}/workfiles/raw?path=acta.txt&download=1`);
+check("the other person downloads it (R2 or the object's SQLite)", raw.status === 200 && (await raw.response.text()) === "Acta " + run, String(raw.status));
 
 // ---- a direct message only its two people see; a guest's limits
 const ginv = await A.req("/auth/workspace/invitations", { method: "POST", body: { email: G.email, role: "guest" } });

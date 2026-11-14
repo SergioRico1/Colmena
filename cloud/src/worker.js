@@ -9,7 +9,7 @@
 // (reads the dev mail while there is no mail provider), RESEND_API_KEY (optional: real mail).
 import { Directory } from "./directory.js";
 import { Workspace } from "./workspace.js";
-import { sendMail } from "./mail.js";
+import { hasMail, sendMail } from "./mail.js";
 import { SECURITY_HEADERS, csrfOk, fail, json, pagePolicy, sameOrigin, sameSecret, sessionCookie, sessionToken, withHeaders } from "./http.js";
 
 export { Directory, Workspace };
@@ -115,7 +115,7 @@ async function auth(request, env, url) {
   // Dev mail (no provider yet): only for the holder of ADMIN_BOOTSTRAP_TOKEN.
   if (p === "/auth/dev/mail" && m === "GET") {
     const bearer = /^Bearer (\S+)$/.exec(request.headers.get("Authorization") || "")?.[1];
-    if (env.RESEND_API_KEY || !env.ADMIN_BOOTSTRAP_TOKEN || !sameSecret(bearer || "", env.ADMIN_BOOTSTRAP_TOKEN)) throw new HttpError(404, "No encontrado.");
+    if (hasMail(env) || !env.ADMIN_BOOTSTRAP_TOKEN || !sameSecret(bearer || "", env.ADMIN_BOOTSTRAP_TOKEN)) throw new HttpError(404, "No encontrado.");
     return json(await dir(env, "devMail", url.searchParams.get("email") || ""));
   }
 
@@ -125,7 +125,7 @@ async function auth(request, env, url) {
     if (!me?.user) return finish(fail(401, "Inicia sesión.", { signIn: "/entrar" }), me);
     const workspaces = await dir(env, "workspacesOf", me.user.id);
     const current = workspaces.find((w) => w.id === me.session.workspaceId) || null;
-    return finish(json({ user: me.user, workspaces, current, csrf: me.session.csrf, mail: env.RESEND_API_KEY ? "email" : "dev" }), me);
+    return finish(json({ user: me.user, workspaces, current, csrf: me.session.csrf, mail: hasMail(env) ? "email" : "dev" }), me);
   }
   const write = !["GET", "HEAD"].includes(m);
   const me = await must(request, env, url, { write });

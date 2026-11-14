@@ -13,6 +13,7 @@ import "./assets.js"; // prompts/ as text (cloud/scripts/gen-assets.mjs)
 import { Store } from "../../server/store.mjs";
 import { DoDriver } from "../../server/store-driver.mjs";
 import { hostWorkspace } from "../../server/cloud/host.mjs";
+import { R2Files, SqlFiles } from "../../server/file-store.mjs";
 
 const ID = /^[0-9a-f-]{36}$/;
 // Each object's Express server listens on its own port of the isolate (objects can share one).
@@ -49,7 +50,9 @@ export class Workspace extends DurableObject {
       if (!mark) store.put("cloud", { id: "workspace", workspaceId, createdAt: new Date().toISOString() }, { silent: true });
       else if (mark.workspaceId !== workspaceId) throw Error("Workspace mismatch.");
       const masters = this.env.VAULT_MASTER_KEY ? [{ kid: "m1", secret: this.env.VAULT_MASTER_KEY }] : [];
-      const host = hostWorkspace({ store, workspace: { id: workspaceId, name: mark?.title || "" }, masters });
+      // Mission files: R2 (EU) when the bucket is bound, else this object's own SQLite.
+      const files = this.env.FILES ? new R2Files(this.env.FILES, "workspaces/" + workspaceId) : new SqlFiles(this.ctx.storage.sql);
+      const host = hostWorkspace({ store, workspace: { id: workspaceId, name: mark?.title || "" }, masters, files });
       const server = http.createServer(host.app);
       const port = nextPort++;
       await new Promise((resolve) => server.listen(port, resolve));
@@ -101,7 +104,10 @@ export class Workspace extends DurableObject {
       try { pair[1].send(JSON.stringify({ type: "ready" })); } catch {}
       return new Response(null, { status: 101, webSocket: pair[0] });
     }
-    return handleAsNodeRequest(this.port, request);
+    // The body is read whole first: a route that answers without reading it (a refusal) must not
+    // leave a half-read stream behind, which workerd treats as an uncaught error.
+    const body = ["GET", "HEAD"].includes(request.method) ? null : await request.arrayBuffer();
+    return handleAsNodeRequest(this.port, new Request(request.url, { method: request.method, headers: request.headers, body }));
   }
 
   // ---------------------------------------------------------------- RPC (the Worker only)

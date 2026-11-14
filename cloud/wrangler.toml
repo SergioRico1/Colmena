@@ -16,7 +16,9 @@ preview_urls = false
 # runtime (env.WORKSPACE.jurisdiction("eu")); wrangler.toml has no field for it. workerd does
 # not implement jurisdictions, so `npm run dev` clears it (--var JURISDICTION:).
 JURISDICTION = "eu"
-# The sender of real mail once RESEND_API_KEY is set (a verified address of that account).
+# Real mail (cloud/src/mail.js): Cloudflare Email Sending once the account has a sending domain
+# (a [[send_email]] binding named SEND_EMAIL plus MAIL_FROM_ADDRESS on that domain), or Resend
+# (secret RESEND_API_KEY, sender MAIL_FROM). With neither, the dev fallback.
 MAIL_FROM = "Colmena <onboarding@resend.dev>"
 
 [assets]
@@ -34,6 +36,13 @@ class_name = "Workspace"
 [[durable_objects.bindings]]
 name = "DIRECTORY"
 class_name = "Directory"
+
+# Mission files of every workspace (server/file-store.mjs › R2Files), under workspaces/<id>/.
+# Without this binding (wrangler dev) files stay in each workspace's own SQLite.
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "colmena-nube-files"
+jurisdiction = "eu"
 
 [[migrations]]
 tag = "v1"

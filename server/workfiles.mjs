@@ -9,7 +9,8 @@
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { lstat, readdir, readFile, rename, writeFile } from "node:fs/promises";
-import { safePath } from "./files.mjs";
+import { checkRelative, safePath } from "./files.mjs";
+import { fileKey, mountedFile, mountedRoot } from "./file-store.mjs";
 import { readDocument, isDocumentFormat, openPdf } from "./documents.mjs";
 import { renderPdfPage } from "./pdfforms.mjs";
 import { isOfficeFile } from "./officepdf.mjs";
@@ -38,6 +39,16 @@ const typeOf = (p) => {
 async function walk(root) {
   const out = [];
   let truncated = false;
+  const mount = mountedRoot(root);
+  if (mount) {
+    const base = fileKey(mount, "");
+    for (const f of await mount.backend.list(base)) {
+      if (out.length >= WORKFILE_LIMITS.entries) { truncated = true; break; }
+      const rel = f.key.slice(base.length), at = rel.lastIndexOf("/");
+      out.push({ path: rel, name: rel.slice(at + 1), dir: at < 0 ? "" : rel.slice(0, at), size: f.size, modifiedAt: f.at || null });
+    }
+    return { files: out, truncated };
+  }
   const visit = async (dir, depth) => {
     if (depth > WORKFILE_LIMITS.depth) return;
     let entries = [];
@@ -138,12 +149,20 @@ export function visualNote(error) {
 export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, HttpError, office = null }) {
   const fail = (status, message, extra = {}) => Object.assign(HttpError ? new HttpError(status, message) : Object.assign(Error(message), { status }), extra);
   const fileOf = async (missionId, rel) => {
+    // A hosted workspace's files are not on a disk (server/file-store.mjs).
+    const mount = mountedRoot(rootOf(missionId));
+    if (mount) {
+      try { checkRelative(rel); } catch { throw fail(404, "Archivo no disponible."); }
+      const f = await mountedFile(mount, rel);
+      if (!f) throw fail(404, "Ese archivo ya no existe.");
+      return { target: "mounted:" + fileKey(mount, rel), info: f.info, read: async () => f.bytes };
+    }
     let target;
     try { target = await safePath(rootOf(missionId), rel); } catch { throw fail(404, "Archivo no disponible."); }
     const info = await lstat(target).catch(() => null);
     if (!info || !info.isFile()) throw fail(404, "Ese archivo ya no existe.");
     if (info.nlink > 1) throw fail(403, "No se abren archivos enlazados.");
-    return { target, info };
+    return { target, info, read: () => readFile(target) };
   };
   const pathQuery = z.string().trim().min(1).max(240);
 
@@ -164,12 +183,12 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
   app.get("/api/missions/:id/workfiles/file", async (req, res) => {
     mustGet("missions", req.params.id, "Misión");
     const rel = check(pathQuery, String(req.query.path ?? ""));
-    const { target, info } = await fileOf(req.params.id, rel);
+    const { target, info, read } = await fileOf(req.params.id, rel);
     const type = typeOf(rel);
     const base = { path: rel, name: path.basename(rel), size: info.size, modifiedAt: info.mtime.toISOString(), type, mime: MIME[extOf(rel)] || "application/octet-stream" };
     if (["text", "markdown", "csv"].includes(type) || extOf(rel) === "svg") {
       if (info.size > WORKFILE_LIMITS.textBytes) return res.json({ ...base, editable: false, reason: "Demasiado grande para verlo aquí (más de 256 KB). Descárgalo." });
-      const buf = await readFile(target);
+      const buf = await read();
       const text = buf.includes(0) ? null : utf8(buf);
       if (text === null) return res.json({ ...base, editable: false, reason: "No es texto que se pueda mostrar." });
       const eol = lineEnding(text);
@@ -180,7 +199,7 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
       // «pdf»: drawn page by page; «office»: the same once converted (GET …/workfiles/visual).
       const visual = type === "pdf" ? "pdf" : office && isOfficeFile(rel) ? "office" : null;
       try {
-        const doc = await readDocument(await readFile(target), rel, { page: 1, cacheKey: target + ":" + info.size + ":" + info.mtimeMs });
+        const doc = await readDocument(await read(), rel, { page: 1, cacheKey: target + ":" + info.size + ":" + info.mtimeMs });
         return res.json({ ...base, editable: false, visual, preview: String(doc.content || "").slice(0, 60000), pages: doc.pages || null });
       } catch (error) {
         return res.json({ ...base, editable: false, visual, reason: "No pude leer su contenido: " + String(error.message || error).slice(0, 160) });
@@ -195,11 +214,11 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
   // file cancels the conversion of the older one.
   const visualOf = async (req, res) => {
     const rel = check(pathQuery, String(req.query.path ?? ""));
-    const { target, info } = await fileOf(req.params.id, rel);
+    const { info, read } = await fileOf(req.params.id, rel);
     if (info.size > WORKFILE_LIMITS.rawBytes) throw Object.assign(Error("Es demasiado grande para verlo con su formato."), { code: "TOO_BIG" });
     const controller = new AbortController();
     res.on("close", () => { if (!res.writableEnded) controller.abort(); });
-    return visualPdf(office, await readFile(target), rel, { source: req.params.id + "\u0000" + rel, signal: controller.signal });
+    return visualPdf(office, await read(), rel, { source: req.params.id + "\u0000" + rel, signal: controller.signal });
   };
   app.get("/api/missions/:id/workfiles/visual", async (req, res) => {
     mustGet("missions", req.params.id, "Misión");
@@ -240,7 +259,7 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
   app.get("/api/missions/:id/workfiles/raw", async (req, res) => {
     mustGet("missions", req.params.id, "Misión");
     const rel = check(pathQuery, String(req.query.path ?? ""));
-    const { target, info } = await fileOf(req.params.id, rel);
+    const { info, read } = await fileOf(req.params.id, rel);
     if (info.size > WORKFILE_LIMITS.rawBytes) throw fail(413, "Archivo demasiado grande.");
     const name = path.basename(rel);
     const ascii = name.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "");
@@ -254,7 +273,7 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
       "Content-Security-Policy": "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox",
       "Cache-Control": "no-store",
     });
-    res.end(await readFile(target));
+    res.end(await read());
   });
 
   app.put("/api/missions/:id/workfiles/file", async (req, res) => {

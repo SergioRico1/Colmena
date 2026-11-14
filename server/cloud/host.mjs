@@ -17,6 +17,7 @@ import { roomSlug } from "../runtime/helpers.mjs";
 import { now } from "../store.mjs";
 import { ROLES, SYSTEM_PERSON, asPerson, currentPerson, isPerson, personAddress, personalFields } from "../identity.mjs";
 import { WorkspaceKeyring, envelopeVault } from "../envelope-vault.mjs";
+import { mountFiles } from "../file-store.mjs";
 import { randomUUID } from "node:crypto";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
@@ -37,11 +38,14 @@ const noSession = () => ({ status: () => null, models: [], start: async () => { 
 
 /**
  * `store`: the workspace's store; `workspace` {id, name}; `masters`: [{kid, secret}] for the
- * envelope vault (none: secrets unavailable); `log`.
+ * envelope vault (none: secrets unavailable); `files`: where mission files live (SqlFiles or
+ * R2Files, server/file-store.mjs); `log`.
  */
-export function hostWorkspace({ store, workspace, masters = [], log = (m) => console.warn("[nube] " + m) }) {
+export function hostWorkspace({ store, workspace, masters = [], files = null, log = (m) => console.warn("[nube] " + m) }) {
   if (!workspace?.id) throw Error("Espacio no válido.");
   store.personal = personalFields();
+  // No disk: mission files (attachments, deliverables) go to `files` (server/file-store.mjs).
+  if (files && store.directory) mountFiles(store.directory, files);
   // --- secrets: the envelope vault (one namespace per desktop vault)
   let vault = () => null;
   if (masters.length) {

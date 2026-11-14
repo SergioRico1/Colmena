@@ -1,10 +1,10 @@
-// Mail of hosted Colmena: sign-in links and invitations. A provider with a Resend-shaped HTTP API
-// (POST {from, to, subject, html, text} with a Bearer key) when the secret RESEND_API_KEY is set;
-// without one, the dev fallback: the link is never in a public response. It is written to the
-// Worker's log (`wrangler tail`) and kept for 30 minutes in the directory, where only a holder of
-// the ADMIN_BOOTSTRAP_TOKEN secret can read it (GET /auth/dev/mail).
-// To switch to real mail: `wrangler secret put RESEND_API_KEY` and set MAIL_FROM (a verified
-// sender of that account) in wrangler.toml [vars]. Nothing else changes (docs/CLOUD.md).
+// Mail of hosted Colmena: sign-in links and invitations. Providers, first that is configured:
+// Cloudflare Email Sending (the SEND_EMAIL binding plus MAIL_FROM_ADDRESS on a verified sending
+// domain), or a Resend-shaped HTTP API (POST {from, to, subject, html, text} with a Bearer key,
+// secret RESEND_API_KEY). Without either, the dev fallback: the link is never in a public
+// response. It is written to the Worker's log (`wrangler tail`) and kept for 30 minutes in the
+// directory, where only a holder of the ADMIN_BOOTSTRAP_TOKEN secret can read it
+// (GET /auth/dev/mail). How the owner turns real mail on: docs/CLOUD.md › Phase 1 › Mail.
 
 const escape = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -32,6 +32,12 @@ function page(intro, url, action, foot) {
  */
 export async function sendMail(env, { to, kind, url, workspace = null, inviter = null }, { keep = async () => {}, fetchImpl = fetch } = {}) {
   const mail = composeMail(kind, { url, workspace, inviter });
+  // Cloudflare Email Sending (a `send_email` binding named SEND_EMAIL, a sending domain on one of
+  // the account's zones): preferred when bound.
+  if (env.SEND_EMAIL?.send && env.MAIL_FROM_ADDRESS) {
+    await env.SEND_EMAIL.send({ from: { email: env.MAIL_FROM_ADDRESS, name: "Colmena" }, to: to, subject: mail.subject, html: mail.html, text: mail.text });
+    return { sent: true };
+  }
   if (env.RESEND_API_KEY) {
     const response = await fetchImpl(env.MAIL_API_URL || "https://api.resend.com/emails", {
       method: "POST",
@@ -46,3 +52,6 @@ export async function sendMail(env, { to, kind, url, workspace = null, inviter =
   await keep({ email: to, kind, url });
   return { sent: false, dev: true };
 }
+
+/** A real mail provider is configured (no dev fallback). */
+export const hasMail = (env) => !!((env.SEND_EMAIL?.send && env.MAIL_FROM_ADDRESS) || env.RESEND_API_KEY);

@@ -125,6 +125,21 @@ try {
   await shot(B, "phone-5-sesion-cerrada");
   const after = await B.evaluate(async () => (await fetch("/api/state")).status);
   check("Beto signs out", after === 401);
+
+  // ---- Cora, phone (light): a company of her own, which sees nothing of the first one
+  const light = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, colorScheme: "light", locale: "es-ES" });
+  const C = await light.newPage();
+  C.on("pageerror", (e) => errors.push("phone2: " + e.message));
+  await signIn(C, `cora.${run}@example.org`, null);
+  await C.getByRole("heading", { name: "Crea tu empresa" }).waitFor();
+  await C.fill("input[maxlength='60']", "Taller Sur " + run);
+  await shot(C, "phone-6-crear-empresa");
+  await C.getByRole("button", { name: "Crear y entrar" }).click();
+  await C.waitForURL((u) => new URL(u).pathname === "/", { timeout: 20000 });
+  const isolated = await C.evaluate(async (id) => { const s = await (await fetch("/api/state")).json(); return !s.missions.some((m) => m.id === id); }, room.missionId);
+  check("another company sees nothing of the first", isolated);
+  await C.waitForTimeout(800);
+  await shot(C, "phone-7-app-otra-empresa");
 } catch (error) {
   check("browser flow", false, error.message);
   await shot(A, "fail-laptop").catch(() => {});

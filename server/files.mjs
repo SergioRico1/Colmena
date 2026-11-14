@@ -10,8 +10,10 @@ import {
 import { z } from "zod";
 import { readDocument, isDocumentFormat, DOC_LIMITS, DOCUMENT_NOTICE } from "./documents.mjs";
 import { attachmentMeta, imageResult, isImageName } from "./media.mjs";
+import { fileKey, mountedFile, mountedRoot } from "./file-store.mjs";
 
-export async function safePath(root, relative, { parent = false } = {}) {
+/** Throws when `relative` is not a plain relative path of a mission («a/b.txt»). */
+export function checkRelative(relative) {
   if (
     typeof relative !== "string" ||
     !relative ||
@@ -31,6 +33,9 @@ export async function safePath(root, relative, { parent = false } = {}) {
       )
   )
     throw Error("Ruta no permitida.");
+}
+export async function safePath(root, relative, { parent = false } = {}) {
+  checkRelative(relative);
   await mkdir(root, { recursive: true });
   const base = await realpath(root);
   let target = base;
@@ -54,6 +59,13 @@ export async function safePath(root, relative, { parent = false } = {}) {
   return target;
 }
 export async function readMissionFile(root, relative) {
+  const mount = mountedRoot(root);
+  if (mount) {
+    checkRelative(relative);
+    const f = await mountedFile(mount, relative);
+    if (!f || f.info.size > 250000) throw Error("Solo archivos de texto de hasta 250 KB.");
+    return f.bytes.toString("utf8");
+  }
   const target = await safePath(root, relative);
   const stat = await lstat(target);
   if (!stat.isFile() || stat.size > 250000)
@@ -63,6 +75,14 @@ export async function readMissionFile(root, relative) {
 
 /** Bytes of a mission file (documents, images, PDFs), at most `max` bytes. */
 export async function readMissionBytes(root, relative, { max = DOC_LIMITS.maxBytes } = {}) {
+  const mount = mountedRoot(root);
+  if (mount) {
+    checkRelative(relative);
+    const f = await mountedFile(mount, relative);
+    if (!f) throw Error("No existe: " + relative);
+    if (f.info.size > max) throw Error("El archivo supera el máximo de " + Math.round(max / 1048576) + " MB.");
+    return { target: fileKey(mount, relative), bytes: f.bytes, size: f.info.size, mtimeMs: f.info.mtimeMs };
+  }
   const target = await safePath(root, relative);
   let info;
   try { info = await lstat(target); } catch { throw Error("No existe: " + relative); }
@@ -81,7 +101,7 @@ export async function readMissionDocument(root, relative, page = 1) {
     const { bytes } = await readMissionBytes(root, relative, { max: 25 * 1024 * 1024 });
     return imageResult(bytes, relative);
   }
-  if (!isDocumentFormat(relative)) {
+  if (!isDocumentFormat(relative) && !mountedRoot(root)) {
     const target = await safePath(root, relative);
     let info;
     try { info = await lstat(target); } catch { throw Error("No existe: " + relative); }
@@ -103,6 +123,15 @@ export async function createMissionFile(root, relative, content, { overwrite = n
   const binary = Buffer.isBuffer(content);
   if (binary ? content.length > ATTACHMENT_LIMITS.binaryBytes : typeof content !== "string" || Buffer.byteLength(content) > 250000)
     throw Error("Archivo demasiado grande.");
+  const mount = mountedRoot(root);
+  if (mount) {
+    checkRelative(relative);
+    const bytes = binary ? content : Buffer.from(content);
+    const existing = await mountedFile(mount, relative);
+    if (existing && !existing.bytes.equals(bytes) && !overwrite?.(relative)) throw Error("Ya existe otro contenido en esta ruta. Elige un nombre nuevo.");
+    if (!existing || !existing.bytes.equals(bytes)) await mount.backend.put(fileKey(mount, relative), bytes);
+    return { path: relative, bytes: bytes.length, ...(existing && !existing.bytes.equals(bytes) ? { replaced: true } : {}) };
+  }
   const target = await safePath(root, relative, { parent: true });
   let replaced = false;
   try {
@@ -129,6 +158,12 @@ export async function createMissionFile(root, relative, content, { overwrite = n
  */
 export async function saveWorkFile(root, relative, content) {
   if (typeof content !== "string" || Buffer.byteLength(content) > 250000) throw Error("Archivo demasiado grande.");
+  const mount = mountedRoot(root);
+  if (mount) {
+    checkRelative(relative);
+    await mount.backend.put(fileKey(mount, relative), Buffer.from(content));
+    return { path: relative, bytes: Buffer.byteLength(content) };
+  }
   const target = await safePath(root, relative, { parent: true });
   await writeFile(target, content);
   return { path: relative, bytes: Buffer.byteLength(content) };
@@ -151,6 +186,12 @@ export async function createUniqueFile(root, folder, base, ext, bytes) {
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "archivo";
   for (let n = 1; n < 200; n++) {
     const relative = (folder ? folder + "/" : "") + clean + (n > 1 ? "-" + n : "") + "." + ext;
+    const mount = mountedRoot(root);
+    if (mount) {
+      if (await mountedFile(mount, relative)) continue;
+      await mount.backend.put(fileKey(mount, relative), bytes);
+      return { path: relative, target: fileKey(mount, relative), bytes: bytes.length };
+    }
     const target = await safePath(root, relative, { parent: true });
     try {
       await writeFile(target, bytes, { flag: "wx" });
@@ -163,6 +204,15 @@ export async function createUniqueFile(root, folder, base, ext, bytes) {
 }
 
 export async function listMissionFiles(root) {
+  const mount = mountedRoot(root);
+  if (mount) {
+    const seen = new Map();
+    for (const f of await mount.backend.list(fileKey(mount, ""))) {
+      const rest = f.key.slice(fileKey(mount, "").length), at = rest.indexOf("/");
+      seen.set(at < 0 ? rest : rest.slice(0, at), at >= 0);
+    }
+    return [...seen].map(([name, directory]) => ({ name, directory }));
+  }
   await mkdir(root, { recursive: true });
   return (await readdir(root, { withFileTypes: true }))
     .filter((x) => !x.isSymbolicLink())
