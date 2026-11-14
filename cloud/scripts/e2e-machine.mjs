@@ -286,7 +286,7 @@ let browserMission = null;
   const rule = ((await A.req("/api/state")).data.automations || []).find((r) => r.id === daily.data?.id);
   const next = new Date(rule?.nextRun || 0);
   const madrid = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(next);
-  check(`a routine at 9:00 Europe/Madrid runs at ${next.toISOString()} (09:00 in Madrid)`, madrid === "09:00" && next.getUTCHours() === (new Date(next).getTimezoneOffset() === 0 ? next.getUTCHours() : next.getUTCHours()) && [7, 8].includes(next.getUTCHours()), JSON.stringify(rule));
+  check(`a routine at 9:00 Europe/Madrid runs at ${next.toISOString()} (09:00 in Madrid)`, madrid === "09:00" && [7, 8].includes(next.getUTCHours()), JSON.stringify(rule));
   numbers.nineMadridNextRunUtc = next.toISOString();
   // One at the next minute in Madrid: it fires at that minute, with nobody connected.
   const at = new Date(Date.now() + 150_000);

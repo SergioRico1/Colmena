@@ -942,3 +942,199 @@ No new Cloudflare resources or DO classes.
 - The Claude Code / Codex / OpenCode engines («Código») in Containers.
 - Event triggers that listen live (a room message, files) instead of the 60 s poll.
 - Real accounts: no real API key or subscription was used; adapters are tested against fakes.
+
+(Phase 4 below did the containers, «Código», the browser, Office previews, time zones and apps
+per person; what is still open is under «Left for phase 5».)
+
+## Phase 4: the machine parts work in the cloud
+
+```
+browser ──► Worker colmena-nube (app.colmena.team)
+             ├─ /api/code/*                 ──► Workspace DO ──► Machine DO "machine:<id>" ──► container :8080
+             │                                   (person, API keys, GitHub token in headers)   server/machine/serve.mjs
+             ├─ /vista/<workspace>/<token>/ ──► Workspace DO (checks the link) ──► Machine ──► 127.0.0.1:<port> in the container
+             ├─ /api/computer/*             ──► Workspace DO: the bots' browser (Browser Rendering, CDP)
+             └─ /prueba/*                   ──► fixture pages for the e2e (only with FAKE_MODEL_TOKEN)
+Machine DO alarm ──► idle for MACHINE_SLEEP_AFTER_S → work folder packed to R2 → container destroyed
+```
+
+### The process seam (`server/machine/seam.mjs`)
+
+One small interface for «run a program / have a filesystem»:
+
+| | Desktop | Cloud |
+| --- | --- | --- |
+| `spawn(file, args, {cwd, env})` | `node:child_process` (`localMachine`, unchanged) | `/machine/run` in the company's container, output as NDJSON; a ChildProcess look-alike, so `runProgram` drives it unchanged |
+| `run({…})` | `server/computer/system.mjs › runProgram` | same result shape (`exitCode, stdout, stderr, truncated, timedOut, seconds`) |
+| `office()` | `createOfficeConverter` (this computer's Office or LibreOffice) | `remoteOfficeConverter`: LibreOffice in the container, newest PDFs kept in memory; pages counted and drawn there too |
+| «Código» | `CodeService` in the desktop's server | the same `CodeService`, unchanged, inside the container (below) |
+
+The machine server (`server/machine/serve.mjs`) is the desktop's own code on a Linux disk: it does not
+re-implement «Código», it hosts it. Before anything opens it answers only `/machine/health`,
+`/machine/restore` (the work folder back from R2) and `/machine/begin`; then the store (encrypted with
+a key derived from `WORKSPACE_KEYS` for the machine), `CodeService` and its routes, `/machine/run`,
+`/machine/office/pdf`, `/machine/pdf/pages|page`, `/machine/port/:n/*` and `/machine/backup`. Every
+request needs the token the Machine DO generated at start (`X-Machine-Token`); the port is reachable only
+through `getTcpPort` of that DO.
+
+The desktop seams this needed are small: `CodeService#engineEnv` (null on the desktop), `ctx.machine` in
+run_command (`server/computer/tools.mjs › commandPlace`), `office.pages/renderPage` in the work-file
+routes, frames on the hosted feed (`app.mjs`). `npm test` passes unchanged.
+
+### Containers (`cloud/src/machine.js`, `cloud/container/`)
+
+- **One container per company**, the Durable Object Container API with the `durable_object` scheduling
+  policy (`ctx.container.start({image, instance, enableInternet, env})`). DO-managed containers take no
+  placement constraints; the Machine DO lives in the EU jurisdiction (`MACHINE_JURISDICTION = "eu"`) and
+  the container beside it. Instance `standard-1` (½ vCPU, 4 GiB, 8 GB disk), `MACHINE_INSTANCE`.
+- **Image**: `node:24-bookworm-slim` + git, gh, lsof, LibreOffice (writer, calc, impress, nogui) with
+  metric-compatible fonts, Codex CLI 0.166.0, Claude Code 2.1.314, OpenCode 1.19.5, the repository's
+  runtime dependencies (node-pty built for Linux) and `server/`. 933 MB compressed. Built by wrangler from
+  the repository root (`build_context = ".."`, `Dockerfile.dockerignore`). Check it locally before a
+  deploy with `cloud/scripts/machine-smoke.mjs` (12 checks).
+- **Persistence**: snapshots (`snapshotContainer`) were considered and not used: a restored snapshot keeps
+  the image it was taken from, so a new image would never reach a company. Instead, before stopping, the
+  machine packs `/work` (projects, worktrees, the store, engine homes; not caches) into
+  `workspaces/<id>/machine/work.tar.gz` in R2 with a multipart upload (atomic: a cut backup changes
+  nothing), and a fresh container restores it before `/machine/begin`. If a container dies without its
+  alarm, what changed since the last backup is lost (the tasks show as cut and can be resent).
+- **Sleep**: activity is any request; open streams (live events, a terminal, a command) keep it awake;
+  the alarm asks `/machine/health` and waits while an engine turn or a command runs. After
+  `MACHINE_SLEEP_AFTER_S` (600) quiet seconds it backs up and `destroy()`s. `setInactivityTimeout` is set
+  5 minutes past that, so the platform never stops it before the backup.
+- **Quotas**: minutes per month per company (`MACHINE_MINUTES_PER_MONTH`, 600, or the company's own
+  `settings.machineMinutes`), counted from start to stop (`server/cloud/machine-quota.mjs`); past it the
+  machine does not start and the request answers 429 «Tu empresa ha usado sus N minutos de máquina de este
+  mes…». Concurrency is one container per company by construction (all of a company's tasks share it).
+  A deployment-wide cap on containers is not built (the platform's account limits apply).
+
+### «Código» in the cloud
+
+- The hosted app shows «Código» when the workspace has a machine (`state.cloud.hidden` no longer lists it).
+  Projects come from «Clonar de GitHub», «Empezar de cero» (in the machine) or a git bundle
+  (`POST /api/code/cloud/import?name=&origin=local`, used by the e2e: the bundle's repository plus a bare
+  «origin» inside the machine, so pushes go nowhere real). A folder of someone's computer is refused.
+- **Engines with API keys only.** The Workspace sends the asking person's keys on the calls that can
+  start a turn (`X-Colmena-Engine-Keys`): Anthropic API key → Claude Code (`ANTHROPIC_API_KEY`, a
+  `CLAUDE_CONFIG_DIR` per person), OpenAI API key → Codex (an `auth.json` of type apikey in a `CODEX_HOME`
+  per person), any of them → OpenCode. A Claude setup-token or ChatGPT sign-in never goes there (the
+  providers' terms, Phase 3). Without a key the turn ends with «En la nube, Código trabaja con tu propia
+  clave de API…», also said on the Código home and in Ajustes.
+- **GitHub**: a token per person or per company (`PUT /api/cloud/github {scope, token}`, sealed in the
+  vault, namespace `github`); the person's wins. It travels with each «Código» call
+  (`X-Colmena-GitHub-Token`) and git and `gh` read it from the environment through a credential helper in
+  the image; nothing is written to disk. A GitHub App's installation token works the same way; the App
+  itself (installation flow, short-lived tokens) is not built.
+- **Terminals**: node-pty inside the container; the existing SSE stream and input routes, proxied.
+- **Previews**: `POST /api/code/tasks/:id/preview-link {port}` makes a link
+  `/vista/<workspace>/<token>/` (24 random bytes, one task and port, 12 hours). It needs no session, carries
+  none (cookies are not forwarded) and is served with `Content-Security-Policy: sandbox …` (no
+  `allow-same-origin`): the page runs in an opaque origin and cannot read or act on the app as whoever
+  opens it. The machine proxies it to `127.0.0.1:<port>`, so dev servers bound to localhost work. Apps
+  that use absolute paths (`/assets/…`) need a base path to load their assets under the link.
+- **Tests**: the fake Claude Code (`cloud/container/fake-claude-code.mjs`, the test fixture plus
+  «arregla»: edits the fixture's bug and runs its tests for real) runs only when the workspace's test flag
+  is on.
+
+### run_command in the cloud
+
+The computer tools take `ctx.machine`: the program is a bare name (looked up on the container's PATH) or
+an absolute `/usr`, `/bin`, `/opt` path; npm and scripts are refused as on the desktop; it runs in
+`/work/missions/<mission>` with the minimal environment, 120 s and 200 KB. Policy, red lines,
+approvals («Aprobado por adelantado» included) are the desktop's, unchanged; there is no host to reach.
+
+### The bots' browser (`server/cloud/browser-cloud.mjs`, `cloud/src/browser.js`)
+
+- Cloudflare Browser Rendering (`[browser] binding = "BROWSER"`, `@cloudflare/puppeteer` 2.0.0): one
+  Chromium per workspace object (keep-alive 10 minutes), a page per mission and bot, driven over CDP
+  exactly like the desktop's Electron browser: the same accessibility snapshot and blocker detection
+  (`desktop/axsnapshot.cjs`, imported), references, `inspect`, `formSummary`, a click on «Enviar» turned
+  into `browser_submit` (a red line), fill, keys, waits, sign-in and downloads (into the mission's files
+  in R2, 10 MB). Pages idle for 10 minutes close.
+- **Cookie jars**: a named session (the bot's or the mission's, «principal» otherwise) is loaded from the
+  envelope vault (namespace `browser-jars`) into a fresh page and saved back, sealed, after each action. A
+  turn for another person (`args.session`) starts empty and is never saved.
+- **Saved passwords** (`browser_sign_in`, the cloud vault): the desktop's rules unchanged (granted bots
+  only, never in a turn for another person or in incognito), and the cloud browser refuses a password in
+  a turn's own session as a second wall.
+- **Live view**: a JPEG after each action (at most one a second per mission) as `browser_frame` on the
+  live socket. «Tomar el control» pauses the bot; the person clicks on the frame, types and presses keys
+  (`POST /api/computer/input`), then gives it back with an optional note. Desktop control (Cua) stays
+  desktop-only.
+- Public pages only: `browser_open` checks the host by DNS over HTTPS (private, loopback, link-local,
+  CGNAT addresses refused).
+
+### Office → PDF previews
+
+The work-file previews (`/api/missions/:id/workfiles/visual|page/:n`) convert Word, Excel and PowerPoint
+with LibreOffice in the container and draw the pages there (pdf.js and the canvas are not in the Worker).
+
+### Time zones (`server/timezone.mjs`)
+
+- `zoned(tz)`: wall-clock times in an IANA zone. A time in the spring-forward gap (02:30 in Madrid on the
+  last Sunday of March) moves forward by the gap; a repeated autumn time is the first one. Without a zone
+  it is the local-time code the desktop always ran (tested to give the same instants).
+- Routines (`triggers.mjs › nextRun`), holidays and weekdays, the «laborable» window of calendar triggers
+  and the routine subtitles use `settings.timezone`. A 9:00 routine in Madrid is 08:00Z in winter and
+  07:00Z in summer, also on the days the clocks change.
+- The company's zone starts as its first owner's browser (`X-Colmena-Time-Zone`, adopted once, owners
+  and admins only) and an admin changes it in Empresa › Hora y máquina (`PUT /api/cloud/timezone`), which
+  moves every timed routine's next run. People keep their own zone in their profile (Phase 2) for display
+  and «no molestar»; who set none uses the company's (it was UTC).
+
+### Apps per person
+
+`PUT /api/cloud/apps/mine {on}` gives a person a Composio profile of their own: the company's key, a
+Composio user of theirs. Their bots' turns and routines (which run as their owner) then use the accounts
+they connected; everyone else keeps the company's. A new company key carries over to them.
+Not checked with a real Composio account.
+
+### Screens
+
+- «Código»: the API-key note and no «Abrir una carpeta» in the cloud; previews through their link in a
+  sandboxed frame.
+- The live browser: clicks on the frame, a box to type, Intro/Tab/Esc/Bajar while you have the control.
+- Empresa › «Hora y máquina»: the zone with the time there, the machine (on or off, minutes this month,
+  last cold start) and the company's GitHub token.
+- Ajustes › «Tu cuenta de IA» › «Código y apps en la nube»: your GitHub token and «Mis propias apps».
+
+### Secrets and resources (added)
+
+| Name | What | Where |
+| --- | --- | --- |
+| DO class `Machine` (migration v3) + container application `colmena-nube-machine` | one container per company | `cloud/wrangler.toml` |
+| `BROWSER` | Browser Rendering | `[browser]` binding |
+| `MACHINE_SLEEP_AFTER_S`, `MACHINE_MINUTES_PER_MONTH`, `MACHINE_INSTANCE`, `MACHINE_JURISDICTION` | sleep, quota, size, EU | `[vars]` |
+| R2 `workspaces/<id>/machine/work.tar.gz` | the work folder while the machine sleeps | the existing bucket |
+
+No new secrets: the machine's store key derives from `WORKSPACE_KEYS`.
+
+### Tests and measurements
+
+- **Node** (`npm test`: PHASE4_TESTS tests, all passing) adds `tests/cloud-timezone.test.mjs` (9: zones,
+  offsets, gaps and repeats, 9:00 Madrid across both changes, weekdays and holidays by the zone's day,
+  weekly and one-off, local time unchanged), `tests/cloud-machine.test.mjs` (8: the seam against a real
+  machine server, restore before begin, run_command with approval through the machine, «Código» with a
+  bundled repo, the fake engine, the diff and live events, the API-key rule, preview links, Office
+  conversion, settings, GitHub tokens sealed, apps per person, quotas) and `tests/cloud-browser.test.mjs`
+  (4: references, fill and submit rules, frames, sealed jars, passwords rules, take control).
+- **Image**: `cloud/scripts/machine-smoke.mjs` 12/12 against the image on this computer (Docker).
+- **Deployed**: PHASE4_E2E
+
+PHASE4_NUMBERS
+
+### Left for phase 5
+
+- The desktop as a cloud client and its local agent (Cua, folders, the desktop's own engines) — the other
+  half of phase 5.
+- Live triggers: Composio trigger webhooks (and Gmail push) delivered to `/hooks/<workspace>/…` instead
+  of the 60 s poll; room and file events are already instant. Not built: it needs a Composio account to
+  check the payloads and signatures.
+- A GitHub App (installation flow, short-lived installation tokens) instead of pasted tokens; PRs were
+  not opened against GitHub in tests (no real credentials).
+- Per-task containers (parallel heavy tasks of one company), a deployment-wide cap on running containers
+  and billing for minutes beyond the quota.
+- Backups more often than at sleep (a crash loses what changed since the last one); trimming the image
+  (build tools are kept).
+- Previews of apps that need absolute paths; WebSocket hot reload through `/vista/`.
+- Real accounts: no real API key, GitHub token or Composio account was used.
