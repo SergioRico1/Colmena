@@ -24,6 +24,7 @@ import { STATE_WORD, STATUS_WORD, conversationPath, foldBots, foldRooms, remembe
 import { selfName } from "../../lib/ownName.js";
 import { Bell, Books, Bot, ChatCircleText, CheckSquare, ChevronDown, CircleHelp, Code, Ellipsis, Gear, Hash, Hourglass, House, KeyRound, ListChecks, LockSimple, LogOut, MessageSquare, NotePencil, Pencil, Plug, Plus, Repeat, Search, Sidebar as SidebarIcon, Smiley, Target, UserPlus, UsersThree } from "../Icon.js";
 import { MenuButton } from "../Menu.js";
+import { signOut } from "../../lib/cloud.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
 // design/v4/colmena-v4.html › .side). Top to bottom: the window's three dots and the wordmark,
@@ -192,7 +193,8 @@ export default function Sidebar({ active = "inicio" }) {
   const pick = (item) => {
     setMenu(null);
     if (item.id === "chat" || item.id === "sala") return openNew(item.id);
-    if (item.id === "dm") return setSheet("dm");
+    // Hosted: a direct message is with someone of your company (the company page lists them).
+    if (item.id === "dm") return store.cloud ? window.location.assign("/empresa#personas") : setSheet("dm");
     navigate(item.href);
   };
   const setStatus = (s) => {
@@ -279,7 +281,7 @@ export default function Sidebar({ active = "inicio" }) {
       <PersonAvatar person={me} size={40} ring={C.raised} presence={peers?.me ? (statusMode === "away" ? "offline" : "online") : null} />
       <span style={{ minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
         <span style={{ fontWeight: "600", fontSize: "var(--t-ui)", ...ellipsis, flex: "none" }}>{userName}</span>
-        <span style={{ fontSize: "var(--t-caption)", color: C.text3, ...ellipsis, flex: "none" }}>{peers?.me ? myStatus : "Solo en este ordenador"}</span>
+        <span style={{ fontSize: "var(--t-caption)", color: C.text3, ...ellipsis, flex: "none" }}>{peers?.me ? myStatus : store.cloud ? store.cloud.workspace?.name || "Tu empresa" : "Solo en este ordenador"}</span>
       </span>
     </>
   );
@@ -291,6 +293,11 @@ export default function Sidebar({ active = "inicio" }) {
       { label: "Modo experto", icon: Code, checked: !!expert, shortcut: "Ctrl+Mayús+E", onSelect: () => setExpert(!expert) },
     ] },
     desktop ? { group: null, items: [{ label: "Cerrar Colmena", icon: LogOut, onSelect: () => window.colmenaWindow.close() }] } : null,
+    // Hosted (src/lib/cloud.js): your company and its people, and signing out.
+    store.cloud ? { group: null, items: [
+      { label: "Empresa y personas", icon: UsersThree, onSelect: () => window.location.assign("/empresa") },
+      { label: "Cerrar sesión", icon: LogOut, onSelect: () => signOut() },
+    ] } : null,
   ];
 
   const groupHead = (id, label, count, addLabel, onAdd, marks) => (
@@ -364,7 +371,7 @@ export default function Sidebar({ active = "inicio" }) {
     );
   };
 
-  const places = PLACES.map((p, i) => {
+  const places = PLACES.filter((p) => !store.cloud?.hidden?.includes(p.id)).map((p, i) => {
     const on = p.id === current;
     const n = p.id === "inicio" ? model.waitingCount : 0;
     return (

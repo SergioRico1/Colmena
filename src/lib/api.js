@@ -1,3 +1,4 @@
+import { isCloud, signInUrl } from "./cloud.js";
 let token = null;
 
 export class ApiError extends Error {
@@ -32,6 +33,9 @@ export async function api(path, method = "GET", body) {
   }
   if (!response.ok) {
     if (response.status === 403) token = null;
+    // Hosted (lib/cloud.js): the session ended, or no company is chosen yet.
+    if (response.status === 401 && isCloud()) location.assign(signInUrl());
+    if (response.status === 409 && data?.choose && isCloud()) location.assign(data.choose);
     throw new ApiError(data?.error || "No se pudo completar la operación.", response.status, data);
   }
   return data;

@@ -4,6 +4,7 @@ import { api } from "./api.js";
 import { applyDeltas, applyLiveSnapshot, queueDelta } from "./liveText.js";
 import { useHiddenVersion, visible } from "./undoToast.js";
 import { activityStore, liveStore } from "./liveStore.js";
+import { liveSource } from "./cloud.js";
 
 // Global data layer: /api/state snapshot + SSE invalidation + live text deltas.
 // The context holds what changes now and then (/api/state, ready, online…). What changes on
@@ -117,7 +118,7 @@ export function StoreProvider({ children }) {
     let source;
     let retry;
     const connect = () => {
-      source = new EventSource("/api/events");
+      source = liveSource("/api/events"); // SSE here, a WebSocket in the cloud (lib/cloud.js)
       source.onopen = () => setOnline(true);
       source.onmessage = (message) => {
         let event;

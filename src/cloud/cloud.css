@@ -1,0 +1,82 @@
+/* Hosted Colmena's own pages (/entrar, /empresa, /invitacion): the app's tokens (styles/base.css),
+   one narrow column that works from a phone up, ink primary buttons, honey only for what waits. */
+html,body{margin:0;min-height:100%;background:var(--c-app);color:var(--c-text);font:400 var(--t-body)/var(--lh-body) 'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+::selection{background:var(--c-accent-soft);color:var(--c-text)}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px;border-radius:var(--r-sm)}
+a{color:var(--c-accent-ink);text-underline-offset:3px}
+
+.cl-shell{min-height:100dvh;display:flex;flex-direction:column;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.cl-top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:960px;width:100%;margin:0 auto;min-height:44px}
+.cl-main{flex:1;display:flex;flex-direction:column;width:100%;max-width:440px;margin:0 auto;padding-top:clamp(32px,12vh,120px)}
+.cl-main.wide{max-width:720px;padding-top:clamp(24px,6vh,56px)}
+.cl-foot{max-width:960px;width:100%;margin:40px auto 0;color:var(--c-text-3);font-size:var(--t-caption);text-align:center}
+
+.cl-title{margin:0 0 8px;font:600 var(--t-headline)/var(--lh-headline) 'Geist',sans-serif;letter-spacing:-0.02em;text-wrap:balance}
+.cl-lead{margin:0 0 28px;color:var(--c-text-2);font-size:var(--t-body);max-width:52ch;text-wrap:pretty}
+.cl-h2{margin:40px 0 4px;font:600 var(--t-title)/var(--lh-title) 'Geist',sans-serif;letter-spacing:-0.01em}
+.cl-h2:first-child{margin-top:0}
+.cl-sub{margin:0 0 16px;color:var(--c-text-3);font-size:var(--t-meta)}
+
+.cl-form{display:flex;flex-direction:column;gap:14px}
+.cl-row{display:flex;gap:8px;flex-wrap:wrap}
+.cl-row > .cl-field{flex:1 1 220px}
+.cl-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cl-label{font:500 var(--t-meta)/1.3 'Geist',sans-serif;color:var(--c-text-2)}
+.cl-input,.cl-select{width:100%;min-height:44px;padding:0 14px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card);color:var(--c-text);font:400 var(--t-body)/1 'Geist',sans-serif;transition:border-color .15s ease,box-shadow .15s ease}
+.cl-select{appearance:none;padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,var(--c-text-3) 50%),linear-gradient(135deg,var(--c-text-3) 50%,transparent 50%);background-position:calc(100% - 18px) 19px,calc(100% - 13px) 19px;background-size:5px 5px;background-repeat:no-repeat}
+.cl-select.small{min-height:36px;width:auto;font-size:var(--t-meta);padding-left:10px;background-position:calc(100% - 18px) 15px,calc(100% - 13px) 15px}
+.cl-input::placeholder{color:var(--c-text-4)}
+.cl-input:hover,.cl-select:hover{border-color:var(--c-text-4)}
+.cl-input:focus-visible,.cl-select:focus-visible{outline:none;border-color:var(--c-focus);box-shadow:0 0 0 3px var(--c-accent-soft)}
+.cl-input[aria-invalid=true]{border-color:var(--c-error)}
+
+.cl-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border:0;border-radius:var(--r-pill);background:var(--c-btn);color:var(--c-btn-text);font:600 var(--t-ui)/1 'Geist',sans-serif;text-decoration:none;cursor:pointer;transition:background .15s ease,transform .12s ease}
+.cl-btn:hover{background:var(--c-btn-hover)}
+.cl-btn:active{transform:scale(.98)}
+.cl-btn[disabled]{opacity:.55;cursor:default;transform:none}
+.cl-btn.ghost{background:transparent;color:var(--c-text);border:1px solid var(--c-line-strong)}
+.cl-btn.ghost:hover{background:var(--c-hover)}
+.cl-btn.small{min-height:36px;padding:0 14px;font-size:var(--t-meta)}
+.cl-btn.danger{background:transparent;color:var(--c-error);border:1px solid var(--c-line-strong)}
+.cl-btn.danger:hover{background:var(--c-error-soft)}
+.cl-btn.block{width:100%}
+.cl-link{padding:0;border:0;background:none;color:var(--c-accent-ink);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+.cl-error{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:var(--r-md);background:var(--c-error-soft);color:var(--c-error);font-size:var(--t-meta)}
+.cl-note{margin:0;color:var(--c-text-3);font-size:var(--t-meta);text-wrap:pretty}
+.cl-ok{display:flex;gap:8px;align-items:center;color:var(--c-ok-ink);font-size:var(--t-meta)}
+
+/* «Revisa tu correo»: the one moment these pages have — the envelope settles in. */
+.cl-sent{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.cl-sent-mark{display:grid;place-items:center;width:56px;height:56px;border-radius:var(--r-lg);background:var(--c-sunken);color:var(--c-text);animation:cl-settle .6s cubic-bezier(.16,1,.3,1) both}
+@keyframes cl-settle{from{transform:translateY(-10px) rotate(-6deg);filter:blur(2px)}to{transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){.cl-sent-mark{animation:none}}
+
+.cl-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-line)}
+.cl-item{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 0;border-bottom:1px solid var(--c-line)}
+.cl-item-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cl-item-name{font-weight:600;font-size:var(--t-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-item-meta{color:var(--c-text-3);font-size:var(--t-caption);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-item-actions{flex:none;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.cl-avatar{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r-circle);background:var(--c-chip);color:var(--c-text-2);font:600 var(--t-meta)/1 'Geist',sans-serif}
+.cl-tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:var(--r-pill);background:var(--c-chip);color:var(--c-text-2);font:500 var(--t-micro)/1 'Geist',sans-serif}
+.cl-tag.here{background:var(--c-accent-soft);color:var(--c-accent-ink)}
+.cl-iconbtn{display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text-3);cursor:pointer}
+.cl-iconbtn:hover{background:var(--c-hover);color:var(--c-text)}
+
+.cl-panel{margin-top:16px;padding:16px;border-radius:var(--r-lg);background:var(--c-sunken)}
+.cl-linkbox{display:flex;gap:8px;align-items:center;margin-top:10px}
+.cl-linkbox code{flex:1;min-width:0;padding:10px 12px;border-radius:var(--r-sm);background:var(--c-card);border:1px solid var(--c-line);font:400 var(--t-caption)/1.3 'Geist Mono',ui-monospace,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--c-text-2)}
+
+.cl-me{display:flex;align-items:center;gap:10px;min-width:0}
+.cl-me-name{font-size:var(--t-meta);color:var(--c-text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40vw}
+.cl-skeleton{height:14px;border-radius:var(--r-xs);background:var(--c-sunken)}
+.cl-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:520px){
+  .cl-title{font-size:var(--t-heading);line-height:var(--lh-heading)}
+  .cl-item{flex-wrap:wrap}
+  .cl-item-actions{width:100%;justify-content:flex-start;padding-left:48px}
+}
