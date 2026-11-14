@@ -22,7 +22,8 @@ export const ROUTES = [
   ["Rutinas", "/trabajo/rutinas"], ["Objetivos", "/trabajo/objetivos"], ["Codigo", "/codigo"], ["Equipo", "/equipo"],
   ["Bot", "/equipo/tomas"], ["Archivos", "/biblioteca"], ["Notas", "/biblioteca/notas"], ["Habilidades", "/biblioteca/habilidades"],
   ["Memoria", "/biblioteca/memoria"], ["Actividad", "/actividad"], ["Ajustes", "/ajustes"], ["AjustesIA", "/ajustes/ia"],
-  ["Bienvenida", "/bienvenida"],
+  ["Bienvenida", "/bienvenida"], ["Marketplace", "/ajustes/apps"], ["AppGmail", "/ajustes/apps?app=gmail"], ["AppCorreo", "/ajustes/apps?app=mail"],
+  ["AppAnalytics", "/ajustes/apps?app=google-analytics"], ["AppGitHub", "/ajustes/apps?app=github"],
 ];
 
 /* Runs inside the page. Everything it needs is declared in its body. */

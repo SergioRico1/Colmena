@@ -50,7 +50,7 @@ export const CATALOG = [
       "Pégala aquí con tu dirección. Colmena la guarda cifrada y solo la usan tus bots.",
     ],
     guide: "docs/GMAIL-CONTRASENA-APLICACION.md",
-    sources: ["https://support.google.com/accounts/answer/185833", "https://developers.google.com/workspace/gmail/imap/imap-smtp", "https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/"],
+    sources: ["https://support.google.com/accounts/answer/185833", "https://developers.google.com/workspace/gmail/imap/imap-smtp"],
   },
   {
     id: "gmail", vendor: "Composio", name: "Gmail", logo: "gmail", category: "mail", auth: "composio", run: "composio", toolkit: "gmail", status: "stable", verifiedAt: VERIFIED, perPerson: true, listed: true,

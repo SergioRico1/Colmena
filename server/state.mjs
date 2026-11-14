@@ -474,7 +474,7 @@ export class ConnectorCache {
 
 export function connectorsView(accounts, bots, folders, mcp = []) {
   // Direct connections of the marketplace (MCP servers, the mail connector) count as connected apps too.
-  const direct = mcp.map((s) => ({ id: "mcp:" + s.id, name: s.name, connected: true, botCount: 0 }));
+  const direct = mcp.map((s) => ({ id: "mcp:" + s.id, name: s.auth === "mail" ? "Correo" : String(s.name).split(" · ")[0], connected: true, botCount: 0 }));
   return [...Object.keys(TOOLKITS).map((key) => {
     const connected =
       accounts.some((a) => a.status === "ACTIVE" && TOOLKITS[key].includes(String(a.toolkit).toLowerCase())) || (key === "carpeta" && folders.length > 0);

@@ -1,31 +1,27 @@
 import Select from "../../Select.jsx";
-import { Check, Folder, Plus, Search } from "../../Icon.js";
+import { Folder } from "../../Icon.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { del, get, patch, post } from "../../../lib/api.js";
 import { navigate } from "../../../lib/router.jsx";
 import { useStore } from "../../../lib/store.jsx";
 import { isHidden, later, useHiddenVersion } from "../../../lib/undoToast.js";
-import { useExpert } from "../../../lib/expert.js";
 import AppLogo from "../../settings/AppLogo.jsx";
 import { appName, linkUrl, loadAccounts, loadCatalogue, loadStatus, pendingLink, rememberApps, setPendingLink } from "../../settings/connections.jsx";
-import { Alert, BotMark, Confirm, Go, LINE, Term, UNDO_MS, anchorOf, btn, danger, h3, mono, select, srOnly } from "./v3.jsx";
+import { Alert, BotMark, Confirm, Go, LINE, UNDO_MS, anchorOf, btn, danger, h3, mono, select, srOnly } from "./v3.jsx";
 import { KIND_OF, disconnectAppText } from "./effects.js";
 import { C } from "../../../lib/theme.js";
 import { isCloud } from "../../../lib/cloud.js";
+import { AppDetail, Marketplace, useMarketplace } from "./Marketplace.jsx";
 
 // Ajustes › Apps y carpetas (design/V3Conexiones.dc.html): the apps your bots work with —
-// direct MCP connections first, the rest (Google, Microsoft, Slack…) through Composio —, the
-// catalogue to connect another one and this computer's folders (the bots' own browser is in
+// direct MCP connections, the mail connector and Composio accounts —, the Marketplace to connect
+// another one (Marketplace.jsx, with each app's page at ?app=<id>) and this computer's folders (the bots' own browser is in
 // Navegador y dictado). What each bot may touch is decided in Autonomía y permisos. Own tools and MCP servers by address go in
 // Avanzado. After a Composio sign-in, /permisos/:id asks what the new account may do.
 
-const FILTERS = [["todas", "Todas"], ["mail", "Correo y agenda"], ["documents", "Archivos"], ["team", "Mensajería"], ["business", "Ventas y facturas"], ["development", "Desarrollo"]];
-const SUGGESTED = ["gmail", "googlecalendar", "notion", "googlesheets", "slack", "atlassian", "linear", "dropbox", "stripe"];
 const UNAVAILABLE = "Ahora no se puede llegar al servicio de apps. Comprueba tu conexión a internet y vuelve a intentarlo en un momento.";
 const NEEDS_ACCOUNT = "Las apps se conectan con tu cuenta de IA. Conéctala primero en Cuentas de IA y vuelve aquí.";
 const ACCESS = [["lee", "Solo leer"], ["escribe", "Leer y escribir"]];
-const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const PAGE = 8;
 const names = (list) => (list.length === 1 ? list[0] : list.slice(0, -1).join(", ") + " y " + list.at(-1));
 
 function useConnections(initialQuery) {
@@ -172,7 +168,8 @@ function Connected({ row, c, first, team }) {
   const trouble = s ? !ok && !waiting : false;
   const kind = a ? KIND_OF[a.toolkit] : null;
   const users = kind ? team.filter((b) => (b.tools?.[kind] || "none") !== "none") : [];
-  const reconnect = () => (s ? c.connectMcp(s.catalogId ? { catalogId: s.catalogId } : { url: s.url, name: s.name }) : c.connectComposio(a.toolkit));
+  // A mailbox or a pasted key is entered again on its marketplace page; a sign-in reopens at once.
+  const reconnect = () => (s && s.catalogId && ["mail", "token"].includes(s.auth) ? navigate("/ajustes/apps?app=" + encodeURIComponent(s.catalogId)) : s ? c.connectMcp(s.catalogId ? { catalogId: s.catalogId } : { url: s.url, name: s.name }) : c.connectComposio(a.toolkit));
   const remove = () => later({
     id: s ? "mcp:" + s.id : "account:" + a.id, keys: [s ? "mcp:" + s.id : "account:" + a.id], ms: UNDO_MS, text: `${label} desconectada`, error: "No se pudo desconectar",
     run: () => (s ? c.removeServer(s) : c.disconnect(a)),
@@ -180,7 +177,7 @@ function Connected({ row, c, first, team }) {
   return (
     <li style={{ display: "flex", flexDirection: "column", background: trouble ? "var(--c-honey-soft)" : "var(--c-card)", borderTop: first ? 0 : LINE }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px 14px", minHeight: "68px", padding: "12px 18px" }}>
-        <AppLogo id={meta?.id || s?.catalogId || a?.toolkit} name={label} logo={meta?.logo} size={40} />
+        <AppLogo id={meta?.icon || meta?.id || s?.catalogId || a?.toolkit} name={label} logo={meta?.logo} size={40} />
         <span style={{ flex: "1 1 220px", minWidth: 0, display: "flex", flexDirection: "column", gap: "3px" }}>
           <span style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{label}</span>
           <span style={{ fontSize: "var(--t-meta)", lineHeight: 1.4, color: trouble || waiting ? "var(--c-honey-text)" : "var(--c-text-3)" }}>{note}</span>
@@ -220,84 +217,6 @@ function Connected({ row, c, first, team }) {
         </div>
       ) : null}
     </li>
-  );
-}
-
-function Catalogue({ c, initialQuery }) {
-  const [expert] = useExpert();
-  const [filter, setFilter] = useState("todas");
-  const [text, setText] = useState(initialQuery || "");
-  const [shown, setShown] = useState(PAGE);
-  const t = useRef(null);
-  useEffect(() => () => clearTimeout(t.current), []);
-  const words = fold(text).split(/\s+/).filter(Boolean);
-  const matches = (i) => words.every((w) => fold(i.name + " " + i.description).includes(w));
-  const curated = c.curated
-    .filter((i) => (filter === "todas" ? true : i.category === filter) && matches(i))
-    .sort((x, y) => (words.length ? 0 : (SUGGESTED.indexOf(y.id) > -1) - (SUGGESTED.indexOf(x.id) > -1)));
-  const known = new Set(c.curated.map((i) => i.toolkit || i.id));
-  const extra = (c.catalogue || []).filter((d) => !known.has(d.slug)).map((d) => ({ id: d.slug, name: d.name, description: d.description, via: "composio", toolkit: d.slug, logo: d.logo || null }));
-  const all = [...curated, ...extra];
-  const list = all.slice(0, shown);
-  const on = (item) => (item.via === "mcp"
-    ? c.servers.some((s) => s.catalogId === item.id && s.status === "connected")
-    : c.accounts.some((a) => a.toolkit === item.toolkit && a.status === "ACTIVE"));
-  const waiting = (item) => (item.via === "mcp" ? c.mcpPending && c.servers.some((s) => s.catalogId === item.id && s.id === c.mcpPending.id) : c.pending?.toolkit === item.toolkit);
-  const pick = (f) => { setFilter(f); setShown(PAGE); c.search(f, text); };
-  const type = (value) => { setText(value); setShown(PAGE); clearTimeout(t.current); t.current = setTimeout(() => c.search(filter, value), 300); };
-  const canMore = shown < all.length || !!c.nextCursor;
-  const showMore = (e) => { e.preventDefault(); if (shown < all.length) setShown(shown + 12); else c.more(filter, text); };
-  const status = c.mcpPending ? `Termina de autorizar ${c.mcpPending.name} en tu navegador. Colmena lo detecta solo.`
-    : c.pending ? `Termina la autorización de ${appName(c.pending.toolkit)} en tu navegador. Colmena lo detecta solo.`
-    : c.loaded && !c.available ? (c.noAccount ? "Las apps del servicio de conexiones (Gmail, Calendar, Slack…) se activan cuando conectes tu cuenta de IA. Las de conexión directa ya funcionan." : UNAVAILABLE) : null;
-  return (
-    <section {...anchorOf("conectar-app")} aria-labelledby="add-t" style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "20px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-        <h3 id="add-t" style={{ ...h3, flex: "1 1 180px" }}>Conectar otra app</h3>
-        <label style={{ flex: "0 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 12px", borderRadius: "var(--r-md)", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .12)" }}>
-          <Search size={14} color={C.text3} />
-          <span style={srOnly}>Buscar una app</span>
-          <input className="c-bare" type="text" value={text} onChange={(e) => type(e.target.value)} placeholder={`Buscar entre ${c.curated.length > 30 ? "cientos de" : "todas las"} apps`} style={{ flex: 1, minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />
-        </label>
-      </div>
-      <div role="group" aria-label="Filtrar por tipo" style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-        {FILTERS.map(([id, label]) => {
-          const sel = filter === id;
-          return <button key={id} type="button" aria-pressed={sel} onClick={() => pick(id)} style={{ height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", background: sel ? "var(--c-btn)" : "var(--c-chip)", color: sel ? "var(--c-btn-text)" : "var(--c-text-2)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{label}</button>;
-        })}
-      </div>
-      {status ? (
-        <div role="status" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "10px 14px", borderRadius: "var(--r-md)", background: c.pending || c.mcpPending ? "var(--c-honey-soft)" : "var(--c-hover)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: c.pending || c.mcpPending ? "var(--c-honey-text)" : "var(--c-text-2)" }}>
-          <span style={{ flex: "1 1 260px" }}>{status}</span>
-          {c.authorizationUrl && (c.pending || c.mcpPending) ? <button type="button" onClick={() => window.open(c.authorizationUrl, "_blank", "noopener")} style={btn("outline", 32)}>Abrir autorización</button> : null}
-          {c.pending ? <button type="button" disabled={c.busy} onClick={() => c.action(c.load)} style={btn("outline", 32)}>Comprobar</button> : null}
-          {c.loaded && !c.available && c.noAccount ? <Go to="/ajustes/ia" style={btn("dark", 32)}>Conectar mi cuenta</Go> : null}
-        </div>
-      ) : null}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(172px, 100%), 1fr))", gap: "8px" }}>
-        {c.loaded && !list.length ? <p style={{ gridColumn: "1 / -1", margin: 0, padding: "18px 0", textAlign: "center", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{text ? `No hay apps que coincidan con «${text}».` : "No hay apps en este tipo."}</p> : null}
-        {!c.loaded ? Array.from({ length: 4 }, (_, i) => <span key={i} style={{ minHeight: "56px", borderRadius: "var(--r-lg)", background: "linear-gradient(90deg, var(--c-hover), var(--c-chip), var(--c-hover))", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} />) : null}
-        {list.map((d) => {
-          const isOn = on(d), wait = waiting(d);
-          const blocked = d.via === "composio" ? !c.available && c.loaded : !c.mcpOk;
-          return (
-            <button key={d.via + ":" + d.id} type="button" disabled={c.busy || blocked || (isOn && d.via === "mcp")} onClick={() => (wait && d.via === "composio" ? c.action(c.load) : c.connect(d))}
-              aria-label={isOn ? `${d.name} conectada` : wait ? `Comprobar la autorización de ${d.name}` : `Conectar ${d.name}`}
-              title={blocked ? (d.via === "composio" ? (c.noAccount ? NEEDS_ACCOUNT : UNAVAILABLE) : "Las conexiones directas solo funcionan en la aplicación de escritorio.") : d.description}
-              style={{ display: "flex", alignItems: "center", gap: "10px", minHeight: "56px", padding: "8px 12px 8px 10px", border: 0, borderRadius: "var(--r-lg)", background: "var(--c-hover)", textAlign: "left", color: "var(--c-text)", cursor: blocked ? "default" : "pointer", opacity: blocked ? 0.55 : 1, boxShadow: wait ? "inset 0 0 0 1.5px var(--c-honey-ring)" : "none", animation: "fade .3s ease-out" }}>
-              <span style={{ flex: "none", width: "34px", height: "34px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: "var(--c-card)", overflow: "hidden" }}><AppLogo id={d.id} name={d.name} logo={d.logo} size={30} /></span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: "var(--t-ui)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</span>
-              {isOn ? <Check size={16} weight="bold" color={C.okInk} style={{ flex: "none" }} />
-                : <Plus size={16} color={C.text3} style={{ flex: "none" }} />}
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "6px 16px", fontSize: "var(--t-meta)" }}>
-        {canMore ? <a href="#conectar-app" onClick={showMore} style={{ fontWeight: 600, color: "var(--c-accent-ink)" }}>{shown < all.length ? `Ver las ${all.length} apps` : "Ver más apps"}</a> : <span />}
-        <span style={{ color: "var(--c-text-3)" }}>¿Una herramienta propia o un servidor <Term tip="Model Context Protocol: una forma estándar de darle herramientas nuevas a un bot.">MCP</Term>? Va en {expert ? <Go to="/ajustes/avanzado#mcp">Servidores y claves</Go> : <Go to="/ajustes/general#modo-experto">Servidores y claves (modo experto)</Go>}.</span>
-      </div>
-    </section>
   );
 }
 
@@ -348,23 +267,28 @@ export default function AppsSection({ query = {} }) {
   const { bots = [] } = useStore();
   const team = bots.filter((b) => b.enabled !== false && b.audience !== "yo");
   const c = useConnections(query.q || "");
+  const market = useMarketplace();
   useHiddenVersion(); // repaint when a disconnect waits or is undone
+  // A marketplace app's own page (/ajustes/apps?app=<id>).
+  if (query.app) return (<><Alert>{c.error}</Alert><AppDetail id={query.app} market={market} c={c} /></>);
   const rows = [
     ...c.servers.filter((s) => !isHidden("mcp:" + s.id)).map((s) => ({ key: "mcp:" + s.id, s })),
     ...c.accounts.filter((a) => !isHidden("account:" + a.id)).map((a) => ({ key: a.id, a })),
   ];
+  // The count says what works now; a sign-in left half-way shows in the list with its own note.
+  const live = rows.filter((r) => (r.s ? r.s.status === "connected" : r.a.status === "ACTIVE")).length;
   return (
     <>
       <Alert>{c.error}</Alert>
       <section {...anchorOf("apps-conectadas")} aria-labelledby="con-t" style={{ display: "flex", flexDirection: "column", gap: "10px", scrollMarginTop: "24px" }}>
-        <h3 id="con-t" style={h3}>{rows.length ? `Conectadas · ${rows.length}` : "Conectadas"}</h3>
+        <h3 id="con-t" style={h3}>{live ? `Conectadas · ${live}` : "Conectadas"}</h3>
         <ul role="list" style={{ margin: 0, padding: 0, listStyle: "none", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden" }}>
           {!c.loaded ? <li style={{ height: "68px", background: "linear-gradient(90deg, var(--c-card), var(--c-hover), var(--c-card))", backgroundSize: "200% 100%", animation: "shimmer 1.4s linear infinite" }} /> : null}
           {c.loaded && !rows.length ? <li style={{ padding: "20px 18px", fontSize: "var(--t-body)", color: "var(--c-text-3)" }}>Ninguna todavía. Conecta abajo la primera: tu correo, tu calendario o tus documentos.</li> : null}
           {rows.map((r, i) => <Connected key={r.key} row={r} c={c} first={i === 0} team={team} />)}
         </ul>
       </section>
-      <Catalogue c={c} initialQuery={query.q || ""} />
+      <Marketplace market={market} c={c} />
       {isCloud() ? null : <Folders />}
     </>
   );
