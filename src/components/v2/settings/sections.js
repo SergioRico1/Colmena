@@ -13,6 +13,7 @@ import { AddressBook, Archive, ArrowsClockwise, Bell, ChartColumn, Laptop, Lock,
 export const SECTION_ICONS = {
   general: UserRound, avisos: Bell, contactos: AddressBook, permisos: ShieldCheck, ia: Sparkles, apps: Plug, uso: ChartColumn,
   privacidad: Lock, copias: Archive, sistema: Laptop, actualizaciones: ArrowsClockwise, ayuda: Stethoscope, avanzado: SquareTerminal,
+  dispositivos: Laptop,
 };
 
 export const SECTIONS = [
@@ -191,6 +192,20 @@ export const SECTIONS = [
     ],
   },
 ];
+
+// Phase 5 (docs/CLOUD.md): hosted, «Tus dispositivos» (your computers and what each lends your
+// bots); in the desktop app's local mode, «Colmena en la nube» (the way to switch). Devices.jsx.
+const inDesktop = typeof window !== "undefined" && !!window.colmenaWindow;
+if (isCloud() || inDesktop) {
+  const cloud = isCloud();
+  SECTIONS.splice(SECTIONS.findIndex((s) => s.id === "actualizaciones"), 0, {
+    id: "dispositivos", group: "ordenador", label: cloud ? "Tus dispositivos" : "Colmena en la nube", icon: SECTION_ICONS.dispositivos,
+    lead: cloud ? "Tus ordenadores, si están encendidos y qué presta cada uno a tus bots." : "Dónde vive tu Colmena: solo en este ordenador o en la nube de tu empresa.",
+    items: cloud
+      ? [["dispositivos", "Tus ordenadores", "dispositivos ordenador portátil aprobar huella quitar revocar encendido apagado"], ["este-ordenador", "Este ordenador", "prestar carpetas navegador sesiones apps contraseñas 1password bitwarden claude code agente llevar mis datos a la nube migrar"]]
+      : [["modo", "Usar Colmena en la nube", "nube empresa cuenta correo cambiar modo servidor online"]],
+  });
+}
 
 // Hosted (src/lib/cloud.js): each person connects their own account (CloudAccount.jsx).
 if (isCloud()) {

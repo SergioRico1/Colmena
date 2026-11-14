@@ -23,6 +23,7 @@ import LinkPreviewLayer from "./components/room/LinkPreview.jsx";
 import ConnectionStatus from "./components/ConnectionStatus.jsx";
 import UpdateNotice from "./components/UpdateNotice.jsx";
 import UndoToasts from "./components/v2/UndoToasts.jsx";
+import DesktopCloudBridge from "./lib/desktopCloud.jsx";
 import { reversible } from "./lib/undoToast.js";
 import { post } from "./lib/api.js";
 import { listenForNoticeSounds } from "./lib/noticeSounds.js";
@@ -93,6 +94,7 @@ function App() {
       <ConnectionStatus />
       <UpdateNotice />
       <UndoToasts />
+      <DesktopCloudBridge />
       <Suspense fallback={null}>
         <Screen params={params} query={query} />
         {Palette && route?.screen !== "DesignGallery" ? <Palette /> : null}

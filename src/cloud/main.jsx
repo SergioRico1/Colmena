@@ -14,10 +14,13 @@ import { createRoot } from "react-dom/client";
 import { SignIn, Verify } from "./SignIn.jsx";
 import { Companies } from "./Companies.jsx";
 import { Invitation } from "./Invitation.jsx";
+import { ApproveDesktop, DesktopSignIn } from "./Desktop.jsx";
 
 function Page() {
   const path = location.pathname.replace(/\/+$/, "") || "/";
   if (path === "/entrar/verificar") return <Verify />;
+  if (path === "/entrar/escritorio") return <DesktopSignIn />;
+  if (path === "/entrar/escritorio/aprobar") return <ApproveDesktop />;
   if (path === "/entrar") return <SignIn />;
   if (path === "/invitacion") return <Invitation />;
   return <Companies />;

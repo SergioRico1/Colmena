@@ -86,3 +86,9 @@ a{color:var(--c-accent-ink);text-underline-offset:3px}
   .cl-item{flex-wrap:wrap}
   .cl-item-actions{width:100%;justify-content:flex-start;padding-left:48px}
 }
+
+/* The desktop app's sign-in (Phase 5): the code both screens show, big and easy to compare. */
+.cl-desk-code{display:inline-flex;align-self:flex-start;padding:14px 22px;border-radius:var(--r-lg);background:var(--c-sunken);border:1px solid var(--c-line);font:600 var(--t-headline)/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.12em;color:var(--c-text)}
+/* Inside the desktop app the frameless window's own title bar sits on top (base.css gives #root its height). */
+.cl-shell.in-desktop{padding-top:16px}
+html.colmena-desktop:has(.cl-shell){background:var(--c-app)}
