@@ -311,6 +311,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     const send = (event) => {
       if (!event || typeof event !== "object") return;
       if (LIVE.has(event.type)) return live.push(event);
+      // Hosted (no SSE of its own there): the bots' browser frames and takeovers ride the live socket.
+      if (hosted && (event.type === "browser_frame" || /^computer_(takeover|returned|closed)$/.test(event.type))) return write(event);
       // A part of an answer was just said: it reaches the room before the live text drops it.
       if (event.type === "flush-now") {
         if (timer) clearTimeout(timer);
