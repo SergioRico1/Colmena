@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { z } from "zod";
 import { now } from "./store.mjs";
+import { zoned, clockOf } from "./timezone.mjs";
 import { validateWebUrl, webFetch } from "./web.mjs";
 import { LoopGuard, ROOM_LOOP_GUARD, postGuardNotice } from "./loops.mjs";
 import { chainDepth, isPersonMessage } from "./origin.mjs";
@@ -343,10 +344,18 @@ export function webDelay(config, failures = 0) {
   return Math.min(WEB_MAX_DELAY, (WEB_EVERY[config?.frecuencia] || WEB_EVERY["1h"]) * 2 ** Math.max(0, failures));
 }
 
-// --- Calendar arithmetic, always in the machine's local time ---------------
-const atTime = (date, time) => {
+// --- Calendar arithmetic: the machine's local time, or a named zone (the cloud) ---------
+// `Z` is server/timezone.mjs › zoned(tz): local time without a zone, exactly as before.
+const atTime = (Z, date, time) => {
   const [h, m] = String(time || "0:0").split(":").map(Number);
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), h || 0, m || 0, 0, 0);
+  const p = Z.parts(date);
+  return Z.make(p.year, p.month, p.day, h || 0, m || 0);
+};
+/** The same wall time `n` days later (a day is not always 24 h across a DST change). */
+const plusDays = (Z, date, n, time) => {
+  const p = Z.parts(date);
+  const day = new Date(Date.UTC(p.year, p.month, p.day + n));
+  return atTime(Z, Z.make(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), 12, 0), time);
 };
 const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 function easter(year) {
@@ -355,34 +364,37 @@ function easter(year) {
   const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
   return new Date(year, Math.floor((h + l - 7 * m + 114) / 31) - 1, ((h + l - 7 * m + 114) % 31) + 1);
 }
-/** Spanish national holidays (fixed dates + Good Friday) plus custom YYYY-MM-DD dates. */
-export function isHoliday(date, extra = []) {
-  const md = ymd(date).slice(5);
+/** Spanish national holidays (fixed dates + Good Friday) plus custom YYYY-MM-DD dates; the day as seen in `tz`. */
+export function isHoliday(date, extra = [], tz = null) {
+  const day = zoned(tz).ymd(date);
+  const md = day.slice(5);
   if (["01-01", "01-06", "05-01", "08-15", "10-12", "11-01", "12-06", "12-08", "12-25"].includes(md)) return true;
-  const e = easter(date.getFullYear());
+  const e = easter(Number(day.slice(0, 4)));
   const goodFriday = new Date(e.getFullYear(), e.getMonth(), e.getDate() - 2);
-  return ymd(goodFriday) === ymd(date) || extra.includes(ymd(date));
+  return ymd(goodFriday) === day || extra.includes(day);
 }
-const workday = (d, extra) => d.getDay() !== 0 && d.getDay() !== 6 && !isHoliday(d, extra);
+const workday = (Z, d, extra) => { const w = Z.parts(d).weekday; return w !== 0 && w !== 6 && !isHoliday(d, extra, Z.tz); };
 
 /**
  * Next run strictly after `from` for time triggers; null for event triggers or a
- * past single run. `anchor` fixes the phase of «cada N semanas».
+ * past single run. `anchor` fixes the phase of «cada N semanas». `tz`: the IANA zone the
+ * hours are in (the company's, in the cloud); none = this machine's local time.
  */
-export function nextRun(trigger, from = new Date(), { holidays = [], anchor = null } = {}) {
+export function nextRun(trigger, from = new Date(), { holidays = [], anchor = null, tz = null } = {}) {
+  const Z = zoned(tz);
   const c = { ...DEFAULTS[trigger.type], ...trigger.config };
   const base = new Date(from);
   if (trigger.type === "dia") {
     if (!c.dias.length) return null;
     for (let i = 0; i < 400; i++) {
-      const candidate = atTime(new Date(base.getFullYear(), base.getMonth(), base.getDate() + i), c.hora);
-      if (candidate <= base || !c.dias.includes(candidate.getDay())) continue;
-      if (isHoliday(candidate, holidays)) {
+      const candidate = plusDays(Z, base, i, c.hora);
+      if (candidate <= base || !c.dias.includes(Z.parts(candidate).weekday)) continue;
+      if (isHoliday(candidate, holidays, Z.tz)) {
         if (c.festivo === "saltar") continue;
         if (c.festivo === "siguiente") {
           let moved = candidate;
-          do moved = atTime(new Date(moved.getFullYear(), moved.getMonth(), moved.getDate() + 1), c.hora);
-          while (!workday(moved, holidays));
+          do moved = plusDays(Z, moved, 1, c.hora);
+          while (!workday(Z, moved, holidays));
           return moved.toISOString();
         }
       }
@@ -393,13 +405,13 @@ export function nextRun(trigger, from = new Date(), { holidays = [], anchor = nu
   if (trigger.type === "semana") {
     const every = Number(c.semCada) || 1;
     const start = anchor ? new Date(anchor) : base;
-    let first = atTime(start, c.semHora);
-    while (first.getDay() !== Number(c.semDia)) first = atTime(new Date(first.getFullYear(), first.getMonth(), first.getDate() + 1), c.semHora);
+    let first = atTime(Z, start, c.semHora);
+    while (Z.parts(first).weekday !== Number(c.semDia)) first = plusDays(Z, first, 1, c.semHora);
     const periodDays = 7 * every;
     if (first <= base) {
       const skip = Math.max(0, Math.floor((base - first) / (periodDays * 86400000)) - 1);
-      first = atTime(new Date(first.getFullYear(), first.getMonth(), first.getDate() + skip * periodDays), c.semHora);
-      while (first <= base) first = atTime(new Date(first.getFullYear(), first.getMonth(), first.getDate() + periodDays), c.semHora);
+      first = plusDays(Z, first, skip * periodDays, c.semHora);
+      while (first <= base) first = plusDays(Z, first, periodDays, c.semHora);
     }
     return first.toISOString();
   }
@@ -413,7 +425,8 @@ export function nextRun(trigger, from = new Date(), { holidays = [], anchor = nu
   if (trigger.type === "vez") {
     const p = String(c.vezFecha || "").split("-").map(Number);
     if (!p[0]) return null;
-    const when = atTime(new Date(p[0], p[1] - 1, p[2]), c.vezHora);
+    const [h, m] = String(c.vezHora || "0:0").split(":").map(Number);
+    const when = Z.make(p[0], p[1] - 1, p[2], h || 0, m || 0);
     return when > base ? when.toISOString() : null;
   }
   return null;
@@ -476,7 +489,7 @@ export function triggerLabel({ type, config }) {
 }
 
 /** «Días laborables, 08:00 · Hoy ✓» — state first, then the last outcome. */
-export function subtitle(rule, reference = new Date()) {
+export function subtitle(rule, reference = new Date(), { tz = null } = {}) {
   const head = rule.trigger ? triggerLabel(rule.trigger) : rule.intervalMinutes ? "Cada " + rule.intervalMinutes + " min" : "Sin disparador";
   let tail;
   if (!rule.enabled) tail = "Pausada";
@@ -489,7 +502,7 @@ export function subtitle(rule, reference = new Date()) {
     tail = when + (ok ? " ✓" : " ✗");
   } else if (rule.nextRun) {
     const next = new Date(rule.nextRun);
-    tail = "Próxima: " + dayLabel(next, reference).toLowerCase() + " " + String(next.getHours()).padStart(2, "0") + ":" + String(next.getMinutes()).padStart(2, "0");
+    tail = "Próxima: " + dayLabel(next, reference).toLowerCase() + " " + clockOf(next, tz);
   } else tail = TIME_TYPES.has(rule.trigger?.type) ? "Sin próximas" : "Vigilando";
   return head + " · " + tail;
 }
@@ -520,6 +533,8 @@ const clip = (s, n = 300) => String(s ?? "").slice(0, n);
 export class TriggerEngine {
   constructor({ store, connections = null, enqueue, pollMs = POLL_MS, fetchPage = webFetch, loopGuard = ROOM_LOOP_GUARD }) {
     this.store = store;
+    // The zone event hours are judged in (the company's, in the cloud); none = local time.
+    this.timeZone = () => store.get("settings", "main")?.timezone || null;
     this.loopGuard = new LoopGuard(loopGuard); // room rules woken by bot messages
     this.connections = connections;
     this.enqueue = enqueue;
@@ -784,7 +799,8 @@ export class TriggerEngine {
       const start = Date.parse(e.start?.dateTime || "");
       if (!start || start - lead > time || start <= time) return false;
       const fire = new Date(start - lead);
-      if (c.laboral && (fire.getDay() === 0 || fire.getDay() === 6 || fire.getHours() < 8 || fire.getHours() >= 19)) return false;
+      const fp = zoned(this.timeZone?.()).parts(fire);
+      if (c.laboral && (fp.weekday === 0 || fp.weekday === 6 || fp.hours < 8 || fp.hours >= 19)) return false;
       if (c.eventoFiltro === "palabra" && !fold(e.summary).includes(fold(c.eventoPalabra))) return false;
       if (c.eventoFiltro === "fuera") {
         const domain = String(e.organizer?.email || "").split("@")[1];

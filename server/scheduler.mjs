@@ -88,7 +88,7 @@ export class Scheduler {
   next(rule, from = new Date()) {
     if (!rule.trigger && rule.intervalMinutes > 0) return new Date(from.getTime() + rule.intervalMinutes * 60000).toISOString(); // legacy rules
     if (!rule.trigger || !TIME_TYPES.has(rule.trigger.type)) return null;
-    return nextRun(rule.trigger, from, { holidays: this.holidays(), anchor: rule.anchorAt || rule.trigger.config?.anchor || rule.createdAt });
+    return nextRun(rule.trigger, from, { holidays: this.holidays(), anchor: rule.anchorAt || rule.trigger.config?.anchor || rule.createdAt, tz: this.store.get("settings", "main")?.timezone || null });
   }
   /** The existing conversation a rule delivers into, or null («nueva», not created yet, or deleted). */
   target(rule) {

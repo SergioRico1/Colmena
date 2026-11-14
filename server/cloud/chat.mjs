@@ -137,13 +137,13 @@ export function localTime(ms, tz) {
   return { hm: get("hour").padStart(2, "0") + ":" + get("minute"), day };
 }
 /** «No molestar» now: until a time, or inside a daily schedule (in the person's time zone). */
-export function doNotDisturb(profile, ms) {
+export function doNotDisturb(profile, ms, fallbackTz = null) {
   const dnd = profile?.dnd;
   if (!dnd) return false;
   if (dnd.until && dnd.until > ms) return true;
   const s = dnd.schedule;
   if (!s?.on || !/^\d\d:\d\d$/.test(s.from || "") || !/^\d\d:\d\d$/.test(s.to || "")) return false;
-  const { hm, day } = localTime(ms, profile.tz);
+  const { hm, day } = localTime(ms, profile.tz || fallbackTz);
   if (Array.isArray(s.days) && s.days.length && !s.days.includes(day)) {
     // Overnight windows started yesterday still count.
     if (!(s.from > s.to && hm < s.to && s.days.includes((day + 6) % 7))) return false;
@@ -164,8 +164,10 @@ export class TeamChat {
    * Phase 3: `bots()` → [{id, name}] that may be named in a message as <@bot:id>; `onPost(person,
    * view, row)`: after a person's message is out (the bots it names answer: channel-bots.mjs).
    */
-  constructor({ store, people, emit = () => {}, presence = () => new Map(), blobs = null, push = null, previews = null, defer = (p) => p?.catch?.(() => {}), clock: now = clock, log = () => {}, bots = () => [], onPost = null }) {
+  constructor({ store, people, emit = () => {}, presence = () => new Map(), blobs = null, push = null, previews = null, defer = (p) => p?.catch?.(() => {}), clock: now = clock, log = () => {}, bots = () => [], onPost = null, zone = null }) {
     this.store = store;
+    // The company's time zone: «no molestar» of someone who never set their own uses it (UTC without).
+    this.zone = () => { try { return zone?.() || null; } catch { return null; } };
     this.bots = bots;
     this.onPost = onPost;
     this.db = store.db;
@@ -244,7 +246,7 @@ export class TeamChat {
   /** What everyone in the workspace sees of a person's profile (keywords and devices stay theirs). */
   publicProfile(id, p = this.profile(id), at = this.now()) {
     const status = p.statusText || p.statusEmoji ? (p.statusUntil && p.statusUntil < at ? null : { text: p.statusText || "", emoji: p.statusEmoji || "", until: p.statusUntil || null }) : null;
-    return { title: p.title || "", tz: p.tz || null, status, away: !!p.away, dnd: doNotDisturb(p, at), dndUntil: p.dnd?.until && p.dnd.until > at ? p.dnd.until : null };
+    return { title: p.title || "", tz: p.tz || null, status, away: !!p.away, dnd: doNotDisturb(p, at, this.zone()), dndUntil: p.dnd?.until && p.dnd.until > at ? p.dnd.until : null };
   }
   /** Changes to your own profile: title, time zone, status, «ausente», «no molestar», keywords, mail digest. */
   updateMe(person, patch = {}) {
@@ -275,7 +277,7 @@ export class TeamChat {
     this.emit({ type: "chat.profile", person: person.id, profile: this.publicProfile(person.id, p) }, { people: "all" });
     return this.myProfile(person.id, p);
   }
-  myProfile(id, p = this.profile(id)) { return { ...this.publicProfile(id, p), keywords: p.keywords || [], digest: p.digest !== false, dnd: p.dnd || null, dndNow: doNotDisturb(p, this.now()), statusText: p.statusText || "", statusEmoji: p.statusEmoji || "", statusUntil: p.statusUntil || null }; }
+  myProfile(id, p = this.profile(id)) { return { ...this.publicProfile(id, p), keywords: p.keywords || [], digest: p.digest !== false, dnd: p.dnd || null, dndNow: doNotDisturb(p, this.now(), this.zone()), statusText: p.statusText || "", statusEmoji: p.statusEmoji || "", statusUntil: p.statusUntil || null }; }
   /** «Personas»: everyone in the workspace (deactivated people flagged), with profiles and presence. */
   directory() {
     const online = this.presence();
@@ -869,7 +871,7 @@ export class TeamChat {
         else if (m.muted) wants = kind === "mention";
         else if (level === "all") wants = true;
         else wants = !!kind;
-        if (!wants || doNotDisturb(profile, at) || online.get(pid) === "active") continue;
+        if (!wants || doNotDisturb(profile, at, this.zone()) || online.get(pid) === "active") continue;
         pushes.push(pid);
       }
     });
@@ -906,7 +908,7 @@ export class TeamChat {
       const m = this.member(pid);
       const profile = this.profile(pid);
       if (!m) { for (const r of list) mark.run(pid, r.seq); continue; }
-      if (doNotDisturb(profile, ms)) continue;
+      if (doNotDisturb(profile, ms, this.zone())) continue;
       const items = [];
       for (const r of list) {
         const msg = this.q("SELECT * FROM chat_messages WHERE seq=?").get(r.seq);

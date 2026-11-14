@@ -547,7 +547,7 @@ export function buildState(store, runtime, extras = {}) {
     waiting: ctx.waiting,
     // What people of your team asked you to decide for their routines (peers/delegation.mjs).
     approvalAsks: delegatedAsks(store, reference),
-    automations: [...ctx.automations.values()].map((r) => automationView(r, reference)),
+    automations: [...ctx.automations.values()].map((r) => automationView(r, reference, store.get("settings", "main")?.timezone || null)),
     suggestions: store
       .list("suggestions")
       .filter((s) => !s.status || ["active", "pending"].includes(s.status))
@@ -579,12 +579,12 @@ export function notificationsState(store) {
   return { unread: all.filter((n) => !n.read).length, notifications: all.slice(0, 10).map(notificationView) };
 }
 
-export function automationView(r, reference = Date.now()) {
+export function automationView(r, reference = Date.now(), tz = null) {
   return {
     id: r.id, name: r.name, botId: r.botId, prompt: r.prompt, enabled: !!r.enabled,
     trigger: r.trigger ? { ...r.trigger, config: editorConfig(r.trigger.type, r.trigger.config) } : null, notify: r.notify || "resultado", needs: r.needs || [],
     state: r.state || "scheduled", nextRun: r.nextRun ?? null, lastRun: r.lastRun ?? null, lastStatus: r.lastStatus ?? null,
-    subtitle: subtitle(r, new Date(reference)), error: r.error ?? null, lastMissionId: r.lastMissionId ?? null,
+    subtitle: subtitle(r, new Date(reference), { tz }), error: r.error ?? null, lastMissionId: r.lastMissionId ?? null,
     createdAt: r.createdAt ?? null, editedAt: r.editedAt ?? null,
     delivery: { mode: r.delivery?.mode || "nueva", missionId: r.delivery?.missionId ?? null },
     lastMerged: r.lastMerged || 0,
