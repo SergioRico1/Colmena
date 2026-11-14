@@ -15,8 +15,10 @@ const BOT_MENTION = /<@bot:([a-z0-9_-]{1,40})>/g;
 const ANSWER_KINDS = new Set(["message"]);
 
 export class ChannelBots {
-  constructor({ store, runtime, chat, canUse = () => true, log = () => {} }) {
-    Object.assign(this, { store, runtime, chat, canUse, log });
+  /** `canThink(person)`: has this person an AI account? Without one the bot cannot answer them. */
+  constructor({ store, runtime, chat, canUse = () => true, canThink = () => true, log = () => {} }) {
+    Object.assign(this, { store, runtime, chat, canUse, canThink, log });
+    this.told = new Set(); // person:thread pairs already told «connect your AI account»
     this.listener = (change) => this.onRecord(change);
     store.listeners.add(this.listener);
   }
@@ -41,6 +43,18 @@ export class ChannelBots {
     const bots = this.named(view.text);
     if (!bots.length && !existing) return null;
     const names = new Map(this.list().map((b) => ["bot:" + b.id, b.name]));
+    // No AI account: the bot cannot think for this person. Say so in the thread, where they look
+    // for the answer, instead of a run that fails where nobody sees it.
+    // Once per person and thread while the workspace is awake: every reply need not repeat it.
+    if (!this.canThink(person)) {
+      const told = person.id + ":" + root;
+      if (this.told.has(told)) return null;
+      this.told.add(told);
+      const who = (bots.length ? bots : existing?.botIds || []).map((id) => names.get("bot:" + id) || id);
+      const list = who.length > 1 ? who.slice(0, -1).join(", ") + " y " + who.at(-1) : who[0] || "El bot";
+      this.note(row.id, root, `${list} no ${who.length > 1 ? "pueden" : "puede"} trabajar para ti todavía: los bots piensan con la cuenta de IA de quien les pide algo, y aún no has conectado la tuya. Conéctala en Ajustes › Tu cuenta de IA y vuelve a pedírselo aquí.`);
+      return null;
+    }
     const text = plainText(String(view.text).replace(BOT_MENTION, (m, id) => (bots.length === 1 && id === bots[0] ? "" : m)), (id) => names.get(id) || this.chat.member(id)?.name || null, (id) => { const r = this.chat.row(id); return r ? this.chat.meta(r)?.name || null : null; }).trim() || "Hola";
     if (existing) {
       const extra = bots.filter((b) => !existing.botIds.includes(b) && b !== "atlas");
@@ -79,6 +93,10 @@ export class ChannelBots {
   notePending(missionId, text) {
     const link = this.store.get("missions", missionId)?.channelThread;
     if (!link) return;
-    try { this.chat.postBot(link.channel, { botId: "colmena", botName: "Colmena", text, thread: link.root }); } catch {}
+    this.note(link.channel, link.root, text);
+  }
+  /** Colmena's own line in a thread. */
+  note(channel, root, text) {
+    try { this.chat.postBot(channel, { botId: "colmena", botName: "Colmena", text, thread: root }); } catch (error) { this.log("note: " + (error?.message || error)); }
   }
 }
