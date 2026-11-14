@@ -44,7 +44,7 @@ const PREVIEW_TTL_MS = 12 * 3600 * 1000;
 /** What a guest may change: talking in the conversations they can see, and their own read marks. */
 const GUEST_WRITES = [/^\/api\/cloud\/onboarding$/,/^\/api\/chat\//, /^\/api\/missions\/[^/]+\/messages$/, /^\/api\/rooms\/[^/]+\/(messages|seen)$/, /^\/api\/notifications(\/|$)/, /^\/api\/messages\/[^/]+\/reactions$/];
 /** The guided start's steps (src/cloud/Setup.jsx), in order. */
-export const ONBOARDING_STEPS = Object.freeze(["ia", "bots", "equipo", "llegada"]);
+export const ONBOARDING_STEPS = Object.freeze(["ia", "bots", "equipo", "escritorio", "llegada"]);
 const MISSION_PATH = /^\/api\/(missions|rooms)\/([^/]+)/;
 const MEMBER_FIELDS = (m) => ({ id: m.id, name: m.name || m.email || "Alguien", email: m.email || null, role: ROLES.includes(m.role) ? m.role : "member", deactivated: !!m.deactivated });
 /** Uploads that are bytes, not JSON (the Durable Object streams them itself; Node gets them here). */
@@ -191,7 +191,9 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       // The company is the one team the sidebar names (rooms carry no teamId: they show in it).
       teams: [{ id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "Empresa", people: members().length, bots: store.list("bots").filter((b) => b.enabled !== false).length, admin: ["owner", "admin"].includes(me.role), current: true }],
       teamsPending: [],
-      cloud: { workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, timezone: bots.timeZone(), me: { id: me.id, name: me.name, email: me.email, role: me.role }, members: members(), hidden: machine ? CLOUD_HIDDEN.filter((h) => h !== "codigo") : CLOUD_HIDDEN, machine: !!machine, browser: !!browser, apiKeysOnly: true, onboarding: onboardingOf(me.id) },
+      cloud: { workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, timezone: bots.timeZone(), me: { id: me.id, name: me.name, email: me.email, role: me.role }, members: members(), hidden: machine ? CLOUD_HIDDEN.filter((h) => h !== "codigo") : CLOUD_HIDDEN, machine: !!machine, browser: !!browser, apiKeysOnly: true, onboarding: onboardingOf(me.id),
+        // A desktop app of this person paired with the company (approved or online): the web stops recommending it.
+        hasDesktop: (() => { try { return agents.list(me).some((d) => d.status === "approved" || d.online); } catch { return false; } })() },
     }, me);
   };
 

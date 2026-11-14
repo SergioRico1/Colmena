@@ -371,4 +371,7 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 .sb-comb-work{fill:rgb(var(--c-ink-rgb) / .16);animation:sb-breathe 3.2s ease-in-out infinite;will-change:opacity}
 .sb-comb[data-paused] .sb-comb-work{animation-play-state:paused}
 @keyframes sb-breathe{0%,100%{opacity:.25}50%{opacity:1}}
+/* «Esperando a que lo escribas» (components/SubscriptionSignIn.jsx). */
+.sub-wait{flex:none;width:8px;height:8px;border-radius:var(--r-circle);background:var(--c-text-4);animation:sb-breathe 2.4s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.sub-wait{animation:none}}
 @media (prefers-reduced-motion: reduce){.sb-comb-work{animation:none;opacity:.6}}

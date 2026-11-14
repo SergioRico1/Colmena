@@ -4,21 +4,30 @@
 // Every step can be skipped. The step reached is kept on the company's server
 // (/api/cloud/onboarding), so leaving and coming back resumes there.
 //
-// The bots sleep until the person has an AI account: the web connects API keys only (the
-// providers' terms forbid a ChatGPT or Claude subscription in a hosted service; docs/CLOUD.md ›
-// Phase 3). Each key is checked live by the same routes Ajustes uses before it is saved.
+// The bots sleep until the person has an AI account. ChatGPT and Claude connect with an API key
+// or by signing in with the person's own plan (device code / setup-token, after one line about
+// the providers' terms; docs/CLOUD.md › Phase 3); the others with a key. Each is checked live by
+// the same routes Ajustes uses before it is saved.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, CircleAlert, CircleCheck, ExternalLink, Hash, Plus, UserPlus } from "../components/Icon.js";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, CircleCheck, ExternalLink, Hash, Plus, UserPlus } from "../components/Icon.js";
 import ProviderMark from "../components/v2/ProviderMark.jsx";
+import SubscriptionSignIn from "../components/SubscriptionSignIn.jsx";
+import DesktopRoute from "../components/DesktopRoute.jsx";
 import { Shell } from "./Shell.jsx";
 import { hive } from "./Hive.jsx";
 import { BotCell, Roster } from "./Roster.jsx";
-import { SEEDED_TEAM } from "../lib/hive.js";
+import { SEEDED_TEAM, hexPath } from "../lib/hive.js";
 import { app, auth, me } from "./api.js";
 
-const ALL_STEPS = { ia: "Tu IA", bots: "Tus bots", equipo: "Tu equipo", llegada: "Tu primera petición" };
+const STEP_CELL = hexPath(10, 11, 9.5);
+const ALL_STEPS = { ia: "Tu IA", bots: "Tus bots", equipo: "Tu equipo", escritorio: "La app de escritorio", llegada: "Tu primera petición" };
 const MANAGERS = new Set(["owner", "admin"]);
-const stepsFor = (role) => (MANAGERS.has(role) ? ["ia", "bots", "equipo", "llegada"] : role === "guest" ? ["bots", "llegada"] : ["ia", "bots", "llegada"]);
+// The desktop app is recommended (the owner's rule) unless this person already paired one; guests
+// cannot lend a computer, so they are not asked.
+const stepsFor = (role, hasDesktop = false) => {
+  const desk = hasDesktop ? [] : ["escritorio"];
+  return MANAGERS.has(role) ? ["ia", "bots", "equipo", ...desk, "llegada"] : role === "guest" ? ["bots", "llegada"] : ["ia", "bots", ...desk, "llegada"];
+};
 
 /** The providers the web connects, each with where its key is made (server routes per kind). */
 const PROVIDERS = [
@@ -37,6 +46,17 @@ const connectKey = (engine, key) => (engine === "openai" ? app("/auth/apikey", "
   : engine === "opencode-go" ? app("/auth/opencode", "POST", { key })
   : app(`/ai/accounts/${engine}`, "POST", { key }));
 const introOf = (bot) => SEEDED_TEAM.find((s) => s.id === bot.id)?.intro || (String(bot.instructions || "").match(/^[^.!?\n]+[.!?]?/) || [""])[0] || bot.role;
+/** A short role from «what it does»: its first words, up to about 24 characters, whole words only. */
+const shortRole = (job) => {
+  const first = job.split(/[,.;:(]/)[0].trim();
+  if (first.length <= 24) return first.charAt(0).toUpperCase() + first.slice(1);
+  const words = first.split(/\s+/);
+  let out = "";
+  for (const w of words) { if ((out + " " + w).trim().length > 24) break; out = (out + " " + w).trim(); }
+  // Not ending on a joining word («Lleva las facturas y»).
+  out = out.replace(/\s+(y|e|o|u|de|del|la|las|el|los|a|al|en|con|para|por|que|sus?)$/i, "");
+  return (out || first.slice(0, 24)).replace(/^./, (c) => c.toUpperCase());
+};
 /** A colour for a bot of your own: one the team does not wear yet, never honey. */
 const OWN_COLORS = ["#0A8C9E", "#A445D6", "#2E9A3E", "#D43C86", "#3A5BE8", "#5B6680"];
 
@@ -46,7 +66,7 @@ function Steps({ steps, at }) {
     <>
       <p className="cl-kick">{`Paso ${i + 1} de ${steps.length}`}<span aria-hidden="true">·</span>{ALL_STEPS[at]}</p>
       <ol className="cl-steps" aria-label="Pasos">
-        {steps.map((s, k) => <li key={s} data-done={k < i ? "" : undefined} aria-current={k === i ? "step" : undefined}><span className="cl-sr">{ALL_STEPS[s] + (k < i ? " (hecho)" : k === i ? " (ahora)" : "")}</span></li>)}
+        {steps.map((s, k) => <li key={s} data-done={k < i ? "" : undefined} aria-current={k === i ? "step" : undefined}><svg viewBox="0 0 20 22" aria-hidden="true" focusable="false"><path d={STEP_CELL} /></svg><span className="cl-sr">{ALL_STEPS[s] + (k < i ? " (hecho)" : k === i ? " (ahora)" : "")}</span></li>)}
       </ol>
     </>
   );
@@ -55,17 +75,26 @@ function Steps({ steps, at }) {
 const Problem = ({ text }) => (text ? <p className="cl-error" role="alert"><CircleAlert size={16} style={{ flex: "none", marginTop: 1 }} />{text}</p> : null);
 
 /* ── 1. Your AI ─────────────────────────────────────────────────────────── */
+// ChatGPT and Claude each offer two ways, side by side: an API key, or signing in with the
+// person's own plan (components/SubscriptionSignIn.jsx, after one line about the terms). The
+// other providers connect with a key.
+const SIGN_IN = { openai: { provider: "chatgpt", label: "Iniciar sesión con ChatGPT" }, anthropic: { provider: "claude", label: "Iniciar sesión con Claude" } };
+
 function AiStep({ ai, onConnected, next, skip }) {
   const [engine, setEngine] = useState("openai");
+  const [way, setWay] = useState("key"); // "key" | "plan", for ChatGPT and Claude
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const input = useRef(null);
   const p = PROVIDERS.find((x) => x.id === engine);
+  const signIn = SIGN_IN[engine];
+  const byPlan = !!signIn && way === "plan" && (signIn.provider === "chatgpt" ? ai?.policy?.chatgptLogin !== false : ai?.policy?.claudeToken !== false);
   const connected = ai?.engines?.find((e) => e.connected) || (ai?.connected ? { label: ai.fake ? "El modelo de prueba" : "Tu cuenta" } : null);
   const submit = async (e) => {
     e.preventDefault();
-    if (busy || !clean(key)) return;
+    if (busy) return;
+    if (!clean(key)) { setError("Pega tu clave de API."); input.current?.focus(); return; }
     setBusy(true); setError(null);
     try {
       await connectKey(engine, clean(key));
@@ -84,8 +113,8 @@ function AiStep({ ai, onConnected, next, skip }) {
           <div className="cl-actions"><button type="button" className="cl-btn" onClick={next} autoFocus>Conocer a mis bots<ArrowRight size={16} /></button></div>
         </>
       ) : (
-        <form className="cl-form" onSubmit={submit}>
-          <fieldset className="cl-choices" aria-describedby="ai-terms">
+        <div className="cl-form">
+          <fieldset className="cl-choices">
             <legend className="cl-label" style={{ marginBottom: 8 }}>Elige tu IA</legend>
             {PROVIDERS.map((x) => (
               <label key={x.id} className="cl-choice">
@@ -94,27 +123,57 @@ function AiStep({ ai, onConnected, next, skip }) {
               </label>
             ))}
           </fieldset>
-          <p className="cl-note" id="ai-terms">En la web se conecta con una clave de API: las condiciones de OpenAI y Anthropic no permiten usar tu suscripción de ChatGPT o Claude en un servicio como este. Tu suscripción sí funciona en la app de escritorio de Colmena, en tu ordenador.</p>
-          <label className="cl-field">
-            <span className="cl-label">{`Clave de API de ${p.name}`}</span>
-            <input ref={input} className="cl-input mono" type="password" autoComplete="off" spellCheck={false} placeholder={p.placeholder} value={key} onChange={(e) => setKey(e.target.value)}
-              aria-invalid={error ? "true" : undefined} aria-describedby={error ? "ai-error" : "ai-where"} />
-            <span className="cl-note" id="ai-where">Créala en <a href={p.url} target="_blank" rel="noopener noreferrer">{p.site}<ExternalLink size={12} style={{ verticalAlign: "-1px", marginLeft: 3 }} /></a>. La comprobamos ahora y se guarda cifrada; solo se ven sus últimos 4 caracteres.</span>
-          </label>
-          {error ? <p id="ai-error" className="cl-error" role="alert"><CircleAlert size={16} style={{ flex: "none", marginTop: 1 }} />{error}</p> : null}
-          <details className="cl-help">
-            <summary>¿No tienes clave? Cómo conseguirla</summary>
-            <ol>
-              <li><b>OpenAI</b>: entra en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">platform.openai.com/api-keys</a>, pulsa «Create new secret key» y cópiala. Pagas por uso: añade saldo en Billing.</li>
-              <li><b>Anthropic</b>: entra en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>, pulsa «Create Key» y cópiala. También es pago por uso.</li>
-              <li>Pégala aquí. Puedes cambiarla cuando quieras en Ajustes › Tu cuenta de IA.</li>
-            </ol>
-          </details>
-          <div className="cl-actions" style={{ marginTop: 6 }}>
-            <button className="cl-btn" type="submit" disabled={busy || !clean(key)}>{busy ? "Comprobando…" : "Conectar y despertar"}{busy ? null : <ArrowRight size={16} />}</button>
-            <button type="button" className="cl-skip" onClick={skip}>Ahora no</button>
-          </div>
-        </form>
+          {signIn ? (
+            <fieldset className="cl-ways">
+              <legend className="cl-label" style={{ marginBottom: 8 }}>Cómo la conectas</legend>
+              <label className="cl-way">
+                <input type="radio" name="way" value="key" checked={way === "key"} onChange={() => { setWay("key"); setError(null); }} />
+                <span><b>Con clave de API</b><small>Pagas por uso</small></span>
+              </label>
+              <label className="cl-way">
+                <input type="radio" name="way" value="plan" checked={way === "plan"} onChange={() => { setWay("plan"); setError(null); }} />
+                <span><b>{signIn.label}</b><small>Con tu suscripción</small></span>
+              </label>
+            </fieldset>
+          ) : null}
+          {byPlan ? (
+            <div className="cl-plan">
+              <section className="cl-plan-way" aria-labelledby="plan-desk">
+                <h2 className="cl-plan-head" id="plan-desk">Recomendado: desde la app de escritorio, con tu suscripción en tu ordenador</h2>
+                <DesktopRoute plan={signIn.provider === "chatgpt" ? "ChatGPT" : "Claude"} compact />
+              </section>
+              <section className="cl-plan-way" aria-labelledby="plan-web">
+                <h2 className="cl-plan-head" id="plan-web">{`O ${signIn.label.charAt(0).toLowerCase() + signIn.label.slice(1)} aquí, en la web`}</h2>
+                <SubscriptionSignIn key={signIn.provider} provider={signIn.provider} info={ai} call={app} onConnected={onConnected} />
+              </section>
+            </div>
+          ) : (
+            <form className="cl-form" onSubmit={submit}>
+              <label className="cl-field">
+                <span className="cl-label">{`Clave de API de ${p.name}`}</span>
+                <input ref={input} className="cl-input mono" type="password" autoComplete="off" spellCheck={false} placeholder={p.placeholder} value={key} onChange={(e) => setKey(e.target.value)}
+                  aria-invalid={error ? "true" : undefined} aria-describedby={error ? "ai-error" : "ai-where"} />
+                <span className="cl-note" id="ai-where">Créala en <a href={p.url} target="_blank" rel="noopener noreferrer">{p.site}<ExternalLink size={12} style={{ verticalAlign: "-1px", marginLeft: 3 }} /></a>. La comprobamos ahora y se guarda cifrada; solo se ven sus últimos 4 caracteres.</span>
+              </label>
+              {error ? <p id="ai-error" className="cl-error" role="alert"><CircleAlert size={16} style={{ flex: "none", marginTop: 1 }} />{error}</p> : null}
+              {engine === "openai" || engine === "anthropic" ? (
+                <details className="cl-help">
+                  <summary><ChevronDown size={14} aria-hidden="true" />¿No tienes clave? Cómo conseguirla</summary>
+                  <ol>
+                    {engine === "openai"
+                      ? <li>Entra en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">platform.openai.com/api-keys</a>, pulsa «Create new secret key» y cópiala. Pagas por uso: añade saldo en Billing.</li>
+                      : <li>Entra en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">console.anthropic.com</a>, pulsa «Create Key» y cópiala. Pagas por uso: añade saldo en Billing.</li>}
+                    <li>Pégala aquí. Puedes cambiarla cuando quieras en Ajustes › Tu cuenta de IA.</li>
+                  </ol>
+                </details>
+              ) : null}
+              <div className="cl-actions" style={{ marginTop: 6 }}>
+                <button className="cl-btn" type="submit" disabled={busy}>{busy ? "Comprobando…" : "Conectar y despertar"}{busy ? null : <ArrowRight size={16} />}</button>
+              </div>
+            </form>
+          )}
+          <div className="cl-actions" style={{ marginTop: 4 }}><button type="button" className="cl-skip" onClick={skip}>Ahora no: seguir con los bots dormidos</button></div>
+        </div>
       )}
     </>
   );
@@ -209,10 +268,11 @@ function OwnBot({ taken, reload, next, back }) {
   const color = OWN_COLORS.find((c) => !taken.some((b) => String(b.color).toUpperCase() === c)) || OWN_COLORS[0];
   const create = async (e) => {
     e.preventDefault();
+    if (!clean(name) || clean(what).length < 4) { setError("Escribe su nombre y qué hace."); return; }
     setBusy(true); setError(null);
     try {
       const job = clean(what);
-      const bot = await app("/bots", "POST", { name: clean(name), role: job.length > 40 ? job.slice(0, 39).trimEnd() + "…" : job, instructions: job.length >= 10 ? job : job + ". Ayuda al equipo con esto.", color, shape: "square" });
+      const bot = await app("/bots", "POST", { name: clean(name), role: shortRole(job), instructions: job.length >= 10 ? job : job + ". Ayuda al equipo con esto.", color, shape: "square" });
       setMade(bot);
       await reload();
     } catch (err) { setError(err.message); }
@@ -234,7 +294,7 @@ function OwnBot({ taken, reload, next, back }) {
       <label className="cl-field"><span className="cl-label">Qué hace</span><textarea className="cl-input" rows={3} maxLength={600} required placeholder="Por ejemplo, lleva las facturas y avisa de los pagos pendientes" value={what} onChange={(e) => setWhat(e.target.value)} style={{ padding: "12px 14px", lineHeight: 1.45, resize: "vertical" }} /></label>
       <Problem text={error} />
       <div className="cl-actions" style={{ marginTop: 6 }}>
-        <button type="submit" className="cl-btn" disabled={busy || !clean(name) || clean(what).length < 4}><Plus size={16} />{busy ? "Creando…" : "Crear el bot"}</button>
+        <button type="submit" className="cl-btn" disabled={busy}><Plus size={16} />{busy ? "Creando…" : "Crear el bot"}</button>
         <button type="button" className="cl-skip" onClick={back}><ArrowLeft size={14} style={{ verticalAlign: "-2px", marginRight: 4 }} />Volver</button>
         <button type="button" className="cl-skip" onClick={next}>Ahora no</button>
       </div>
@@ -251,6 +311,7 @@ function TeamStep({ workspace, next, skip }) {
   const emails = [...new Set(text.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean))];
   const invite = async (e) => {
     e.preventDefault();
+    if (!emails.length) { setError("Escribe al menos un correo."); return; }
     setBusy(true); setError(null);
     const sent = [], failed = [];
     for (const email of emails.slice(0, 20)) {
@@ -276,7 +337,7 @@ function TeamStep({ workspace, next, skip }) {
         <div className="cl-actions" style={{ marginTop: 6 }}>
           {done.length && !emails.length
             ? <button type="button" className="cl-btn" onClick={next} autoFocus>Siguiente<ArrowRight size={16} /></button>
-            : <button type="submit" className="cl-btn" disabled={busy || !emails.length}><UserPlus size={16} />{busy ? "Invitando…" : emails.length > 1 ? `Invitar a ${emails.length}` : "Invitar"}</button>}
+            : <button type="submit" className="cl-btn" disabled={busy}><UserPlus size={16} />{busy ? "Invitando…" : emails.length > 1 ? `Invitar a ${emails.length}` : "Invitar"}</button>}
           <button type="button" className="cl-skip" onClick={done.length ? next : skip}>{done.length ? "Seguir sin más" : "Ahora no"}</button>
         </div>
       </form>
@@ -339,6 +400,18 @@ function ArrivalStep({ bots, awake, guest, workspace, finish, toAi }) {
   );
 }
 
+/* ── Recommended: the desktop app ───────────────────────────────────────── */
+function DesktopStep({ workspace, next }) {
+  return (
+    <>
+      <h1 className="cl-title">Recomendado: la app de escritorio</h1>
+      <p className="cl-lead">{`Abre ${workspace} igual que aquí, y tus bots pueden trabajar con lo que tienes en tu ordenador.`}</p>
+      <DesktopRoute />
+      <div className="cl-actions"><button type="button" className="cl-btn ghost" onClick={next}>Seguir en la web<ArrowRight size={16} /></button></div>
+    </>
+  );
+}
+
 export function Setup() {
   const [who, setWho] = useState(undefined);
   const [state, setState] = useState(null); // {bots, ai}
@@ -347,7 +420,7 @@ export function Setup() {
   const card = useRef(null);
   const load = async () => {
     const [s, ai] = await Promise.all([app("/state"), app("/cloud/ai").catch(() => null)]);
-    setState({ bots: (s?.bots || []).filter((b) => !b.archived), ai: ai || { connected: !!s?.ai?.mine, fake: !!s?.ai?.fake }, onboarding: s?.cloud?.onboarding || null, workspace: s?.cloud?.workspace?.name || "" });
+    setState({ bots: (s?.bots || []).filter((b) => !b.archived), ai: ai || { connected: !!s?.ai?.mine, fake: !!s?.ai?.fake }, onboarding: s?.cloud?.onboarding || null, workspace: s?.cloud?.workspace?.name || "", hasDesktop: !!s?.cloud?.hasDesktop });
     return s;
   };
   useEffect(() => {
@@ -357,7 +430,7 @@ export function Setup() {
       setWho(m);
       try {
         const s = await load();
-        const steps = stepsFor(m.current.role);
+        const steps = stepsFor(m.current.role, !!s?.cloud?.hasDesktop);
         const saved = s?.cloud?.onboarding;
         const first = saved?.started && steps.includes(saved.step) ? saved.step : steps[0];
         setStep(first);
@@ -366,7 +439,7 @@ export function Setup() {
     }, (e) => setError(e.message));
   }, []);
   const role = who?.current?.role;
-  const steps = useMemo(() => stepsFor(role), [role]);
+  const steps = useMemo(() => stepsFor(role, !!state?.hasDesktop), [role, state?.hasDesktop]);
   const awake = !!(state?.ai?.connected || state?.ai?.engines?.some((e) => e.connected));
   // Focus moves to the new step's heading, so a screen reader hears where it is (not on arrival:
   // the first field keeps its own focus there).
@@ -396,6 +469,7 @@ export function Setup() {
         {step === "ia" ? <AiStep ai={state.ai} onConnected={async () => { await load(); hive("ok"); }} next={() => go(nextOf("ia"))} skip={() => go(nextOf("ia"))} />
           : step === "bots" ? <BotsStep bots={state.bots} awake={awake} manager={MANAGERS.has(role)} workspace={workspace} reload={load} next={() => go(nextOf("bots"))} toAi={toAi} />
           : step === "equipo" ? <TeamStep workspace={workspace} next={() => go(nextOf("equipo"))} skip={() => go(nextOf("equipo"))} />
+          : step === "escritorio" ? <DesktopStep workspace={workspace} next={() => go(nextOf("escritorio"))} />
           : <ArrivalStep bots={state.bots} awake={awake} guest={role === "guest"} workspace={workspace} finish={finish} toAi={toAi} />}
       </div>
     </Shell>

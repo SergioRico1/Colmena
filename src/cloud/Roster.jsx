@@ -8,9 +8,9 @@ import { initialsOf } from "../lib/identity.js";
 const CELL = hexPath(32, 36, 33);
 
 /** One cell of the comb with something in it. */
-export function Cell({ state = "awake", lit = false, children, size = "md" }) {
+export function Cell({ state = "awake", lit = false, children, size = "md", className = "" }) {
   return (
-    <span className={"cl-cell " + size} data-state={state} data-lit={lit ? "" : undefined}>
+    <span className={"cl-cell " + size + (className ? " " + className : "")} data-state={state} data-lit={lit ? "" : undefined}>
       <svg className="cl-cell-hex" viewBox="0 0 64 72" aria-hidden="true" focusable="false"><path d={CELL} /></svg>
       <span className="cl-cell-in">{children}</span>
     </span>
@@ -42,7 +42,7 @@ export function PersonCell({ name, size = "md" }) {
  */
 export function Roster({ items, label, compact = false }) {
   return (
-    <ul className={"cl-roster" + (compact ? " compact" : "")} aria-label={label}>
+    <ul className={"cl-roster" + (compact ? " compact" : "")} aria-label={label} style={compact ? undefined : { "--cols": items.length <= 6 ? 6 : items.length <= 8 ? 4 : 6 }}>
       {items.map((it) => (
         <li key={it.key} className="cl-roster-item" data-kind={it.kind} data-in={it.fresh ? "" : undefined}>
           {it.kind === "bot" ? <BotCell bot={it.bot} asleep={it.asleep} off={it.off} lit={it.lit} size={compact ? "sm" : "md"} />

@@ -29,6 +29,8 @@ import { Menu as MenuIcon, X } from "../Icon.js";
 import { useBreakpoint } from "../../lib/breakpoint.js";
 import ChannelsNav from "../../chat/ChannelsNav.jsx";
 import SidebarComb from "./SidebarComb.jsx";
+import { DOWNLOADS, detectOs } from "../DesktopRoute.jsx";
+import { Download } from "../Icon.js";
 import { useChatTitle } from "../../chat/title.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
@@ -340,6 +342,8 @@ export default function Sidebar({ active = "inicio" }) {
     // Hosted (src/lib/cloud.js): your company and its people, and signing out.
     store.cloud ? { group: null, items: [
       { label: "Empresa y personas", icon: UsersThree, onSelect: () => window.location.assign("/empresa") },
+      // The owner's rule: recommend the desktop app, quietly, until this person has one paired.
+      !desktop && !store.cloud.hasDesktop ? { label: "Descargar la app de escritorio", icon: Download, onSelect: () => window.location.assign(DOWNLOADS.find((d) => d.id === detectOs()).href) } : null,
       { label: "Cerrar sesión", icon: LogOut, onSelect: () => signOut() },
     ] } : null,
   ];

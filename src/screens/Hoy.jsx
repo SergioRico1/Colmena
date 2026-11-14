@@ -11,6 +11,7 @@ import { CompletionCards } from "../components/v3/dia/Completion.jsx";
 import { needEntries } from "../components/v3/dia/needRows.js";
 import { Shape, srOnly } from "../components/v3/dia/parts.jsx";
 import SetupCard from "../components/v3/dia/Setup.jsx";
+import DesktopCard from "../components/v3/dia/DesktopCard.jsx";
 import { routeOf } from "../components/v3/dia/route.js";
 import { useResource, useStore } from "../lib/store.jsx";
 import { pickFiles, post } from "../lib/api.js";
@@ -228,6 +229,7 @@ export default function Hoy({ query = {} }) {
           {aiInCard ? null : <NoAccountNotice />}
           <PlanLimitNotice />
           <SetupCard state={store} />
+          <DesktopCard store={store} />
 
           <section aria-labelledby="need-t">
             <div style={SEC}>

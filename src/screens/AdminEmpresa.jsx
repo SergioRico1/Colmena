@@ -539,7 +539,8 @@ function Settings() {
 /* ── IA y apps ────────────────────────────────────────────────────────────────────────────── */
 // The company's AI rules (docs/CLOUD.md › Phase 3; server/cloud/ai.mjs): each person thinks with
 // their own account; signing in with a consumer subscription (ChatGPT by code, the Claude
-// setup-token) stays off unless an owner or admin turns it on after reading the providers' terms.
+// setup-token) is on by default (the owner's decision, 2026-11-14) and each person confirms the
+// providers' terms before connecting; an owner or admin can turn either off here.
 // And the company's Composio key for the apps, written here and never shown back.
 
 const SUBSCRIPTIONS = [
@@ -579,10 +580,10 @@ function AiPolicy() {
   return (
     <>
       <h2 className="ch-section-title">Cuentas de IA</h2>
-      <p className="ch-hint">Cada persona conecta su propia cuenta de IA en Ajustes › Tu cuenta de IA, y los bots usan la de quien les pide algo. Lo seguro es una clave de API (OpenAI, Anthropic u otra).</p>
+      <p className="ch-hint">Cada persona conecta su propia cuenta de IA en Ajustes › Tu cuenta de IA, y los bots usan la de quien les pide algo. Una clave de API (OpenAI, Anthropic u otra) es lo que permiten las condiciones de los proveedores.</p>
 
       <h2 className="ch-section-title">Cuentas de suscripción</h2>
-      <p className="ch-hint">Apagadas salvo que las actives. Lee antes lo que dicen las condiciones de cada proveedor.</p>
+      <p className="ch-hint">Encendidas: cada persona puede conectar su propio plan, después de confirmar lo que dicen las condiciones del proveedor. Apágalas si tu empresa solo quiere claves de API.</p>
       {SUBSCRIPTIONS.map((s) => {
         const on = !!policy[s.key];
         return (

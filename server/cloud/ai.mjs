@@ -6,9 +6,11 @@
 //   providers/person:<id> (method, last four characters, pins, limits), its secrets in the
 //   workspace's envelope vault under the namespace ai-<id>. Nothing that needs this computer:
 //   no local model, no Claude Code CLI, «Servidor propio» only on a public https address.
-// - Consumer subscriptions (ChatGPT sign-in by device code, Claude setup-token) are off unless a
-//   workspace admin turns them on, with the warning `SUBSCRIPTION_WARNING` (the providers'
-//   terms; docs/CLOUD.md › Phase 3 › Terms).
+// - Consumer subscriptions (ChatGPT sign-in by device code, Claude setup-token) are ON by default
+//   (decided by the owner, 2026-11-14, knowing the providers' terms; docs/CLOUD.md › Phase 3 ›
+//   Terms); an owner or admin can turn each off (`SUBSCRIPTION_WARNING` says why). Before a person
+//   connects one, they confirm one honest line (`SUBSCRIPTION_CONSENT`); the consent is kept per
+//   person and provider, and nothing is asked of the provider without it.
 // - `personalProviders(…)`: one object with ProviderHub's surface that answers as the hub of
 //   `currentPerson()` (server/identity.mjs). Background work runs as the person it is for.
 import { ProviderHub, OpenAIProvider } from "../provider.mjs";
@@ -24,10 +26,21 @@ export const SUBSCRIPTION_WARNING = Object.freeze({
   claude: "Anthropic prohíbe expresamente que un producto de terceros use credenciales de los planes Free, Pro, Max o Ultra en nombre de sus usuarios, o que las guarde. Si lo activas, incumples sus condiciones y Anthropic puede cerrar esas cuentas sin aviso. Lo permitido es una clave de API.",
 });
 
-/** The workspace's switches: both subscription sign-ins start off. */
+/**
+ * The one line each person confirms («Entendido, conectar») before connecting a subscription;
+ * kept per person and provider in their config (`consent`).
+ */
+export const SUBSCRIPTION_CONSENT = Object.freeze({
+  chatgpt: "Usar tu suscripción de ChatGPT desde un servicio alojado va contra las condiciones de OpenAI: pueden limitar tu cuenta.",
+  claude: "Usar tu suscripción de Claude desde un servicio alojado va contra las condiciones de Anthropic: pueden limitar o cerrar tu cuenta.",
+});
+export const CONSENT_PROVIDERS = Object.freeze(["chatgpt", "claude"]);
+const needsConsent = (which) => Object.assign(Error("Antes de conectar tu suscripción, confirma que entiendes las condiciones del proveedor."), { status: 409, code: "COLMENA_CONSENT", consent: which });
+
+/** The workspace's switches: both subscription sign-ins start on; an owner or admin may turn each off. */
 export function aiPolicy(store) {
   const p = store.get("cloud", AI_POLICY_ID) || {};
-  return { chatgptLogin: p.chatgptLogin === true, claudeToken: p.claudeToken === true, updatedAt: p.updatedAt || null, updatedBy: p.updatedBy || null };
+  return { chatgptLogin: p.chatgptLogin !== false, claudeToken: p.claudeToken !== false, updatedAt: p.updatedAt || null, updatedBy: p.updatedBy || null };
 }
 export function setAiPolicy(store, patch = {}, by = null) {
   const next = { ...aiPolicy(store) };
@@ -71,8 +84,8 @@ export function jwtClaims(token) {
 
 export class CodexDeviceSession {
   /** `vault` (envelope vault of this person), `info()` / `setInfo(v)`: what the config keeps in the clear (email, account). */
-  constructor({ vault, fetchImpl = plainFetch, info = () => null, setInfo = () => {}, allowed = () => true, clock = Date.now }) {
-    Object.assign(this, { vault, fetch: fetchImpl, info, setInfo, allowed, clock });
+  constructor({ vault, fetchImpl = plainFetch, info = () => null, setInfo = () => {}, allowed = () => true, consented = () => true, clock = Date.now }) {
+    Object.assign(this, { vault, fetch: fetchImpl, info, setInfo, allowed, consented, clock });
     this.credentials = undefined; // undefined: not loaded yet
     this.models = [];
     this.refreshing = null;
@@ -95,6 +108,7 @@ export class CodexDeviceSession {
   /** Step 1: a code for the person to type at VERIFY_URL. */
   async start() {
     if (!this.allowed()) throw refuse("El inicio de sesión con ChatGPT está desactivado en este espacio. Usa una clave de API de OpenAI.");
+    if (!this.consented()) throw needsConsent("chatgpt");
     const r = await this.post(CODEX.issuer + "/api/accounts/deviceauth/usercode", { client_id: CODEX.clientId });
     if (r.status === 404) throw refuse("OpenAI no tiene activado el inicio de sesión con código. Actívalo en la configuración de seguridad de ChatGPT («device code login») y vuelve a probar.", 409);
     const code = r.data?.user_code || r.data?.usercode;
@@ -189,6 +203,7 @@ export class PersonHub extends ProviderHub {
       info: () => hub?.config().chatgpt || null,
       setInfo: (value) => hub?.saveConfig({ chatgpt: value }),
       allowed: () => policy().chatgptLogin,
+      consented: () => !!hub?.config().consent?.chatgpt,
     });
     super({ session, store, vault, fetchImpl, claudeCli: NO_CLI });
     hub = this;
@@ -214,7 +229,15 @@ export class PersonHub extends ProviderHub {
   async connectAnthropic({ method, secret = "" }) {
     if (method === "cli") throw refuse("Claude Code de este ordenador no existe en la nube. Usa una clave de API de Anthropic.", 400);
     if (method === "token" && !this.policy().claudeToken) throw refuse("El token de suscripción de Claude está desactivado en este espacio: las condiciones de Anthropic no lo permiten en servicios de terceros. Usa una clave de API.");
+    if (method === "token" && !this.config().consent?.claude) throw needsConsent("claude");
     return super.connectAnthropic({ method, secret });
+  }
+  /** This person confirmed the line for a provider («Entendido, conectar»): kept, with the date. */
+  consent(which) {
+    if (!CONSENT_PROVIDERS.includes(which)) throw refuse("Ese proveedor no existe.", 400);
+    const consent = { ...(this.config().consent || {}), [which]: new Date().toISOString() };
+    this.saveConfig({ consent });
+    return consent;
   }
   /** A token saved while the switch was on stops working when an admin turns it off. */
   async anthropicCredential() {

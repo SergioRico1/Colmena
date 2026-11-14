@@ -90,7 +90,8 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
     const layout = () => {
       theme();
       dpr = Math.min(1.5, devicePixelRatio || 1);
-      W = innerWidth; H = innerHeight; px = W < 640 ? 24 : 32; R = W >= 1280 ? 26 : 22;
+      W = innerWidth; H = innerHeight; // Whole pixels per cell of the bots' 16-cell drawing, and cells to hold them.
+      px = W >= 1280 ? 64 : W >= 1024 ? 48 : 32; R = W >= 1280 ? 44 : W >= 1024 ? 34 : 24;
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ({ cells, cols, rows } = combCells(W, H, R));
@@ -159,7 +160,8 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
       // The mark at the heart of the rosette.
       if (core && mark.complete && mark.naturalWidth) {
         ctx.globalAlpha = sleeping ? 0.55 : 1;
-        ctx.drawImage(mark, Math.round(core.x - 14), Math.round(core.y - 14), 28, 28);
+        const m = Math.round(R * 0.95);
+        ctx.drawImage(mark, Math.round(core.x - m / 2), Math.round(core.y - m / 2), m, m);
         ctx.globalAlpha = 1;
       }
       // The bots.
@@ -168,7 +170,7 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
         const k = still || sleeping ? 1 : Math.min(1, Math.max(0, (now - f.t0) / f.dur));
         const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
         const x = f.from.x + (f.to.x - f.from.x) * e;
-        const y = f.from.y + (f.to.y - f.from.y) * e - Math.sin(Math.PI * k) * 10;
+        const y = f.from.y + (f.to.y - f.from.y) * e - Math.sin(Math.PI * k) * R * 0.45;
         const img = face(f.b, sleeping ? "pausa" : k < 1 ? "trabajando" : "libre");
         ctx.drawImage(img, Math.round(x - px / 2), Math.round(y - px / 2), px, px);
       }
@@ -180,7 +182,9 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
         if (!f.to || now < f.t0 + f.dur + f.wait) continue;
         const land = f.to;
         if (f.from !== land) { land.glow = 1; land.rgb = f.rgb; land.delay = 0; }
-        const inside = (n) => n.w && n !== core && n.y > 60 && n.y < H - 24 && n.x > 12 && n.x < W - 12;
+        // A cell another bot is in or flying to is taken: two never share one.
+        const taken = new Set(flyers.filter((x) => x !== f).map((x) => x.to));
+        const inside = (n) => n.w && n !== core && !taken.has(n) && n.y > 60 && n.y < H - 24 && n.x > 12 && n.x < W - 12;
         let next = land, away = false;
         if (gather) {
           // Gathered: each walks cell by cell to the card's edge and waits there.
@@ -188,13 +192,22 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
           if (options[0] && fromCard(options[0]) < fromCard(land) && fromCard(land) > 40) next = options[0];
         } else if (land === f.home) {
           // Out on an errand: one or two cells beyond the rosette.
-          const out = neighbours(cells, cols, rows, land).filter((n) => inside(n) && !n.home);
-          const far = out.length ? out[Math.floor(rand() * out.length)] : null;
-          const farther = far ? neighbours(cells, cols, rows, far).filter((n) => inside(n) && !n.home) : [];
-          next = (rand() < 0.5 && farther.length ? farther[Math.floor(rand() * farther.length)] : far) || land;
+          // Out on an errand: two to four cells away, now and then all the way to the card's edge.
+          let at = land;
+          const hops = 2 + Math.floor(rand() * 3);
+          for (let i = 0; i < hops; i++) {
+            const out = neighbours(cells, cols, rows, at).filter((n) => inside(n) && !n.home && Math.hypot(n.x - core.x, n.y - core.y) >= Math.hypot(at.x - core.x, at.y - core.y));
+            if (!out.length) break;
+            at = out[Math.floor(rand() * out.length)];
+          }
+          if (rand() < 0.25 && hole) {
+            const edge = cells.filter((k) => inside(k) && fromCard(k) < R * 1.2).sort((a, b) => Math.hypot(a.x - land.x, a.y - land.y) - Math.hypot(b.x - land.x, b.y - land.y))[0];
+            if (edge) at = edge;
+          }
+          next = at;
           away = true;
         } else next = f.home;
-        f.from = land; f.to = next; f.t0 = now; f.dur = (next === land ? 1 : 520 + Math.hypot(next.x - land.x, next.y - land.y) * 2.2) / speed;
+        f.from = land; f.to = next; f.t0 = now; f.dur = (next === land ? 1 : 520 + Math.hypot(next.x - land.x, next.y - land.y) * 1.6) / speed;
         f.wait = (gather ? 900 + rand() * 1800 : away ? 300 + rand() * 900 : 1400 + rand() * 3200) / speed;
       }
     };
@@ -231,7 +244,7 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
       if (type === "type" && placed.length && !sleeping) {
         // One bot comes to the card's edge to look at what you write.
         const f = placed[Math.floor(rand() * placed.length)];
-        const edge = cells.filter((k) => k.w && k.y > 60 && fromCard(k) < 30).sort((a, b) => Math.hypot(a.x - f.to.x, a.y - f.to.y) - Math.hypot(b.x - f.to.x, b.y - f.to.y))[0];
+        const edge = cells.filter((k) => k.w && k.y > 60 && fromCard(k) < R * 1.2).sort((a, b) => Math.hypot(a.x - f.to.x, a.y - f.to.y) - Math.hypot(b.x - f.to.x, b.y - f.to.y))[0];
         if (edge && performance.now() > f.t0 + f.dur) { f.from = f.to; f.to = edge; f.t0 = performance.now(); f.dur = 520; f.wait = 900; }
       }
       if (type === "gather") { gather = true; speed = 0.8; }

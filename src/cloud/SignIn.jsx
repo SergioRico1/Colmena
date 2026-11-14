@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, CircleAlert, CircleCheck, Mail } from "../components/Icon.js";
 import { Shell } from "./Shell.jsx";
+import { Cell } from "./Roster.jsx";
 import { hive } from "./Hive.jsx";
 import { auth, me, tokenFromHash } from "./api.js";
 
@@ -81,14 +82,14 @@ function Sent({ email, delivery, creating, onBack }) {
   if (entered)
     return (
       <div className="cl-sent" role="status">
-        <span className="cl-sent-mark ok"><CircleCheck size={28} /></span>
+        <Cell lit className="cl-mark"><CircleCheck size={26} /></Cell>
         <h1 className="cl-title">Ya has entrado</h1>
         <p className="cl-lead" style={{ margin: 0 }}>Abriste el enlace en otra pestaña. Seguimos aquí.</p>
       </div>
     );
   return (
     <div className="cl-sent">
-      <span className="cl-sent-mark"><Mail size={28} /></span>
+      <Cell className="cl-mark"><Mail size={26} /></Cell>
       <div role="status">
         <h1 className="cl-title">Revisa tu correo</h1>
         <p className="cl-lead" style={{ marginBottom: 12 }}>Te hemos enviado un enlace a <strong>{email}</strong>. Ábrelo en el ordenador o el móvil donde quieras usar Colmena: sirve una vez y caduca en 15 minutos.</p>
@@ -123,6 +124,9 @@ export function SignIn() {
   const send = async (e) => {
     e.preventDefault();
     if (state.busy) return;
+    // The button is always ready (a grey, dead button is the loudest thing on a page); an empty
+    // field says so here.
+    if (!email.trim()) { setState((s) => ({ ...s, error: "Escribe tu correo para recibir el enlace." })); input.current?.focus(); return; }
     setState((s) => ({ ...s, busy: true, error: null }));
     try {
       const r = await auth.link(email.trim(), nextParam());
@@ -155,7 +159,7 @@ export function SignIn() {
             value={email} onChange={onType} aria-invalid={state.error ? "true" : undefined} aria-describedby={state.error ? "signin-error" : undefined} />
         </label>
         {state.error ? <p id="signin-error" className="cl-error" role="alert"><CircleAlert size={16} style={{ flex: "none", marginTop: 1 }} />{state.error}</p> : null}
-        <button className="cl-btn block" type="submit" disabled={state.busy || !email.trim()}>{state.busy ? "Enviando…" : "Enviarme el enlace"}{state.busy ? null : <ArrowRight size={16} />}</button>
+        <button className="cl-btn block" type="submit" disabled={state.busy}>{state.busy ? "Enviando…" : "Enviarme el enlace"}{state.busy ? null : <ArrowRight size={16} />}</button>
       </form>
       <p className="cl-note" style={{ marginTop: 20 }}>¿Te han invitado a una empresa? Abre el enlace de tu invitación: te pedirá este mismo paso.</p>
     </Shell>

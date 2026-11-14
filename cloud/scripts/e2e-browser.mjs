@@ -71,8 +71,10 @@ try {
   await A.waitForURL(/\/empezar/, { timeout: 30000 });
   check("Ana signs in and creates a company", true);
   await A.getByRole("heading", { name: "Despierta a tus bots" }).waitFor({ timeout: 30000 });
-  const terms = await A.getByText(/clave de API: las condiciones de OpenAI y Anthropic/).count();
-  check("the AI step says the web uses API keys, and why", terms > 0);
+  const ways = (await A.getByText("Con clave de API").count()) > 0 && (await A.getByText("Iniciar sesión con ChatGPT").count()) > 0;
+  check("ChatGPT offers two ways: an API key or signing in with the plan", ways);
+  await A.getByText("Iniciar sesión con ChatGPT").click();
+  check("the plan's way recommends the desktop app and asks for one confirmation", (await A.getByText(/Recomendado: desde la app de escritorio/).count()) > 0 && (await A.getByRole("button", { name: "Entendido, conectar" }).count()) > 0);
   await shot(A, "laptop-3b-empezar-ia");
   await A.getByRole("button", { name: "Ahora no" }).click();
   await A.getByRole("heading", { name: "Conoce a tus bots" }).waitFor();

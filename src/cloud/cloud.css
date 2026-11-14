@@ -57,7 +57,7 @@ textarea.cl-input{min-height:88px;font-family:inherit;line-height:1.45}
 .cl-divider::before,.cl-divider::after{content:"";flex:1;height:1px;background:var(--c-line)}
 .cl-tag.off{background:var(--c-sunken);color:var(--c-text-3)}
 .cl-item.off .cl-item-name{color:var(--c-text-3)}
-.cl-link{padding:0;border:0;background:none;color:var(--c-accent-ink);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.cl-link{display:inline-flex;align-items:center;min-height:32px;padding:0;border:0;background:none;color:var(--c-accent-ink);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 
 .cl-error{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:var(--r-md);background:var(--c-error-soft);color:var(--c-error);font-size:var(--t-meta)}
 .cl-note{margin:0;color:var(--c-text-3);font-size:var(--t-meta);text-wrap:pretty}
@@ -66,9 +66,12 @@ textarea.cl-input{min-height:88px;font-family:inherit;line-height:1.45}
 /* «Revisa tu correo»: the one moment these pages have — the envelope settles in. */
 .cl-sent{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
 .cl-sent-mark{display:grid;place-items:center;width:56px;height:56px;border-radius:var(--r-lg);background:var(--c-sunken);color:var(--c-text);animation:cl-settle .6s cubic-bezier(.16,1,.3,1) both}
-.cl-sent-mark.ok{background:var(--c-ok-soft);color:var(--c-ok-ink)}
+/* The page's mark is a cell of the comb (Roster.jsx › Cell): it settles in once. */
+.cl-mark{margin-bottom:4px;color:var(--c-text);animation:cl-settle .6s cubic-bezier(.16,1,.3,1) both}
+.cl-mark[data-lit]{color:var(--c-ok-ink)}
+.cl-card > .cl-mark{margin-bottom:18px}
 @keyframes cl-settle{from{transform:translateY(-10px) rotate(-6deg);filter:blur(2px)}to{transform:none;filter:none}}
-@media (prefers-reduced-motion:reduce){.cl-sent-mark{animation:none}}
+@media (prefers-reduced-motion:reduce){.cl-sent-mark,.cl-mark{animation:none}}
 
 .cl-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-line)}
 .cl-item{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 0;border-bottom:1px solid var(--c-line)}
@@ -121,13 +124,15 @@ html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
 
 /* Six to a row (three on a narrow card), every other one half a cell lower: a strip of comb. */
 .cl-card{container-type:inline-size}
-.cl-roster{list-style:none;margin:0;padding:0 0 22px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px 4px}
-.cl-roster-item:nth-child(even){transform:translateY(22px)}
-@container (max-width:360px){.cl-roster{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:28px}}
+.cl-roster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:10px 4px}
+/* Every other cell half a cell lower (a strip of comb); the names below keep one baseline. */
+.cl-roster:not(.compact) .cl-roster-item:nth-child(even) .cl-cell{margin-top:22px}
+.cl-roster:not(.compact) .cl-roster-item:nth-child(odd) .cl-roster-text{margin-top:22px}
+@container (max-width:360px){.cl-roster{--cols:3 !important}}
 .cl-roster-item{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
 .cl-roster-text{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:100%}
 .cl-roster-name{font:600 var(--t-meta)/1.25 'Geist',sans-serif;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cl-roster-line{font-size:var(--t-caption);line-height:1.3;color:var(--c-text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-roster-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:var(--t-caption);line-height:1.3;color:var(--c-text-3);overflow:hidden;overflow-wrap:anywhere;text-wrap:balance}
 .cl-roster.compact{display:flex;flex-wrap:wrap;gap:2px;padding-bottom:12px}
 .cl-roster.compact .cl-roster-item:nth-child(even){transform:translateY(12px)}
 .cl-roster.compact .cl-roster-item{gap:0}
@@ -136,21 +141,39 @@ html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
 @keyframes cl-hatch{from{transform:scale(.55) translateY(6px);opacity:0}60%{opacity:1}to{transform:none;opacity:1}}
 
 /* ── Steps of /empezar and the cards' parts ────────────────────────────────── */
-.cl-steps{list-style:none;display:flex;gap:6px;margin:0 0 22px;padding:0}
-.cl-steps li{flex:1;height:4px;border-radius:var(--r-xs);background:var(--c-line)}
-.cl-steps li[data-done]{background:var(--c-text-3)}
-.cl-steps li[aria-current]{background:var(--c-text)}
+/* The steps as a row of comb cells: done ones filled, the current one in ink, one lit cell for «now». */
+.cl-steps{list-style:none;display:flex;gap:4px;margin:0 0 20px;padding:0}
+.cl-steps li{display:block;width:20px;height:22px}
+.cl-steps svg{display:block;width:100%;height:100%;overflow:visible}
+.cl-steps path{fill:transparent;stroke:var(--c-line-strong);stroke-width:1.5}
+.cl-steps li[data-done] path{fill:var(--c-text-4);stroke:var(--c-text-4)}
+.cl-steps li[aria-current] path{fill:var(--c-text);stroke:var(--c-text)}
 .cl-kick{display:flex;align-items:center;gap:8px;margin:0 0 6px;color:var(--c-text-3);font:500 var(--t-meta)/1.3 'Geist',sans-serif;font-variant-numeric:tabular-nums}
 .cl-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:22px}
 .cl-actions .cl-skip{margin-left:auto}
 .cl-skip{min-height:44px;padding:0 4px;border:0;background:none;color:var(--c-text-3);font:500 var(--t-ui)/1 'Geist',sans-serif;cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:color .15s ease,text-decoration-color .15s ease}
 .cl-skip:hover{color:var(--c-text);text-decoration-color:currentColor}
-.cl-choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
+.cl-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
 .cl-choice{position:relative;display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 12px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card);color:var(--c-text);font:500 var(--t-ui)/1.2 'Geist',sans-serif;cursor:pointer;transition:border-color .15s ease,background .15s ease}
 .cl-choice:hover{background:var(--c-hover)}
 .cl-choice:has(input:checked){border-color:var(--c-text);box-shadow:inset 0 0 0 1px var(--c-text)}
 .cl-choice:has(input:focus-visible){outline:2px solid var(--c-focus);outline-offset:2px}
 .cl-choice input{position:absolute;opacity:0;pointer-events:none}
+/* «Cómo la conectas»: two ways side by side for ChatGPT and Claude. */
+.cl-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
+.cl-way{position:relative;display:flex;align-items:center;min-height:56px;padding:10px 14px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card);cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.cl-way:hover{background:var(--c-hover)}
+.cl-way:has(input:checked){border-color:var(--c-text);box-shadow:inset 0 0 0 1px var(--c-text)}
+.cl-way:has(input:focus-visible){outline:2px solid var(--c-focus);outline-offset:2px}
+.cl-way input{position:absolute;opacity:0;pointer-events:none}
+.cl-way span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cl-way b{font:600 var(--t-ui)/1.25 'Geist',sans-serif;color:var(--c-text)}
+.cl-way small{font-size:var(--t-caption);color:var(--c-text-3)}
+@container (max-width:340px){.cl-ways{grid-template-columns:minmax(0,1fr)}}
+.cl-help summary{list-style:none;display:flex;align-items:center;gap:8px}
+.cl-help summary::-webkit-details-marker{display:none}
+.cl-help summary svg{transition:transform .2s ease}
+.cl-help[open] summary svg{transform:rotate(180deg)}
 .cl-help{margin:4px 0 0;border-radius:var(--r-md);background:var(--c-sunken);font-size:var(--t-meta);color:var(--c-text-2)}
 .cl-help summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--c-text-2);border-radius:var(--r-md)}
 .cl-help ol{margin:0;padding:0 14px 12px 32px;display:flex;flex-direction:column;gap:6px;line-height:1.5}
@@ -165,6 +188,12 @@ html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
 .cl-below{display:flex;flex-direction:column;gap:10px}
 .cl-team{gap:4px}
 .cl-below-label{margin:0;color:var(--c-text-3);font-size:var(--t-meta)}
+/* With a subscription: the desktop route first (recommended), the web sign-in under a hairline. */
+.cl-plan{display:flex;flex-direction:column}
+.cl-plan-way{display:flex;flex-direction:column;gap:10px;padding:14px 0}
+.cl-plan-way + .cl-plan-way{border-top:1px solid var(--c-line)}
+.cl-plan-way:first-child{padding-top:4px}
+.cl-plan-head{margin:0;font:600 var(--t-ui)/1.35 'Geist',sans-serif;color:var(--c-text);text-wrap:balance}
 .cl-listening{display:flex;align-items:center;gap:10px;color:var(--c-text-3);font-size:var(--t-meta)}
 .cl-listening i{flex:none;width:8px;height:8px;border-radius:var(--r-circle);background:var(--c-text-4);animation:cl-breathe 2.4s ease-in-out infinite}
 @keyframes cl-breathe{50%{opacity:.25}}

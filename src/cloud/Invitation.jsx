@@ -6,7 +6,7 @@ import { ArrowRight, CircleAlert, UsersThree } from "../components/Icon.js";
 import { Shell } from "./Shell.jsx";
 import { auth, me, tokenFromHash, unnamed } from "./api.js";
 import { YourName } from "./YourName.jsx";
-import { Roster } from "./Roster.jsx";
+import { Cell, Roster } from "./Roster.jsx";
 
 const KEY = "colmena:invitation";
 const ROLE = { admin: "para administrarla", member: "como miembro", guest: "como invitado" };
@@ -74,7 +74,7 @@ export function Invitation() {
         <Roster items={team} label={`Personas y bots de ${invite.workspace}`} />
       </section>
     ) : null}>
-      <span className="cl-sent-mark" style={{ marginBottom: 20 }}><UsersThree size={28} /></span>
+      <Cell className="cl-mark"><UsersThree size={26} /></Cell>
       <h1 className="cl-title">{invite.inviter} te invita a {invite.workspace}</h1>
       <p className="cl-lead">Entrarás {ROLE[invite.role] || "como miembro"}. La invitación es para <strong>{invite.email}</strong>.</p>
       {closed ? <p className="cl-error" role="alert"><CircleAlert size={16} style={{ flex: "none", marginTop: 1 }} />{invite.accepted ? "Esta invitación ya se aceptó." : "Esta invitación ha caducado. Pide otra."}</p>

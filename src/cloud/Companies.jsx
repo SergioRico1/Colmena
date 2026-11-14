@@ -118,6 +118,8 @@ function CreateCompany({ first, user, onError }) {
   const [busy, setBusy] = useState(false);
   const create = async (e) => {
     e.preventDefault();
+    if (askName && !person.trim()) { onError("Escribe tu nombre: así te ven tu equipo y tus bots."); return; }
+    if (!name.trim()) { onError("Escribe el nombre de la empresa."); return; }
     setBusy(true);
     onError(null);
     try {
@@ -136,7 +138,7 @@ function CreateCompany({ first, user, onError }) {
         <input className="cl-input" autoFocus={first && !askName} maxLength={60} required placeholder="Por ejemplo, Estudio Norte" value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <div className="cl-row">
-        <button className="cl-btn" type="submit" disabled={busy || !name.trim() || (askName && !person.trim())}>{busy ? "Creando…" : "Crear y entrar"}{busy ? null : <ArrowRight size={16} />}</button>
+        <button className="cl-btn" type="submit" disabled={busy}>{busy ? "Creando…" : "Crear y entrar"}{busy ? null : <ArrowRight size={16} />}</button>
         {first ? null : <button type="button" className="cl-btn ghost" onClick={() => setOpen(false)}>Cancelar</button>}
       </div>
       {first ? <Arriving count={Math.min(SEEDED_TEAM.length, name.trim().length)} /> : null}
