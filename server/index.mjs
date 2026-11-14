@@ -13,6 +13,7 @@ import { BrowserSessions } from "./computer/sessions.mjs";
 import { SecretStore, secretsExtraTools } from "./secrets.mjs";
 import { importNexoComposio } from "./nexo/import.mjs";
 import { McpHub } from "./mcp/hub.mjs";
+import { googleClient } from "./mcp/google.mjs";
 import { mcpExtraTools } from "./mcp/tools.mjs";
 import { CuaDesktop, desktopExtraTools } from "./computer/desktop.mjs";
 import { createApp } from "./app.mjs";
@@ -121,7 +122,15 @@ let origin = "http://127.0.0.1:4317";
 runtime.vault = new SiteVault(store); // site passwords for browser_sign_in (DPAPI)
 runtime.managers = new PasswordManagers(store); // 1Password (op) and Bitwarden (bw) logins, read at fill time
 runtime.browserSessions = new BrowserSessions(store, { computer }); // «Sesiones del navegador»
-runtime.mcp = new McpHub(store); // MCP connections (catalogue in Ajustes › Conexiones)
+// MCP connections (the marketplace in Ajustes › Apps): Colmena's own Google client for the desktop
+// when it is configured (COLMENA_GOOGLE_DESKTOP_CLIENT_ID/SECRET), official local servers as
+// children of this computer, mail over node:tls.
+runtime.mcp = new McpHub(store, { google: { desktop: googleClient(process.env, "desktop") } });
+// Composio with the person's own key (the marketplace's «Conectar con tu cuenta de Composio»).
+runtime.composioKey = {
+  status: async () => { const { configured } = await connections.call("status"); return { configured: !!configured, mine: !!configured, company: false, canRemove: false }; },
+  setKey: (key) => connections.manage("configure", { key }),
+};
 // Commands and project scripts bots run go through a process sandbox when this computer has
 // one (Codex CLI on Windows, sandbox-exec on macOS, bwrap on Linux); bot-written code without
 // one waits for your OK (server/computer/sandbox.mjs).

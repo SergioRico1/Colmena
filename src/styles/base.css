@@ -119,6 +119,9 @@ html[data-theme] :is(button,a,input,textarea,select,summary,[tabindex]):focus-vi
 button,input,textarea,select{font:inherit;color:inherit}
 a{color:var(--c-text);text-decoration:none}a:hover{color:var(--c-accent-ink)}
 button:disabled{cursor:not-allowed}
+/* A row of filter chips: wraps on wide screens, one scrolling row on a phone (Marketplace). */
+.c-chiprow{display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:560px){.c-chiprow{flex-wrap:nowrap;overflow-x:auto;width:0;min-width:100%;scrollbar-width:none;padding-bottom:2px}.c-chiprow::-webkit-scrollbar{display:none}}
 @keyframes colmena-spin{to{transform:rotate(360deg)}}
 @keyframes colmena-blink{50%{opacity:0}}
 @keyframes colmena-pulse{0%,100%{opacity:1}50%{opacity:.35}}

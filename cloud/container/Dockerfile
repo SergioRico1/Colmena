@@ -17,6 +17,13 @@ RUN apt-get update \
 RUN npm install -g @openai/codex@0.166.0 @anthropic-ai/claude-code@2.1.314 opencode-ai@1.19.5 \
  && npm cache clean --force
 
+# Google's official open-source MCP servers the marketplace runs per person (docs/CONNECTIONS.md):
+# Google Analytics (read-only by default) and Google Ads, each in its own venv, pinned.
+RUN apt-get update && apt-get install -y --no-install-recommends python3-venv && rm -rf /var/lib/apt/lists/* \
+ && python3 -m venv /opt/mcp/analytics && /opt/mcp/analytics/bin/pip install --no-cache-dir analytics-mcp==1.1.0 \
+ && python3 -m venv /opt/mcp/ads && /opt/mcp/ads/bin/pip install --no-cache-dir google-ads-mcp==0.0.6 \
+ && mkdir -p /opt/mcp/bin && ln -s /opt/mcp/analytics/bin/analytics-mcp /opt/mcp/bin/analytics-mcp && ln -s /opt/mcp/ads/bin/google-ads-mcp /opt/mcp/bin/google-ads-mcp
+
 WORKDIR /app
 COPY package.json package-lock.json ./
 # Runtime dependencies only; node-pty is built for this Linux (the «Código» terminal).

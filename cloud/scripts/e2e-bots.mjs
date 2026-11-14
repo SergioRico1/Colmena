@@ -119,9 +119,10 @@ check("the seeded bots can be named", ["atlas", "nora", "tomas", "iris", "vera",
 check("without the test secret the fake model cannot be turned on", (await fetch(BASE + "/auth/dev/test/fake-model", { method: "POST", headers: { Authorization: "Bearer nope", "Content-Type": "application/json" }, body: JSON.stringify({ workspace: WS, on: true }) })).status === 404);
 const before = (await A.req("/api/state")).data;
 check("a new workspace has no fake model and no AI account", before.ai?.fake === false && before.ai?.mine === false, JSON.stringify(before.ai));
-check("the subscription sign-ins start off", before.ai?.policy?.chatgptLogin === false && before.ai?.policy?.claudeToken === false);
-check("a member cannot turn them on", (await B.req("/api/cloud/ai/policy", { method: "PUT", body: { chatgptLogin: true } })).status === 403);
-check("ChatGPT by code is refused while off", (await B.req("/api/cloud/ai/chatgpt/device", { method: "POST", body: {} })).status === 403);
+// The owner chose the subscription sign-ins ON by default; each person confirms one line first.
+check("the subscription sign-ins start on", before.ai?.policy?.chatgptLogin === true && before.ai?.policy?.claudeToken === true, JSON.stringify(before.ai?.policy));
+check("a member cannot turn them off", (await B.req("/api/cloud/ai/policy", { method: "PUT", body: { chatgptLogin: false } })).status === 403);
+check("ChatGPT by code waits for the person's consent first", (await B.req("/api/cloud/ai/chatgpt/device", { method: "POST", body: {} })).status === 409);
 check("the test flag on", (await dev("fake-model", { body: { workspace: WS, on: true } })).data?.fakeModel === true);
 
 // ---- 1. a mention in a channel answers

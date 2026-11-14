@@ -75,5 +75,9 @@ rule("au-2", "Vigilar precios de la competencia", "nora", { type: "dia", config:
 rule("au-3", "Cierre de caja del día", "tomas", { type: "dia", config: { hora: "18:30", dias: [0, 1, 2, 3, 4, 5, 6], festivo: "igual", zona: "Madrid" }, sentence: "sean las 18:30 todos los días" });
 rule("au-4", "Avisar de contratos que vencen", "nora", { type: "semana", config: { semDia: 1, semHora: "09:00", semCada: "1" }, sentence: "sea lunes a las 09:00" }, { enabled: false, state: "paused" });
 put("suggestions", { id: "sug-1", kind: "automation", status: "pending", botId: "atlas", text: "Atlas ha notado que cada lunes pides «resumen de ventas de la semana». ¿Lo automatizamos?", cta: "Sí, cada lunes a las 9:00", payload: { name: "Resumen de ventas de la semana", prompt: "Prepara el resumen de ventas de la semana.", botId: "tomas", trigger: { type: "semana", config: { semDia: 1, semHora: "09:00", semCada: "1" } } } });
+// The marketplace (Ajustes › Apps): two connections already made (records only; no secrets).
+put("mcpServers", { id: "notion", name: "Notion", url: "https://mcp.notion.com/mcp", catalogId: "notion", auth: "oauth", run: "remote", owner: null, status: "connected", tools: [{ name: "notion-search" }, { name: "notion-fetch" }, { name: "notion-create-pages" }], connectedAt: at(300) });
+put("mcpServers", { id: "correo-ana", name: "Correo (IMAP/SMTP) · ana@example.com", url: "mail:ana@example.com", catalogId: "mail", auth: "mail", run: "builtin", owner: null, account: "ana@example.com", status: "connected", tools: Array.from({ length: 8 }, (_, i) => ({ name: "t" + i })), connectedAt: at(200) });
+put("mcpServers", { id: "linear", name: "Linear", url: "https://mcp.linear.app/mcp", catalogId: "linear", auth: "oauth", run: "remote", owner: null, status: "needs_auth", tools: [{ name: "list_issues" }], connectedAt: at(400) });
 store.close();
 console.log("Datos de QA en", dir);

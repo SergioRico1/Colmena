@@ -483,7 +483,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerSecretRoutes(app, { store, runtime, secrets: runtime?.secrets || new SecretStore(store) });
   // MCP connections (MCP first, Composio for the rest): the runtime's hub, or one of its own in tests.
   if (runtime && !runtime.mcp) runtime.mcp = new McpHub(store);
-  registerMcpRoutes(app, { hub: runtime?.mcp || new McpHub(store), z });
+  registerMcpRoutes(app, { hub: runtime?.mcp || new McpHub(store), z, composio: runtime?.composioKey || null });
   app.locals.interaction = registerInteractionRoutes(app, { store, runtime, scheduler, connections, aiConnected, providerStatus, check, mustGet, HttpError, createAutomation, automationView });
   if (computer) registerComputerRoutes(app, { store, runtime, computer });
   if (runtime?.projects) registerProjectRoutes(app, { store, projects: runtime.projects });

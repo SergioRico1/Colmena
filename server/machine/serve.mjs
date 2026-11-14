@@ -8,6 +8,7 @@
 //                                 «origin» when asked, so tests can push without any real host)
 //   POST /machine/run             one program, no shell, its output streamed as NDJSON (run_command)
 //   POST /machine/office/pdf      an Office document → PDF with LibreOffice (server/officepdf.mjs)
+//   POST /machine/mcp             an official local MCP server (server/mcp/local.mjs): list / call / close
 //   ALL  /machine/port/:n/*       a dev server of the container (127.0.0.1:n), for previews
 //   GET  /machine/health          {ok, busy}: whether engines or terminals are working
 //   GET  /machine/backup          the work folder as a .tar.gz (the Machine DO keeps it in R2)
@@ -32,6 +33,7 @@ import { registerCodeRoutes, codeUploadParser } from "../code/routes.mjs";
 import { createOfficeConverter, libreOfficeEngine } from "../officepdf.mjs";
 import { asPerson } from "../identity.mjs";
 import { slug } from "../code/git.mjs";
+import { LocalMcpHost, machineMcpRoute } from "../mcp/local.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 /** The fake Claude Code of the cloud tests (cloud/container/fake-claude-code.mjs). */
@@ -103,6 +105,7 @@ export function createMachine({ work, token, storeKey, office = null, spawnImpl 
   const converter = office || createOfficeConverter({ cacheDir: path.join(data, "cache", "office-pdf"), engines: [libreOfficeEngine()] });
   let lastUse = Date.now();
   const running = new Set(); // /machine/run children
+  const mcpHost = new LocalMcpHost({ spawn: spawnImpl, dir: path.join(work, ".mcp-run") });
 
   const app = express();
   app.disable("x-powered-by");
@@ -205,6 +208,10 @@ export function createMachine({ work, token, storeKey, office = null, spawnImpl 
     }).catch((error) => { line({ error: error.message }); res.end(); });
   });
 
+  // ---- official local MCP servers (Google Analytics…): stdio children kept per connection,
+  // their credential file only in a private folder of /work/.mcp-run while they run
+  app.post("/machine/mcp", machineMcpRoute(mcpHost));
+
   // ---- Office → PDF
   app.post("/machine/office/pdf", express.raw({ type: "*/*", limit: "60mb" }), async (req, res) => {
     const ext = String(req.query.ext || "").toLowerCase();
@@ -239,7 +246,7 @@ export function createMachine({ work, token, storeKey, office = null, spawnImpl 
   app.get("/machine/backup", (req, res) => {
     res.set({ "Content-Type": "application/gzip", "Cache-Control": "no-store" });
     // Engine caches and node_modules come back with an install; the rest is the work.
-    const tar = spawn("tar", ["-czf", "-", "--exclude=./.colmena/cache", "--exclude=./.cache", "--exclude=./.npm", "-C", work, "."], { stdio: ["ignore", "pipe", "ignore"] });
+    const tar = spawn("tar", ["-czf", "-", "--exclude=./.colmena/cache", "--exclude=./.cache", "--exclude=./.npm", "--exclude=./.mcp-run", "-C", work, "."], { stdio: ["ignore", "pipe", "ignore"] });
     tar.stdout.pipe(res);
     res.on("close", () => { if (!res.writableFinished) try { tar.kill(); } catch {} });
   });

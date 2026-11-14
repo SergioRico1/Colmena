@@ -38,12 +38,14 @@ async function connectedHub(store, log) {
   return { hub, out };
 }
 
-test("the catalogue goes MCP first and leaves Google and Microsoft to Composio", () => {
+test("the catalogue goes MCP first and leaves Gmail, Calendar and Microsoft to Composio or the mail connector", () => {
   const byId = Object.fromEntries(CATALOG.map((e) => [e.id, e]));
   assert.equal(byId.notion.via, "mcp");
   assert.match(byId.notion.url, /^https:\/\/mcp\.notion\.com\//);
-  for (const id of ["gmail", "googlecalendar", "outlook", "slack", "github"]) assert.equal(byId[id].via, "composio", id);
-  assert.ok(CATALOG.filter((e) => e.via === "mcp").every((e) => e.url.startsWith("https://")));
+  for (const id of ["gmail", "googlecalendar", "outlook", "slack"]) assert.equal(byId[id].via, "composio", id);
+  assert.equal(byId.github.auth, "token", "GitHub's own MCP server with a personal token");
+  assert.equal(byId.mail.auth, "mail");
+  assert.ok(CATALOG.filter((e) => e.run === "remote").every((e) => e.url.startsWith("https://")));
 });
 
 test("tool policy: reading is free, changing asks, sending/deleting/paying is a red line whatever the hints say", () => {

@@ -1,10 +1,12 @@
 import { radiusOf } from "../../lib/radius.js";
 import { stepOf } from "../../lib/type.js";
 import { useState } from "react";
+import { Mail } from "../Icon.js";
 import {
   siAirtable, siAsana, siAtlassian, siClickup, siCloudflare, siDropbox, siFigma, siGithub, siGmail, siGooglecalendar,
   siGoogledrive, siGooglesheets, siHubspot, siIntercom, siLinear, siMiro, siNotion, siPaypal, siSentry, siSquare,
-  siStripe, siSupabase, siVercel, siWebflow, siWix, siZapier,
+  siStripe, siSupabase, siVercel, siWebflow, siWix, siZapier, siGoogleanalytics, siGoogleads, siGooglebigquery, siGooglemaps,
+  siPosthog, siBrevo, siCalendly, siBox,
 } from "simple-icons";
 
 // Each app's logo: simple-icons (CC0) in its brand colour; for brands that are not there the
@@ -14,7 +16,9 @@ const ICONS = {
   figma: siFigma, github: siGithub, gmail: siGmail, googlecalendar: siGooglecalendar, googledrive: siGoogledrive,
   googlesheets: siGooglesheets, hubspot: siHubspot, intercom: siIntercom, linear: siLinear, miro: siMiro, notion: siNotion,
   paypal: siPaypal, sentry: siSentry, square: siSquare, stripe: siStripe, supabase: siSupabase, vercel: siVercel,
-  webflow: siWebflow, wix: siWix, zapier: siZapier,
+  webflow: siWebflow, wix: siWix, zapier: siZapier, googleanalytics: siGoogleanalytics, googleads: siGoogleads,
+  googlebigquery: siGooglebigquery, googlemaps: siGooglemaps, posthog: siPosthog, brevo: siBrevo, calendly: siCalendly,
+  box: siBox,
 };
 // Brand colours too light to read on white get a darker shade of themselves.
 const ON_WHITE = { miro: "#050038", square: "#3E4348" };
@@ -23,6 +27,13 @@ export default function AppLogo({ id, name, logo = null, size = 36 }) {
   const [broken, setBroken] = useState(false);
   const tile = { width: size + "px", height: size + "px", flexShrink: "0", borderRadius: radiusOf(Math.round(size * 0.3)) + "px", display: "flex", alignItems: "center", justifyContent: "center" };
   const icon = ICONS[id];
+  // Colmena's own mail connector: a plain envelope, no vendor's mark.
+  if (id === "mail")
+    return (
+      <span aria-hidden="true" style={{ ...tile, background: "var(--c-logo-tile)", color: "var(--c-text)" }}>
+        <Mail size={Math.round(size * 0.55)} />
+      </span>
+    );
   if (icon)
     return (
       <span aria-hidden="true" style={{ ...tile, background: "var(--c-logo-tile)" }}>
