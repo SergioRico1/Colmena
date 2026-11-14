@@ -46,7 +46,8 @@ export default function SetupCard({ state }) {
               {s.done ? null : (
                 <span style={{ flex: "none", display: "flex", alignItems: "center", gap: "6px" }}>
                   {s.optional ? <button type="button" className="u4-ghost" onClick={hide(s.id)} disabled={busy} style={B.ghost}>{"Ahora no"}</button> : null}
-                  <a href={s.action.href} onClick={go(s.action.href)} className="u4-sec" style={B.secondary}>{s.action.label}</a>
+                  {/* `page`: a page outside this app (hosted /empresa); target keeps the router off it. */}
+                  <a href={s.action.href} target={s.action.page ? "_self" : undefined} onClick={s.action.page ? undefined : go(s.action.href)} className="u4-sec" style={B.secondary}>{s.action.label}</a>
                 </span>
               )}
             </li>

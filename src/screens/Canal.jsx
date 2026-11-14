@@ -3,7 +3,7 @@
 // unread message with a «Nuevo» line, or around a message (?m=), and keeps itself current over
 // the live socket. ?hilo= opens a thread beside it. Reading the end marks the channel as read.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowDown, Bell, BellSlash, Check, Ellipsis, Hash, LockSimple, Pin, UserPlus, UsersThree } from "../components/Icon.js";
+import { ArrowDown, Bell, BellSlash, Check, Ellipsis, Hash, LockSimple, Pin, Robot, UserPlus, UsersThree } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
 import { navigate } from "../lib/router.jsx";
 import { chat } from "../chat/api.js";
@@ -292,6 +292,8 @@ function ChannelIntro({ ch, title, s }) {
       <p className="cv-intro-text">{ch.description || (ch.kind === "private" ? "Un canal privado: solo lo ven sus miembros." : "El principio de #" + title + ".")}</p>
       {ch.kind === "private" ? <p className="cv-intro-text"><LockSimple size={14} /> Privado</p> : null}
       <p className="cv-intro-text"><UserPlus size={14} /> Añade personas desde «Personas y detalles».</p>
+      {/* The first thing a new company tries: asking a bot. Guests read bots, never start their work. */}
+      {s.me?.role === "guest" || !s.bots?.size ? null : <p className="cv-intro-text"><Robot size={14} /> Para pedirle algo a un bot, escribe @ y su nombre: te contesta en un hilo.</p>}
     </div>
   );
 }

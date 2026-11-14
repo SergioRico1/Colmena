@@ -17,7 +17,10 @@ export function askBox(state) {
   return {
     blocked: true,
     placeholder: "Conecta una cuenta de IA para pedir trabajo a tus bots",
-    note: "Tus bots piensan con tu cuenta de IA y aún no hay ninguna conectada. Con tus compañeros puedes hablar igual: las salas y los mensajes no la necesitan.",
+    // Hosted (state.cloud): the company's channels are where people talk, and AI is a key.
+    note: state.cloud
+      ? "Tus bots piensan con tu clave de API de IA y aún no has puesto ninguna. Con tus compañeros puedes hablar igual: los canales y los mensajes no la necesitan."
+      : "Tus bots piensan con tu cuenta de IA y aún no hay ninguna conectada. Con tus compañeros puedes hablar igual: las salas y los mensajes no la necesitan.",
     action: { label: "Conectar mi cuenta", href: "/ajustes/ia" },
   };
 }
