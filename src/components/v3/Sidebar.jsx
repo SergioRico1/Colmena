@@ -28,6 +28,7 @@ import { signOut } from "../../lib/cloud.js";
 import { Menu as MenuIcon, X } from "../Icon.js";
 import { useBreakpoint } from "../../lib/breakpoint.js";
 import ChannelsNav from "../../chat/ChannelsNav.jsx";
+import SidebarComb from "./SidebarComb.jsx";
 import { useChatTitle } from "../../chat/title.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
@@ -381,11 +382,13 @@ export default function Sidebar({ active = "inicio" }) {
       </a>
     );
   };
+  // Hosted Colmena with no AI account of yours: your bots sleep (eyes closed) until you connect one.
+  const asleep = !!store.cloud && !!store.ai && !store.ai.mine && !store.ai.fake;
   // A bot's state on the right of its row: «te espera» is the honey chip; the rest are words.
   const botState = (b) => (b.waiting || b.state === "waiting"
     ? <span aria-hidden="true" style={{ flex: "none", height: "20px", display: "inline-flex", alignItems: "center", padding: "0 7px", borderRadius: "var(--r-pill)", background: C.honey, color: C.honeyInk, fontSize: "var(--t-caption)", fontWeight: "600", whiteSpace: "nowrap" }}>{STATE_WORD.waiting}</span>
-    : <span aria-hidden="true" style={{ flex: "none", fontSize: "var(--t-caption)", color: b.state === "paused" ? C.text4 : C.text3, whiteSpace: "nowrap" }}>{STATE_WORD[b.busy ? "working" : b.state]}</span>);
-  const faceState = (b) => (b.state === "working" || b.busy ? "work" : b.waiting || b.state === "waiting" ? "wait" : b.state === "paused" ? "pause" : "rest");
+    : <span aria-hidden="true" style={{ flex: "none", fontSize: "var(--t-caption)", color: b.state === "paused" ? C.text4 : C.text3, whiteSpace: "nowrap" }}>{asleep ? "dormido" : STATE_WORD[b.busy ? "working" : b.state]}</span>);
+  const faceState = (b) => (asleep ? "pause" : b.state === "working" || b.busy ? "work" : b.waiting || b.state === "waiting" ? "wait" : b.state === "paused" ? "pause" : "rest");
   const botRow = (b) => {
     const on = b.href === here;
     const bot = { ...(botOf(b.id) || b), shape: b.shape };
@@ -539,6 +542,8 @@ export default function Sidebar({ active = "inicio" }) {
     {drawerOpen ? <div aria-hidden="true" className="c-drawer-scrim" onClick={() => setDrawer(false)} /> : null}
     <nav id="colmena-sidebar" aria-label="Colmena: equipo, sitios y conversaciones" data-v3-sidebar={folded ? "folded" : "open"} data-drawer={compact ? (drawer ? "open" : "closed") : undefined} inert={bp === "phone" && !drawer ? true : undefined} onClick={compact ? (e) => { if (e.target.closest?.("a[href]")) setDrawer(false); } : undefined} style={{ position: "relative", zIndex: "40", boxSizing: "border-box", flex: "none", width: width + "px", height: "100%", minHeight: "0", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", background: C.sidebar, borderRight: line(), fontFamily: font, color: C.text, WebkitFontSmoothing: "antialiased", WebkitAppRegion: "drag", transition: "width .18s ease", "--c-cut": C.sidebar }}>
       <style>{SIDEBAR_CSS}</style>
+      {/* A corner of the home page's comb: honey while something waits for you, a breath while a bot works. */}
+      <SidebarComb folded={folded} waiting={model.waitingCount > 0} working={model.bots.some((b) => b.state === "working" || b.busy)} />
       <a href="#contenido" onClick={skip} className="v3-skip" style={noDrag}>{here ? "Ir a la conversación" : "Ir al contenido"}</a>
       {/* The title strip: the window's dots, the wordmark and «Plegar». It never scrolls. */}
       <div style={{ flex: "none", height: folded ? "auto" : "44px", display: "flex", flexDirection: folded ? "column" : "row", alignItems: "center", gap: "10px", padding: folded ? "14px 0 8px" : "0 10px 0 14px" }}>
