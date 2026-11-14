@@ -75,7 +75,10 @@ commercial use of the platform»: conviene confirmarlo por escrito con Composio.
 
 Pruebas: `tests/marketplace.test.mjs` (catálogo, Google falso con PKCE/estado/renovación, servidores
 locales por la costura en escritorio y máquina, correo con buzón falso, líneas rojas, secretos
-cifrados y aislamiento entre empresas y personas, rutas).
+cifrados y aislamiento entre empresas y personas, rutas, un espacio alojado). Desplegado
+(app.colmena.team, 2026-11-14): `node cloud/scripts/e2e-marketplace.mjs --url … --env …` 20/20
+(catálogo en 351 ms, un buzón inalcanzable falla con un mensaje claro por los sockets del Worker en
+417 ms). Capturas de portátil y móvil en `.local/shots/marketplace/`.
 
 ## Implementacion
 
