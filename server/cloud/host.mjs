@@ -19,15 +19,23 @@ import { ROLES, SYSTEM_PERSON, asPerson, currentPerson, isPerson, personAddress,
 import { WorkspaceKeyring, envelopeVault } from "../envelope-vault.mjs";
 import { mountFiles } from "../file-store.mjs";
 import { randomUUID } from "node:crypto";
+import { TeamChat } from "./chat.mjs";
+import { chatRoutes } from "./chat-routes.mjs";
+import { SlackImport } from "./slack-import.mjs";
+import { MemoryBlobs } from "./blobs.mjs";
+import { sendPush } from "./webpush.mjs";
+import { fetchPreview } from "./link-preview.mjs";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
 export const CLOUD_HIDDEN = Object.freeze(["codigo", "ordenador", "dictado", "voz", "gestores", "copias", "cifrado", "carpetas", "personas-buzon"]);
 /** API areas that need the person's computer or the desktop's mailbox: «not in the cloud». */
 const DESKTOP_ONLY = /^\/api\/(peers|teams|code|computer|projects|voice|voice-live|dictation|backup|backups|encryption|password-managers|browser-sessions|vault|logins|sign-in-grants|folders|webhooks|diagnostics|drag|auth)(\/|$)/;
 /** What a guest may change: talking in the conversations they can see, and their own read marks. */
-const GUEST_WRITES = [/^\/api\/missions\/[^/]+\/messages$/, /^\/api\/rooms\/[^/]+\/(messages|seen)$/, /^\/api\/notifications(\/|$)/, /^\/api\/messages\/[^/]+\/reactions$/];
+const GUEST_WRITES = [/^\/api\/chat\//, /^\/api\/missions\/[^/]+\/messages$/, /^\/api\/rooms\/[^/]+\/(messages|seen)$/, /^\/api\/notifications(\/|$)/, /^\/api\/messages\/[^/]+\/reactions$/];
 const MISSION_PATH = /^\/api\/(missions|rooms)\/([^/]+)/;
-const MEMBER_FIELDS = (m) => ({ id: m.id, name: m.name || m.email || "Alguien", email: m.email || null, role: ROLES.includes(m.role) ? m.role : "member" });
+const MEMBER_FIELDS = (m) => ({ id: m.id, name: m.name || m.email || "Alguien", email: m.email || null, role: ROLES.includes(m.role) ? m.role : "member", deactivated: !!m.deactivated });
+/** Uploads that are bytes, not JSON (the Durable Object streams them itself; Node gets them here). */
+const BINARY_WRITES = [/^\/api\/chat\/files$/, /^\/api\/chat\/import\/[^/]+\/parts\/\d+$/];
 
 /** The AI account of a hosted workspace before phase 3: none, and it says so. */
 function noProvider() {
@@ -41,7 +49,11 @@ const noSession = () => ({ status: () => null, models: [], start: async () => { 
  * envelope vault (none: secrets unavailable); `files`: where mission files live (SqlFiles or
  * R2Files, server/file-store.mjs); `log`.
  */
-export function hostWorkspace({ store, workspace, masters = [], files = null, log = (m) => console.warn("[nube] " + m) }) {
+export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m) }) {
+  // Team messaging (Phase 2): `blobs` (server/cloud/blobs.mjs: uploads, import parts), `vapid`
+  // {publicKey, privateKey, subject} for Web Push (none: no pushes), `previews` (url → a link
+  // preview; default: fetched with SSRF protection; false: none), `defer(promise)`: work that
+  // outlives a response, `presence()` → Map(person → "active"|"away") of the open screens.
   if (!workspace?.id) throw Error("Espacio no válido.");
   store.personal = personalFields();
   // No disk: mission files (attachments, deliverables) go to `files` (server/file-store.mjs).
@@ -63,8 +75,10 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, lo
   }
 
   // --- the people of this workspace (synced from the directory: cloud/src/directory.js)
-  const members = () => store.list("members").filter((m) => !m.removedAt).map(MEMBER_FIELDS);
-  const memberOf = (id) => { const m = store.get("members", id); return m && !m.removedAt ? MEMBER_FIELDS(m) : null; };
+  // Everyone the directory lists, deactivated people included (their names stay on what they wrote).
+  const everyone = () => store.list("members").filter((m) => !m.removedAt).map(MEMBER_FIELDS);
+  const members = () => everyone().filter((m) => !m.deactivated);
+  const memberOf = (id) => { const m = store.get("members", id); return m && !m.removedAt && !m.deactivated ? MEMBER_FIELDS(m) : null; };
   /** Who may see a conversation: everyone in the workspace, or only its `audience` (a direct message). */
   const canSee = (mission, person = currentPerson()) => !mission?.audience || (isPerson(person) && mission.audience.includes(person.id));
   const missionOf = (id) => store.get("missions", id) || (store.get("rooms", id)?.missionId ? store.get("missions", store.get("rooms", id).missionId) : null);
@@ -99,9 +113,9 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, lo
     if (!person || typeof person.id !== "string" || !ROLES.includes(person.role)) return res.status(401).json({ error: "Inicia sesión para entrar en este espacio." });
     // The directory's word is the request's; the workspace's own list is what others see of them.
     const known = store.get("members", person.id);
-    if (!known || known.removedAt) return res.status(403).json({ error: "Ya no perteneces a este espacio." });
+    if (!known || known.removedAt || known.deactivated) return res.status(403).json({ error: "Ya no perteneces a este espacio." });
     const write = !["GET", "HEAD"].includes(req.method);
-    if (req.path.startsWith("/api/") && write && !req.is("application/json")) return res.status(415).json({ error: "Se requiere JSON." });
+    if (req.path.startsWith("/api/") && write && req.is("application/json") === false && !(req.method === "PUT" && BINARY_WRITES.some((re) => re.test(req.path)))) return res.status(415).json({ error: "Se requiere JSON." });
     if (DESKTOP_ONLY.test(req.path)) return res.status(404).json({ error: "Esto solo está en la aplicación de escritorio por ahora.", desktopOnly: true });
     if (person.role === "guest" && write && !GUEST_WRITES.some((re) => re.test(req.path))) return res.status(403).json({ error: "Como invitado puedes leer y escribir en las conversaciones, no cambiar el espacio." });
     const target = MISSION_PATH.exec(req.path);
@@ -131,8 +145,39 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, lo
     };
   };
 
+  // ---- team messaging (server/cloud/chat.mjs): its live frames go to the open feeds they are for
+  const chatFeeds = new Set(); // {person, write, watching()}
+  const chatEmit = (event, { people = [], channel = null } = {}) => {
+    const to = people === "all" ? null : new Set(people);
+    for (const feed of chatFeeds) {
+      const pid = feed.person.id;
+      let ok = to ? to.has(pid) : true;
+      if (!ok && channel && feed.watching?.() === channel) ok = chat.canRead(feed.person, chat.row(channel));
+      if (ok && chat.member(pid)) { try { feed.write(event); } catch {} }
+    }
+  };
+  const blobStore = blobs || new MemoryBlobs({ max: 32 * 1024 * 1024 });
+  const chat = new TeamChat({
+    store, people: { list: everyone, get: (id) => { const m = store.get("members", id); return m && !m.removedAt ? MEMBER_FIELDS(m) : null; } },
+    emit: chatEmit, presence, blobs: blobStore, defer, log,
+    previews: previews === false ? null : previews || ((url) => fetchPreview(url)),
+  });
+  const pushSend = vapid?.publicKey && vapid?.privateKey ? async (personId, payload) => {
+    let sent = 0;
+    for (const target of chat.pushTargets(personId)) {
+      try {
+        const r = await sendPush({ subscription: target, payload, vapid: { subject: vapid.subject || "mailto:avisos@colmena.invalid", publicKey: vapid.publicKey, privateKey: vapid.privateKey } });
+        if (r.gone) chat.dropPush(target.id); else if (r.ok) sent++;
+      } catch (error) { log("push: " + (error?.message || error)); }
+    }
+    return { sent };
+  } : null;
+  chat.push = pushSend;
+  const importer = new SlackImport({ chat, blobs: blobStore, log });
+
   // ---- the workspace's own routes (people, direct messages); after the guard like the rest
   const routes = (app) => {
+  chatRoutes(app, { chat, importer, blobs: blobStore, workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, presence, push: pushSend ? { publicKey: vapid.publicKey, send: pushSend } : null });
   app.get("/api/cloud/members", (_req, res) => res.json(members()));
   app.post("/api/cloud/dm", (req, res) => {
     const me = currentPerson();
@@ -164,24 +209,64 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, lo
       const at = now();
       const keep = new Set(list.map((m) => m.id));
       store.tx(() => {
-        for (const m of list) store.put("members", { ...MEMBER_FIELDS(m), joinedAt: store.get("members", m.id)?.joinedAt || at, removedAt: null }, { silent: true });
+        for (const m of list) store.put("members", { ...MEMBER_FIELDS(m), deactivatedAt: m.deactivated ? m.deactivatedAt || at : null, joinedAt: store.get("members", m.id)?.joinedAt || at, removedAt: null }, { silent: true });
         for (const m of store.list("members")) if (!keep.has(m.id) && !m.removedAt) store.put("members", { ...m, removedAt: at }, { silent: true });
         if (name) store.put("cloud", { ...(store.get("cloud", "workspace") || { id: "workspace" }), title: String(name).slice(0, 80) }, { silent: true });
       });
       for (const fn of store.listeners) try { fn({ type: "changed-local", kinds: ["members", "settings"] }); } catch {}
+      chat.syncPeople(everyone());
+      chatEmit({ type: "chat.people", people: chat.directory() }, { people: "all" });
       return members();
     },
     members,
     canSee: (missionId, person) => { const m = missionOf(missionId); return !m || canSee(m, person); },
     /** A live feed for one screen, as its person: frames they may not see never reach them. */
-    openFeed(person, write) {
+    /** `watching()`: the channel this screen has open (its live frames reach it even before joining). */
+    openFeed(person, write, { watching = null } = {}) {
       const allowed = (event) => {
         const mission = event?.mission || event?.missionId || null;
         if (!mission) return true;
         const m = store.get("missions", mission);
         return !m || canSee(m, person);
       };
-      return asPerson(person, () => app.locals.openFeed((event) => { if (allowed(event)) write(event); }, { as: (fn) => asPerson(person, fn) }));
+      const feed = { person, write, watching };
+      chatFeeds.add(feed);
+      const close = asPerson(person, () => app.locals.openFeed((event) => { if (allowed(event)) write(event); }, { as: (fn) => asPerson(person, fn) }));
+      return () => { chatFeeds.delete(feed); close(); };
+    },
+    chat, importer, blobs: blobStore, chatEmit,
+    push: pushSend,
+    /** An admin action the Worker handled (the directory's), in the audit log. */
+    audit(entry) { chat.audit(entry?.actor || null, String(entry?.action || "admin"), entry?.target || null, entry?.details || null); },
+    /**
+     * Background upkeep (Workspace#alarm): a step of a running import, the mail digest, retention,
+     * unsent uploads. `invite(startedBy, people)` and `mail(digest)` reach the directory and the
+     * mail provider. Returns when it wants to run next (ms).
+     */
+    async tick({ invite = null, mail = null, now: at = Date.now() } = {}) {
+      const running = importer.active();
+      if (running) {
+        await importer.step({ invite: invite ? (people) => invite(running.startedBy, people) : null });
+        if (importer.active()) return at + 250;
+      }
+      if (mail) for (const d of chat.digestDue(at)) { try { await mail(d); } catch (error) { log("digest: " + (error?.message || error)); } }
+      const last = chat.kvGet("upkeep-at")?.at || 0;
+      if (at - last > 3600000) {
+        for (let i = 0; i < 20; i++) {
+          const r = chat.retention(at);
+          for (const k of r.keys) await blobStore.remove(k).catch(() => {});
+          if (!r.more) break;
+        }
+        for (const k of chat.sweepFiles(at)) await blobStore.remove(k).catch(() => {});
+        chat.kvSet("upkeep-at", { at });
+      }
+      return this.nextAlarm(at);
+    },
+    nextAlarm(at = Date.now()) {
+      if (importer.active()) return at + 250;
+      const digest = chat.nextDigestAt();
+      const upkeep = (chat.kvGet("upkeep-at")?.at || 0) + 3600000;
+      return Math.max(at + 1000, Math.min(digest ?? Infinity, upkeep));
     },
     /** Background work (an alarm) as nobody in particular. */
     background: (fn) => asPerson(SYSTEM_PERSON, fn),
