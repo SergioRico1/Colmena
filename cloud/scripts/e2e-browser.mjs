@@ -97,9 +97,8 @@ try {
   const composer = (p) => p.locator("textarea").last();
   await composer(A).waitFor({ timeout: 20000 });
   await composer(B).waitFor({ timeout: 20000 });
-  // The phone layout is still the desktop's (the responsive shell is separate work): fold the
-  // sidebar (Ctrl+B) so the room has the screen.
-  await B.keyboard.press("Control+b");
+  // On a phone the sidebar is a closed drawer and side panels start closed (responsive shell);
+  // close the room panel if a wider layout left it open.
   const panel = B.getByRole("button", { name: "Ocultar el panel lateral" });
   if (await panel.count()) await panel.first().click();
   await composer(A).fill("Buenos días, ¿revisamos el presupuesto a las 12?");
