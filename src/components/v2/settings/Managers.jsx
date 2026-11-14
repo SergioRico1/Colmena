@@ -60,7 +60,7 @@ function Picker({ manager, onClose }) {
         <>
           <label style={{ position: "relative", display: "flex" }}>
             <Search size={16} aria-hidden="true" style={{ position: "absolute", left: "10px", top: "10px", color: "var(--c-text-3)" }} />
-            <input type="search" aria-label="Buscar por web o nombre" placeholder="Buscar por web o nombre" value={query} onChange={(e) => setQuery(e.target.value)} style={{ ...field, width: "100%", paddingLeft: "34px" }} />
+            <input inputMode="search" enterKeyHint="search" autoComplete="off" type="search" aria-label="Buscar por web o nombre" placeholder="Buscar por web o nombre" value={query} onChange={(e) => setQuery(e.target.value)} style={{ ...field, width: "100%", paddingLeft: "34px" }} />
           </label>
           <div role="group" aria-label={`Inicios de sesión de ${manager.label}`} style={{ display: "flex", flexDirection: "column", maxHeight: "300px", overflowY: "auto", borderRadius: "var(--r-sm)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
             {shown.map((item, i) => (

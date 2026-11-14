@@ -31,7 +31,7 @@ export default function ShareSearch({ shareId, onClose }) {
     <div role="search" style={{ position: "relative", padding: "0 clamp(20px, 4vw, 44px) 14px", animation: "fade .2s ease-out" }}>
       <label style={{ display: "flex", alignItems: "center", gap: "10px", height: "36px", padding: "0 8px 0 16px", borderRadius: "var(--r-sm)", background: "var(--c-card)", boxShadow: "var(--c-shadow-pop)" }}>
         <Search size={17} strokeWidth={2.2} color={C.text3} aria-hidden="true" />
-        <input className="c-bare" ref={input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } if (e.key === "Enter" && hits?.[0]) { navigate(hitUrl(hits[0])); onClose(); } }}
+        <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" ref={input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); onClose(); } if (e.key === "Enter" && hits?.[0]) { navigate(hitUrl(hits[0])); onClose(); } }}
           placeholder="Buscar en esta conversación" aria-label="Buscar en esta conversación"
           style={{ flex: 1, minWidth: 0, height: "100%", border: 0, background: "transparent", font: "inherit", fontSize: "var(--t-body)" }} />
         {hits ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)", whiteSpace: "nowrap" }}>{hits.length === 0 ? "Nada" : hits.length === 1 ? "1 mensaje" : hits.length + (hits.length >= 40 ? "+" : "") + " mensajes"}</span> : null}

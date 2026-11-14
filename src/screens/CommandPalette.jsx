@@ -19,6 +19,7 @@ import { SECTIONS, searchSettings, SECTION_OF } from "../components/v2/settings/
 import { hitUrl } from "../components/v2/people/ShareSearch.jsx";
 import { shareUrl } from "../lib/peers.js";
 import { useDialogFocus } from "../lib/useDialogFocus.js";
+import { isDesktopApp } from "../lib/breakpoint.js";
 
 // Colmena 3 · «Buscar o pedir» (design/V3Buscar.dc.html; Ctrl K, or the window event
 // 'colmena:palette' with detail.text). One box finds chats, tareas, archivos, bots, rutinas,
@@ -329,7 +330,7 @@ export default function CommandPalette() {
     { key: "p:notas", scope: "archivos", group: "Lugares", name: "Notas", icon: iconTile(NotebookText), title: "Notas", meta: "Biblioteca › Notas", terms: ["Notas", "wiki apuntes páginas"], run: () => go("/biblioteca/notas"), preview: { kind: "Lugar", title: "Notas", desc: "Lo que tú y tus bots tenéis escrito: clientes, proyectos, cómo se hace cada cosa.", facts: [["Dónde", "Biblioteca"]], cta: "Ir" } },
     { key: "p:ajustes", scope: "ajustes", group: "Lugares", name: "Ajustes", icon: iconTile(Settings2), title: "Ajustes", meta: "Cuenta, IA, permisos, avisos…", terms: ["Ajustes"], run: () => go("/ajustes"), preview: { kind: "Lugar", title: "Ajustes", desc: "Todas las secciones, con buscador.", facts: [], cta: "Ir" } },
   ];
-  const sectionRows = () => SECTIONS.filter((s) => !s.hidden && (!s.expert || expert)).map((s) => ({ key: "p:s:" + s.id, scope: "ajustes", group: "Ajustes", name: s.label, icon: iconTile(s.icon), title: s.label, meta: s.lead, terms: [s.label, s.lead], run: () => go("/ajustes/" + s.id), preview: { kind: "Ajustes", title: s.label, desc: s.lead, facts: [["Sección", s.label]], cta: "Ir a la sección" } }));
+  const sectionRows = () => SECTIONS.filter((s) => !s.hidden && (!s.expert || expert) && (!s.desktopOnly || isDesktopApp())).map((s) => ({ key: "p:s:" + s.id, scope: "ajustes", group: "Ajustes", name: s.label, icon: iconTile(s.icon), title: s.label, meta: s.lead, terms: [s.label, s.lead], run: () => go("/ajustes/" + s.id), preview: { kind: "Ajustes", title: s.label, desc: s.lead, facts: [["Sección", s.label]], cta: "Ir a la sección" } }));
 
   // What the box finds, one group per kind.
   const found = useMemo(() => {
@@ -605,6 +606,11 @@ export default function CommandPalette() {
             ref={input}
             data-autofocus=""
             type="text"
+            inputMode="search"
+            enterKeyHint="go"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             value={text}
             placeholder={placeholder}
             aria-label="Buscar o pedir"
@@ -618,11 +624,11 @@ export default function CommandPalette() {
             onKeyDown={onKeyDown}
             style={{ flex: "1", minWidth: "0", height: "48px", border: "0", background: "transparent", fontSize: "var(--t-title)", color: "var(--c-text)" }}
           />
-          <button type="button" onClick={close} aria-label="Cerrar" style={{ padding: "5px 8px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-chip)", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-2)", cursor: "pointer" }}>{"Esc"}</button>
+          <button type="button" onClick={close} aria-label="Cerrar" style={{ padding: "5px 8px", border: "0", borderRadius: "var(--r-sm)", background: "var(--c-chip)", font: "500 var(--t-caption)/1 'Geist Mono', monospace", color: "var(--c-text-2)", cursor: "pointer" }}><span className="r-hide-touch">{"Esc"}</span><span className="r-only-touch">{"Cerrar"}</span></button>
         </div>
 
         {menu || mention || parsed.actionsOnly ? null : (
-          <div role="tablist" aria-label="Qué buscar" style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "12px 22px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
+          <div role="tablist" aria-label="Qué buscar" className="r-scroll-x" style={{ display: "flex", flexWrap: "wrap", gap: "6px", padding: "12px 22px", borderBottom: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
             {SCOPES.map(([id, label]) => {
               const on = scope === id;
               return (
@@ -635,8 +641,9 @@ export default function CommandPalette() {
           </div>
         )}
 
-        <div style={{ display: "flex", flexWrap: "wrap", minHeight: "460px" }}>
-          <div ref={list} id="paleta-resultados" role="listbox" aria-label="Resultados" style={{ flex: "1 1 420px", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", padding: "10px", maxHeight: "520px", overflow: "auto" }}>
+        {/* On a phone (styles/responsive.css) the results fill the sheet; the preview and the keyboard hints step aside. */}
+        <div className="r-palette-body" style={{ display: "flex", flexWrap: "wrap", minHeight: "460px" }}>
+          <div ref={list} id="paleta-resultados" role="listbox" aria-label="Resultados" className="r-palette-list" style={{ flex: "1 1 420px", minWidth: "0", display: "flex", flexDirection: "column", gap: "2px", padding: "10px", maxHeight: "520px", overflow: "auto" }}>
             {groups.map((g, gi) => (
               <div key={(g.title || "pedir") + gi} role="group" aria-label={g.title || "Pedir"} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                 {g.title ? <span style={{ padding: "12px 12px 4px", fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>{g.title}</span> : null}
@@ -670,7 +677,7 @@ export default function CommandPalette() {
             ))}
           </div>
 
-          <aside aria-label="Vista previa" style={{ flex: "1 1 300px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "22px", background: "var(--c-hover)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
+          <aside aria-label="Vista previa" className="r-hide-phone" style={{ flex: "1 1 300px", minWidth: "0", display: "flex", flexDirection: "column", gap: "14px", padding: "22px", background: "var(--c-hover)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .06)" }}>
             {preview ? (
               <>
                 <span style={{ fontSize: "var(--t-caption)", fontWeight: "600", color: "var(--c-text-3)" }}>{preview.kind}</span>
@@ -690,7 +697,7 @@ export default function CommandPalette() {
         </div>
 
         {error ? <p role="alert" style={{ margin: "0", padding: "10px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)", fontSize: "var(--t-meta)", color: "var(--c-error)", fontWeight: "600" }}>{error}</p> : null}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", padding: "12px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
+        <div className="r-hide-phone r-hide-touch" style={{ display: "flex", flexWrap: "wrap", gap: "8px 20px", padding: "12px 22px", borderTop: "1px solid rgb(var(--c-ink-rgb) / .07)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
           <span><kbd style={hint}>{"↑ ↓"}</kbd>{" moverse"}</span>
           <span><kbd style={hint}>{"Intro"}</kbd>{" abrir"}</span>
           {menu ? <span><kbd style={hint}>{"⌫"}</kbd>{" volver"}</span> : null}

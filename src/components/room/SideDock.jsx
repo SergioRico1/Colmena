@@ -3,6 +3,7 @@ import { ArrowLeftToLine, ArrowRightToLine, Maximize2, Minimize2, PanelRightClos
 import { usePanelWidth } from "../../lib/usePanelWidth.jsx";
 import { comboLabel } from "../../lib/useDock.js";
 import { MenuButton } from "../Menu.js";
+import OverlayBack from "../OverlayBack.jsx";
 
 // The side panel of a room or chat (OpenClaw panel-tab-strip + chat-sidebar-region): a strip
 // of tabs (roving keys, ←/→, close on hover or middle click, drag to reorder), «+» to add one,
@@ -55,8 +56,9 @@ export default function SideDock({ dock, tabs, addable = [], widthKey = "room", 
     : { flex: "1 1 400px", minWidth: "0", ...resize.style };
 
   return (
-    <aside aria-label={label} className="c-panel" style={{ background: paper, [left ? "borderRight" : "borderLeft"]: "1px solid " + hair, display: "flex", flexDirection: "column", order: left ? -1 : 2, ...asideStyle }}>
+    <aside aria-label={label} className={dock.expanded ? "c-panel" : "c-panel r-overlay"} style={{ background: paper, [left ? "borderRight" : "borderLeft"]: "1px solid " + hair, display: "flex", flexDirection: "column", order: left ? -1 : 2, ...asideStyle }}>
       {dock.expanded ? null : resize.handle}
+      <OverlayBack onClose={() => dock.setOpen(false)} />
       <div style={{ flex: "none", display: "flex", alignItems: "center", gap: "4px", minHeight: "52px", padding: "8px 8px 8px 10px", borderBottom: "1px solid " + (v3 ? "rgb(var(--c-ink-rgb) / .06)" : "var(--c-line)"), background: paper }}>
         <div ref={strip} role="tablist" aria-label={label} style={{ flex: "1", minWidth: 0, display: "flex", alignItems: "center", gap: "4px", overflowX: "auto", scrollbarWidth: "none" }}>
           {tabs.map((t, i) => {

@@ -12,6 +12,7 @@ import { firstName } from "../../lib/identity.js";
 import { srOnly } from "../../lib/alt.js";
 import { Brain, ChevronRight, Clock3, FolderOpen, MessageCircleQuestion, Plus, Sliders, Ticket, UserPlus } from "../Icon.js";
 import "../../styles/conversation.css";
+import OverlayBack from "../OverlayBack.jsx";
 
 // The right panel of a room (Colmena 4: design/v4 › .panel): two tabs, the bot you opened (its
 // face, role, whose it is, what it is doing, how it thinks, its autonomy, what it can use and,
@@ -157,7 +158,7 @@ export function BotProfile({ bot, owner = null, state = null, stateWord = null, 
   );
 }
 
-export default function MemberPanel({ view, panel, mission = null, addable = [], fileCount = 0, onRules = null, onFiles = null, onInvite = null, profile = null, tab = "miembros", onTab = null, onOpenBot = null }) {
+export default function MemberPanel({ view, panel, mission = null, addable = [], fileCount = 0, onRules = null, onFiles = null, onInvite = null, profile = null, tab = "miembros", onTab = null, onOpenBot = null, onClose = null }) {
   const { act, busy } = useAction();
   const nameless = lacksOwnName(useStore());
   const queue = QUEUE.find(([v]) => v === (mission?.queueMode || "steer"))?.[1] || QUEUE[0][1];
@@ -172,7 +173,8 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
   const shownTab = profile ? tab : "miembros";
   const open = (b, owner) => onOpenBot?.({ id: b.id, owner: owner?.address || null });
   return (
-    <aside id="sala-miembros" aria-label="Detalles de la sala" style={{ flex: "none", width: "312px", height: "100%", display: "flex", flexDirection: "column", background: "var(--c-app)", borderLeft: "1px solid var(--c-line)", "--c-cut": "var(--c-app)" }}>
+    <aside id="sala-miembros" aria-label="Detalles de la sala" className="r-overlay" style={{ flex: "none", width: "312px", height: "100%", display: "flex", flexDirection: "column", background: "var(--c-app)", borderLeft: "1px solid var(--c-line)", "--c-cut": "var(--c-app)" }}>
+      <OverlayBack onClose={onClose} label="Volver a la sala" />
       {profile ? (
         <div className="v4-seg" role="tablist" aria-label="Panel">
           <button type="button" role="tab" id="panel-tab-perfil" aria-selected={shownTab === "perfil"} aria-controls="panel-perfil" onClick={() => onTab?.("perfil")}>{found?.b.name || profile.name || "Bot"}</button>

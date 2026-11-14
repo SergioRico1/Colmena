@@ -1243,7 +1243,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{placeholder ? placeholder.split(" · ")[0] : "Mensaje a la sala"}</span>
           {/* «@Vera» as a pill while you write (MentionMirror behind the textarea). */}
           {pills ? <MentionMirror ref={mirror} value={text} bots={bots} style={{ padding: "5px 6px", fontSize: "var(--t-read)", lineHeight: "1.4" }} /> : null}
-          <textarea className="c-bare" ref={inputRef} rows={1} placeholder={placeholder || `Mensaje en #${room} · @ para nombrar a alguien`} {...mentions.inputProps} onKeyDown={onKeyDown} disabled={shared?.disabled || undefined} maxLength={shared ? 8000 : undefined}
+          <textarea className="c-bare" ref={inputRef} rows={1} enterKeyHint="send" autoCapitalize="sentences" placeholder={placeholder || `Mensaje en #${room} · @ para nombrar a alguien`} {...mentions.inputProps} onKeyDown={onKeyDown} disabled={shared?.disabled || undefined} maxLength={shared ? 8000 : undefined}
             onInput={shared?.onTyping ? () => shared.onTyping() : undefined}
             onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
             style={{ position: "relative", flex: "1", minWidth: 0, resize: "none", border: "0", fontSize: "var(--t-read)", lineHeight: "1.4", padding: "5px 6px", background: "transparent", color: "var(--c-text)", fieldSizing: "content", minHeight: "32px", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "var(--c-text)" } : {}) }} />

@@ -265,9 +265,9 @@ export function DeliverableV2({ artifact, onOpen, extra = null }) {
   const [bg, fg] = isImage ? ["var(--c-accent-soft)", "var(--c-accent-ink)"] : extTint(ext);
   return (
     <article style={{ alignSelf: "flex-start", width: "min(100%, 540px)", display: "flex", flexDirection: "column", gap: "10px", padding: "10px 10px 10px 12px", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)", background: "var(--c-raised)", boxSizing: "border-box", animation: "rise .5s ease-out" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <div className="r-wrap" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <span aria-hidden="true" style={{ flex: "none", width: "40px", height: "40px", display: "grid", placeItems: "center", borderRadius: "var(--r-md)", background: bg, color: fg, fontSize: "var(--t-micro)", fontWeight: 700 }}>{ext}</span>
-        <div style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+        <div className="r-grow" style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
           <span {...(artifact?.id && (artifact.file || artifact.workFile || isImage) ? dragOutProps(`/api/artifacts/${encodeURIComponent(artifact.id)}/file`) : {})} style={{ fontSize: "var(--t-ui)", fontWeight: 600, color: "var(--c-text)", overflowWrap: "anywhere" }}>{artifact?.title || "Entregable"}</span>
           <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{[artifactMeta(artifact), pages].filter(Boolean).join(" · ")}</span>
         </div>
