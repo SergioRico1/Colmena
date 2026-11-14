@@ -82,7 +82,7 @@
 .ch-tab{position:relative;display:inline-flex;align-items:center;gap:6px;height:42px;padding:0 12px;border:0;background:transparent;color:var(--c-text-3);font:500 var(--t-ui)/1 'Geist',sans-serif;cursor:pointer;white-space:nowrap}
 .ch-tab:hover{color:var(--c-text)}
 .ch-tab[aria-selected="true"]{color:var(--c-text)}
-.ch-tab[aria-selected="true"]::before{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--c-text)}
+.ch-tab[aria-selected="true"]::before{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:var(--r-xs);background:var(--c-text)}
 .ch-tab-count{font-size:var(--t-caption);color:var(--c-text-3);font-variant-numeric:tabular-nums}
 @media (max-width: 639.98px){.ch-tabs{padding:0 8px}}
 
@@ -93,4 +93,4 @@
 .ch-mention.is-me{background:color-mix(in oklab,var(--c-accent) 26%,transparent);color:var(--c-text)}
 .ch-code{padding:1px 5px;border-radius:var(--r-xs);background:var(--c-sunken);border:1px solid var(--c-line);font:400 .9em/1.4 'Geist Mono',ui-monospace,monospace}
 .ch-pre{margin:6px 0;padding:10px 12px;border-radius:var(--r-sm);background:var(--c-sunken);border:1px solid var(--c-line);font:400 var(--t-meta)/1.5 'Geist Mono',ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box}
-.ch-mark{background:color-mix(in oklab,var(--c-accent) 22%,transparent);color:inherit;border-radius:2px;padding:0 1px}
+.ch-mark{background:color-mix(in oklab,var(--c-accent) 22%,transparent);color:inherit;border-radius:var(--r-xs);padding:0 1px}

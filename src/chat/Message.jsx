@@ -106,7 +106,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   ].filter(Boolean);
   return (
     <div className={"ms-row" + (compact ? " is-compact" : "") + (highlight ? " is-highlight" : "") + (m.pending ? " is-pending" : "")} data-message-id={m.id} tabIndex={-1}
-      onClick={(e) => { if (e.target === e.currentTarget || e.target.closest(".ms-text")) e.currentTarget.classList.add("is-touched"); }}
+      onClick={(e) => { if (!e.target.closest("a,button,input,textarea,label,[role='toolbar']")) e.currentTarget.classList.toggle("is-touched"); }}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove("is-touched"); }}>
       <div className="ms-gutter">
         {compact ? <time className="ms-gutter-time" dateTime={new Date(m.at).toISOString()}>{timeOf(m.at)}</time> : <Avatar id={m.author} size={36} />}

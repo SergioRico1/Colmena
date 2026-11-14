@@ -15,8 +15,8 @@ export function ChatPage({ title, top = null, icon = null, sub = null, actions =
   return (
     <Shell active={active} scroll={false} background="var(--c-app)">
       <main className="ch-page" aria-label={top || title}>
-        <header className="ch-head r-wrap">
-          <div className="ch-head-title r-grow">
+        <header className="ch-head">
+          <div className="ch-head-title">
             <h1 className="ch-h1">{icon}<span className="ch-ellipsis">{title}</span></h1>
             {sub ? <p className="ch-sub">{sub}</p> : null}
           </div>
