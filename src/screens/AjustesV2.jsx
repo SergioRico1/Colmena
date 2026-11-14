@@ -12,6 +12,7 @@ import PrivacySection from "../components/v2/settings/Privacy.jsx";
 import CopiesSection from "../components/v2/settings/Copies.jsx";
 import SystemSection from "../components/v2/settings/System.jsx";
 import UpdatesSection from "../components/v2/settings/Updates.jsx";
+import DevicesSection from "../components/v2/settings/Devices.jsx";
 import UsageSection, { UsageUnits } from "../components/v2/settings/Usage.jsx";
 import HelpSection, { useDiagnostics } from "../components/v2/settings/Diagnostics.jsx";
 import AdvancedSection from "../components/v2/settings/Advanced.jsx";
@@ -33,8 +34,9 @@ const BODY = {
   general: GeneralSection, avisos: NoticesSection, contactos: PeopleSettings, permisos: AutonomySection,
   ia: AccountsSection, apps: AppsSection, uso: UsageSection, privacidad: PrivacySection, copias: CopiesSection,
   sistema: SystemSection, actualizaciones: UpdatesSection, ayuda: HelpSection, avanzado: AdvancedSection,
+  dispositivos: DevicesSection,
 };
-const WIDTH = { ia: 840, permisos: 860, apps: 860, copias: 860, uso: 860, contactos: 860 };
+const WIDTH = { dispositivos: 860, ia: 840, permisos: 860, apps: 860, copias: 860, uso: 860, contactos: 860 };
 const ASIDE = { permisos: PauseButton, uso: UsageUnits };
 // A lead with a link in it (the plain words stay in sections.js for the search).
 const LEAD = { apps: <>Las apps y carpetas con las que trabajan tus bots. Qué puede tocar cada uno se decide en <Go to="/ajustes/permisos#que-app">Autonomía y permisos</Go>.</> };

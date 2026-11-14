@@ -242,7 +242,7 @@ test("company settings: time zone from the owner's browser, then the admin's; Gi
   const { host, store } = await company(t, m);
   const bots = host.bots;
   // A routine at 9:00 made before any zone: UTC; the first owner's browser says Madrid.
-  store.put("automations", { id: "r1", name: "Buenos días", botId: "nora", prompt: "Hola", enabled: true, trigger: { type: "dia", config: { hora: "09:00", dias: [0, 1, 2, 3, 4, 5, 6], festivo: "normal" } }, createdAt: new Date().toISOString() });
+  store.put("automations", { id: "r1", name: "Buenos días", botId: "nora", prompt: "Hola", enabled: true, trigger: { type: "dia", config: { hora: "09:00", dias: [0, 1, 2, 3, 4, 5, 6], festivo: "igual" } }, createdAt: new Date().toISOString() });
   assert.equal(bots.adoptTimeZone("Europe/Madrid", GIL), null, "a guest never sets it");
   assert.equal(bots.adoptTimeZone("Europe/Madrid", ANA), "Europe/Madrid");
   const next = new Date(store.get("automations", "r1").nextRun);

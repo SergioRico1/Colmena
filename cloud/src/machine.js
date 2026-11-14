@@ -117,7 +117,8 @@ export class Machine extends DurableObject {
 
   /** Packs the work folder into R2 (multipart: no length needed, nothing whole in memory). */
   async backup(workspaceId) {
-    if (!this.env.FILES || !this.ctx.container.running || !this.ready) return null;
+    if (!this.env.FILES || !this.ctx.container.running) return null;
+    this.token ||= await this.ctx.storage.get("token");
     const t0 = Date.now();
     const r = await this.tcp().fetch("http://machine/machine/backup", { headers: { "X-Machine-Token": this.token } });
     if (!r.ok || !r.body) return null;

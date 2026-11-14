@@ -25,7 +25,7 @@ function prefsFile() { return path.join(app.getPath("userData"), "desktop-prefs.
 function readPrefs() { try { return JSON.parse(fs.readFileSync(prefsFile(), "utf8")) || {}; } catch { return {}; } }
 function writePrefs(p) { try { fs.writeFileSync(prefsFile(), JSON.stringify(p, null, 2)); } catch {} }
 
-function setupBackground({ icon, preload, getMain, getOrigin }) {
+function setupBackground({ icon, preload, getMain, getOrigin, partition = undefined }) {
   let quitting = false;
   let toldHidden = false;
   let quick = null;
@@ -87,7 +87,8 @@ function setupBackground({ icon, preload, getMain, getOrigin }) {
         width: QUICK.width, height: QUICK.min, show: false, frame: false, transparent: true, resizable: false,
         alwaysOnTop: true, skipTaskbar: true, fullscreenable: false, maximizable: false, minimizable: false,
         title: "Colmena · Pregunta rápida", icon, backgroundColor: "#00000000",
-        webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, preload },
+        // Cloud mode: the quick window shares the cloud window's own session partition.
+        webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, preload, ...(partition ? { partition } : {}) },
       });
       quick.setAlwaysOnTop(true, "floating");
       quick.on("blur", () => { if (!capturing && !quick.webContents.isDevToolsOpened()) quick.hide(); });

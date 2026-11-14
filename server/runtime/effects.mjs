@@ -272,11 +272,15 @@ export class EffectMethods {
         case "web_fetch":
           return await this.cachedWeb(args.url, signal);
         case "list_folder": {
+          // Hosted: folders a person's own computer lends, read through its local agent (server/agent-link).
+          const lent = this.agentFolders;
           if (!args.folderId)
-            return { folders: accessibleFolders(this.store, bot.id).map(({ id, label, access, path: p }) => ({ id, label: label || path.basename(p), access })) };
+            return { folders: [...accessibleFolders(this.store, bot.id).map(({ id, label, access, path: p }) => ({ id, label: label || path.basename(p), access })), ...(lent ? lent.list(bot, mission) : [])] };
+          if (lent?.owns(args.folderId)) return await lent.run("list", { bot, mission, step, args });
           return await listFolder(this.folderFor(bot, args.folderId), args.path);
         }
         case "read_folder_file": {
+          if (this.agentFolders?.owns(args.folderId)) return await this.agentFolders.run("read", { bot, mission, step, args });
           const result = await readFolderFile(this.folderFor(bot, args.folderId), args.path, args.page);
           this.setActivity(bot.id, mission.id, step.id, "leyendo", `${result.name} · página ${result.page} de ${result.pages}`);
           return result;

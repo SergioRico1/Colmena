@@ -12,6 +12,8 @@
 // FAKE_MODEL_TOKEN (optional, tests only: allows the deterministic fake model per workspace and
 // the test routes under /auth/dev/; docs/CLOUD.md › Phase 3).
 //   /hooks/<workspace>/h/<id>  a routine's public webhook address (Phase 3)
+//   /agent/connect             a person's computer: its local agent's socket (Phase 5)
+//   /auth/desktop/*            the desktop app signs in through the system browser (Phase 5)
 import { Directory } from "./directory.js";
 import { Workspace } from "./workspace.js";
 import { Machine } from "./machine.js";
@@ -22,7 +24,7 @@ import { SECURITY_HEADERS, csrfOk, fail, json, pagePolicy, sameOrigin, sameSecre
 
 export { Directory, Workspace, Machine };
 
-const CLOUD_PAGES = /^\/(entrar|entrar\/verificar|empresa|empresa\/nueva|invitacion)\/?$/;
+const CLOUD_PAGES = /^\/(entrar|entrar\/verificar|entrar\/escritorio|entrar\/escritorio\/aprobar|empresa|empresa\/nueva|invitacion)\/?$/;
 const ID = /^[0-9a-f-]{36}$/;
 const namespace = (env, binding) => (env.JURISDICTION ? binding.jurisdiction(env.JURISDICTION) : binding);
 const directoryStub = (env) => { const n = namespace(env, env.DIRECTORY); return n.get(n.idFromName("directory")); };
@@ -52,10 +54,11 @@ export default {
 
 async function route(request, env, ctx) {
   const url = new URL(request.url);
-  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 4 });
+  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 5 });
   if (!env.WORKSPACE_KEYS) return fail(503, "Colmena en la nube no está configurada todavía.");
   if (url.pathname.startsWith("/auth/")) return auth(request, env, url, ctx);
   if (url.pathname.startsWith("/hooks/")) return hook(request, env, url);
+  if (url.pathname === "/agent/connect") return agentConnect(request, env, url);
   if (url.pathname.startsWith("/vista/")) return vista(request, env, url);
   // Tests only (FAKE_MODEL_TOKEN): public fixture pages the cloud browser reads and fills.
   if (url.pathname.startsWith("/prueba/") && env.FAKE_MODEL_TOKEN) return testPage(request, url);
@@ -214,6 +217,30 @@ async function auth(request, env, url) {
     return json(await dir(env, "devMail", email));
   }
 
+  // The desktop app signs in (Phase 5): start and poll from the app's own window; preview and
+  // approve in the person's browser, signed in there. The session the app gets is its own.
+  if (p === "/auth/desktop/start" && m === "POST") {
+    if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
+    const data = await body(request);
+    return json(await dir(env, "startDesktop", { name: data.name, ip: ipOf(request) }));
+  }
+  if (p === "/auth/desktop/poll" && m === "POST") {
+    if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
+    const data = await body(request);
+    const done = await dir(env, "finishDesktop", { id: String(data.id || ""), poll: String(data.poll || ""), handback: String(data.handback || "").slice(0, 20), agent: request.headers.get("User-Agent") });
+    if (!done.session) return json(done);
+    if (done.session.workspaceId) await syncAll(env, [done.session.workspaceId]);
+    return json({ ok: true, user: done.user, workspaceId: done.session.workspaceId }, 200, { "Set-Cookie": sessionCookie(url, done.session.token, done.session.expiresAt - Date.now()) });
+  }
+  if (p === "/auth/desktop/preview" && m === "GET") {
+    const me = await must(request, env, url);
+    return finish(json(await dir(env, "previewDesktop", url.searchParams.get("c") || "")), me);
+  }
+  if (p === "/auth/desktop/approve" && m === "POST") {
+    const me = await must(request, env, url, { write: true });
+    return finish(json(await dir(env, "approveDesktop", String((await body(request)).id || ""), me.user.id, me.session.workspaceId)), me);
+  }
+
   // Tests only (FAKE_MODEL_TOKEN): a workspace's fake model, an eviction, what the object holds.
   if (p.startsWith("/auth/dev/test/")) return devTest(request, env, url);
 
@@ -363,6 +390,27 @@ async function api(request, env, url) {
   return live ? response : finish(response, me);
 }
 
+// ------------------------------------------------------------------ /agent (Phase 5)
+/**
+ * GET /agent/connect?workspace=W&device=D (WebSocket): a computer's local agent. No cookie is
+ * read or passed on: the workspace sends a challenge that only the device's own key can sign
+ * (server/agent-link/hub.mjs). A page from another site cannot open it (Origin checked).
+ */
+async function agentConnect(request, env, url) {
+  if (request.headers.get("Upgrade") !== "websocket") return fail(426, "Se esperaba un WebSocket.");
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== url.origin) return fail(403, "Petición externa no permitida.");
+  const workspaceId = url.searchParams.get("workspace") || "", deviceId = url.searchParams.get("device") || "";
+  if (!ID.test(workspaceId) || !/^[a-f0-9]{24}$/.test(deviceId)) return fail(400, "Conexión no válida.");
+  // Only a company that exists: an unknown id never wakes (or makes) a workspace object.
+  if (!(await dir(env, "workspace", workspaceId))) return fail(404, "Ese espacio no existe.");
+  const headers = new Headers();
+  for (const name of ["Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions", "User-Agent"]) if (request.headers.get(name)) headers.set(name, request.headers.get(name));
+  headers.set("X-Colmena-Workspace", workspaceId);
+  headers.set("X-Colmena-Agent-Device", deviceId);
+  return workspaceStub(env, workspaceId).fetch(new Request(request, { headers }));
+}
+
 // ------------------------------------------------------------------ /hooks (Phase 3)
 const HOOK = /^\/hooks\/([0-9a-f-]{36})\/h\/([A-Za-z0-9_-]{20,64})$/;
 const HOOK_MAX = 64 * 1024;
@@ -412,6 +460,7 @@ async function devTest(request, env, url) {
   if (what === "machine" && request.method === "GET") return json(await stub.machineStatus(id));
   if (what === "machine/sleep" && request.method === "POST") return json(await stub.machineSleep(id));
   if (what === "machine/quota" && request.method === "POST") return json(await stub.setMachineQuota(id, data.minutes ?? null));
+  if (what === "browser" && request.method === "POST") return json(await stub.browserProbe(id, String(data.url || "")));
   throw new HttpError(404, "No encontrado.");
 }
 

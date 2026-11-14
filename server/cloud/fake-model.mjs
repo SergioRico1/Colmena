@@ -9,6 +9,7 @@
 //   [[slow:4000]]        it takes that long to answer (abortable), to test concurrency and eviction;
 //   [[tool:NAME|{json}]] it calls that tool with those arguments (several: one after another), then
 //                        answers with the last result (Phase 4: browser_* and run_command);
+//   [[tool:NAME {json}]] the bot calls that tool with those arguments, then says what it got back;
 //   anything else        «<Bot> (modelo de prueba): <the first words of what you wrote>».
 import { randomUUID } from "node:crypto";
 
@@ -56,7 +57,7 @@ export async function fakeRespond({ instructions = "", input = [], tools = [], s
     const bots = (/\[\[plan:([a-z0-9_,-]+)\]\]/i.exec(said)?.[1] || "nora,tomas").split(",").filter(Boolean).slice(0, 4);
     result = outputsOf(input, "fake-plan").length ? answer("Plan en marcha: " + bots.join(" y ") + ".")
       : call("propose_plan", { summary: "Reparto de prueba", assignments: bots.map((botId, i) => ({ botId, task: "Parte " + (i + 1) + " de prueba" })) }, "fake-plan-" + randomUUID().slice(0, 8));
-  } else if (/\[\[tool:/.test(said)) {
+  } else if (/\[\[tool:[a-z_]{3,40}\|/.test(said)) {
     // [[tool:NAME|{json}]] … one call each, in order (Phase 4: the browser and run_command), then an
     // answer that quotes the last result so a test can read it.
     const steps = [...said.matchAll(/\[\[tool:([a-z_]{3,40})\|(\{.*?\})\]\]/g)].map((m) => ({ name: m[1], args: m[2] }));
@@ -73,7 +74,28 @@ export async function fakeRespond({ instructions = "", input = [], tools = [], s
   } else {
     const app = /\[\[app:([A-Z0-9_]{3,80})\]\]/.exec(said)?.[1];
     const done = outputsOf(input, "fake-app");
-    if (app && names.has("apps_execute") && !done.length)
+    // [[tool:NAME {json}]]: the bot calls that tool once (Phase 5: folders on the person's computer).
+    const tool = /\[\[tool:([a-z_]{3,40})(?:\s+(\{.*?\}))?\]\]/s.exec(said);
+    const toolDone = outputsOf(input, "fake-tool");
+    let toolArgs = null;
+    try { toolArgs = tool ? JSON.parse(tool[2] || "{}") : null; } catch { toolArgs = null; }
+    if (tool && toolArgs && names.has(tool[1]) && !toolDone.length)
+      result = call(tool[1], toolArgs, "fake-tool-" + randomUUID().slice(0, 8));
+    else if (tool && toolDone.length) {
+      const out = textOf(toolDone.at(-1).output) || String(toolDone.at(-1).output || "");
+      // The tool's JSON (inside the external-content marks, when there are any), said in a sentence.
+      let said = null;
+      try {
+        const json = JSON.parse(/---\s*(\{[\s\S]*\})\s*<<</.exec(out)?.[1] || out);
+        said = json.error ? "no he podido: " + json.error
+          : typeof json.content === "string" ? "he leído «" + (json.name || "el archivo") + "»: " + json.content
+          : Array.isArray(json.entries) ? "en «" + (json.folder || "la carpeta") + "» hay " + json.entries.map((e) => e.name).join(", ") + "."
+          : Array.isArray(json.folders) ? "carpetas: " + json.folders.map((f) => f.label).join(", ") + "." : null;
+      } catch {}
+      result = answer(botNameOf(instructions) + " (modelo de prueba): " + (said || out).replace(/\s+/g, " ").slice(0, 1500));
+    } else if (tool && !names.has(tool[1]))
+      result = answer(botNameOf(instructions) + " (modelo de prueba): no tengo la herramienta " + tool[1] + ".");
+    else if (app && names.has("apps_execute") && !done.length)
       result = call("apps_execute", { tool: app, account: "Prueba", arguments_json: JSON.stringify({ event_id: "evt-prueba", recipient_email: "equipo@example.com" }) }, "fake-app-" + randomUUID().slice(0, 8));
     else if (app && done.length) {
       const out = textOf(done.at(-1).output) || String(done.at(-1).output || "");

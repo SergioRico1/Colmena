@@ -221,8 +221,8 @@ let project = null, taskId = null;
 {
   const sent = await A.post(general.id, '<@bot:atlas> comprueba la máquina [[tool:run_command|{"program":"node","args":["-e","console.log(require(\'os\').platform(), 2+3)"],"folderId":null,"reason":"Comprobar la máquina de la nube"}]]');
   const root = sent.data?.message?.id;
-  const approval = await until(async () => ((await A.req("/api/state")).data.approvals || []).find((a) => a.status === "pending" && a.tool === "run_command"), { timeout: 60000, step: 1500 });
-  check("run_command waits for the person's approval", !!approval, JSON.stringify(((await A.req("/api/state")).data.approvals || []).map((a) => [a.tool, a.status])));
+  const approval = await until(async () => ((await A.req("/api/state")).data.approvals || []).find((a) => a.status === "pending" && a.computer), { timeout: 60000, step: 1500 });
+  check("run_command waits for the person's approval", !!approval, JSON.stringify(((await A.req("/api/state")).data.approvals || []).map((a) => [a.title, a.status, a.computer])));
   if (approval) {
     const t0 = performance.now();
     const ok = await A.req("/api/approvals/" + encodeURIComponent(approval.id), { method: "POST", body: { decision: "approved", revision: approval.revision } });
@@ -240,7 +240,7 @@ let browserMission = null;
   const sent = await A.post(general.id, `<@bot:nora> lee la página de prueba [[tool:browser_open|{"url":"${BASE}/prueba/pagina"}]] [[tool:browser_read|{"mode":"texto","query":""}]]`);
   const replies = await until(async () => { const r = (await A.thread(sent.data.message.id)).filter((m) => m.author === "bot:nora" && /resultado/.test(m.text)); return r.length ? r : null; }, { timeout: 120000, step: 1500 });
   numbers.browserReadMs = Math.round(performance.now() - t0);
-  check("the browser reads a public test page", (replies || []).some((m) => /COLMENA-4242/.test(m.text)), JSON.stringify(replies));
+  check("the browser reads a public test page", (replies || []).some((m) => /COLMENA-4242/.test(m.text)), JSON.stringify(replies || (await A.thread(sent.data.message.id)).map((m) => [m.author, m.text])));
   const t1 = performance.now();
   const form = await A.post(general.id, `<@bot:nora> rellena el formulario [[tool:browser_open|{"url":"${BASE}/prueba/formulario"}]] [[tool:browser_fill|{"fields":[{"ref":"e1","value":"Ana Prueba"},{"ref":"e2","value":"ana@example.com"}]}]] [[tool:browser_read|{"mode":"elementos","query":""}]]`);
   const filled = await until(async () => { const r = (await A.thread(form.data.message.id)).filter((m) => m.author === "bot:nora" && /resultado/.test(m.text)); return r.length ? r : null; }, { timeout: 120000, step: 1500 });
@@ -282,7 +282,7 @@ let browserMission = null;
 
 // ---- 6. routines in the company's time zone
 {
-  const daily = await A.req("/api/automations", { method: "POST", body: { name: "Buenos días " + run, prompt: "Resumen de la mañana", botId: "nora", trigger: { type: "dia", config: { hora: "09:00", dias: [0, 1, 2, 3, 4, 5, 6], festivo: "normal" } } } });
+  const daily = await A.req("/api/automations", { method: "POST", body: { name: "Buenos días " + run, prompt: "Resumen de la mañana", botId: "nora", trigger: { type: "dia", config: { hora: "09:00", dias: [0, 1, 2, 3, 4, 5, 6], festivo: "igual" } } } });
   const rule = ((await A.req("/api/state")).data.automations || []).find((r) => r.id === daily.data?.id);
   const next = new Date(rule?.nextRun || 0);
   const madrid = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(next);

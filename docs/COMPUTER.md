@@ -296,8 +296,40 @@ Si se añade `browser_frame` a `LIVE`, tratarlo **antes** de `schedule()` para n
 
 - `<BrowserLive missionId={id} bot={bot} verb={activity[bot.id]?.verb} missionActive={…} />` en En vivo / Sala.
 
+## En modo nube: el agente local (fase 5, docs/CLOUD.md)
+
+Con «Usar Colmena en la nube», el servidor local no arranca: en su lugar Electron lanza el **agente local**
+(`server/agent-link/main.mjs`, hijo con IPC y `COLMENA_COMPUTER=1`, igual que el servidor). El puente de este
+documento sigue siendo el mismo (`server/computer/bridge.mjs` sobre IPC, `desktop/browser.cjs` en Electron); lo
+que cambia es quién pide: los bots de la nube, a través de un WebSocket saliente del agente al espacio de la
+empresa, firmado con la clave Ed25519 de este ordenador.
+
+```
+nube (Workspace DO)  ── {call, cap, op:"plan"|"execute", args:{name, args, autonomy, approved?}} ──►  agente
+agente               ── planComputerCall / executeComputerTool (server/computer/tools.mjs) ──►  puente IPC ─► Electron
+agente               ── {result} ──►  nube (tarjeta de aprobación, reglas, recibo)
+```
+
+- **Planificar aquí, decidir allí.** `planComputerCall` se ejecuta en este ordenador (conoce las carpetas, los
+  programas, la página abierta); la nube crea la tarjeta de aprobación, aplica las reglas («Permitir siempre», 30
+  días para comandos) y las líneas rojas como siempre, y solo con la aprobación manda `execute` con
+  `approved: true`. `executeComputerTool` vuelve a calcular la política aquí y se niega a lo que no sea libre
+  sin aprobación.
+- **Lista blanca propia.** «Este ordenador» (`desktop/cloud/agent.html`) dice qué presta y a qué bots: carpetas,
+  «Navegador con tus sesiones» (`browser_*`), «Apps y programas» (`open_file`, `open_app` de las apps marcadas,
+  `run_command`), «Gestor de contraseñas» (`browser_sign_in` con los inicios de sesión marcados; la contraseña va
+  del gestor al navegador aquí y nunca sale) y «Claude Code de este ordenador». El agente rechaza cualquier
+  llamada fuera de esa lista (`refusalFor`), pida lo que pida la nube.
+- **Solo tus turnos.** La nube solo enruta a tu ordenador las peticiones tuyas (nunca las de un compañero, un
+  invitado ni un encargo para otra persona), y solo con tus bots a los que prestaste eso.
+- **Apagado.** Si el ordenador está apagado o sin conexión, la herramienta lo dice así al bot, que te lo cuenta.
+- **Sin rutas ni secretos.** A la nube solo llegan etiquetas, ids y bots; las capturas para las tarjetas de
+  aprobación se quedan aquí; las descargas de las misiones de la nube van a `<datos>/nube/misiones/<misión>/`.
+- Pendiente: la vista en vivo del navegador (`BrowserLive`) no se reenvía a la nube.
+
 ## Pruebas
 
+`node --test tests/agent-link.test.mjs` (modo nube: firma, repeticiones, lista blanca, apagado, rutas, migración).
 `node --test tests/password-managers.test.mjs tests/browser-sessions.test.mjs` (`op` y `bw` falsos; la contraseña no
 aparece en la base de datos, los registros, el resultado ni la tarjeta; permisos por bot; mismo sitio; turnos para otra
 persona e incógnito; particiones y vuelta a Principal).

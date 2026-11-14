@@ -44,7 +44,7 @@ test("zones: wall-clock times resolve to the right instant, also on DST days", (
   assert.deepEqual([p.year, p.month, p.day, p.hours, p.minutes, p.weekday], [2026, 2, 29, 3, 30, 0]);
 });
 
-const daily = (hora, dias = [0, 1, 2, 3, 4, 5, 6], extra = {}) => ({ type: "dia", config: { hora, dias, festivo: "normal", ...extra } });
+const daily = (hora, dias = [0, 1, 2, 3, 4, 5, 6], extra = {}) => ({ type: "dia", config: { hora, dias, festivo: "igual", ...extra } });
 
 test("routines: 9:00 every day in Madrid fires at 08:00Z in winter and 07:00Z in summer, across both DST changes", () => {
   const spring = [];

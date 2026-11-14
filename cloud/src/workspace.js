@@ -80,7 +80,9 @@ export class Workspace extends DurableObject {
         // when the Worker has the test secret (each workspace still needs its own flag).
         publicUrl: this.env.PUBLIC_URL || "", testing: !!this.env.FAKE_MODEL_TOKEN,
         defer: (promise) => { const p = Promise.resolve(promise).catch((e) => console.error("workspace deferred: " + (e?.stack || e))); try { this.ctx.waitUntil(p); } catch {} return p; },
-        presence: () => this.presence() });
+        presence: () => this.presence(),
+        // Phase 5: the open sockets of each person's computers (server/agent-link/hub.mjs).
+        agentSockets: (tag) => this.ctx.getWebSockets(tag).map((ws) => this.agentSocket(ws)) });
       const server = http.createServer(host.app);
       const port = nextPort++;
       await new Promise((resolve) => server.listen(port, resolve));
@@ -115,9 +117,21 @@ export class Workspace extends DurableObject {
     return n.get(n.idFromName("machine:" + workspaceId));
   }
 
+  /** A socket of the local agent as the hub sees it (attachment, send, close, last keep-alive). */
+  agentSocket(ws) {
+    return {
+      attachment: () => { try { return ws.deserializeAttachment(); } catch { return null; } },
+      setAttachment: (a) => ws.serializeAttachment(a),
+      send: (text) => ws.send(text),
+      close: (code, reason) => ws.close(code, reason),
+      lastPing: () => { try { return this.ctx.getWebSocketAutoResponseTimestamp(ws)?.getTime() || 0; } catch { return 0; } },
+    };
+  }
+
   attach(ws) {
     if (this.feeds.has(ws)) return;
-    const { person } = ws.deserializeAttachment() || {};
+    const { person, agent } = ws.deserializeAttachment() || {};
+    if (agent) return;
     if (!person?.id) { try { ws.close(4001, "unknown"); } catch {} return; }
     const close = this.host.openFeed(person, (event) => {
       try { ws.send(JSON.stringify(event)); } catch {}
@@ -136,6 +150,9 @@ export class Workspace extends DurableObject {
       return Response.json({ error: "El espacio no se pudo abrir. Prueba en unos segundos." }, { status: 503 });
     }
     const url = new URL(request.url);
+    // Phase 5: a computer's local agent (outbound from the desktop). It proves who it is with its
+    // device key on this socket (a challenge per socket); nothing here trusts a cookie.
+    if (url.pathname === "/agent/connect") return this.agentConnect(request, workspaceId);
     // A task's dev server (the Worker's /vista/<workspace>/<token>/…): the token is the capability.
     const preview = PREVIEW.exec(url.pathname);
     if (preview) {
@@ -177,13 +194,35 @@ export class Workspace extends DurableObject {
     return response;
   }
 
+  async agentConnect(request, workspaceId) {
+    if (request.headers.get("Upgrade") !== "websocket") return Response.json({ error: "WebSocket expected." }, { status: 426 });
+    const deviceId = request.headers.get("X-Colmena-Agent-Device") || "";
+    const device = /^[a-f0-9]{24}$/.test(deviceId) ? this.host.store.get("agentDevices", deviceId) : null;
+    if (!device || device.workspaceId !== workspaceId) return Response.json({ error: "Este espacio no conoce este ordenador." }, { status: 404 });
+    if (device.status === "revoked") {
+      // Said over the socket, so the computer stops trying (a plain 404 looks like a network error).
+      const gone = new WebSocketPair();
+      gone[1].accept();
+      gone[1].send(JSON.stringify({ type: "refused", code: "revoked", message: "Este ordenador se quitó de «Tus dispositivos»." }));
+      gone[1].close(4403, "revoked");
+      return new Response(null, { status: 101, webSocket: gone[0] });
+    }
+    // One socket per device: a new one replaces the old (a computer that woke up again).
+    for (const old of this.ctx.getWebSockets("agent:" + deviceId)) { try { old.close(4000, "replaced"); } catch {} }
+    const pair = new WebSocketPair();
+    this.ctx.acceptWebSocket(pair[1], ["agent", "agent:" + deviceId]);
+    pair[1].serializeAttachment({ agent: true, workspaceId, deviceId });
+    this.host.agents.open(this.agentSocket(pair[1]), deviceId);
+    return new Response(null, { status: 101, webSocket: pair[0] });
+  }
+
   /** Who is here: each person with an open screen, "active" unless every screen of theirs says away. */
   presence() {
     const out = new Map();
     for (const ws of this.ctx.getWebSockets()) {
       let a = null;
       try { a = ws.deserializeAttachment(); } catch {}
-      if (!a?.person?.id) continue;
+      if (!a?.person?.id || a.agent) continue;
       if (out.get(a.person.id) !== "active") out.set(a.person.id, a.state === "away" ? "away" : "active");
     }
     return out;
@@ -282,6 +321,21 @@ export class Workspace extends DurableObject {
     const r = await this.machineStub(workspaceId).fetch(new Request("http://machine/__status", { headers: { "X-Machine-Workspace": workspaceId } }));
     return { configured: true, ...(await r.json()), minutesPerMonth: this.host.store.get("settings", "main")?.machineMinutes || Number(this.env.MACHINE_MINUTES_PER_MONTH || 600), browserLaunches: this.browserLaunches || [], browserPages: this.host.browser?.open() || 0 };
   }
+  /** Test only: the cloud browser opens a page and reads it (Browser Rendering's launch and CDP, measured). */
+  async browserProbe(workspaceId, url) {
+    const host = await this.boot(workspaceId);
+    if (!host.browser) return { configured: false };
+    const t0 = Date.now();
+    const args = { missionId: "probe", botId: "probe", url, session: "probe-" + t0 };
+    try {
+      const page = await host.browser.call("open", args);
+      return { ok: true, ms: Date.now() - t0, title: page.title, elements: page.elements, launches: this.browserLaunches || [] };
+    } catch (error) {
+      return { ok: false, ms: Date.now() - t0, error: String(error?.message || error).slice(0, 500), launches: this.browserLaunches || [] };
+    } finally {
+      await host.browser.call("close", args).catch(() => {});
+    }
+  }
   /** Test only: the machine sleeps now (its work packed to R2 first), as the idle alarm would. */
   async machineSleep(workspaceId) {
     await this.boot(workspaceId);
@@ -299,7 +353,7 @@ export class Workspace extends DurableObject {
   /** Someone left or was taken out: their open screens close now. */
   async revokePerson(workspaceId, userId) {
     await this.boot(workspaceId);
-    let closed = 0;
+    let closed = this.host.agents.revokePerson(userId);
     for (const ws of this.ctx.getWebSockets(userId)) {
       this.feeds.get(ws)?.();
       this.feeds.delete(ws);
@@ -317,6 +371,12 @@ export class Workspace extends DurableObject {
   async webSocketMessage(ws, message) {
     const a = ws.deserializeAttachment() || {};
     if (a.workspaceId) await this.boot(a.workspaceId);
+    if (a.agent) {
+      // The local agent: its hello, results of calls, what it lends, data it brings.
+      try { await this.host.agents.message(this.agentSocket(ws), typeof message === "string" ? message : ""); } catch (error) { console.error("agent: " + (error?.stack || error)); }
+      await this.schedule();
+      return;
+    }
     if (typeof message !== "string" || message.length > 500 || !a.person?.id) return;
     let m = null;
     try { m = JSON.parse(message); } catch { return; }
@@ -341,6 +401,13 @@ export class Workspace extends DurableObject {
     }
   }
   async webSocketClose(ws, code) {
+    let agent = null;
+    try { agent = ws.deserializeAttachment()?.agent ? ws : null; } catch {}
+    if (agent) {
+      try { ws.close(code === 1005 ? 1000 : code, "bye"); } catch {}
+      if (this.host) this.host.agents.closed(this.agentSocket(ws));
+      return;
+    }
     this.feeds.get(ws)?.();
     this.feeds.delete(ws);
     try { ws.close(code === 1005 ? 1000 : code, "bye"); } catch {}

@@ -24,6 +24,9 @@ export const LIMITS = Object.freeze({
   workspacesPerPerson: 10,
   oauthMs: 10 * 60 * 1000, // a sign-in with Google, Microsoft or GitHub has 10 minutes to come back
   oauthPerIp: 30, // started per 15 minutes
+  desktopMs: 10 * 60 * 1000, // a desktop sign-in (Phase 5) has 10 minutes to be approved and picked up
+  desktopPerIp: 20, // started per 15 minutes
+  desktopAttempts: 5, // wrong hand-back codes before the request closes
   domains: 20, // auto-join domains per workspace
   name: 80,
   workspaceName: 60,
@@ -58,6 +61,10 @@ export function cleanEmail(email) {
 const cleanName = (name, max = LIMITS.name) => String(name || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 /** Only a path of this site: «/sala/x», never «//elsewhere» or a full URL. */
 export const safeNext = (next) => (typeof next === "string" && /^\/(?![/\\])[^\s]{0,300}$/.test(next) ? next : "/");
+/** A short code people read and type: 8 letters and digits without look-alikes, «K7QX-4PZM». */
+const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const shortCode = () => { const b = randomBytes(8); let s = ""; for (const x of b) s += CODE_ALPHABET[x % CODE_ALPHABET.length]; return s.slice(0, 4) + "-" + s.slice(4); };
+const cleanCode = (code) => String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 const parseDomains = (text) => {
   try { const d = JSON.parse(text || "[]"); return Array.isArray(d) ? d.filter((x) => typeof x === "string") : []; } catch { return []; }
 };
@@ -78,6 +85,7 @@ CREATE TABLE IF NOT EXISTS rate (key TEXT PRIMARY KEY, window_start INTEGER NOT 
 CREATE TABLE IF NOT EXISTS outbox (id TEXT PRIMARY KEY, email TEXT NOT NULL, kind TEXT NOT NULL, url TEXT NOT NULL, created_at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS oauth_states (hash TEXT PRIMARY KEY, provider TEXT NOT NULL, verifier TEXT NOT NULL, nonce TEXT NOT NULL, next TEXT NOT NULL, binding TEXT NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, used_at INTEGER, ip TEXT);
 CREATE TABLE IF NOT EXISTS departures (workspace_id TEXT NOT NULL, user_id TEXT NOT NULL, reason TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (workspace_id, user_id));
+CREATE TABLE IF NOT EXISTS desktop_signins (id TEXT PRIMARY KEY, poll_hash TEXT NOT NULL, user_code TEXT NOT NULL, name TEXT NOT NULL, handback_hash TEXT, user_id TEXT, workspace_id TEXT, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, approved_at INTEGER, used_at INTEGER, attempts INTEGER NOT NULL DEFAULT 0, ip TEXT);
 `;
 /** Columns added after the first deploy: ALTER TABLE once, when missing. */
 const COLUMNS = [
@@ -125,6 +133,7 @@ export class DirectoryCore {
     this.run("DELETE FROM rate WHERE window_start < ?", t - LIMITS.rateWindowMs);
     this.run("DELETE FROM outbox WHERE created_at < ?", t - 30 * 60 * 1000);
     this.run("DELETE FROM oauth_states WHERE expires_at < ?", t - 3600 * 1000);
+    this.run("DELETE FROM desktop_signins WHERE expires_at < ?", t - 3600 * 1000);
   }
 
   // ------------------------------------------------------------------ sign-in links
@@ -579,6 +588,69 @@ export class DirectoryCore {
     return this.rows(
       "SELECT i.id, i.workspace_id AS workspaceId, w.name AS workspace, COALESCE(u.name, 'Alguien') AS inviter, i.role, i.created_at AS createdAt, i.expires_at AS expiresAt FROM invitations i JOIN workspaces w ON w.id=i.workspace_id LEFT JOIN users u ON u.id=i.invited_by WHERE i.email=? AND i.accepted_at IS NULL AND i.revoked_at IS NULL AND i.expires_at > ? AND i.workspace_id NOT IN (SELECT workspace_id FROM memberships WHERE user_id=?) ORDER BY i.created_at DESC",
       user.email, this.clock(), userId);
+  }
+
+  // ------------------------------------------------------------------ the desktop app signs in (Phase 5)
+  /**
+   * The desktop asks to sign in: an id (not secret: it goes to the browser), a `poll` token only
+   * the app holds and a code both screens show. The person approves it in their browser (signed in
+   * there as usual), which hands back a second code to the app (a colmena:// link, or typed).
+   * Only an app holding both the poll token and that code gets a session of its own: someone who
+   * sends you their request cannot get one, because the hand-back reaches your computer, not theirs.
+   */
+  startDesktop({ name = null, ip = null } = {}) {
+    if (ip) this.limit("desktop:ip:" + String(ip).slice(0, 64), LIMITS.desktopPerIp);
+    const id = randomUUID(), poll = token(), code = shortCode(), t = this.clock();
+    this.run("INSERT INTO desktop_signins(id, poll_hash, user_code, name, created_at, expires_at, ip) VALUES(?,?,?,?,?,?,?)", id, hash(poll), code, cleanName(name, 60) || "Ordenador", t, t + LIMITS.desktopMs, ip ? String(ip).slice(0, 64) : null);
+    return { id, poll, code, expiresAt: t + LIMITS.desktopMs };
+  }
+  desktopRow(id) {
+    const row = /^[0-9a-f-]{36}$/.test(String(id || "")) ? this.row("SELECT * FROM desktop_signins WHERE id=?", id) : null;
+    if (!row) throw new DirectoryError("Esa petición no existe. Vuelve a empezar desde Colmena en tu ordenador.", 404, "desktop");
+    return row;
+  }
+  /** What the browser shows before approving: the computer's name and the code it shows. */
+  previewDesktop(id) {
+    const row = this.desktopRow(id);
+    const state = row.used_at ? "used" : row.expires_at < this.clock() ? "expired" : row.approved_at ? "approved" : "pending";
+    return { id: row.id, name: row.name, code: row.user_code, state, expiresAt: row.expires_at };
+  }
+  /** You approve it, signed in: the hand-back code goes to your computer (never stored in the clear). */
+  approveDesktop(id, userId, workspaceId = null) {
+    return this.tx(() => {
+      const row = this.desktopRow(id);
+      if (row.used_at || row.approved_at) throw new DirectoryError("Esta petición ya se usó. Vuelve a empezar desde Colmena en tu ordenador.", 410, "used");
+      if (row.expires_at < this.clock()) throw new DirectoryError("Esta petición ha caducado. Vuelve a empezar desde Colmena en tu ordenador.", 410, "expired");
+      const handback = shortCode();
+      const ws = workspaceId && this.roleOf(workspaceId, userId) ? workspaceId : null;
+      this.run("UPDATE desktop_signins SET user_id=?, workspace_id=?, approved_at=?, handback_hash=? WHERE id=?", userId, ws, this.clock(), hash(cleanCode(handback)), row.id);
+      return { handback, name: row.name };
+    });
+  }
+  /** The app asks: {pending} until approved; with the poll token and the hand-back code, a session. */
+  finishDesktop({ id, poll, handback = "", agent = null }) {
+    if (!TOKEN.test(String(poll || ""))) throw new DirectoryError("Petición no válida.", 400, "desktop");
+    // A wrong code is counted in its own write (a refusal thrown inside the transaction would undo it).
+    const out = this.tx(() => {
+      const row = this.desktopRow(id);
+      if (hash(poll) !== row.poll_hash) throw new DirectoryError("Petición no válida.", 403, "desktop");
+      if (row.used_at) throw new DirectoryError("Esta petición ya se usó. Vuelve a empezar.", 410, "used");
+      if (row.expires_at < this.clock()) throw new DirectoryError("Esta petición ha caducado. Vuelve a empezar.", 410, "expired");
+      if (!row.approved_at) return { pending: true, code: row.user_code };
+      const given = cleanCode(handback);
+      if (!given) return { pending: true, approved: true, code: row.user_code };
+      if (hash(given) !== row.handback_hash) {
+        const attempts = row.attempts + 1;
+        this.run("UPDATE desktop_signins SET attempts=?, used_at=? WHERE id=?", attempts, attempts >= LIMITS.desktopAttempts ? this.clock() : null, row.id);
+        return { wrong: attempts };
+      }
+      this.run("UPDATE desktop_signins SET used_at=? WHERE id=?", this.clock(), row.id);
+      const user = this.row("SELECT * FROM users WHERE id=?", row.user_id);
+      if (!user) throw new DirectoryError("Esa cuenta ya no existe.", 410, "account");
+      return { user: this.userView(user), session: this.createSession(user.id, { agent, workspaceId: row.workspace_id }) };
+    });
+    if (out.wrong) throw new DirectoryError(out.wrong >= LIMITS.desktopAttempts ? "Demasiados códigos equivocados. Vuelve a empezar." : "Ese código no es el que te dio el navegador.", 403, "handback");
+    return out;
   }
 
   // ------------------------------------------------------------------ dev mail (no provider yet)
