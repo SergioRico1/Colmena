@@ -8,6 +8,7 @@ import "@fontsource/geist-mono/600.css";
 import "@fontsource/poppins/800.css";
 import "./styles/base.css";
 import "./styles/palette.css";
+import "./styles/responsive.css";
 import { StrictMode, Suspense, lazy, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, navigate, useRouter } from "./lib/router.jsx";
@@ -28,6 +29,8 @@ import { listenForNoticeSounds } from "./lib/noticeSounds.js";
 import { installDragOut } from "./lib/dragOut.js";
 import { watchFocusModality } from "./lib/focusModality.js";
 import { watchTheme } from "./lib/theme.js";
+import { isDesktopApp, watchBreakpoint } from "./lib/breakpoint.js";
+import { installLongPress, installTouchReveal } from "./lib/longPress.js";
 
 const live = import.meta.glob("./screens/*.jsx");
 // Mockups are only reachable while developing (/_design); the desktop build never ships them as screens.
@@ -65,6 +68,8 @@ function App() {
     if (ready && settings.onboarded === false && !OPEN_BEFORE_ONBOARDING.has(route?.screen)) navigate("/bienvenida", { replace: true });
   }, [ready, settings.onboarded, route, pathname]);
   useEffect(preloadScreens, []);
+  // «Pregunta rápida» is a window of the desktop app; in a browser its address opens Inicio.
+  useEffect(() => { if (route?.screen === "QuickAsk" && !isDesktopApp()) navigate("/", { replace: true }); }, [route]);
   // Light or dark (Ajustes › General › Tema): before the settings arrive, theme-boot.js already
   // applied the last choice; from then on the setting and, for «Sistema», the system decide.
   const themeMode = ready ? settings.theme || "system" : null;
@@ -106,6 +111,11 @@ for (const type of ["dragover", "drop"]) {
 
 // Files Colmena shows drag out into other apps (desktop app; src/lib/dragOut.js).
 installDragOut();
+// Phone, tablet or laptop, and a plain browser or the desktop app (styles/responsive.css).
+watchBreakpoint();
+// In a browser on a touch screen a long press opens what a right-click opens (lib/longPress.js).
+// A tap on a message shows its toolbar, which a mouse finds on hover.
+if (!isDesktopApp()) { installLongPress(); installTouchReveal(); }
 // Text fields show their focus ring only while you move with the keyboard (styles/base.css).
 watchFocusModality();
 // «Ha terminado» and «te necesita» each sound their own way (Ajustes › Avisos).

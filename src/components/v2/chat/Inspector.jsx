@@ -61,7 +61,7 @@ export default function Inspector({ bot, mission, messages = [], steps = [], app
   const tabs = [["ctx", "Contexto"], ["tools", "Herramientas"], ["log", "Registro"]];
 
   return (
-    <aside aria-label="Inspector" style={{ flex: "1 1 340px", maxWidth: "420px", minWidth: "300px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "16px 18px 20px", background: "var(--c-sunken)", color: "var(--c-text)", borderLeft: "1px solid var(--c-line)", animation: "fade .2s ease-out" }}>
+    <aside aria-label="Inspector" className="r-overlay" style={{ flex: "1 1 340px", maxWidth: "420px", minWidth: "300px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px", padding: "16px 18px 20px", background: "var(--c-sunken)", color: "var(--c-text)", borderLeft: "1px solid var(--c-line)", animation: "fade .2s ease-out" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
         <h2 style={{ margin: 0, fontSize: "var(--t-body)", fontWeight: 600 }}>{"Inspector"}</h2>
         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>

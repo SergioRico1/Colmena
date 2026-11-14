@@ -72,6 +72,8 @@ import { exportConversation } from "../lib/exportConversation.jsx";
 import { LimitBanner } from "../components/v2/LimitNotice.jsx";
 import UndoChanges from "../components/v2/chat/UndoChanges.jsx";
 import ChangedFiles, { TurnFileLinks, useOpenFileRequests } from "../components/v2/chat/ChangedFiles.jsx";
+import OverlayBack from "../components/OverlayBack.jsx";
+import { currentBreakpoint } from "../lib/breakpoint.js";
 
 // Colmena 2.0 · 23 «Conversación con un bot» (design/V2Conversacion.dc.html). On the left all
 // conversations; on the right the bot as a presence that breathes while it works, its work
@@ -193,7 +195,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   // Expert mode (design/V3ChatExperto.dc.html): model and context in the header, the Inspector
   // beside the chat (Ctrl I) and the composer's chips in Geist Mono.
   const [expert] = useExpert();
-  const [inspector, setInspector] = useState(() => { try { return localStorage.getItem("colmena:inspector") !== "0"; } catch { return true; } });
+  // Below a laptop the inspector covers the chat (.r-overlay): it opens when asked.
+  const [inspector, setInspector] = useState(() => { if (currentBreakpoint() !== "laptop") return false; try { return localStorage.getItem("colmena:inspector") !== "0"; } catch { return true; } });
   const toggleInspector = () => setInspector((v) => { try { localStorage.setItem("colmena:inspector", v ? "0" : "1"); } catch {} return !v; });
   usePanelShortcuts([{ combo: "mod+i", run: toggleInspector }], expert);
   const [slashOpen, setSlashOpen] = useState(false);
@@ -781,7 +784,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
           {c ? <SideDock dock={dock} tabs={dockTabs} addable={dockAddable} widthKey="chat" label="Panel de la conversación" tone="v3" /> : null}
           {expert && inspector ? <Inspector bot={bot} mission={mission} messages={messages} steps={steps} approvals={approvals} onClose={toggleInspector} /> : null}
           {profileOpen && bot ? (
-            <aside id="chat-perfil" aria-label={`Perfil de ${bot.name}`} style={{ flex: "none", width: "312px", height: "100%", overflowY: "auto", padding: "12px 20px 20px", boxSizing: "border-box", background: "var(--c-app)", borderLeft: "1px solid var(--c-line)", "--c-cut": "var(--c-app)" }}>
+            <aside id="chat-perfil" aria-label={`Perfil de ${bot.name}`} className="r-overlay" style={{ flex: "none", width: "312px", height: "100%", overflowY: "auto", padding: "12px 20px 20px", boxSizing: "border-box", background: "var(--c-app)", borderLeft: "1px solid var(--c-line)", "--c-cut": "var(--c-app)" }}>
+              <OverlayBack onClose={() => setProfileOpen(false)} />
               <BotProfile bot={bot} state={pending.length ? "waiting" : turn ? "working" : "free"} stateWord={pending.length ? "te espera" : turn ? "trabajando" : "libre"} doing={turn ? status : null} />
             </aside>
           ) : null}

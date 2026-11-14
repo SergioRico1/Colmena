@@ -189,7 +189,7 @@ export default function ChatsHome() {
         <label style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "10px", height: "42px", padding: "0 14px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid rgb(var(--c-ink-rgb) / .08)" }}>
           <Search size={16} color="var(--c-text-3)" />
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Buscar en los chats"}</span>
-          <input className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en nombres y mensajes" style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
+          <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en nombres y mensajes" style={{ flex: "1", minWidth: 0, border: 0, background: "transparent", fontSize: "var(--t-body)" }} />
         </label>
       </div>
 

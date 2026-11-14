@@ -50,6 +50,7 @@ import Announcer from "../components/Announcer.jsx";
 import { useRoomTimeline } from "../lib/useRoomTimeline.js";
 import { CompletionNote } from "../components/v3/dia/Completion.jsx";
 import NotFound from "./NotFound.jsx";
+import { currentBreakpoint } from "../lib/breakpoint.js";
 
 // The one room screen (docs/PLAN-equipo-y-salas.md, scope 3; docs/CONTRACT.md §18): every room,
 // private or with people, at /sala/:id. A room is the parent of a sala of your bots (a mission,
@@ -74,7 +75,8 @@ export default function RoomScreen({ params = {}, query = {} }) {
 
 /** The member panel stays as you left it (open by default), in every room. */
 function useMembersOpen() {
-  const [open, setOpen] = useState(() => { try { return localStorage.getItem(MEMBERS_KEY) !== "0"; } catch { return true; } });
+  // Below a laptop's width the panel covers the room (styles/responsive.css › .r-overlay): it opens when asked.
+  const [open, setOpen] = useState(() => { if (currentBreakpoint() !== "laptop") return false; try { return localStorage.getItem(MEMBERS_KEY) !== "0"; } catch { return true; } });
   const set = useCallback((v) => { setOpen(v); try { localStorage.setItem(MEMBERS_KEY, v ? "1" : "0"); } catch {} }, []);
   return [open, set];
 }
@@ -455,8 +457,9 @@ function Room({ id, query }) {
             {ready2 ? (
               <>
                 <header style={{ position: "relative", zIndex: 5, flex: "none", background: "var(--c-app)", borderBottom: "1px solid var(--c-line)", WebkitAppRegion: "drag" }}>
-                  <div style={{ minHeight: "56px", display: "flex", alignItems: "center", gap: "12px", padding: "0 12px 0 24px" }}>
-                    <div style={{ flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: "12px", marginRight: "auto", WebkitAppRegion: "no-drag" }}>
+                  {/* On a phone (styles/responsive.css) the name takes the first line and its buttons the second. */}
+                  <div className="r-wrap r-pad" style={{ minHeight: "56px", display: "flex", alignItems: "center", gap: "12px", padding: "0 12px 0 24px" }}>
+                    <div className="r-grow" style={{ flex: "1 1 auto", minWidth: 0, display: "flex", alignItems: "center", gap: "12px", marginRight: "auto", WebkitAppRegion: "no-drag" }}>
                       {renaming !== null ? (
                         <form onSubmit={saveName} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <label style={{ flex: 1, minWidth: 0, display: "flex" }}>
@@ -472,7 +475,7 @@ function Room({ id, query }) {
                         <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{taskTalk ? `Conversación de la tarea «${taskTalk.title}»` : title}</span>
                       </h1>}
                       {renaming !== null ? null : (
-                        <span style={{ flex: "1 1 auto", minWidth: 0, paddingLeft: "12px", borderLeft: "1px solid var(--c-line)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
+                        <span className="r-hide-phone" style={{ flex: "1 1 auto", minWidth: 0, paddingLeft: "12px", borderLeft: "1px solid var(--c-line)", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
                           {/* Up to two lines, the whole of it on hover and to a screen reader (it is all in the page). */}
                           <span title={subtitle} style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4 }}>
                             {taskTalk ? <>{"Lo que habláis tú y los bots sobre esta tarea · "}<a href={`/encargo/${encodeURIComponent(missionId)}`}>{"volver a la tarea"}</a></> : <>
@@ -541,7 +544,7 @@ function Room({ id, query }) {
                     </div>
                   </div>
                   <PositionRail scroller={scroller} items={railItems(missionRows, (b) => findBot(bots, b || "atlas").name)} version={rows.length} />
-                  <div style={{ width: "100%", maxWidth: "1040px", padding: "0 24px", boxSizing: "border-box" }}>
+                  <div className="r-composer" style={{ width: "100%", maxWidth: "1040px", padding: "0 24px", boxSizing: "border-box" }}>
                     {mission ? <NowBar missionId={missionId} active={["running", "planning"].includes(mission.status) && (activity.length > 0 || live.length > 0)} steps={steps} bots={bots} scroller={scroller} selector="[data-live-turn], [data-room-end]"
                       onShow={follow.toEnd} onStop={() => { post(`/missions/${missionId}/control`, { action: "pause" }).catch(() => {}); }} style={{ margin: "0 0 6px" }} /> : null}
                     {shared && view?.requests?.length ? <RoomAddRequests roomId={roomId} title={title} requests={view.requests} onDecided={refreshView} /> : null}
@@ -560,7 +563,7 @@ function Room({ id, query }) {
           {ready2 && mission && dockShown ? <SideDock dock={dockView} tabs={tabs} addable={addableTabs} widthKey="sala" label="Panel de la sala" tone="v3" /> : null}
           {ready2 && panelOpen ? (
             <MemberPanel view={shown} panel={panel} mission={mission} addable={addableBots} fileCount={fileCount} onRules={mission ? () => dock.open(TABS.reglas) : null} onFiles={mission ? () => dock.open(TABS.archivos) : null}
-              onInvite={!gone && !guest ? () => setSheet("invitar") : null} profile={profile} tab={panelTab} onTab={setPanelTab} onOpenBot={(b) => { setProfile(b); setPanelTab("perfil"); }} />
+              onInvite={!gone && !guest ? () => setSheet("invitar") : null} profile={profile} tab={panelTab} onTab={setPanelTab} onOpenBot={(b) => { setProfile(b); setPanelTab("perfil"); }} onClose={() => setMembersOpen(false)} />
           ) : null}
           {viewing ? <FileViewer file={viewing} onClose={closeViewer} /> : null}
           {sheet === "invitar" && shown ? <InviteSheet context={{ kind: "room", room: shown }} onClose={() => setSheet(null)} onChanged={refreshView} /> : null}

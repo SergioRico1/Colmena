@@ -118,7 +118,7 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
       <div className="c-ring" style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: compact ? "6px" : "8px", background: "var(--c-card)", borderRadius: compact ? "var(--r-2xl)" : "var(--r-3xl)", boxShadow: "var(--c-shadow-pop)" }}>
         <label style={{ flex: 1, display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje"}</span>
-          <textarea className="c-bare" ref={input} rows={1} value={text} disabled={disabled} maxLength={8000}
+          <textarea className="c-bare" ref={input} rows={1} enterKeyHint="send" autoCapitalize="sentences" value={text} disabled={disabled} maxLength={8000}
             onChange={(e) => { const v = e.target.value; setText(v); if (v.trim()) onTyping(); if (/(^|\s)@$/.test(v)) setOpen(true); else if (open && !/@\S*$/.test(v)) setOpen(false); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
             onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (leaveComposer(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
             placeholder={placeholder}

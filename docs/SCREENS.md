@@ -134,6 +134,36 @@ con estas tres piezas; no hay colores, iconos ni bots dibujados a mano.
 - Contenido: agrupado por intención, ≤ 7 por grupo, lo que no es una acción fuera del menú, y nada que ya tenga un
   control visible al lado (ni «Solo para mí», que vive en el chip del compositor).
 
+## Anchos: móvil, tableta y portátil
+Colmena se dibujó para una ventana de escritorio (1440×960, mínimo 760×600) y también se usa en un navegador, en el móvil
+y en la tableta. Tres anchos, los mismos en CSS (`src/styles/responsive.css`, con `--bp-tablet` y `--bp-laptop` en `:root`)
+y en JS (`src/lib/breakpoint.js`):
+
+| Ancho | Media query | Qué cambia |
+|---|---|---|
+| Móvil, < 640 px | `(max-width: 639.98px)` | Una columna. La barra lateral es un cajón (`nav[data-drawer]`) tras una barra superior `.c-topbar` (menú, dónde estás, «Ir a…», «Nuevo») con márgenes seguros. Paneles, hilos y diálogos ocupan la pantalla; los menús suben desde abajo. |
+| Tableta, 640–1023 px | `(max-width: 1023.98px)` | La barra es siempre el carril plegado; «Desplegar» la abre entera sobre el contenido. Los paneles laterales (`.r-overlay`) se superponen. |
+| Portátil, ≥ 1024 px | sin query | El diseño de escritorio, píxel a píxel. |
+
+- **CSS antes que JS.** Las pantallas usan clases en lugar de comprobar el ancho: `.r-stack` / `.r-stack-tab` (una fila que
+  pasa a columna), `.r-grid-1`, `.r-pad`, `.r-full`, `.r-hide-phone`, `.r-wrap` + `.r-grow` (los botones bajan bajo el
+  nombre), `.r-scroll-x` (pestañas y chips que se deslizan), `.r-xbox` (una matriz ancha con su propio scroll), `.r-overlay`
+  (panel lateral, con `<OverlayBack>` como primera fila), `.r-table` (filas apiladas, cada celda con `data-label`) y
+  `.r-composer`. `useBreakpoint()` solo cuando se pinta algo distinto (la barra lateral, el estado inicial de un panel).
+- **Entrada, no ancho.** `(pointer: coarse)` lleva cada control a 44×44 px de zona de toque sin cambiar su dibujo, filas de
+  menú de 44 px y campos de 16 px (iOS no hace zoom); `(hover: none)` enseña lo que el ratón descubre al pasar, un toque
+  en un mensaje enseña su barra de acciones y una pulsación larga abre el menú del clic derecho (`src/lib/longPress.js`).
+  Los buscadores llevan `inputMode="search"`, los compositores `enterKeyHint="send"` y los nombres su `autoComplete`. `.r-hide-touch` / `.r-only-touch` para los
+  atajos de teclado.
+- **Navegador sin la app de escritorio.** Sin `window.colmenaWindow` (`html.colmena-web`) no se dibujan los botones de la
+  ventana, «Pregunta rápida», las capturas de pantalla, «Mostrar en el Explorador» ni «Actualizaciones»: o el componente
+  comprueba `isDesktopApp()` o el control lleva `data-desktop-only`.
+- **Teclado del móvil.** `--app-h` sigue la altura visible (`visualViewport`) y la `.c-shell` mide eso: el compositor queda
+  encima del teclado.
+- **Comprobación.** `node scripts/responsive-shots.cjs --base=<url> [--all] [--desktop]` hace capturas a 375, 768, 1280 y 1440
+  en claro y oscuro (`.local/shots/responsive/`) y falla si algo se sale por la derecha; `node scripts/shot-diff.mjs <antes>
+  <después>` compara dos carpetas píxel a píxel (con `--desktop` las capturas imitan la app de escritorio).
+
 ## Invitar: un solo modelo y unas mismas palabras
 Traer a alguien a Colmena, a una sala o a un mensaje directo usa siempre las mismas piezas
 (`src/components/people/`, reglas puras en `src/lib/invite.js`, estilos en `src/styles/invite.css`).

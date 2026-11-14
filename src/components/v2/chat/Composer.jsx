@@ -61,7 +61,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
     </div>
   ) : null;
   return (
-    <form onSubmit={onSubmit} {...(drop?.props || {})} style={{ position: "relative", flex: "none", width: "100%", padding: "0 24px 18px", boxSizing: "border-box" }}>
+    <form onSubmit={onSubmit} {...(drop?.props || {})} className="r-composer" style={{ position: "relative", flex: "none", width: "100%", padding: "0 24px 18px", boxSizing: "border-box" }}>
       <div style={{ position: "relative", maxWidth: "820px", margin: "0 auto" }}>
         {above}
         {d.error ? <DictationHelp problem={d.error} onClose={d.clearError} style={{ margin: "0 0 10px auto", maxWidth: "min(440px, 100%)" }} /> : null}
@@ -100,7 +100,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
             <label style={{ flex: "1 1 auto", display: "flex", position: "relative", minWidth: 0, alignSelf: "center" }}>
               <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{label}</span>
               {pills ? <MentionMirror ref={mirror} value={value} bots={mentionBots} style={{ padding: "5px 6px", fontSize: "var(--t-read)", lineHeight: "1.4", fontFamily: "inherit" }} /> : null}
-              <textarea className="c-bare" ref={box} rows="1" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
+              <textarea className="c-bare" ref={box} rows="1" enterKeyHint="send" autoCapitalize="sentences" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={onKeyDown} placeholder={placeholder} {...inputProps}
                 onScroll={(e) => { if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop; }}
                 style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "32px", maxHeight: "200px", padding: "5px 6px", border: "0", background: "transparent", color: "var(--c-text)", fontSize: "var(--t-read)", lineHeight: "1.4", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "var(--c-text)" } : {}) }} />
             </label>

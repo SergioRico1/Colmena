@@ -45,7 +45,7 @@ export default function TrabajoHeader({ tab, action = null, counts = null }) {
         ) : null}
       </header>
       <WorkingStrip />
-      <nav aria-label="Partes de Trabajo" style={{ display: "flex", gap: "2px", borderBottom: line(), overflowX: "auto" }}>
+      <nav aria-label="Partes de Trabajo" className="r-scroll-x" style={{ display: "flex", gap: "2px", borderBottom: line(), overflowX: "auto" }}>
         {TRABAJO_TABS.map((t) => {
           const on = t.id === tab;
           const n = counts?.[t.id];

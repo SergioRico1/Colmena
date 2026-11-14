@@ -188,7 +188,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
               })}
             </div>
           </div>
-          <div style={{ flex: "none", width: "100%", maxWidth: "1040px", padding: "0 24px 18px", boxSizing: "border-box" }}>
+          <div className="r-composer" style={{ flex: "none", width: "100%", maxWidth: "1040px", padding: "0 24px 18px", boxSizing: "border-box" }}>
             <p style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
               {chat.typing.length ? (
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>

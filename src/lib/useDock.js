@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { currentBreakpoint } from "./breakpoint.js";
 
 // The side panel of a room or chat (OpenClaw unified side panel, sidebar-layout.ts): tabs you
 // open, reorder and close; one active; docked right or left; minimised (tabs kept) or
@@ -34,7 +35,10 @@ const normalize = (v) => {
  * the work, e.g. the live browser). Returns the layout and its operations.
  */
 export function useDock(key, { transient = () => false } = {}) {
-  const [layout, setLayout] = useState(() => normalize(key ? readAll()[key] : EMPTY));
+  // On a phone or a tablet the panel lies over the conversation (styles/responsive.css ›
+  // .r-overlay): you arrive at the conversation, with the saved tabs one tap away.
+  const arrive = (v) => { const l = normalize(v); return currentBreakpoint() === "laptop" ? l : { ...l, open: false, expanded: false }; };
+  const [layout, setLayout] = useState(() => arrive(key ? readAll()[key] : EMPTY));
   // Never saved before: the screen may open a sensible first tab (the thread, if any).
   const [fresh, setFresh] = useState(() => !!key && !(key in readAll()));
   const keyRef = useRef(key);
@@ -43,7 +47,7 @@ export function useDock(key, { transient = () => false } = {}) {
   if (keyRef.current !== key) {
     keyRef.current = key;
     const all = readAll();
-    const next = normalize(key ? all[key] : EMPTY);
+    const next = arrive(key ? all[key] : EMPTY);
     if (JSON.stringify(next) !== JSON.stringify(layout)) setLayout(next);
     const isFresh = !!key && !(key in all);
     if (isFresh !== fresh) setFresh(isFresh);

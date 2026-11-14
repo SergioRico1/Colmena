@@ -42,7 +42,7 @@ export default function ThreadPanel({ shareId, rootId, dm, botOf, shared, compos
   }, [onClose]);
   const common = { dm, botOf, shared, inThread: true, onReact: thread.react, onRetry: thread.retry, onEdit: thread.edit, onError };
   return (
-    <aside aria-label="Hilo" style={{ flex: "none", width: narrow ? "min(440px, 100%)" : "clamp(340px, 34vw, 440px)", height: "100%", display: "flex", flexDirection: "column", background: "var(--c-sunken)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .07)", animation: narrow ? "sheet .35s cubic-bezier(.2,.8,.2,1)" : "fade .25s ease-out", ...(narrow ? { position: "absolute", top: 0, right: 0, bottom: 0, zIndex: 30, boxShadow: "var(--c-shadow-pop)", borderRadius: "var(--r-3xl) 0 0 var(--r-3xl)" } : {}) }}>
+    <aside aria-label="Hilo" className="r-overlay" style={{ flex: "none", width: narrow ? "min(440px, 100%)" : "clamp(340px, 34vw, 440px)", height: "100%", display: "flex", flexDirection: "column", background: "var(--c-sunken)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .07)", animation: narrow ? "sheet .35s cubic-bezier(.2,.8,.2,1)" : "fade .25s ease-out", ...(narrow ? { position: "absolute", top: 0, right: 0, bottom: 0, zIndex: 30, boxShadow: "var(--c-shadow-pop)", borderRadius: "var(--r-3xl) 0 0 var(--r-3xl)" } : {}) }}>
       <header style={{ flex: "none", display: "flex", alignItems: "center", gap: "12px", padding: "22px 20px 16px 24px" }}>
         <span style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
           <strong style={{ font: "600 var(--t-title)/1 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{"Hilo"}</strong>

@@ -63,7 +63,7 @@ export default function FilesPanel({ missionId, onOpen, version = 0 }) {
         <label style={{ display: "flex", alignItems: "center", gap: "8px", height: "38px", padding: "0 10px", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-md)" }}>
           <Search {...I} style={{ color: "var(--c-text-3)", flex: "none" }} />
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>Buscar archivos</span>
-          <input className="c-bare" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en los archivos de la sala" style={{ flex: "1", minWidth: 0, border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
+          <input inputMode="search" enterKeyHint="search" autoComplete="off" className="c-bare" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar en los archivos de la sala" style={{ flex: "1", minWidth: 0, border: "0", background: "transparent", fontSize: "var(--t-ui)" }} />
           {q ? <button type="button" className="rm-focus" onClick={() => setQ("")} aria-label="Borrar búsqueda" style={{ width: "24px", height: "24px", display: "grid", placeItems: "center", background: "transparent", border: "0", cursor: "pointer" }}><X {...I} size={13} /></button> : null}
         </label>
         {files.length ? (

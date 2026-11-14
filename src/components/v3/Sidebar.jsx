@@ -25,13 +25,18 @@ import { selfName } from "../../lib/ownName.js";
 import { Bell, Books, Bot, ChatCircleText, CheckSquare, ChevronDown, CircleHelp, Code, Ellipsis, Gear, Hash, Hourglass, House, KeyRound, ListChecks, LockSimple, LogOut, MessageSquare, NotePencil, Pencil, Plug, Plus, Repeat, Search, Sidebar as SidebarIcon, Smiley, Target, UserPlus, UsersThree } from "../Icon.js";
 import { MenuButton } from "../Menu.js";
 import { signOut } from "../../lib/cloud.js";
+import { Menu as MenuIcon, X } from "../Icon.js";
+import { useBreakpoint } from "../../lib/breakpoint.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
 // design/v4/colmena-v4.html › .side). Top to bottom: the window's three dots and the wordmark,
 // your team (or «Solo tú»), «Ir a…» (Ctrl K) with «Nuevo» (Ctrl N) beside it, five places
 // (Ctrl 1–5), and three live groups — Salas, Personas, Bots — that fold and remember it; at the
 // foot, you (your status, profile, Ajustes, Modo experto) and the bell (Actividad). Ctrl B folds
-// it to a rail of icons and avatars. Honey only marks what waits for you; unread is bold with a
+// it to a rail of icons and avatars.
+// Narrower windows (lib/breakpoint.js, styles/responsive.css): on a tablet the bar is always the
+// rail and «Desplegar» opens it whole over the content; on a phone it is a drawer behind a top bar
+// (menu, where you are, «Ir a…» and «Nuevo»). Neither changes the folded setting. Honey only marks what waits for you; unread is bold with a
 // neutral count. The rows come from src/lib/sidebar.js.
 export const PLACES = [
   { id: "inicio", label: "Inicio", href: "/", icon: House },
@@ -116,7 +121,12 @@ export default function Sidebar({ active = "inicio" }) {
   const [sheet, setSheet] = useState(null); // "chat" | "sala" | "dm" | "invitar" | "aceptar"
   const [inviteName, setInviteName] = useState("");
   const [teamSheet, setTeamSheet] = useState(null); // {kind: "create" | "join" | "invite", team?} (team/TeamSheets.jsx)
-  const [folded, setFoldedState] = useState(!!settings.sidebarFolded);
+  const [foldedPref, setFoldedState] = useState(!!settings.sidebarFolded);
+  const bp = useBreakpoint();
+  const compact = bp !== "laptop";
+  const [drawer, setDrawer] = useState(false); // phone and tablet: the whole bar, over the content
+  const folded = bp === "phone" ? false : bp === "tablet" ? !drawer : foldedPref;
+  const menuBtn = useRef(null), foldBtn = useRef(null), wasOpen = useRef(false);
   const [closed, setClosed] = useState(() => readJson(GROUPS_KEY, {}));
   const [showAll, setShowAll] = useState(allRooms);
   const [showBots, setShowBots] = useState(allBots);
@@ -126,6 +136,28 @@ export default function Sidebar({ active = "inicio" }) {
   const newRef = useRef(null), teamRef = useRef(null), meRef = useRef(null), scroller = useRef(null);
   useEffect(() => setFoldedState(!!settings.sidebarFolded), [settings.sidebarFolded]);
   const setFolded = (v) => { setFoldedState(v); run(() => patch("/settings", { sidebarFolded: v })).catch(() => {}); };
+  // Ctrl B and the strip's button: fold the bar on a laptop, open or close the drawer below that.
+  const toggleFold = () => (compact ? setDrawer((d) => !d) : setFolded(!foldedPref));
+  // The drawer closes when you go somewhere, and on a laptop it does not exist.
+  useEffect(() => setDrawer(false), [pathname, compact]);
+  // Open: the content behind is out of reach (inert) and Escape closes it; focus moves in, and
+  // back to the button that opened it when it closes.
+  const drawerOpen = compact && drawer;
+  useEffect(() => {
+    const content = document.getElementById("contenido");
+    const bar = document.querySelector("[data-topbar]");
+    if (drawerOpen) {
+      wasOpen.current = true;
+      content?.setAttribute("inert", "");
+      bar?.setAttribute("inert", "");
+      foldBtn.current?.focus();
+      const onKey = (e) => { if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector(".c-menu")) setDrawer(false); };
+      window.addEventListener("keydown", onKey);
+      return () => { window.removeEventListener("keydown", onKey); content?.removeAttribute("inert"); bar?.removeAttribute("inert"); };
+    }
+    if (wasOpen.current) { wasOpen.current = false; (bp === "phone" ? menuBtn.current : foldBtn.current)?.focus(); }
+    return undefined;
+  }, [drawerOpen]); // eslint-disable-line react-hooks/exhaustive-deps
   // /chats comes back to the conversation you had open last.
   useEffect(() => rememberConversation(pathname), [pathname]);
   // The list comes back where you left it, with the open conversation's row in view.
@@ -164,6 +196,13 @@ export default function Sidebar({ active = "inicio" }) {
   const myStatus = peers?.me ? statusText(statusMode !== "available" ? peers.me.status : null) || "Disponible" : "Ajustes y cuenta";
   const me = { you: true, name: userName, color: settings.botLooks?.family?.tint || null };
   const desktop = typeof window !== "undefined" && !!window.colmenaWindow?.close;
+  // The phone's top bar says where you are: the conversation's name, or the place's.
+  const convRow = here ? [...model.rooms, ...model.people, ...model.bots].find((r) => r.href === here) : null;
+  const topTitle = convRow ? convRow.title || convRow.name : PLACES.find((p) => p.id === current)?.label || PLACE_TITLES[current] || "Colmena";
+  // «Nuevo» opens from the top bar on a phone while the drawer is closed, from the bar otherwise.
+  const newInBar = bp !== "phone" || drawer;
+  // A sheet opened from the bar shows over the content, not under the drawer.
+  useEffect(() => { if (sheet || teamSheet) setDrawer(false); }, [sheet, teamSheet]);
 
   const toggleGroup = (id) => setClosed((c) => { const next = { ...c, [id]: !c[id] }; writeJson(GROUPS_KEY, next); return next; });
   const toggleAll = () => { allRooms = !showAll; setShowAll(allRooms); };
@@ -192,6 +231,7 @@ export default function Sidebar({ active = "inicio" }) {
   };
   const pick = (item) => {
     setMenu(null);
+    setDrawer(false);
     if (item.id === "chat" || item.id === "sala") return openNew(item.id);
     // Hosted: a direct message is with someone of your company (the company page lists them).
     if (item.id === "dm") return store.cloud ? window.location.assign("/empresa#personas") : setSheet("dm");
@@ -218,7 +258,7 @@ export default function Sidebar({ active = "inicio" }) {
       if (e.shiftKey && k === "e") { e.preventDefault(); setExpert(!expert); return; }
       if (e.shiftKey) return;
       if (k === "n") { e.preventDefault(); setMenu((v) => (v === "new" ? null : "new")); return; }
-      if (k === "b") { e.preventDefault(); setFolded(!folded); return; }
+      if (k === "b") { e.preventDefault(); toggleFold(); return; }
       if (k === ",") { e.preventDefault(); navigate("/ajustes"); return; }
       if (/^[1-5]$/.test(e.key)) { e.preventDefault(); navigate(PLACES[Number(e.key) - 1].href); }
     };
@@ -232,7 +272,7 @@ export default function Sidebar({ active = "inicio" }) {
     window.addEventListener("colmena:new-message", onDm);
     window.addEventListener("colmena:join", onJoin);
     return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("colmena:new-conversation", onNew); window.removeEventListener("colmena:new-message", onDm); window.removeEventListener("colmena:join", onJoin); };
-  }, [expert, folded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [expert, folded, compact, foldedPref]); // eslint-disable-line react-hooks/exhaustive-deps
   const width = folded ? 68 : 272;
   const noDrag = { WebkitAppRegion: "no-drag" };
   const opened = (which) => (v) => setMenu(v ? which : null);
@@ -390,7 +430,7 @@ export default function Sidebar({ active = "inicio" }) {
   const roomsNew = { unread: sum(model.rooms, "unread"), waiting: sum(model.rooms, "waiting") };
   const rail = (
     <>
-      <button type="button" onClick={() => setFolded(false)} aria-label={["Salas", `${model.rooms.length}`, roomsNew.unread ? `${roomsNew.unread} sin leer` : null, roomsNew.waiting ? "te esperan" : null, "desplegar la barra"].filter(Boolean).join(", ")} title="Salas" className="v3-hover" style={railTile}><Hash size={18} />{roomsNew.waiting ? railDot(true) : roomsNew.unread ? railDot(false) : null}</button>
+      <button type="button" onClick={() => (compact ? setDrawer(true) : setFolded(false))} aria-label={["Salas", `${model.rooms.length}`, roomsNew.unread ? `${roomsNew.unread} sin leer` : null, roomsNew.waiting ? "te esperan" : null, "desplegar la barra"].filter(Boolean).join(", ")} title="Salas" className="v3-hover" style={railTile}><Hash size={18} />{roomsNew.waiting ? railDot(true) : roomsNew.unread ? railDot(false) : null}</button>
       {model.people.map((p) => {
         const on = p.href === here;
         return <a key={p.id} href={p.href} aria-label={rowLabel("person", p)} title={[p.name, p.status ? STATUS_WORD[p.status] : null].filter(Boolean).join(" · ")} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...railTile, ...(on ? onRow : {}) }}><PersonAvatar person={p} size={28} ring={on ? C.selected : C.sidebar} presence={p.presence} />{p.waiting ? railDot(true) : p.unread ? railDot(false) : null}</a>;
@@ -453,7 +493,7 @@ export default function Sidebar({ active = "inicio" }) {
         <Search size={16} style={{ flex: "none", color: C.text3 }} />
         {folded ? null : <><span style={ellipsis}>{"Ir a…"}</span><span aria-hidden="true" style={{ display: "flex", gap: "3px" }}><Kbd>{"Ctrl"}</Kbd><Kbd>{"K"}</Kbd></span></>}
       </button>
-      <MenuButton label="Nuevo (Ctrl N)" menuLabel="Crear algo nuevo" items={newEntries} open={menu === "new"} onOpenChange={opened("new")} placement={folded ? "bottom-start" : "bottom-end"} className="v4-goto" style={{ ...iconBtn, width: folded ? "40px" : "34px", height: "34px", border: line(), background: C.raised, color: C.text2, boxSizing: "border-box" }} openStyle={{ border: `1px solid ${C.lineStrong}` }}>
+      <MenuButton label="Nuevo (Ctrl N)" menuLabel="Crear algo nuevo" items={newEntries} open={menu === "new" && newInBar} onOpenChange={opened("new")} placement={folded ? "bottom-start" : "bottom-end"} className="v4-goto" style={{ ...iconBtn, width: folded ? "40px" : "34px", height: "34px", border: line(), background: C.raised, color: C.text2, boxSizing: "border-box" }} openStyle={{ border: `1px solid ${C.lineStrong}` }}>
         <NotePencil size={18} />
       </MenuButton>
     </div>
@@ -468,16 +508,36 @@ export default function Sidebar({ active = "inicio" }) {
             : sheet === "aceptar" ? <JoinSheet onClose={() => setSheet(null)} /> : null;
 
   const activityLabel = `Actividad: ${model.summary.text}`;
+  // Phone only: the top bar that stands in for the bar (menu, where you are, «Ir a…», «Nuevo»).
+  const topBar = bp === "phone" ? (
+    <header data-topbar="" className="c-topbar" role="navigation" aria-label="Colmena: menú, búsqueda y nuevo">
+      <button ref={menuBtn} type="button" data-mobile-menu="" onClick={() => setDrawer(true)} aria-label={model.waitingCount ? `Abrir el menú, ${waitingLabel(model.waitingCount)}` : "Abrir el menú"} aria-expanded={drawer} aria-controls="colmena-sidebar" className="c-topbar-btn">
+        <MenuIcon size={22} />
+        {model.waitingCount ? <span aria-hidden="true" className="c-topbar-dot" /> : null}
+      </button>
+      <span className="c-topbar-title">{topTitle}</span>
+      <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("colmena:palette"))} aria-label="Ir a… o pedir" className="c-topbar-btn"><Search size={20} /></button>
+      <MenuButton label="Nuevo" menuLabel="Crear algo nuevo" items={newEntries} open={menu === "new" && !newInBar} onOpenChange={opened("new")} placement="bottom-end" className="c-topbar-btn">
+        <NotePencil size={21} />
+      </MenuButton>
+    </header>
+  ) : null;
   return (
-    <nav aria-label="Colmena: equipo, sitios y conversaciones" data-v3-sidebar={folded ? "folded" : "open"} style={{ position: "relative", zIndex: "40", boxSizing: "border-box", flex: "none", width: width + "px", height: "100%", minHeight: "0", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", background: C.sidebar, borderRight: line(), fontFamily: font, color: C.text, WebkitFontSmoothing: "antialiased", WebkitAppRegion: "drag", transition: "width .18s ease", "--c-cut": C.sidebar }}>
+    <>
+    {topBar}
+    {bp === "tablet" && drawer ? <div aria-hidden="true" style={{ flex: "none", width: "68px", background: C.sidebar, borderRight: line() }} /> : null}
+    {drawerOpen ? <div aria-hidden="true" className="c-drawer-scrim" onClick={() => setDrawer(false)} /> : null}
+    <nav id="colmena-sidebar" aria-label="Colmena: equipo, sitios y conversaciones" data-v3-sidebar={folded ? "folded" : "open"} data-drawer={compact ? (drawer ? "open" : "closed") : undefined} inert={bp === "phone" && !drawer ? true : undefined} onClick={compact ? (e) => { if (e.target.closest?.("a[href]")) setDrawer(false); } : undefined} style={{ position: "relative", zIndex: "40", boxSizing: "border-box", flex: "none", width: width + "px", height: "100%", minHeight: "0", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", background: C.sidebar, borderRight: line(), fontFamily: font, color: C.text, WebkitFontSmoothing: "antialiased", WebkitAppRegion: "drag", transition: "width .18s ease", "--c-cut": C.sidebar }}>
       <style>{SIDEBAR_CSS}</style>
       <a href="#contenido" onClick={skip} className="v3-skip" style={noDrag}>{here ? "Ir a la conversación" : "Ir al contenido"}</a>
       {/* The title strip: the window's dots, the wordmark and «Plegar». It never scrolls. */}
       <div style={{ flex: "none", height: folded ? "auto" : "44px", display: "flex", flexDirection: folded ? "column" : "row", alignItems: "center", gap: "10px", padding: folded ? "14px 0 8px" : "0 10px 0 14px" }}>
-        <span style={{ display: "flex", alignItems: "center", ...noDrag }}><WindowDots inline compact={folded} /></span>
+        {desktop ? <span style={{ display: "flex", alignItems: "center", ...noDrag }}><WindowDots inline compact={folded} /></span> : null}
         {folded ? null : <span aria-hidden="true" style={{ display: "flex", alignItems: "center", gap: "7px", marginLeft: "6px" }}><LogoMark size={20} /><b style={{ font: `800 15px/1 ${LOGO_FONT}`, letterSpacing: "-0.02em", color: C.text }}>{"Colmena"}</b></span>}
         {folded ? null : <span style={{ flex: "1" }} />}
-        <button type="button" onClick={() => setFolded(!folded)} aria-label={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} title={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} className="v3-hover" style={{ ...iconBtn, ...noDrag }}><SidebarIcon size={18} /></button>
+        {drawerOpen
+          ? <button ref={foldBtn} type="button" onClick={() => setDrawer(false)} aria-label="Cerrar el menú" title="Cerrar el menú" className="v3-hover" style={{ ...iconBtn, ...noDrag }}><X size={18} /></button>
+          : <button ref={foldBtn} type="button" onClick={toggleFold} aria-label={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} title={folded ? "Desplegar la barra (Ctrl B)" : "Plegar la barra (Ctrl B)"} className="v3-hover" style={{ ...iconBtn, ...noDrag }}><SidebarIcon size={18} /></button>}
       </div>
 
       <div ref={teamRef} style={{ flex: "none", position: "relative", zIndex: "6", margin: folded ? "0 0 8px" : "2px 10px 8px", ...noDrag }}>
@@ -522,8 +582,12 @@ export default function Sidebar({ active = "inicio" }) {
       </div>
       {sheets ? createPortal(sheets, document.body) : null}
     </nav>
+    </>
   );
 }
+
+// Where you are, for the phone's top bar, when it is not one of the five places.
+const PLACE_TITLES = { actividad: "Actividad", ajustes: "Ajustes", chats: "Conversaciones" };
 
 const SIDEBAR_CSS = `
 [data-v3-sidebar] .v3-hover:hover{background:var(--c-sidebar-hover)!important;color:var(--c-text)!important}

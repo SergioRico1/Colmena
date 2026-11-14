@@ -4,7 +4,7 @@ import "../../styles/conversation.css";
 
 // The window buttons of the frameless desktop window, drawn as Colmena's three dots (design/v4
 // � .dots): close, minimise, maximise; a glyph shows on hover or keyboard focus. Outside the
-// desktop app they are only the drawn placeholder. (The Colmena 2 rail that lived here is gone:
+// desktop app they are not drawn. (The Colmena 2 rail that lived here is gone:
 // every screen has the sidebar, components/v3/Sidebar.jsx.)
 export function WindowDots({ dark = false, inline = false, compact = false }) {
   const api = typeof window !== "undefined" ? window.colmenaWindow : null;
@@ -18,13 +18,8 @@ export function WindowDots({ dark = false, inline = false, compact = false }) {
   const size = 12, box = (compact ? 14 : 20) + "px";
   const dot = { width: size + "px", height: size + "px", borderRadius: "var(--r-circle)", background: dark ? "rgb(var(--c-dot-on-dark-rgb, 255 255 255) / .16)" : "var(--c-dot, rgb(var(--c-ink-rgb) / .15))" };
   const row = { display: "flex", alignItems: "center", gap: "0", height: box, margin: compact ? "0" : "0 -4px", marginBottom: inline ? "0" : "10px" };
-  if (!api) {
-    return (
-      <span aria-hidden="true" title="Zona de los botones de la ventana" style={row}>
-        {[0, 1, 2].map((i) => <span key={i} style={{ width: box, height: box, display: "grid", placeItems: "center" }}><span style={dot} /></span>)}
-      </span>
-    );
-  }
+  // In a browser there is no window to close: nothing is drawn (styles/responsive.css › desktop-only).
+  if (!api) return null;
   // The glyphs show on hover and while one of the buttons has keyboard focus (a click does not keep them on).
   const shown = hover || keys;
   const glyph = { color: "var(--c-dot-glyph)", opacity: shown ? 0.7 : 0, transition: "opacity .12s ease" };

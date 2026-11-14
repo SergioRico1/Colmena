@@ -88,7 +88,7 @@ function RoomPeople({ view, onChanged, onNewcomer }) {
       <div className="inv-search">
         <Search size={16} style={{ flex: "none", color: "var(--c-text-3)" }} />
         {picked.map((p) => <Chip key={p.address} person={p} onRemove={() => toggle(p)} />)}
-        <input type="search" aria-label="Buscar entre las personas que puedes invitar" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={picked.length ? "Añadir a alguien más" : "Buscar por nombre"} data-autofocus=""
+        <input inputMode="search" enterKeyHint="search" autoComplete="off" type="search" aria-label="Buscar entre las personas que puedes invitar" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={picked.length ? "Añadir a alguien más" : "Buscar por nombre"} data-autofocus=""
           onKeyDown={(e) => { if (e.key === "ArrowDown" && items.length) { e.preventDefault(); roving.focusFirst(); } else if (e.key === "Backspace" && !query && picked.length) setPicked((l) => l.slice(0, -1)); }} />
       </div>
       {items.length ? (
