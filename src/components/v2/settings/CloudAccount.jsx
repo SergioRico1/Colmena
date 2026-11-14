@@ -211,7 +211,7 @@ function CodeAndApps() {
       <form onSubmit={saveToken} style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "flex-end" }}>
         <label style={{ ...field, flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>
           Tu token de GitHub {gh?.mine ? "(guardado)" : gh?.company ? "(si no pones uno, se usa el de la empresa)" : ""}
-          <input type="password" autoComplete="off" spellCheck={false} value={token} onChange={(e) => { setToken(e.target.value); setSaved(null); }} placeholder={gh?.mine ? "Pega otro para cambiarlo, o guarda vacío para quitarlo" : "ghp_… o github_pat_…"} style={{ ...mono, height: "40px", padding: "0 12px", border: LINE, borderRadius: "var(--r-sm)", background: "var(--c-card)", color: "var(--c-text)" }} />
+          <input type="password" autoComplete="off" spellCheck={false} value={token} onChange={(e) => { setToken(e.target.value); setSaved(null); }} placeholder={gh?.mine ? "Pega otro para cambiarlo, o guarda vacío para quitarlo" : "ghp_… o github_pat_…"} style={{ fontFamily: mono, height: "40px", padding: "0 12px", border: LINE, borderRadius: "var(--r-sm)", background: "var(--c-card)", color: "var(--c-text)" }} />
         </label>
         <button type="submit" disabled={act.busy || (!token.trim() && !gh?.mine)} style={btn("dark", 40)}>{token.trim() || !gh?.mine ? "Guardar" : "Quitar"}</button>
       </form>
