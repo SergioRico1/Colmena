@@ -133,7 +133,7 @@ const SLASH = [
  * «Pasárselo ya»). It floats above the composer (Composer `overlay`), so it never moves the list
  * nor changes the composer's height; with an empty box there is nothing to choose.
  */
-function WhileWorking({ value, onChange, botName = "el bot" }) {
+function WhileWorking({ value, onChange, botName = "el bot", onStop = null }) {
   const options = [["after", "Cuando acabe", `Espera en la cola y sale cuando ${botName} acabe`], ["steer", "Pasárselo ya", `${botName} lo lee en su siguiente paso, sin parar`]];
   return (
     <div className="v4-while">
@@ -143,7 +143,9 @@ function WhileWorking({ value, onChange, botName = "el bot" }) {
             style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: value === id ? "var(--c-raised)" : "transparent", boxShadow: value === id ? "var(--c-shadow-lift)" : "none", color: value === id ? "var(--c-text)" : "var(--c-text-2)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>{label}</button>
         ))}
       </span>
-      <span className="r-hide-touch">{`Ctrl+Intro: ${value === "steer" ? "a la cola" : "se lo pasas ya"}`}</span>
+      <span className="r-hide-touch v4-while-keys">{`Ctrl+Intro: ${value === "steer" ? "a la cola" : "se lo pasas ya"}`}</span>
+      {/* With text in the box the send button sends: stopping it stays one click away here. */}
+      {onStop ? <button type="button" className="rm-focus v4-while-stop" onClick={onStop} title="Parar (Esc con la caja vacía)">{"Parar"}</button> : null}
     </div>
   );
 }
@@ -795,7 +797,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
               onAttach={() => { setSlashOpen(false); setPlusOpen((v) => !v); }} drop={drop} busy={send.busy} tools={composerTools}
               overlay={(c && turn) ? <>
                 {c ? <NowBar missionId={c} active={turn} steps={steps} bots={bots} scroller={scroller} fallbackBotId={botId} onShow={follow.toEnd} onStop={stopTurn} style={{ margin: 0, boxShadow: "var(--c-shadow-lift)", background: "var(--c-raised)" }} /> : null}
-                {!expert && text.trim() && !plusOpen && !slashShown && !mentions.menu ? <WhileWorking value={whileWorking} onChange={chooseWhileWorking} botName={bot?.name} /> : null}
+                {!expert && text.trim() && !plusOpen && !slashShown && !mentions.menu ? <WhileWorking value={whileWorking} onChange={chooseWhileWorking} botName={bot?.name} onStop={stopTurn} /> : null}
               </> : null}
               above={<>
                 <DraftOffer offer={draft.offer} onRecover={() => { draft.recover(); requestAnimationFrame(() => focusBox(inputRef.current)); }} onLater={draft.later} onDiscard={draft.discard} />

@@ -43,7 +43,7 @@ import { workFileUrl } from "../../lib/dragOut.js";
 import ChatBlock from "../blocks/ChatBlock.jsx";
 import { AuthorAvatar, AuthorHead } from "./Author.jsx";
 import { AddressChip, EmojiButton } from "./ComposerBits.jsx";
-import { PaperPlaneRight, Paperclip } from "../Icon.js";
+import { Eye, PaperPlaneRight, Paperclip } from "../Icon.js";
 import { authorOf, continues, mentionTargets, requestHint } from "../../lib/roomView.js";
 import { listNames } from "../../lib/identity.js";
 
@@ -369,7 +369,7 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
     const botLook = (r) => r.emoji === "👀" && bots.some((b) => b.id === r.by);
     const looking = reactions.filter(botLook).map((r) => bots.find((b) => b.id === r.by).name);
     const shown = looking.length ? reactions.filter((r) => !botLook(r)) : reactions;
-    const status = receipt ? <Receipt receipt={receipt} bots={bots} /> : looking.length ? <span title={`${listNames(looking)} ${looking.length === 1 ? "está" : "están"} en ello`}>{"👀 " + listNames(looking)}</span> : null;
+    const status = receipt ? <Receipt receipt={receipt} bots={bots} /> : looking.length ? <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}><Eye size={13} aria-hidden="true" />{`${listNames(looking)} ${looking.length === 1 ? "está" : "están"} en ello`}</span> : null;
     const under = (
       <>
         {message.peer && !peerSeen ? <TravelLine peer={message.peer} /> : null}

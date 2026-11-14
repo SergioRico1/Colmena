@@ -87,7 +87,9 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
     getItemKey,
     overscan: 6,
     paddingStart: 36,
-    paddingEnd: 28,
+    // Room for what floats over the end while a bot works (Composer `overlay`: «Cuando acabe /
+    // Pasárselo ya», 46 px with the last row's own 18): it never covers the newest words.
+    paddingEnd: 36,
     anchorTo: "end",
     // Following is followScroll's: the list never pulls the reader to the end on its own.
     followOnAppend: false,

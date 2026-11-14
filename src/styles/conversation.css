@@ -40,12 +40,16 @@
 .v4-msg.is-continued .v4-msg-body{margin-top:0}
 .v4-msg-time{position:absolute;left:12px;top:7px;width:32px;padding:0}
 .v4-msg .v4-msg-actions{top:0;right:8px}
+/* A rated answer keeps its toolbar out of sight like any other (base.css shows a pressed one). */
+.v4-msg:not(:hover):not(:focus-within):not(.is-touched) .v4-msg-actions:has([aria-pressed="true"]):not(.is-open){opacity:0;pointer-events:none}
+/* What cannot be done right now (another answer, editing, while the bot works) does not light up. */
+.msg-actions [aria-disabled="true"]:hover{background:transparent!important}
+@media (max-width: 639.98px){.v4-msg .v4-msg-actions{top:-18px}}
 .v4-thinking{display:flex;align-items:baseline;gap:10px;min-width:0;margin:0;font-size:var(--t-body);line-height:1.55;white-space:nowrap;overflow:hidden}
 .v4-live{min-height:calc(var(--t-body) * 1.55)}
 .v4-thinking-note{min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:var(--t-meta);color:var(--c-text-3)}
 .v4-you{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .v4-you.msg-row:hover,.v4-you.msg-row.is-touched{background:transparent}
-.v4-you.is-continued{margin-top:-12px}
 .v4-you.is-continued .v4-bubble{border-top-right-radius:6px}
 .v4-you-line{position:relative;display:flex;justify-content:flex-end;max-width:min(62%,560px)}
 .v4-you .v4-you-actions{top:0;right:calc(100% + 6px)}
@@ -55,7 +59,10 @@
    the list, above the composer, only once you have typed something (Conversacion.jsx). */
 .v4-overlay{position:absolute;left:0;right:0;bottom:100%;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding-bottom:8px;pointer-events:none}
 .v4-overlay > *{pointer-events:auto}
-.v4-while{align-self:flex-end;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 10px;max-width:100%;padding:4px 10px 4px 4px;border:1px solid var(--c-line);border-radius:var(--r-pill);background:var(--c-raised);box-shadow:var(--c-shadow-lift);font-size:var(--t-caption);color:var(--c-text-3);animation:c-rise .16s ease-out both}
+.v4-while{align-self:flex-end;display:flex;align-items:center;justify-content:flex-end;gap:6px 10px;max-width:100%;padding:4px;border:1px solid var(--c-line);border-radius:var(--r-pill);background:var(--c-raised);box-shadow:var(--c-shadow-lift);font-size:var(--t-caption);color:var(--c-text-3);white-space:nowrap;animation:c-rise .16s ease-out both}
+.v4-while-stop{height:28px;padding:0 12px;border:0;border-radius:var(--r-pill);background:transparent;color:var(--c-text-2);font-size:var(--t-meta);font-weight:600;cursor:pointer}
+.v4-while-stop:hover{background:var(--c-hover);color:var(--c-text)}
+@media (max-width: 639.98px){.v4-while-keys{display:none}}
 /* A room's line under its composer (RoomParts.jsx RoomComposer): always there, one height. */
 .room-status-line{display:flex;align-items:center;gap:8px;height:26px;margin:6px 4px 0;overflow:hidden;white-space:nowrap;font-size:var(--t-meta);color:var(--c-text-3)}
 .room-status-line > :last-child{font-size:var(--t-caption)}
