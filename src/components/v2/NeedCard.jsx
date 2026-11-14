@@ -9,7 +9,7 @@ import { cancel, schedule, useUndoable } from "../../lib/undoable.js";
 import { later } from "../../lib/undoToast.js";
 import { failureText, groupLine, groupShown, groupTitle } from "../../lib/approvalGroups.js";
 import { GROUP_VERBS } from "../../lib/approvalCard.js";
-import { ApprovalNotes, SendWhat, useApprovalCard } from "../ApprovalParts.jsx";
+import { ApprovalNotes, DelegatedLine, RoutineChoice, SendWhat, useApprovalCard } from "../ApprovalParts.jsx";
 import { decideBatch, useBatchFailures } from "../../lib/useApprovalBatch.js";
 import { letterOf, letterStyle, useChoiceKeys } from "../../lib/choiceKeys.js";
 import { isSnoozed, snoozeWhen } from "../../lib/snooze.js";
@@ -127,10 +127,10 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
   const isQuestion = a.kind === "question";
   // The same verbs, undo line and expiry line as on Inicio, in a room and in Revisar.
   const model = useApprovalCard(a, bot?.name);
-  const approve = (always = false) => {
+  const approve = (always = false, preapprove = null) => {
     setError(null);
     schedule(key, async () => {
-      await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, ...(always ? { always: true } : {}) });
+      await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, ...(always ? { always: true } : {}), ...(preapprove ? { preapprove } : {}) });
     });
   };
   const deny = () => {
@@ -230,8 +230,10 @@ export const NeedCard = withRowBoundary(function NeedCard({ a, bot, mission, set
             {model.secondary.map((s) => (s.id === "review" ? <a key={s.id} href={s.href} style={{ ...SOFT, display: "flex", alignItems: "center" }}>{s.label}</a>
               : s.id === "always" ? <button key={s.id} type="button" onClick={() => approve(true)} style={SOFT}>{s.label}</button>
                 : <button key={s.id} type="button" onClick={deny} style={QUIET}>{s.label}</button>))}
+            <RoutineChoice a={a} onPick={(uses) => approve(false, uses)} style={SOFT} />
             {a.kind === "secret" ? null : <SnoozeMenu items={[a]} style={QUIET} onError={setError} />}
           </div>
+          <DelegatedLine a={a} size="var(--t-ui)" />
           <ApprovalNotes model={model} size="var(--t-ui)" />
         </>
       )}

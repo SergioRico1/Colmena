@@ -5,7 +5,7 @@ import BotFace from "../components/BotFace.jsx";
 import Shell from "../components/v2/Shell.jsx";
 import { botAlt } from "../lib/alt.js";
 import { needsOf } from "../components/v2/needs.js";
-import { ApprovalNeed, ChoiceNeed, ErrandNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
+import { ApprovalNeed, ChoiceNeed, DelegatedNeed, ErrandNeed, GroupNeed, SnoozedNeeds, WatchNeed, recentlyDone } from "../components/v3/dia/Needs.jsx";
 import NeedRows from "../components/v3/dia/NeedRows.jsx";
 import { CompletionCards } from "../components/v3/dia/Completion.jsx";
 import { needEntries } from "../components/v3/dia/needRows.js";
@@ -132,8 +132,11 @@ export default function Hoy({ query = {} }) {
     if (e.type === "approval") return <ApprovalNeed a={e.a} wide bot={botOf(e.botId)} mission={mission} />;
     if (e.type === "note") return <WatchNeed n={e.note} wide bot={botOf(e.botId)} />;
     if (e.type === "choice") return <ChoiceNeed m={e.mission} wide bots={bots} />;
+    if (e.type === "delegated") return <DelegatedNeed ask={(store.approvalAsks || []).find((x) => x.id === e.key) || e.item.ask} wide />;
     return <ErrandNeed item={e.item} wide bot={botOf(e.botId)} />;
   };
+  // Other people's asks that closed in the last two hours: how they ended, then they go.
+  const closedAsks = (store.approvalAsks || []).filter((x) => x.state !== "asked" && x.closedAt && Date.now() - ts(x.closedAt) < 2 * 3600e3);
   // The one count of what waits for you (server/waiting.mjs): every request counts, also inside a shared row.
   const n = items.length;
 
@@ -234,9 +237,10 @@ export default function Hoy({ query = {} }) {
               </div>
             ) : null}
             {entries.length ? <NeedRows entries={entries} card={cardOf} botOf={botOf} roomOf={(id) => { const m = (missions || []).find((x) => x.id === id); return m ? m.room || m.title || "" : ""; }} /> : null}
-            {settled.length ? (
+            {settled.length || closedAsks.length ? (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(360px, 100%), 1fr))", gap: "12px", alignItems: "start", marginTop: "12px" }}>
                 {settled.map((d) => <ApprovalNeed key={"done" + d.approval.id} a={d.approval} bot={botOf(d.approval.botId)} mission={missions.find((m) => m.id === d.approval.missionId)} settled={d.text} />)}
+                {closedAsks.map((x) => <DelegatedNeed key={"ask" + x.id} ask={x} />)}
               </div>
             ) : null}
             {/* What you put off with «Recordar después»: out of the count, one click away. */}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Calendar, FileText, Folder, Mail, MessageSquare, Check, Lock as LockGlyph, ChevronDown } from "../../Icon.js";
+import { Calendar, FileText, Folder, Mail, MessageSquare, Check, Lock as LockGlyph, ChevronDown, Users } from "../../Icon.js";
 import QuestionFlow from "../../v2/chat/QuestionFlow.jsx";
 import { QuestionReply } from "../../room/QuestionReply.jsx";
 import { post } from "../../../lib/api.js";
@@ -8,7 +8,7 @@ import { cancel, schedule, useUndoable } from "../../../lib/undoable.js";
 import { later } from "../../../lib/undoToast.js";
 import { failureText, groupLine, groupShown, groupTitle } from "../../../lib/approvalGroups.js";
 import { GROUP_VERBS } from "../../../lib/approvalCard.js";
-import { ApprovalNotes, SendWhat, useApprovalCard } from "../../ApprovalParts.jsx";
+import { ApprovalNotes, DelegatedLine, RoutineChoice, SendWhat, useApprovalCard } from "../../ApprovalParts.jsx";
 import { decideBatch, useBatchFailures } from "../../../lib/useApprovalBatch.js";
 import { letterOf, letterStyle, useChoiceKeys } from "../../../lib/choiceKeys.js";
 import { snoozeWhen, snoozedLabel } from "../../../lib/snooze.js";
@@ -49,10 +49,11 @@ export const recentlyDone = () => {
  * Approves one request with the 10 s to undo, wherever the click comes from (its card, or its
  * row on Inicio): the same wait, the same confirmation afterwards. `model`: its approvalCard.
  */
-export function scheduleApproval(a, model, always = false) {
+export function scheduleApproval(a, model, always = false, preapprove = null) {
   schedule("approval:" + a.id, async () => {
-    await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, ...(always ? { always: true } : {}) });
-    remember(a, a.kind === "send" ? `Enviado a las ${time(new Date())}. Lo encontrarás en la Biblioteca.` : `${model.doneText} a las ${time(new Date())}.`);
+    await post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, ...(always ? { always: true } : {}), ...(preapprove ? { preapprove } : {}) });
+    const kept = preapprove ? ` ${preapprove === "next" ? "La próxima vez" : "A partir de ahora"} la rutina lo hará sin preguntarte.` : "";
+    remember(a, (a.kind === "send" ? `Enviado a las ${time(new Date())}. Lo encontrarás en la Biblioteca.` : `${model.doneText} a las ${time(new Date())}.`) + kept);
   });
 }
 
@@ -151,6 +152,7 @@ export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, miss
         <h3 style={title(wide)}>{heading}</h3>
         {/* Who it goes to and what it says; the title already carries the subject. */}
         {model.send ? <SendWhat send={model.send} subject={!model.send.subject} /> : a.summary && a.summary !== a.title ? <p style={body}>{a.summary}</p> : null}
+        <DelegatedLine a={a} />
       </div>
       {/* A note of «Notas» the bot wants to write: which one, and the lines it adds and removes. */}
       {a.wiki ? <NoteAsk id={a.id} wiki={a.wiki} compact={!wide} /> : null}
@@ -185,6 +187,7 @@ export const ApprovalNeed = withRowBoundary(function ApprovalNeed({ a, bot, miss
           {model.secondary.map((s) => (s.id === "review" ? <a key={s.id} href={s.href} style={btn.line}>{s.label}</a>
             : s.id === "always" ? <button key={s.id} type="button" onClick={() => approve(true)} style={btn.line}>{s.label}</button>
               : <button key={s.id} type="button" onClick={deny} style={btn.text}>{s.label}</button>))}
+          <RoutineChoice a={a} onPick={(uses) => { setError(null); scheduleApproval(a, model, false, uses); }} style={btn.line} />
           {a.kind === "secret" ? null : <SnoozeMenu items={[a]} style={btn.text} onError={setError} />}
           {wide && (outside || a.impact?.headline) ? (
             <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
@@ -363,6 +366,79 @@ export function ErrandNeed({ item, bot, wide = false }) {
       <Head bot={bot} where="de otra persona" at={item.at} label="Decidir" />
       <h3 style={title(wide)}>{item.title}</h3>
       <a href={item.roomId ? `/con/${encodeURIComponent(item.roomId)}` : "/equipo"} style={{ ...btn.dark, alignSelf: "flex-start" }}>{"Ver y decidir"}</a>
+    </article>
+  );
+}
+
+/**
+ * Another person of your team asks you to decide a red line of their routine (server/peers/
+ * delegation.mjs). What it does is their bot's text: shown as plain text and marked as theirs,
+ * never given to a bot. «Aprobar» / «Denegar» (with an optional reason) go back to them; once
+ * they decided first, it expired or you answered, the card says so in calm colours.
+ */
+export function DelegatedNeed({ ask, wide = false }) {
+  const { run } = useStore();
+  const [busy, setBusy] = useState(false);
+  const [denying, setDenying] = useState(false);
+  const [reason, setReason] = useState("");
+  const [error, setError] = useState(null);
+  const who = String(ask.from || "Alguien").split(" ")[0];
+  const d = ask.details || {};
+  const open = ask.state === "asked";
+  const answer = async (decision) => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await run(() => post(`/peers/approval-asks/${encodeURIComponent(ask.id)}/decide`, { decision, ...(decision === "denied" && reason.trim() ? { reason: reason.trim() } : {}) }));
+      setDenying(false);
+    } catch (e) {
+      setError(e?.message || "No se pudo enviar tu respuesta.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const settled = ask.state === "decided" ? `Has ${ask.decision === "approved" ? "aprobado" : "denegado"} esto. Se lo hemos dicho a ${who}.`
+    : ask.state === "closed" ? `Ya lo decidió ${who}${ask.resolution ? ` · ${ask.resolution}` : ""}.`
+      : ask.state === "expired" ? "Pasaron 24 horas sin respuesta y ya no espera." : null;
+  const fact = (label, value) => (value ? <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{label}{" "}<strong style={strong}>{value}</strong></span> : null);
+  return (
+    <article aria-label={`${who} te pide que decidas: ${ask.title}`} style={card(wide, open ? (wide ? RING : RING_SM) : CALM)}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
+        <span aria-hidden="true" style={{ width: "20px", height: "20px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: "var(--c-chip)", color: "var(--c-text-2)" }}><Users size={13} /></span>
+        <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)", minWidth: 0 }}>
+          <strong style={strong}>{`${who} te pide que decidas`}</strong>
+          {ask.routine ? ` · rutina «${ask.routine}»` : null}
+          {ask.at ? " · " + time(ask.at) : null}
+        </span>
+        {open ? <NeedLabel>{"Decidir"}</NeedLabel> : null}
+      </div>
+      <h3 style={title(wide)}>{ask.title}</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "10px 12px", borderRadius: "var(--r-sm)", background: "var(--c-sunken)", fontSize: "var(--t-ui)", lineHeight: "1.5", color: "var(--c-text-2)" }}>
+        <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`Lo ha preparado ${d.bot ? d.bot + ", el bot de " + who : "un bot de " + who}. Es contenido de otra persona: tus bots no lo leen.`}</span>
+        {fact("Para", d.to?.join(", "))}
+        {fact("Copia", d.cc?.join(", "))}
+        {fact("Asunto", d.subject)}
+        {fact("En", d.app ? d.app.charAt(0).toUpperCase() + d.app.slice(1) : null)}
+        {d.command ? <code style={{ font: "var(--t-ui)/1.5 'Geist Mono', monospace", color: "var(--c-text)", overflowWrap: "anywhere" }}>{d.command}</code> : null}
+        {d.body ? <span style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: wide ? "160px" : "96px", overflowY: "auto", color: "var(--c-text)" }}>{d.body}</span> : null}
+      </div>
+      {settled ? <Settled text={settled} /> : denying ? (
+        <div role="group" aria-label="Denegar" style={row}>
+          <input className="c-quiet" autoFocus value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setDenying(false); else if (e.key === "Enter" && !e.nativeEvent.isComposing) answer("denied"); }}
+            placeholder={`¿Por qué? Se lo diremos a ${who} (opcional)`} aria-label="Por qué no"
+            style={{ flex: "1 1 220px", height: "36px", padding: "0 12px", background: "var(--c-raised)", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", fontSize: "var(--t-ui)", color: "var(--c-text)" }} />
+          <button type="button" disabled={busy} onClick={() => answer("denied")} style={btn.dark}>{"Denegar"}</button>
+          <button type="button" onClick={() => setDenying(false)} style={btn.text}>{"Cancelar"}</button>
+        </div>
+      ) : (
+        <div style={row}>
+          <button type="button" disabled={busy} onClick={() => answer("approved")} style={btn.dark}>{"Aprobar"}</button>
+          <button type="button" disabled={busy} onClick={() => setDenying(true)} style={btn.line}>{"Denegar"}</button>
+          <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{`${who} también puede decidirlo; vale lo que llegue antes.`}</span>
+        </div>
+      )}
+      {error ? <span role="alert" style={{ fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</span> : null}
     </article>
   );
 }

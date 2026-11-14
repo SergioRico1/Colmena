@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Ellipsis, History, Lightning, PencilLine, Play, Repeat, Settings2, Trash2, X } from "../components/Icon.js";
+import { Ellipsis, History, Lightning, PencilLine, Play, Repeat, Settings2, ShieldCheck, Trash2, X } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
 import Shell from "../components/v2/Shell.jsx";
 import { BotPresence } from "../components/v2/Presence.jsx";
@@ -11,6 +11,7 @@ import { ago, isRoom } from "../lib/format.js";
 import { later, useHidden } from "../lib/undoToast.js";
 import { scrollBehavior } from "../lib/motion.js";
 import WebhookPanel, { HOOK_DEFAULT } from "../components/rutinas/WebhookPanel.jsx";
+import RoutineApprovals from "../components/rutinas/RoutineApprovals.jsx";
 import { C, alpha } from "../lib/theme.js";
 
 // Colmena 3 · Trabajo › Rutinas (design/V3Rutinas.dc.html): what repeats. «Nueva rutina» reads
@@ -152,7 +153,7 @@ export default function RutinasV2() {
   const atlas = team.find((b) => b.id === "atlas") || team.find((b) => /coordin/i.test(b.role || "")) || team[0];
   const botOf = (id) => team.find((b) => b.id === id) || null;
   const openNew = () => { setChanging(null); setOpen(true); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: scrollBehavior() })); };
-  const openChange = (ruleId, part = null) => { setOpen(false); setChangingPart(part); setChanging(ruleId); setReloads((n) => n + 1); requestAnimationFrame(() => document.getElementById("nueva")?.scrollIntoView({ block: "start", behavior: scrollBehavior() })); };
+  const openChange = (ruleId, part = null, anchor = "nueva") => { setOpen(false); setChangingPart(part); setChanging(ruleId); setReloads((n) => n + 1); requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView({ block: "start", behavior: scrollBehavior() }))); };
   const changingRule = changing ? automations.find((a) => a.id === changing) || null : null;
 
   const rows = [
@@ -170,6 +171,8 @@ export default function RutinasV2() {
         <TrabajoHeader tab="rutinas" action={{ label: "Nueva rutina", onClick: openNew }} />
         {open ? <RoutineBuilder team={team} skills={skills} missions={missions} initialWhat={query.texto || ""} initialWho={query.bot || null} onClose={() => setOpen(false)} onSaved={(id) => openChange(id, "when")} /> : null}
         {changingRule ? <RoutineBuilder key={changing + ":" + reloads} team={team} skills={skills} missions={missions} rule={changingRule} initialOpen={changingPart} onReload={() => setReloads((n) => n + 1)} onClose={() => setChanging(null)} /> : null}
+        {/* Its red lines: who else decides them, and what it may do at its time with nobody there. */}
+        {changingRule ? <RoutineApprovals key={"ra:" + changingRule.id} rule={changingRule} /> : null}
 
         <section aria-labelledby="act-t" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
@@ -231,6 +234,7 @@ function ruleRow(a, bot, act, missions, openChange) {
       stopped ? ["Reanudar", () => act.act(() => patch(`/automations/${id}`, { enabled: true }))] : null,
       ["Cambiar la rutina", () => openChange(a.id)],
       type === "webhook" ? ["Ver y cambiar los detalles", () => openChange(a.id, "when")] : null,
+      ["Aprobado por adelantado", () => openChange(a.id, null, "adelantado")],
       ["Probar ahora", () => act.act(() => post(`/automations/${id}/test`, {}))],
       a.lastMissionId ? ["Ver la última vez", () => navigate(`/encargo/${encodeURIComponent(a.lastMissionId)}`)] : null,
       ["Borrar", () => later({ id: "automation:" + a.id, keys: ["automation:" + a.id], text: "Rutina borrada", error: "No se pudo borrar la rutina", run: () => act.act(() => del(`/automations/${id}`)) })],
@@ -277,7 +281,7 @@ function intentRow(r, atlas, missions, act) {
 
 // A row's «···» (components/Menu.js): each action with its icon, «Borrar» last in red (it
 // undoes from its five-second notice, so it does not ask first).
-const ROW_ICONS = { "Reanudar": Play, "Cambiar la rutina": PencilLine, "Editar": PencilLine, "Ver y cambiar los detalles": Settings2, "Probar ahora": Lightning, "Ver la última vez": History, "Ver la rutina que creó": Repeat, "Crear la rutina": Repeat, "Borrar": Trash2 };
+const ROW_ICONS = { "Reanudar": Play, "Aprobado por adelantado": ShieldCheck, "Cambiar la rutina": PencilLine, "Editar": PencilLine, "Ver y cambiar los detalles": Settings2, "Probar ahora": Lightning, "Ver la última vez": History, "Ver la rutina que creó": Repeat, "Crear la rutina": Repeat, "Borrar": Trash2 };
 const rowEntries = (menu) => menu.map(([label, fn]) => ({ label, icon: ROW_ICONS[label], danger: label === "Borrar", onSelect: fn }));
 
 function RoutineRow({ r, first, busy }) {
@@ -711,7 +715,7 @@ function RoutineBuilder({ team, skills, missions, onClose, initialWhat = "", ini
         {msg?.missionId ? <> <a href={`/encargo/${msg.missionId}`} onClick={go(`/encargo/${msg.missionId}`)} style={{ color: "var(--c-accent-ink)", fontWeight: 600 }}>Ver cómo va</a></> : null}
       </span>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", paddingTop: "4px" }}>
-        <span style={{ flex: "1 1 260px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Aunque la rutina diga otra cosa, enviar fuera, pagar, publicar y borrar siempre te preguntan.</span>
+        <span style={{ flex: "1 1 260px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>Aunque la rutina diga otra cosa, enviar fuera, publicar y borrar te preguntan, salvo lo que hayas aprobado por adelantado. Pagar, siempre.</span>
         <button type="button" onClick={onTest} disabled={act.busy} style={{ height: "36px", padding: "0 14px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-sm)", background: "var(--c-card)", fontSize: "var(--t-ui)", fontWeight: 500, cursor: act.busy ? "wait" : "pointer" }}>{savedId ? "Probar otra vez" : "Probar ahora"}</button>
         <button type="button" onClick={onActivate} disabled={act.busy || (editing && (conflict || changedElsewhere))} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: act.busy ? "wait" : "pointer", opacity: editing && (conflict || changedElsewhere) ? 0.5 : 1 }}>{editing ? "Guardar cambios" : "Activar"}</button>
       </div>

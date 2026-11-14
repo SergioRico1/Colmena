@@ -15,7 +15,7 @@ const stamp = (iso) => Date.parse(iso || 0) || 0;
  * lists) still gets its row, so the rows always add up to the count.
  */
 export function needEntries(needs = {}) {
-  const { asks = [], choices = [], notes = [], errands = [], items = [] } = needs;
+  const { asks = [], choices = [], notes = [], errands = [], delegated = [], items = [] } = needs;
   // A room that waits for a choice or a plan waits as a room (server/waiting.mjs): no bot is
   // its face, unless it is that bot's own chat. The list says which.
   const botOfItem = new Map(items.map((i) => [i.id, i.botId ?? null]));
@@ -26,6 +26,7 @@ export function needEntries(needs = {}) {
     ...notes.map((n) => ({ type: "note", key: n.id, at: n.createdAt, count: 1, botId: n.botId, missionId: n.missionId, note: n })),
     ...choices.map((m) => ({ type: "choice", key: m.id, at: m.updatedAt || m.createdAt, count: 1, botId: botOfItem.has(m.id) ? botOfItem.get(m.id) : m.conversation && m.botIds?.length === 1 ? m.botIds[0] : null, missionId: m.id, mission: m, room: !(m.conversation && m.botIds?.length === 1) })),
     ...errands.map((x) => ({ type: "errand", key: x.id, at: x.at, count: 1, botId: x.botId, missionId: null, item: x })),
+    ...delegated.map((x) => ({ type: "delegated", key: x.id, at: x.at, count: 1, botId: null, missionId: null, item: x })),
   ];
   const known = new Set(out.flatMap((e) => (e.type === "group" ? e.group.items.map((a) => a.id) : [e.key])));
   for (const item of items) if (!known.has(item.id)) out.push({ type: "item", key: item.id, at: item.at, count: 1, botId: item.botId, missionId: item.missionId, item });
@@ -63,6 +64,11 @@ export function needRow(entry, { botName = "", roomName = "" } = {}) {
         who, what: plan ? `El plan de «${m.title}» espera tu OK` : `Las propuestas de «${m.title}» están listas`, sub: "",
         action: { kind: "link", label: plan ? "Revisar el plan" : "Ver y elegir", href: plan ? `/encargo/${m.id}` : `/debate/${m.id}` },
       };
+    }
+    case "delegated": {
+      // Another person's routine: whose it is and what it would do; decided in its card.
+      const ask = entry.item.ask || {};
+      return { who: String(ask.from || "Alguien").split(" ")[0] + (ask.routine ? ` · «${ask.routine}»` : ""), what: entry.item.title || "Te piden que decidas", sub: ask.title || "", action: { kind: "expand", label: "Decidir" } };
     }
     case "errand":
       return { who, what: entry.item.title || "Otra persona pide algo a tu bot", sub: "", action: { kind: "link", label: "Ver y decidir", href: entry.item.roomId ? `/con/${encodeURIComponent(entry.item.roomId)}` : "/equipo" } };

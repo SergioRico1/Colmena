@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { approvalCard } from "../lib/approvalCard.js";
+import { MenuButton } from "./Menu.js";
+import { ChevronDown, Clock, Repeat, ShieldCheck, Users } from "./Icon.js";
 
 // The pieces every approval card shares (lib/approvalCard.js): who a send goes to and its
 // subject, with what the card leaves out said in words, and the two lines under the buttons:
@@ -52,5 +54,39 @@ export function ApprovalNotes({ model, size = "var(--t-meta)", style = null }) {
       {lines.length ? <span>{lines.join(" ")}</span> : null}
       {expiry ? <span role="timer" aria-live="off" style={{ color: expiry.urgent ? "var(--c-error)" : "var(--c-text-3)" }}>{expiry.text}</span> : null}
     </div>
+  );
+}
+
+/**
+ * «Aprobar y dejarlo aprobado en esta rutina» (server/preapprovals.mjs): offered only where the
+ * server says this request may be kept (`a.preapprove`). The shared menu (components/Menu.js)
+ * gives «Solo la próxima vez» and «Siempre»; picking one approves this request now and keeps
+ * it in the routine. `onPick("next" | "always")`.
+ */
+export function RoutineChoice({ a, onPick, disabled = false, className, style = null }) {
+  if (!a?.preapprove) return null;
+  const where = a.routine?.name ? `«${a.routine.name}»` : "esta rutina";
+  const items = [{ group: `Dejarlo aprobado en ${where}`, items: [
+    { label: "Solo la próxima vez", hint: "La próxima vez que lo pida, se hace sin preguntarte", icon: Clock, onSelect: () => onPick("next") },
+    { label: "Siempre", hint: "Cada vez que esta rutina pida lo mismo", icon: Repeat, onSelect: () => onPick("always") },
+  ] }];
+  return (
+    <MenuButton label="Aprobar y dejarlo aprobado en esta rutina" menuLabel={`Dejarlo aprobado en ${where}`} showTitle={false} disabled={disabled} className={className} placement="bottom-start" items={items}
+      style={{ display: "inline-flex", alignItems: "center", gap: "6px", ...style }}>
+      <ShieldCheck size={15} aria-hidden="true" />
+      <span>{"Aprobar y dejarlo aprobado en esta rutina"}</span>
+      <ChevronDown size={13} aria-hidden="true" />
+    </MenuButton>
+  );
+}
+
+/** «También se lo has pedido a Marta»: another person of your team can decide it too. */
+export function DelegatedLine({ a, size = "var(--t-meta)", style = null }) {
+  if (!a?.delegatedTo) return null;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: size, lineHeight: "1.45", color: "var(--c-text-2)", ...style }}>
+      <Users size={14} aria-hidden="true" style={{ flex: "none" }} />
+      {`También se lo has pedido a ${a.delegatedTo.name}. Vale lo que decida primero uno de los dos.`}
+    </span>
   );
 }

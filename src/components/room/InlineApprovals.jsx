@@ -8,7 +8,7 @@ import { needsHold } from "../../lib/holdApprove.js";
 import { GROUP_VERBS, leftText } from "../../lib/approvalCard.js";
 import { cancel, schedule, useUndoFailed, useUndoable } from "../../lib/undoable.js";
 import { useApprovalBatch, useBatchFailures } from "../../lib/useApprovalBatch.js";
-import { useApprovalCard } from "../ApprovalParts.jsx";
+import { DelegatedLine, RoutineChoice, useApprovalCard } from "../ApprovalParts.jsx";
 import HoldButton from "../HoldButton.jsx";
 import BotFace from "../BotFace.jsx";
 import RowBoundary from "../RowBoundary.jsx";
@@ -126,6 +126,7 @@ function Row({ a, bots, note = null }) {
       </div>
       {deadline.bar}
       <ActionBox a={a} model={model} reviewHref={reviewHref} />
+      {a.delegatedTo ? <DelegatedLine a={a} style={{ padding: "0 14px" }} /> : null}
       {/* Not a <form>: this card sits inside the composer, which is one (a nested form never submits). */}
       {denying ? (
         <div role="group" aria-label="Decir que no" className="v4-need-f c-enter">
@@ -153,6 +154,7 @@ function Row({ a, bots, note = null }) {
                 : <button type="button" className="v4-btn primary lg" disabled={busy} onClick={() => decide("approved")}>{model.primary.label}</button>}
               <button type="button" className="v4-btn lg" disabled={busy} onClick={() => setDenying(true)}>{denyLabel}</button>
               {always ? <button type="button" className="v4-btn ghost lg" disabled={busy} onClick={() => decide("approved", true)}>{always.label}</button> : null}
+              <RoutineChoice a={a} className="v4-btn ghost lg" disabled={busy} onPick={(uses) => act(() => leave(self.current, () => post(`/approvals/${a.id}`, { decision: "approved", revision: a.revision, preapprove: uses })))} />
             </>
           )}
           {!review && !leaving && !hold ? <span className="note">{"También puedes responder «sí» en el chat"}</span> : quiet ? <span className="note">{quiet}</span> : null}

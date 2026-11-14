@@ -62,6 +62,8 @@ export function needsOf(store = {}, now = Date.now()) {
     choices: missions.filter((m) => choosing.has(m.id)),
     notes: (watchNotes || []).filter((n) => noted.has(n.id)),
     errands: items.filter((i) => i.kind === "errand"),
+    // Another person asks you to decide a red line of their routine (server/peers/delegation.mjs).
+    delegated: items.filter((i) => i.kind === "delegated"),
     snoozed,
   };
 }
