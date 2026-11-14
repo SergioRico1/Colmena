@@ -129,7 +129,7 @@ html.colmena-web [data-desktop-only]{display:none!important}
   .r-overlay{left:0;width:100vw!important;border-radius:0!important;border-left:0!important;padding-top:var(--safe-t);padding-bottom:var(--safe-b)}
   /* A row of a name and its buttons: the buttons go under the name instead of crushing it. */
   .r-wrap{flex-wrap:wrap!important;row-gap:10px!important}
-  .r-wrap > .r-grow{flex-basis:calc(100% - 64px)!important}
+  .r-wrap > .r-grow{flex-basis:calc(100% - 80px)!important;min-width:0!important}
   .r-wrap.r-pad{padding-top:8px!important;padding-bottom:8px!important}
   /* The composer of a chat or room: the text takes the first line, its buttons the second. */
   .r-composer{padding-left:10px!important;padding-right:10px!important;padding-bottom:calc(10px + var(--safe-b))!important}

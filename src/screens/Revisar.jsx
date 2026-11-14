@@ -165,9 +165,10 @@ export default function Revisar({ params = {} }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
           {isSend ? (
             <section aria-label="Correo" style={{ flex: "999 1 520px", minWidth: "0", display: "flex", flexDirection: "column", background: "var(--c-card)", border: "1px solid var(--c-line)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
-              <div style={row}>
+              {/* On a phone «CC · CCO» goes under the recipients (styles/responsive.css › .r-wrap). */}
+              <div className="r-wrap" style={row}>
                 <span style={label}>{"Para"}</span>
-                <div style={{ flex: "1", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
+                <div className="r-grow" style={{ flex: "1", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
                   {d.to.map((e, i) => chip("to", e, i))}
                   {!extra ? d.cc.map((e, i) => chip("cc", e, i)) : null}
                   {!extra ? d.cco.map((e, i) => chip("cco", e, i)) : null}
