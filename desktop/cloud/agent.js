@@ -92,7 +92,7 @@
         html += '<p class="small muted" style="margin:0">Tus conversaciones solo las verás tú. Las rutinas llegan en pausa. Los recuerdos de tus bots los usan los bots de toda la empresa.</p>';
       }
       if (m.progress) html += '<div class="progress" aria-hidden="true"><span style="width:' + Math.round((m.progress.done / Math.max(1, m.progress.total)) * 100) + '%"></span></div><span class="small muted">Subiendo ' + m.progress.done + " de " + m.progress.total + "…</span>";
-      if (m.result) html += '<div class="notice">Hecho: ' + m.result.totals.created + " nuevos, " + m.result.totals.updated + " actualizados, " + m.result.totals.unchanged + " ya estaban" + (m.result.totals.skipped ? ", " + m.result.totals.skipped + " se quedan aquí" : "") + ".</div>";
+      if (m.result) html += '<div class="notice">Hecho: ' + m.result.totals.created + " nuevos, " + m.result.totals.updated + " actualizados, " + m.result.totals.unchanged + " ya estaban" + (m.result.totals.skipped ? ", " + m.result.totals.skipped + " no se subieron (la empresa ya los tenía, o se quedan en este ordenador)" : "") + ".</div>";
       html += '<div class="row">' + (m.preview ? '<button type="button" class="btn" id="upload"' + (m.busy || state.status !== "online" ? " disabled" : "") + ">" + (m.busy ? "Subiendo…" : "Subir a la nube") + "</button>" : '<button type="button" class="btn ghost" id="preview"' + (m.busy ? " disabled" : "") + ">Ver qué se subiría</button>") + (state.status !== "online" ? '<span class="small muted">Hace falta que este ordenador esté conectado.</span>' : "") + "</div></section>";
     }
     root.innerHTML = html;
