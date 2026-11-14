@@ -64,6 +64,9 @@ export class Workspace extends DurableObject {
       const blobs = this.env.FILES ? new R2Blobs(this.env.FILES, "workspaces/" + workspaceId) : new SqlBlobs(this.ctx.storage.sql);
       const vapid = this.env.VAPID_PUBLIC_KEY && this.env.VAPID_PRIVATE_KEY ? { publicKey: this.env.VAPID_PUBLIC_KEY, privateKey: this.env.VAPID_PRIVATE_KEY, subject: this.env.VAPID_SUBJECT || "mailto:avisos@colmena.invalid" } : null;
       const host = hostWorkspace({ store, workspace: { id: workspaceId, name: mark?.title || "" }, masters, files, blobs, vapid,
+        // Phase 3: webhook addresses and MCP callbacks on the public site; the fake model only
+        // when the Worker has the test secret (each workspace still needs its own flag).
+        publicUrl: this.env.PUBLIC_URL || "", testing: !!this.env.FAKE_MODEL_TOKEN,
         defer: (promise) => { const p = Promise.resolve(promise).catch((e) => console.error("workspace deferred: " + (e?.stack || e))); try { this.ctx.waitUntil(p); } catch {} return p; },
         presence: () => this.presence() });
       const server = http.createServer(host.app);
@@ -75,6 +78,14 @@ export class Workspace extends DurableObject {
       if ((await this.ctx.storage.get("workspaceId")) !== workspaceId) await this.ctx.storage.put("workspaceId", workspaceId);
       // Sockets that were open while the object hibernated get their feed again.
       for (const ws of this.ctx.getWebSockets()) this.attach(ws);
+      // Work an eviction cut (a deploy, a crash, memory) goes on by itself, as the person it is for.
+      this.bootedAt = Date.now();
+      try {
+        const resumed = host.resume();
+        if (resumed?.length) console.log("workspace resumed " + resumed.length + " mission(s) after a wake-up");
+      } catch (error) { console.error("workspace resume: " + (error?.stack || error)); }
+      // The alarm comes back for whatever bots wait on (routines, heartbeats of running work).
+      this.ctx.waitUntil(this.scheduleFor(host).catch(() => {}));
       return host;
     })();
     try {
@@ -125,8 +136,8 @@ export class Workspace extends DurableObject {
     // leave a half-read stream behind, which workerd treats as an uncaught error.
     const body = ["GET", "HEAD"].includes(request.method) ? null : await request.arrayBuffer();
     const response = await handleAsNodeRequest(this.port, new Request(request.url, { method: request.method, headers: request.headers, body }));
-    // A mention (the mail digest) or an import may need the alarm sooner.
-    if (body !== null && url.pathname.startsWith("/api/chat/")) await this.schedule();
+    // A mention (the mail digest), an import, a bot's work or a routine may need the alarm sooner.
+    if (body !== null) await this.schedule();
     return response;
   }
 
@@ -145,10 +156,13 @@ export class Workspace extends DurableObject {
     if (!this.host) return;
     this.host.chatEmit({ type: "chat.presence", person: personId, presence: this.presence().get(personId) || "offline" }, { people: "all" });
   }
-  /** The alarm at the earliest of what the workspace wants (import steps, the digest, upkeep). */
+  /** The alarm at the earliest of what the workspace wants (import steps, the digest, upkeep, bots). */
   async schedule(at = null) {
     if (!this.host) return;
-    const want = at ?? this.host.nextAlarm(Date.now());
+    return this.scheduleFor(this.host, at);
+  }
+  async scheduleFor(host, at = null) {
+    const want = at ?? host.nextAlarm(Date.now());
     const current = await this.ctx.storage.getAlarm();
     if (!current || want < current) await this.ctx.storage.setAlarm(want);
   }
@@ -196,6 +210,35 @@ export class Workspace extends DurableObject {
     host.audit(entry);
     return { ok: true };
   }
+  /** The test flags of this workspace ({fakeModel}); refused unless the Worker allows tests. */
+  async setTestFlags(workspaceId, flags) {
+    const host = await this.boot(workspaceId);
+    const out = host.setTestFlags(flags);
+    await this.schedule();
+    return out;
+  }
+  /** A request to one of this workspace's webhook addresses (the Worker has already limited its size). */
+  async hook(workspaceId, hookId, headers, bytes) {
+    const host = await this.boot(workspaceId);
+    await host.hook(hookId, { headers, body: Buffer.from(bytes || new ArrayBuffer(0)) });
+    await this.schedule();
+    return { ok: true };
+  }
+  /** What the object holds in memory right now: for the e2e (eviction and concurrency checks). */
+  async probe(workspaceId) {
+    const host = await this.boot(workspaceId);
+    return { bootedAt: this.bootedAt || null, working: host.working(), alarm: await this.ctx.storage.getAlarm() };
+  }
+  /**
+   * Test only (the Worker checks the test secret): the object is reset as an eviction would
+   * (DurableObjectState#abort). The next request or alarm makes a fresh one from storage.
+   */
+  async evict(workspaceId) {
+    await this.boot(workspaceId);
+    await this.schedule(Date.now() + 2000);
+    this.ctx.abort("test eviction");
+  }
+
   /** Someone left or was taken out: their open screens close now. */
   async revokePerson(workspaceId, userId) {
     await this.boot(workspaceId);
@@ -258,7 +301,6 @@ export class Workspace extends DurableObject {
     const workspaceId = this.workspaceId || (await this.ctx.storage.get("workspaceId"));
     if (!workspaceId) return;
     const host = await this.boot(workspaceId);
-    host.background(() => host.runtime.sweepQuestions?.());
     const env = this.env;
     const directory = () => { const n = env.JURISDICTION ? env.DIRECTORY.jurisdiction(env.JURISDICTION) : env.DIRECTORY; return n.get(n.idFromName("directory")); };
     const next = await host.tick({
@@ -272,5 +314,6 @@ export class Workspace extends DurableObject {
       mail: (digest) => sendMail(env, { to: digest.email, kind: "digest", url: (env.PUBLIC_URL || "") + "/canales", items: digest.items, name: digest.name, workspace: host.store.get("cloud", "workspace")?.title || null }, { keep: async (m) => { await directory().call("keepDevMail", m); } }),
     });
     await this.ctx.storage.setAlarm(next);
+    // While bots work the alarm keeps the object awake; each wake-up is short (a tick).
   }
 }

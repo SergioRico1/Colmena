@@ -8,7 +8,10 @@
 // VAULT_MASTER_KEY (the master of the secrets' envelope encryption), ADMIN_BOOTSTRAP_TOKEN
 // (reads the dev mail while there is no mail provider), RESEND_API_KEY (optional: real mail),
 // GOOGLE_CLIENT_ID/SECRET, MICROSOFT_CLIENT_ID/SECRET (+ var MICROSOFT_TENANT), GITHUB_CLIENT_ID/
-// SECRET (optional: each pair turns on «Continuar con …» on /entrar; cloud/src/oauth.js).
+// SECRET (optional: each pair turns on «Continuar con …» on /entrar; cloud/src/oauth.js),
+// FAKE_MODEL_TOKEN (optional, tests only: allows the deterministic fake model per workspace and
+// the test routes under /auth/dev/; docs/CLOUD.md › Phase 3).
+//   /hooks/<workspace>/h/<id>  a routine's public webhook address (Phase 3)
 import { Directory } from "./directory.js";
 import { Workspace } from "./workspace.js";
 import { hasMail, isTestAddress, sendMail } from "./mail.js";
@@ -47,9 +50,10 @@ export default {
 
 async function route(request, env, ctx) {
   const url = new URL(request.url);
-  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 2 });
+  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 3 });
   if (!env.WORKSPACE_KEYS) return fail(503, "Colmena en la nube no está configurada todavía.");
   if (url.pathname.startsWith("/auth/")) return auth(request, env, url, ctx);
+  if (url.pathname.startsWith("/hooks/")) return hook(request, env, url);
   if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return api(request, env, url);
   return page(request, env, url);
 }
@@ -205,6 +209,9 @@ async function auth(request, env, url) {
     return json(await dir(env, "devMail", email));
   }
 
+  // Tests only (FAKE_MODEL_TOKEN): a workspace's fake model, an eviction, what the object holds.
+  if (p.startsWith("/auth/dev/test/")) return devTest(request, env, url);
+
   if (p === "/auth/me" && m === "GET") {
     if (!sameOrigin(request)) throw new HttpError(403, "Petición externa no permitida.");
     const me = await who(request, env, url);
@@ -333,7 +340,11 @@ async function auth(request, env, url) {
 async function api(request, env, url) {
   const write = !["GET", "HEAD", "OPTIONS"].includes(request.method);
   const live = url.pathname === "/api/live";
-  const me = await must(request, env, url, { write, origin: live });
+  // The browser back from an MCP server's sign-in arrives from that site (cross-site): a GET that
+  // only completes a sign-in whose state the workspace keeps, so the origin check does not apply.
+  const callback = url.pathname === "/api/mcp/oauth/callback" && request.method === "GET";
+  const me = callback ? await who(request, env, url) : await must(request, env, url, { write, origin: live });
+  if (callback && !me?.user) return redirect("/entrar");
   if (url.pathname === "/api/bootstrap") return finish(json({ csrf: me.session.csrf }), me);
   const workspaceId = me.session.workspaceId;
   if (!workspaceId) return finish(fail(409, "Elige una empresa.", { choose: "/empresa" }), me);
@@ -345,6 +356,54 @@ async function api(request, env, url) {
   headers.set("X-Colmena-Person", JSON.stringify(personOf(me)));
   const response = await workspaceStub(env, workspaceId).fetch(new Request(request, { headers }));
   return live ? response : finish(response, me);
+}
+
+// ------------------------------------------------------------------ /hooks (Phase 3)
+const HOOK = /^\/hooks\/([0-9a-f-]{36})\/h\/([A-Za-z0-9_-]{20,64})$/;
+const HOOK_MAX = 64 * 1024;
+/**
+ * POST /hooks/<workspace>/h/<id>: another app tells a routine something. Anyone may call it (the
+ * id is the secret, and a routine can also check a signature); 64 KB at most; the workspace
+ * answers 202 whatever it does with it, so the address reveals nothing.
+ */
+async function hook(request, env, url) {
+  const m = HOOK.exec(url.pathname);
+  if (!m) return fail(404, "No encontrado.");
+  if (request.method !== "POST") return fail(405, "Método no permitido.");
+  if (Number(request.headers.get("Content-Length") || 0) > HOOK_MAX) return fail(413, "Demasiado grande.");
+  const bytes = await request.arrayBuffer();
+  if (bytes.byteLength > HOOK_MAX) return fail(413, "Demasiado grande.");
+  const headers = {};
+  for (const [k, v] of request.headers) {
+    const name = k.toLowerCase();
+    if (/^(cookie|authorization|cf-|x-forwarded-|x-real-ip|true-client-ip)/.test(name) || Object.keys(headers).length >= 40) continue;
+    headers[name] = String(v).slice(0, 2000);
+  }
+  try {
+    await workspaceStub(env, m[1]).hook(m[1], m[2], headers, bytes);
+  } catch (error) {
+    console.error("hook: " + (error?.message || error));
+  }
+  return json({ ok: true }, 202);
+}
+
+// ------------------------------------------------------------------ test routes (FAKE_MODEL_TOKEN)
+async function devTest(request, env, url) {
+  const bearer = /^Bearer (\S+)$/.exec(request.headers.get("Authorization") || "")?.[1];
+  if (!env.FAKE_MODEL_TOKEN || !sameSecret(bearer || "", env.FAKE_MODEL_TOKEN)) throw new HttpError(404, "No encontrado.");
+  const data = request.method === "POST" ? await body(request) : Object.fromEntries(url.searchParams);
+  const id = String(data.workspace || "");
+  if (!ID.test(id)) throw new HttpError(400, "Falta el espacio.");
+  const stub = workspaceStub(env, id);
+  const what = url.pathname.slice("/auth/dev/test/".length);
+  if (what === "fake-model" && request.method === "POST") return json(await stub.setTestFlags(id, { fakeModel: data.on === true }));
+  if (what === "probe" && request.method === "GET") return json(await stub.probe(id));
+  if (what === "evict" && request.method === "POST") {
+    // The object resets itself (DurableObjectState#abort): the call fails on purpose.
+    try { await stub.evict(id); } catch {}
+    return json({ ok: true, evictedAt: Date.now() });
+  }
+  throw new HttpError(404, "No encontrado.");
 }
 
 // ------------------------------------------------------------------ pages
