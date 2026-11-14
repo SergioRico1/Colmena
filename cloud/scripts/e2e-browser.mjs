@@ -23,7 +23,12 @@ const results = [];
 const check = (name, ok, detail = "") => { results.push(!!ok); console.log((ok ? "  ok   " : "  FAIL ") + name + (detail && !ok ? " — " + detail : "")); };
 const shot = (page, name) => page.screenshot({ path: path.join(SHOTS, name + ".png") });
 /** «Tu nombre», asked once by /empresa and /invitacion while the account has only its address. */
-const nameIfAsked = async (page, name) => { const f = page.locator("input[autocomplete='name']"); if (await f.count()) await f.fill(name); };
+const nameIfAsked = async (page, name) => {
+  const f = page.locator("input[autocomplete='name']");
+  // The page draws the field after it reads the account: wait a moment before deciding it is not asked.
+  try { await f.waitFor({ timeout: 5000 }); } catch { return; }
+  await f.fill(name);
+};
 
 async function mailLink(email, kind) {
   for (let i = 0; i < 20; i++) {
@@ -118,7 +123,8 @@ try {
   await A.waitForTimeout(600);
   await shot(A, "laptop-5-sala-compartida");
   await shot(B, "phone-4-sala-compartida");
-  const named = await A.getByText(`beto.${run}`, { exact: false }).count();
+  // The name Beto gave on accepting («Tu nombre»), not his address.
+  const named = await A.getByText("Beto Prueba", { exact: false }).count();
   check("Ana's screen names Beto as the author", named > 0);
 
   // ---- sign out (Beto)
