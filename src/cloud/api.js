@@ -77,3 +77,6 @@ export function tokenFromHash() {
   const t = new URLSearchParams(location.hash.slice(1)).get("t");
   return t && /^[A-Za-z0-9_-]{43}$/.test(t) ? t : null;
 }
+
+/** A name nobody chose: the sign-in link named the account after its address («ana.garcia»). */
+export const unnamed = (user) => !user?.name || user.name.trim().toLowerCase() === String(user.email || "").split("@")[0].trim().toLowerCase();

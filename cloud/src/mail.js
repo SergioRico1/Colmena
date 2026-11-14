@@ -22,8 +22,10 @@ export function composeMail(kind, { url, workspace = null, inviter = null, items
   }
   if (kind === "invite") {
     const subject = `${inviter || "Alguien"} te invita a ${workspace || "su empresa"} en Colmena`;
-    const text = `${inviter || "Alguien"} te ha invitado a ${workspace || "su empresa"} en Colmena.\n\nAcepta aquí (caduca en 7 días):\n${url}\n\nSi no esperabas esta invitación, ignora este correo.`;
-    return { subject, text, html: page(`<p><strong>${escape(inviter || "Alguien")}</strong> te ha invitado a <strong>${escape(workspace || "su empresa")}</strong> en Colmena.</p>`, url, "Aceptar la invitación", "Caduca en 7 días. Si no esperabas esta invitación, ignora este correo.") };
+    // One line on what Colmena is: an invited person may never have heard of it.
+    const what = "Colmena es el chat de trabajo de un equipo y sus bots: canales y mensajes entre personas, y bots que preparan el trabajo y esperan el OK de alguien antes de enviar, pagar, comprar, publicar o borrar.";
+    const text = `${inviter || "Alguien"} te ha invitado a ${workspace || "su empresa"} en Colmena.\n\n${what}\n\nAcepta aquí (caduca en 7 días):\n${url}\n\nSi no esperabas esta invitación, ignora este correo.`;
+    return { subject, text, html: page(`<p><strong>${escape(inviter || "Alguien")}</strong> te ha invitado a <strong>${escape(workspace || "su empresa")}</strong> en Colmena.</p><p style="color:#5b5e69">${escape(what)}</p>`, url, "Aceptar la invitación", "Caduca en 7 días. Si no esperabas esta invitación, ignora este correo.") };
   }
   const subject = "Tu enlace para entrar en Colmena";
   const text = `Entra en Colmena con este enlace (sirve una vez y caduca en 15 minutos):\n${url}\n\nSi no lo has pedido tú, ignora este correo.`;

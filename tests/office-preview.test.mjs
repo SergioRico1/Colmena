@@ -61,7 +61,7 @@ test("conversions are cached by content, shared while running, and a newer versi
   const slow = fakeEngine({ name: "slow", hold: true });
   const office2 = createOfficeConverter({ cacheDir: path.join(dir, "cache2"), engines: [slow], fonts: false });
   const old = office2.convert(makeDocx(["v1"]), "docx", { source: "m1/a.docx" });
-  await new Promise((r) => setTimeout(r, 30));
+  await engineStarted(slow);
   const fresh = office2.convert(makeDocx(["v2 más larga"]), "docx", { source: "m1/a.docx" });
   await assert.rejects(old, (e) => e.code === "ABORTED");
   assert.equal(slow.calls[0].signal.aborted, true, "the engine was told to stop");
@@ -70,13 +70,22 @@ test("conversions are cached by content, shared while running, and a newer versi
   assert.equal(office2.pending(), 0);
 });
 
+/** Waits until the engine has been handed the conversion (a fixed delay races a loaded machine). */
+async function engineStarted(engine, ms = 5000) {
+  const until = Date.now() + ms;
+  while (!engine.calls.length) {
+    if (Date.now() > until) throw Error("the engine never started");
+    await new Promise((r) => setTimeout(r, 5));
+  }
+}
+
 test("a caller that leaves cancels a conversion nobody else waits for; a deadline stops a stuck one", async (t) => {
   const dir = await tmp(t);
   const engine = fakeEngine({ hold: true });
   const office = createOfficeConverter({ cacheDir: path.join(dir, "c"), engines: [engine], fonts: false });
   const leave = new AbortController();
   const p = office.convert(makeDocx(["x"]), "docx", { signal: leave.signal });
-  await new Promise((r) => setTimeout(r, 20));
+  await engineStarted(engine);
   leave.abort();
   await assert.rejects(p, (e) => e.code === "ABORTED");
   assert.equal(engine.calls[0].signal.aborted, true);

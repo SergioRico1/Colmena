@@ -47,6 +47,8 @@ export function SignIn() {
   const [failed] = useState(oauthError);
   const input = useRef(null);
   const leaving = new URLSearchParams(location.search).has("salir");
+  // ?crear=1: the home page's «Crear mi empresa». The same sign-in, saying what comes after it.
+  const creating = !leaving && new URLSearchParams(location.search).has("crear");
   useEffect(() => { let live = true; auth.providers().then((list) => { if (live) setProviders(list); }); return () => { live = false; }; }, []);
   // The error code leaves the address bar (a reload should not show it again); `next` stays.
   useEffect(() => {
@@ -55,8 +57,8 @@ export function SignIn() {
     q.delete("error");
     history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : ""));
   }, [failed]);
-  // Already signed in: straight on.
-  useEffect(() => { if (!leaving) me().then((m) => { if (m?.user) location.replace(m.current || nextParam().startsWith("/invitacion") ? nextParam() : "/empresa"); }).catch(() => {}); }, [leaving]);
+  // Already signed in: straight on (to the company form when they came to create one).
+  useEffect(() => { if (!leaving) me().then((m) => { if (m?.user) location.replace(!creating && (m.current || nextParam().startsWith("/invitacion")) ? nextParam() : "/empresa"); }).catch(() => {}); }, [leaving, creating]);
   const send = async (e) => {
     e.preventDefault();
     if (state.busy) return;
@@ -76,7 +78,7 @@ export function SignIn() {
           <span className="cl-sent-mark"><Mail size={28} /></span>
           <div>
             <h1 className="cl-title">Revisa tu correo</h1>
-            <p className="cl-lead" style={{ marginBottom: 12 }}>Te hemos enviado un enlace a <strong>{state.email}</strong>. Ábrelo en este dispositivo para entrar; sirve una vez y caduca en 15 minutos.</p>
+            <p className="cl-lead" style={{ marginBottom: 12 }}>Te hemos enviado un enlace a <strong>{state.email}</strong>. Ábrelo en el ordenador o el móvil donde quieras usar Colmena; sirve una vez y caduca en 15 minutos.</p>
             {state.delivery === "dev" ? <p className="cl-note">Este espacio aún no tiene correo configurado: quien lo administra puede ver el enlace en los registros del servidor.</p> : null}
           </div>
           <button type="button" className="cl-link" onClick={() => setState({ step: "ask", busy: false, error: null })}><ArrowLeft size={14} style={{ verticalAlign: "-2px", marginRight: 4 }} />Usar otro correo</button>
@@ -85,8 +87,8 @@ export function SignIn() {
     );
   return (
     <Shell>
-      <h1 className="cl-title">{leaving ? "Has cerrado la sesión" : "Entra en Colmena"}</h1>
-      <p className="cl-lead">{leaving ? "Vuelve cuando quieras con tu correo." : "Escribe tu correo de trabajo y te enviamos un enlace para entrar. Sin contraseñas."}</p>
+      <h1 className="cl-title">{leaving ? "Has cerrado la sesión" : creating ? "Crea tu empresa en Colmena" : "Entra en Colmena"}</h1>
+      <p className="cl-lead">{leaving ? "Vuelve cuando quieras con tu correo." : creating ? "Primero, tu correo: te enviamos un enlace para entrar, sin contraseñas. Después le pones nombre a tu empresa y empiezas en su canal #general." : "Escribe tu correo de trabajo y te enviamos un enlace para entrar. Sin contraseñas."}</p>
       {failed ? <p className="cl-error" role="alert" style={{ marginBottom: 20 }}><CircleAlert size={16} style={{ flex: "none", marginTop: 1 }} />{failed}</p> : null}
       <Providers providers={providers} />
       <form className="cl-form" onSubmit={send} noValidate>

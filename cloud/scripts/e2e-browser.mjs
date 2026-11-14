@@ -22,6 +22,8 @@ const run = randomBytes(3).toString("hex");
 const results = [];
 const check = (name, ok, detail = "") => { results.push(!!ok); console.log((ok ? "  ok   " : "  FAIL ") + name + (detail && !ok ? " — " + detail : "")); };
 const shot = (page, name) => page.screenshot({ path: path.join(SHOTS, name + ".png") });
+/** «Tu nombre», asked once by /empresa and /invitacion while the account has only its address. */
+const nameIfAsked = async (page, name) => { const f = page.locator("input[autocomplete='name']"); if (await f.count()) await f.fill(name); };
 
 async function mailLink(email, kind) {
   for (let i = 0; i < 20; i++) {
@@ -56,6 +58,7 @@ try {
   await signIn(A, ana, "laptop");
   await A.waitForURL(/\/empresa/);
   await A.getByRole("heading", { name: "Crea tu empresa" }).waitFor();
+  await nameIfAsked(A, "Ana Prueba");
   await A.fill("input[maxlength='60']", "Estudio de prueba " + run);
   await shot(A, "laptop-3-crear-empresa");
   await A.getByRole("button", { name: "Crear y entrar" }).click();
@@ -78,6 +81,7 @@ try {
   await B.getByRole("link", { name: /Entrar con/ }).click();
   await signIn(B, beto, "phone", { fromInvite: true });
   await B.waitForURL(/\/invitacion/);
+  await nameIfAsked(B, "Beto Prueba");
   await B.getByRole("button", { name: "Aceptar y entrar" }).click();
   await B.waitForURL((u) => !/invitacion|entrar/.test(new URL(u).pathname), { timeout: 20000 });
   check("Beto accepts from his phone", true);
@@ -131,6 +135,7 @@ try {
   C.on("pageerror", (e) => errors.push("phone2: " + e.message));
   await signIn(C, `cora.${run}@example.org`, null);
   await C.getByRole("heading", { name: "Crea tu empresa" }).waitFor();
+  await nameIfAsked(C, "Cora Prueba");
   await C.fill("input[maxlength='60']", "Taller Sur " + run);
   await shot(C, "phone-6-crear-empresa");
   await C.getByRole("button", { name: "Crear y entrar" }).click();

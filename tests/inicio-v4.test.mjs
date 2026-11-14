@@ -24,6 +24,16 @@ test("each step is done by what already exists: an AI account, your role, an app
   assert.equal(setupSteps({ ...fresh, teams: [{ id: "t", people: 3 }] }).steps.find((x) => x.id === "invite").done, true, "a team of several counts");
 });
 
+test("hosted Colmena: the AI step asks for a key and «Invitar» opens the company's people page", () => {
+  const s = setupSteps({ ...fresh, cloud: { workspace: { id: "w", name: "Cerámica" } } });
+  const ai = s.steps.find((x) => x.id === "ai");
+  const invite = s.steps.find((x) => x.id === "invite");
+  assert.match(ai.text, /clave de API/);
+  assert.doesNotMatch(ai.text, /ChatGPT o Claude/, "subscriptions are the desktop's");
+  assert.deepEqual(invite.action, { label: "Invitar", href: "/empresa#personas", page: true });
+  assert.doesNotMatch(invite.text, /salas/);
+});
+
 test("«Ahora no» puts an optional step off and the × closes the card", () => {
   const off = setupSteps({ ...fresh, settings: { setupHidden: ["apps", "invite"] } });
   assert.deepEqual(off.steps.filter((x) => x.hidden).map((x) => x.id), ["apps", "invite"]);

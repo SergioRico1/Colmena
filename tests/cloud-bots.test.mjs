@@ -213,6 +213,23 @@ test("a bot named in a channel answers in the thread, as the person who named it
   assert.deepEqual((await as(GIL)("GET", "/chat/bootstrap")).data.bots, []);
 });
 
+test("a bot named by someone with no AI account: Colmena says so in the thread, and nothing runs", async (t) => {
+  const { host, as, store } = await company(t, { fake: false });
+  const general = await generalOf(as(BETO));
+  const sent = (await as(BETO)("POST", "/chat/channels/" + general.id + "/messages", { text: "<@bot:nora> resume la semana" })).data.message;
+  await settled(host);
+  const thread = (await as(BETO)("GET", "/chat/messages/" + sent.id + "/thread")).data;
+  const note = (thread.replies || thread.messages || []).find((m) => m.author === "bot:colmena");
+  assert.ok(note, "a line in the thread, where the answer would be");
+  assert.match(note.text, /^Nora no puede trabajar para ti todavía: .*Ajustes › Tu cuenta de IA/);
+  assert.equal(store.list("missions").filter((m) => m.channelThread?.root === sent.id).length, 0, "no conversation was started");
+  // Asking again in the same thread does not repeat the line.
+  await as(BETO)("POST", "/chat/channels/" + general.id + "/messages", { text: "<@bot:nora> ¿y ahora?", thread: sent.id });
+  await settled(host);
+  const again = (await as(BETO)("GET", "/chat/messages/" + sent.id + "/thread")).data;
+  assert.equal((again.replies || again.messages).filter((m) => m.author === "bot:colmena").length, 1);
+});
+
 test("a plan with two bots completes; messaging stays responsive while they work", async (t) => {
   const { host, as, store } = await company(t);
   const general = await generalOf(as(ANA));
