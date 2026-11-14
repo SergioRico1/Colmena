@@ -30,6 +30,7 @@ import { failure, later } from "../lib/undoToast.js";
 import BtwNotes, { useBtw } from "../components/v2/BtwNotes.jsx";
 import TaskPeople, { PeerComments } from "../components/v2/people/TaskPeople.jsx";
 import { HandoffPage, SharedTask } from "../components/v2/people/SharedTasks.jsx";
+import { isDesktopApp } from "../lib/breakpoint.js";
 
 /** Commands for the open task from shortcuts and the palette (TaskView listens). */
 const command = (name) => window.dispatchEvent(new CustomEvent("colmena:code-command", { detail: name }));
@@ -477,7 +478,8 @@ function TaskScreen({ taskId, engines = [], github = null, panel, wide, onPanel,
     ] },
     { group: "Ver", items: [
       { label: "Panel de trabajo", icon: PanelRight, checked: !!panel, shortcut: "Ctrl+J", onSelect: () => onPanel(!panel) },
-      { label: "Abrir la carpeta de la copia", icon: FolderOpen, onSelect: openFolder },
+      // Explorer / Finder opens on the computer Colmena runs on: only from the desktop app.
+      isDesktopApp() ? { label: "Abrir la carpeta de la copia", icon: FolderOpen, onSelect: openFolder } : null,
       { label: "Atajos de teclado", icon: Keyboard, shortcut: "F1", onSelect: () => window.dispatchEvent(new Event("colmena:code-shortcuts")) },
     ] },
     ...taskActions(task, true),

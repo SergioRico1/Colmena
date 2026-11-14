@@ -2,6 +2,7 @@ import { useExpert } from "../../../lib/expert.js";
 import { reversible } from "../../../lib/undoToast.js";
 import { applyTheme } from "../../../lib/theme.js";
 import { Alert, Card, Panel, Pills, Row, SwitchRow, TextInput, UNDO_MS, useSettings } from "./v3.jsx";
+import { isDesktopApp } from "../../../lib/breakpoint.js";
 
 // Ajustes › Perfil y apariencia (group «Tú»): your name, your space, the theme (Colmena 4), how
 // much detail you see (Modo experto), how the bots talk to you, and the keyboard shortcuts. Who
@@ -16,7 +17,8 @@ const KEYS = [
   ["Buscar o pedir", "Ctrl K"], ["Nuevo", "Ctrl N"],
   ["Ir a Inicio … Biblioteca", "Ctrl 1 – 5"], ["Plegar la barra", "Ctrl B"],
   ["Deshacer lo último", "Ctrl Z"], ["Modo experto", "Ctrl ⇧ E"],
-  ["Pregunta rápida", "Alt Espacio"], ["Buscar un ajuste", "/"],
+  // «Pregunta rápida» is a window of the desktop app, opened from any other app.
+  ...(isDesktopApp() ? [["Pregunta rápida", "Alt Espacio"]] : []), ["Buscar un ajuste", "/"],
 ];
 
 export default function GeneralSection() {
@@ -39,14 +41,14 @@ export default function GeneralSection() {
       <Alert>{error}</Alert>
       <Card label="Tú">
         <Row as="label" first anchor="tu-nombre" title="Tu nombre" sub="Así te llaman los bots y las personas con las que hablas.">
-          <TextInput label="Tu nombre" value={settings.userName} onSave={(v) => save({ userName: v }, "Nombre cambiado")} />
+          <TextInput label="Tu nombre" autoComplete="name" value={settings.userName} onSave={(v) => save({ userName: v }, "Nombre cambiado")} />
         </Row>
         <Row as="label" anchor="tu-rol" title="Tu rol" sub="Les ayuda a saber qué te importa.">
-          <TextInput label="Tu rol" value={settings.userRole} list="st-roles" onSave={(v) => save({ userRole: v }, "Rol cambiado")} />
+          <TextInput label="Tu rol" autoComplete="organization-title" value={settings.userRole} list="st-roles" onSave={(v) => save({ userRole: v }, "Rol cambiado")} />
           <datalist id="st-roles">{ROLES.map((r) => <option key={r} value={r} />)}</datalist>
         </Row>
         <Row as="label" anchor="nombre-espacio" title="Nombre del espacio" sub="El equipo, la empresa o el departamento que trabaja aquí.">
-          <TextInput label="Nombre del espacio" value={settings.spaceName} onSave={(v) => save({ spaceName: v }, "Nombre del espacio cambiado")} />
+          <TextInput label="Nombre del espacio" autoComplete="organization" value={settings.spaceName} onSave={(v) => save({ spaceName: v }, "Nombre del espacio cambiado")} />
         </Row>
       </Card>
       <Card label="Apariencia">
