@@ -163,6 +163,10 @@ try {
   await C.fill("input[maxlength='60']", "Taller Sur " + run);
   await shot(C, "phone-6-crear-empresa");
   await C.getByRole("button", { name: "Crear y entrar" }).click();
+  await C.waitForURL(/\/empezar/, { timeout: 30000 });
+  await C.getByRole("heading", { name: "Despierta a tus bots" }).waitFor({ timeout: 30000 });
+  await shot(C, "phone-6b-empezar");
+  await C.getByRole("button", { name: "Ir a Colmena" }).click();
   await C.waitForURL((u) => new URL(u).pathname === "/", { timeout: 20000 });
   const isolated = await C.evaluate(async (id) => { const s = await (await fetch("/api/state")).json(); return !s.missions.some((m) => m.id === id); }, room.missionId);
   check("another company sees nothing of the first", isolated);
