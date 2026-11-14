@@ -4,7 +4,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowRight, ChatCircleText, Check, CircleAlert, Copy, DoorOpen, LogOut, Plus, UserPlus, X } from "../components/Icon.js";
 import { Shell } from "./Shell.jsx";
-import { auth, me } from "./api.js";
+import { auth, me, unnamed } from "./api.js";
+import { YourName } from "./YourName.jsx";
 
 const ROLE_LABEL = { owner: "Propietario", admin: "Administra", member: "Miembro", guest: "Invitado" };
 const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "?";
@@ -32,7 +33,7 @@ export function Companies() {
   return (
     <Shell wide right={right}>
       <h1 className="cl-title">{hasAny ? "Tus empresas" : "Crea tu empresa"}</h1>
-      <p className="cl-lead">{hasAny ? "Elige dónde trabajar o crea otra. Cada empresa tiene sus propias salas, personas y bots." : "Un espacio para tu equipo: salas, mensajes directos y, pronto, los bots de todos. Si te han invitado, abre el enlace de tu invitación."}</p>
+      <p className="cl-lead">{hasAny ? "Elige dónde trabajar o crea otra. Cada empresa tiene sus propios canales, personas y bots." : "El chat de tu equipo y de sus bots: canales, hilos y mensajes directos. Empiezas en #general, con seis bots que trabajan con tu cuenta de IA. ¿Te han invitado a una empresa que ya existe? Abre el enlace de tu invitación."}</p>
       <Problem text={error} />
       <ForYou onError={setError} />
       {hasAny ? (
@@ -52,7 +53,7 @@ export function Companies() {
           ))}
         </ul>
       ) : null}
-      <CreateCompany first={!hasAny} onError={setError} />
+      <CreateCompany first={!hasAny} user={who.user} onError={setError} />
       {who.current ? <Manage who={who} onChanged={load} /> : null}
     </Shell>
   );
@@ -91,25 +92,32 @@ function ForYou({ onError }) {
   );
 }
 
-function CreateCompany({ first, onError }) {
+function CreateCompany({ first, user, onError }) {
   const [openForm, setOpen] = useState(first);
+  const askName = first && unnamed(user);
+  const [person, setPerson] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const create = async (e) => {
     e.preventDefault();
     setBusy(true);
     onError(null);
-    try { await auth.createWorkspace(name.trim()); location.assign("/"); } catch (err) { setBusy(false); onError(err.message); }
+    try {
+      if (askName && person.trim()) await auth.rename(person.trim());
+      await auth.createWorkspace(name.trim());
+      location.assign("/");
+    } catch (err) { setBusy(false); onError(err.message); }
   };
   if (!openForm) return <button type="button" className="cl-btn ghost small" style={{ marginTop: 16, alignSelf: "flex-start" }} onClick={() => setOpen(true)}><Plus size={14} />Crear otra empresa</button>;
   return (
     <form className="cl-form" onSubmit={create} style={{ marginTop: first ? 0 : 24 }}>
+      {askName ? <YourName value={person} onChange={setPerson} autoFocus /> : null}
       <label className="cl-field">
         <span className="cl-label">Nombre de la empresa</span>
-        <input className="cl-input" autoFocus={first} maxLength={60} required placeholder="Por ejemplo, Estudio Norte" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="cl-input" autoFocus={first && !askName} maxLength={60} required placeholder="Por ejemplo, Estudio Norte" value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <div className="cl-row">
-        <button className="cl-btn" type="submit" disabled={busy || !name.trim()}>{busy ? "Creando…" : "Crear y entrar"}</button>
+        <button className="cl-btn" type="submit" disabled={busy || !name.trim() || (askName && !person.trim())}>{busy ? "Creando…" : "Crear y entrar"}</button>
         {first ? null : <button type="button" className="cl-btn ghost" onClick={() => setOpen(false)}>Cancelar</button>}
       </div>
     </form>
