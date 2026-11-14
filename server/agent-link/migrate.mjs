@@ -10,8 +10,9 @@
 //   of what was imported. The same upload again changes nothing; a changed record updates only
 //   what this import made; a record the workspace already had for itself is never overwritten
 //   (a seeded bot keeps the cloud's version and receives the memories that name it).
-// - Private by default: imported conversations are seen only by the person who brought them;
-//   routines arrive paused, owned by them.
+// - Private by default: imported conversations are seen only by the person who brought them, and
+//   messages only join conversations that person brought; routines arrive paused, owned by them;
+//   skills (which shape every bot of the company) arrive switched off.
 import { containsSecret } from "../memory.mjs";
 import { canonical, sha256Hex } from "./protocol.mjs";
 
@@ -92,6 +93,8 @@ export async function importBatch(store, person, { installId, kind, records } = 
       const key = installId + ":" + kind + ":" + record.id;
       const ledger = store.get(LEDGER, key);
       if (ledger?.hash === hash) { out.unchanged++; continue; }
+      // Messages and rooms only join a conversation this person brought (never someone else's).
+      if ((kind === "messages" || kind === "rooms") && store.get("missions", record.missionId)?.importedBy !== person.id) { out.skipped++; continue; }
       const existing = store.get(kind, record.id);
       const ours = existing && existing.importedFrom === installId && existing.importedBy === person.id;
       if (existing && !ours) {
@@ -115,6 +118,8 @@ function shape(kind, record, person, installId, existing) {
   if (kind === "missions") return { ...record, ...mark, audience: [person.id], askedBy: person.id, createdBy: person.id, ...(["running", "queued", "planning"].includes(record.status) ? { status: "paused" } : {}) };
   if (kind === "automations") return { ...record, ...mark, ownerId: person.id, enabled: false, importedPaused: true, approver: null, queue: [] };
   if (kind === "bots") return { ...record, ...mark, createdBy: person.id };
+  // Skills shape every bot of the company: they arrive switched off until someone turns them on.
+  if (kind === "skills") return { ...record, ...mark, status: "disabled", importedDisabled: true };
   return { ...record, ...mark };
 }
 

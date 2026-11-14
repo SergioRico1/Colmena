@@ -445,6 +445,13 @@ test("migration: secrets stay home, the upload is idempotent, conversations stay
   assert.equal(cloud.get("missions", "c1").title, "Ventas");
   assert.ok(cloud.list(LEDGER).length >= first.created);
   await assert.rejects(importBatch(cloud, ANA, { installId, kind: "vault", records: [] }), /no se puede llevar/);
+  // A message never joins someone else's conversation; skills arrive switched off.
+  cloud.put("missions", { id: "ajena", title: "De Beto", audience: [BETO.id] });
+  const sneaky = await importBatch(cloud, ANA, { installId, kind: "messages", records: [{ id: "intruso", missionId: "ajena", role: "user", text: "hola" }] });
+  assert.equal(sneaky.skipped, 1);
+  assert.equal(cloud.get("messages", "intruso"), null);
+  await importBatch(cloud, ANA, { installId, kind: "skills", records: [{ id: "sk1", name: "Informes", content: "Haz informes cortos", status: "active" }] });
+  assert.equal(cloud.get("skills", "sk1").status, "disabled");
 });
 
 // ---------------------------------------------------------------- the desktop sign-in (directory)
