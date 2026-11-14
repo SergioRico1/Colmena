@@ -1115,7 +1115,7 @@ No new secrets: the machine's store key derives from `WORKSPACE_KEYS`.
 
 ### Tests and measurements
 
-- **Node** (`npm test`: PHASE4_TESTS tests, all passing) adds `tests/cloud-timezone.test.mjs` (9: zones,
+- **Node** (`npm test`: 1,663 tests, all passing, with phase 5 merged) adds `tests/cloud-timezone.test.mjs` (9: zones,
   offsets, gaps and repeats, 9:00 Madrid across both changes, weekdays and holidays by the zone's day,
   weekly and one-off, local time unchanged), `tests/cloud-machine.test.mjs` (8: the seam against a real
   machine server, restore before begin, run_command with approval through the machine, «Código» with a
@@ -1123,9 +1123,42 @@ No new secrets: the machine's store key derives from `WORKSPACE_KEYS`.
   conversion, settings, GitHub tokens sealed, apps per person, quotas) and `tests/cloud-browser.test.mjs`
   (4: references, fill and submit rules, frames, sealed jars, passwords rules, take control).
 - **Image**: `cloud/scripts/machine-smoke.mjs` 12/12 against the image on this computer (Docker).
-- **Deployed**: PHASE4_E2E
+- **Deployed** (app.colmena.team, 2026-11-14, with phase 5 merged): `node scripts/e2e-machine.mjs --url …
+  --env … --out ../.local/shots/cloud-phase4` 38/38 (a fresh company each run, the fake model and the
+  fake Claude Code, a real container and real Browser Rendering); screens with
+  `node scripts/e2e-browser-machine.mjs` (laptop and 375 px phone: «Código» home and task, the live
+  browser taken over, an Office file drawn as pages, Empresa › Hora y máquina; 17/17 screen checks) in
+  `.local/shots/cloud-phase4/`.
+  Earlier runs found and fixed: approvals have no `tool` in `/api/state` (the test), the machine backup
+  depended on an in-memory flag (lost when the object restarted: the work was not kept), Puppeteer 2's
+  `connected` property (a second page failed), tools behind `use_tool` in the fake model.
 
-PHASE4_NUMBERS
+| Measure (deployed, client in Spain) | Result |
+| --- | --- |
+| First start of a company's machine (image pulled to a new place; nothing to restore) | 38.5 s to ready, 39.0 s to the first answer |
+| Waking a sleeping machine with its work folder (318 KB) back from R2 | 2.7 s to ready (1.8 s container, 0.1 s restore), 3.1 s to the first answer |
+| A «Código» request to a running machine | 335 ms (Worker → Workspace → Machine → container) |
+| «arregla la suma y prueba» (fake engine: edit, `node --test` in the container) → done | 0.8 s |
+| A dev server preview through its link | 313 ms |
+| run_command: approve → the bot's answer with the output | 0.8 s |
+| Browser Rendering: first page (launch 0.9–2.2 s) / read a page via the bot / open+fill a form via the bot | 3.5–4.4 s / 4.4 s / 1.9 s |
+| Office → PDF with LibreOffice (first, a small .docx) / page 1 as PNG | 4.3 s / 0.76 s |
+| Sleep: pack the work folder into R2 and stop | 1.4 s (backup 0.8 s) |
+| A routine at its minute in Europe/Madrid | fired 0–64 ms after the minute; 9:00 Madrid planned at 08:00Z (November) |
+
+**Costs** (Workers Paid list prices, 2026-11: memory $0.0000025/GiB-s, CPU $0.000020/vCPU-s, disk
+$0.00000007/GB-s, 25 GiB-h memory, 375 vCPU-min and 200 GB-h disk included per month; Browser
+Rendering 10 h included then $0.09/h):
+
+- `standard-1` (½ vCPU, 4 GiB, 8 GB) running for an hour: memory $0.036, disk $0.002, CPU up to $0.036
+  when busy the whole hour → **$0.04–0.07 per machine-hour**.
+- A typical «Código» task: the machine wakes (3 s), works ~10 minutes and sleeps 10 minutes after the last
+  request → ~20 machine-minutes ≈ **$0.015–0.025**. The 600-minute default quota is at most ~$0.75 a month
+  per company.
+- The e2e itself used 3.6 machine-minutes. Browser pages close after 10 idle minutes; the browser closes
+  with its last page (each new launch ~1–2 s).
+- R2: a work folder of ~0.3 MB here; real repositories with `node_modules` are tens to hundreds of MB
+  (storage $0.015/GB-month; class A operations per backup part).
 
 ### Left after phase 4
 
@@ -1139,6 +1172,9 @@ PHASE4_NUMBERS
 - Backups more often than at sleep (a crash loses what changed since the last one); trimming the image
   (build tools are kept).
 - Previews of apps that need absolute paths; WebSocket hot reload through `/vista/`.
+- The text of a Word file is not read in the Worker («No pude leer su contenido» above its pages): the
+  pages show (converted in the machine) but text extraction for .docx should move to the machine too.
+- The live view names the bot only while it is browsing («el bot» once its turn ended).
 - Real accounts: no real API key, GitHub token or Composio account was used.
 
 ## Phase 5: the desktop app is a client of the cloud plus a local agent

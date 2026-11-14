@@ -39,13 +39,34 @@ await req("/auth/link", { method: "POST", body: { email } });
 let token = null;
 for (let i = 0; i < 12 && !token; i++) {
   const list = await (await fetch(BASE + "/auth/dev/mail?email=" + encodeURIComponent(email), { headers: { Authorization: "Bearer " + ADMIN } })).json().catch(() => []);
-  const mail = (Array.isArray(list) ? list : []).filter((m) => m.kind === "signin").at(-1);
+  const mail = (Array.isArray(list) ? list : []).find((m) => m.kind === "signin");
   if (mail) token = new URL(mail.url).hash.slice(3); else await sleep(500);
 }
 await req("/auth/verify", { method: "POST", body: { token } });
 csrf = (await req("/auth/me")).data?.csrf;
 await req("/auth/workspaces/select", { method: "POST", body: { id: FROM.workspace } });
 csrf = (await req("/auth/me")).data?.csrf;
+// The room of the browser test: a page open again (frames live in memory) and taken over, so the
+// live view shows; and an Office document in its files.
+const ROOM = FROM.numbers?.browserMission;
+if (ROOM) {
+  const { Document, Packer, Paragraph, TextRun } = require("docx");
+  const doc = new Document({ sections: [{ children: [new Paragraph({ children: [new TextRun({ text: "Informe trimestral", bold: true, size: 40 })] }), new Paragraph("Ventas de octubre: 1.240 cajas, un 8 % más que en septiembre."), new Paragraph("Preparado por Nora en la nube de la empresa.")] }] });
+  const bytes = await Packer.toBuffer(doc);
+  const up = await req("/api/missions/" + ROOM + "/attachments", { method: "POST", body: { attachments: [{ name: "informe.docx", content: bytes.toString("base64"), encoding: "base64" }] } });
+  check("an Office document in the room's files", up.status === 201, JSON.stringify(up.data).slice(0, 200));
+  const general = (await req("/api/chat/bootstrap")).data.channels.find((c) => c.name === "general");
+  await req(`/api/chat/channels/${general.id}/messages`, { method: "POST", body: { text: `<@bot:nora> abre el formulario [[tool:browser_open|{"url":"${BASE}/prueba/formulario"}]] [[tool:browser_fill|{"fields":[{"ref":"e1","value":"Ana Prueba"}]}]]` } });
+  let mission = null;
+  for (let i = 0; i < 40 && !mission; i++) {
+    await sleep(1500);
+    const st = (await req("/api/state")).data;
+    mission = (st.missions || []).filter((m) => /abre-el-formulario|abre el formulario/.test((m.title || "") + (m.room || "") + (m.prompt || "")) && m.status === "completed").sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0]?.id || null;
+  }
+  FROM.numbers.liveMission = mission;
+  const take = mission ? await req("/api/computer/takeover", { method: "POST", body: { missionId: mission, action: "take" } }) : { status: 0 };
+  check("the browser is open and taken over for the shots", take.status === 200, JSON.stringify(take.data));
+}
 const code = (await req("/api/code")).data;
 const project = code?.projects?.[0];
 check("signed in to the e2e company, its project is there", !!project, JSON.stringify(code).slice(0, 200));
@@ -78,19 +99,29 @@ try {
     }
     check(who + ": «Código» has no sideways scroll", (await overflow(page)) <= 2);
     // The bots' browser: its room with the live view.
-    if (FROM.numbers?.browserMission) {
-      await page.goto(BASE + "/sala/" + FROM.numbers.browserMission); await settle(page);
+    if (FROM.numbers?.liveMission) {
+      await page.goto(BASE + "/sala/" + FROM.numbers.liveMission); await settle(page);
+      // The «Navegador» panel (it opens by itself while a bot browses; here the bot has finished).
+      if (!(await page.locator("article[aria-label^='Vista en vivo']").first().isVisible().catch(() => false))) {
+        if (who === "phone") await page.getByRole("button", { name: /Más opciones de/ }).first().click().catch(() => {});
+        else await page.keyboard.press("Control+Alt+Shift+U").catch(() => {});
+        if (who === "phone") { await page.getByText("Panel lateral").first().click().catch(() => {}); await page.getByText("Navegador").last().click().catch(() => {}); }
+      }
       await page.locator("article[aria-label^='Vista en vivo']").first().waitFor({ timeout: 20000 }).catch(() => {});
       await page.locator("article[aria-label^='Vista en vivo']").first().scrollIntoViewIfNeeded().catch(() => {});
       await shot(page, who + "-03-navegador-en-vivo");
       check(who + ": the live view of the cloud browser", await page.locator("article[aria-label^='Vista en vivo'] img").first().isVisible().catch(() => false));
     }
     // An Office preview: the room of the document, its file opened.
-    if (FROM.numbers?.officeMission) {
-      await page.goto(BASE + "/sala/" + FROM.numbers.officeMission); await settle(page);
+    if (ROOM) {
+      await page.goto(BASE + "/sala/" + ROOM); await settle(page);
+      const files = page.getByText("Archivos de la sala").first();
+      if (!(await files.isVisible().catch(() => false))) await page.getByRole("button", { name: /miembros|personas|detalles|panel/i }).first().click().catch(() => {});
+      await files.click().catch(() => {});
+      await settle(page);
       const file = page.getByText("informe.docx").first();
       await file.waitFor({ timeout: 20000 }).catch(() => {});
-      if (await file.isVisible().catch(() => false)) { await file.click().catch(() => {}); await settle(page); await sleep(4000); }
+      if (await file.isVisible().catch(() => false)) { await file.click().catch(() => {}); await settle(page); await page.locator("img[src*='/workfiles/page/']").first().waitFor({ timeout: 45000 }).catch(() => {}); await sleep(1500); }
       await shot(page, who + "-04-vista-office");
       check(who + ": an Office page is drawn", await page.locator("img[src*='/workfiles/page/']").first().isVisible().catch(() => false));
     }

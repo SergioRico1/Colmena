@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, ChevronRight, Copy, Download, File, FileImage, FileSpreadsheet, FileText, Pencil, RotateCcw, Save, Search, X } from "../Icon.js";
 import { api } from "../../lib/api.js";
 import { isCloud } from "../../lib/cloud.js";
+import { useStore } from "../../lib/store.jsx";
 import { ago } from "../../lib/format.js";
 import { copyText, ErrorLine } from "./common.jsx";
 import Markdown from "./Markdown.jsx";
@@ -135,6 +136,7 @@ function FileRow({ file, missionId, onOpen }) {
 
 /** One file in its own tab: preview, download and (text) conflict-safe editing. */
 export function FileView({ missionId, path, onDirty, version = 0 }) {
+  const cloudMachine = !!useStore().cloud?.machine;
   const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
   const key = draftKey(missionId, path);
@@ -207,8 +209,9 @@ export function FileView({ missionId, path, onDirty, version = 0 }) {
   const type = file?.type;
   const page = /[.]html?$/i.test(path);
   // PDFs, and Office files once converted, are seen as their pages (the text one click away).
-  // Hosted (src/lib/cloud.js): no Office to convert a document, so Office files show as text.
-  const visualUrl = file?.visual && !(file.visual === "office" && isCloud()) ?`/api/missions/${encodeURIComponent(missionId)}/workfiles/visual?path=${encodeURIComponent(path)}` : null;
+  // Hosted (src/lib/cloud.js): Office files are converted in the company's machine (Phase 4);
+  // a hosted install without one shows them as text.
+  const visualUrl = file?.visual && !(file.visual === "office" && isCloud() && !cloudMachine) ?`/api/missions/${encodeURIComponent(missionId)}/workfiles/visual?path=${encodeURIComponent(path)}` : null;
   const visual = useVisual(visualUrl, file ? file.size + ":" + file.modifiedAt : "");
   const pages = file?.visual && visual.state === "ready";
   const pageUrl = (n) => `/api/missions/${encodeURIComponent(missionId)}/workfiles/page/${n}?path=${encodeURIComponent(path)}&width=1200&v=${visual.info?.version || ""}`;
