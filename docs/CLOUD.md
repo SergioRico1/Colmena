@@ -1,8 +1,9 @@
 # Colmena in the cloud
 
-Status: **Phase 1** (accounts, companies and the real server in each workspace, deployed; Phase 0
-proved the store on Durable Objects). This document is the start of
-the cloud architecture; it grows with each phase. The desktop stays as it is: everything here is
+Status: **Phase 2** (team messaging: channels, threads, search, notifications, the Slack import and
+sign-in with Google, Microsoft and GitHub, deployed). Phase 1: accounts, companies and the real server
+in each workspace; Phase 0 proved the store on Durable Objects. This document is the start of the
+cloud architecture; it grows with each phase. The desktop stays as it is: everything here is
 additive, and the desktop's default paths do not change.
 
 ## Target shape
@@ -456,3 +457,318 @@ desktop layout until the responsive shell lands (separate work).
 - Big values: the R2 spill of records over 2 MB, a records-level export, importing desktop data.
 - The directory as one object: shard or move to D1 before thousands of people.
 - Editing work files and Office previews without a disk; generated documents need phase 4.
+
+(Phase 2 below did most of this list; what is still open is under «Left for phase 3».)
+
+## Phase 2: team messaging, so a company can leave Slack
+
+```
+browser ──► Worker colmena-nube
+             ├─ /auth/oauth/:provider[/callback]   Google, Microsoft, GitHub (cloud/src/oauth.js)
+             ├─ /auth/workspace/…                  members, roles, deactivation, domains, invitations
+             ├─ /api/chat/*  ──► Workspace DO: server/cloud/chat-routes.mjs over chat.mjs (own tables)
+             │                   PUT /api/chat/files, …/import/:id/parts/:n and GET /api/chat/files/:id
+             │                   are streamed by the object itself to/from R2 (cloud/src/workspace.js)
+             └─ /api/live    ──► the same socket as Phase 1: chat.* frames per person, typing, presence
+Workspace DO alarm ──► Slack import steps · mail digest of unread mentions · hourly retention
+```
+
+### The model (`server/cloud/chat.mjs`)
+
+Team messaging keeps its own tables in the workspace's SQLite instead of the store's records: a
+channel of 50,000 messages is read by pages over `(channel, top, seq)` without decrypting the rest.
+Every body (message, channel, profile, draft, file name, audit entry) is sealed with the store's
+own AES-256-GCM cipher, bound to its table and id; operators see ids, sequence numbers, times and
+flags only.
+
+| Table | Holds |
+| --- | --- |
+| `chat_channels` | public, private, `dm`, `group`; archived; `last_seq`; `dm_key` (the people of a DM, sorted) |
+| `chat_members` | who is in which channel; `read_seq` (unread, «marcar como leído», unread from a message), notify (`default`/`all`/`mentions`/`nothing`), muted, the sealed draft |
+| `chat_messages` | `seq` (order), `thread` (the first message's seq), `top` (shown in the channel: not a reply, or a reply also sent to it), author, times, edited, deleted, reply count, pinned, has file/link, sealed body (text, files, reactions, repliers, link preview) |
+| `chat_terms` | the search index: `HMAC(word prefix)` → seq |
+| `chat_mentions` | what was «para ti» (mention, DM, @canal, @aquí, thread, keyword): badges, «Para ti», the mail digest |
+| `chat_people`, `chat_push` | profiles (title, time zone, status, «ausente», «no molestar» and its schedule, keywords, digest) and Web Push subscriptions |
+| `chat_files` | uploads (blob key in R2, sealed name and type) |
+| `chat_audit`, `chat_kv` | the audit log; settings (default channels, retention, digest minutes), import state, the term key |
+| `chat_ghosts`, `chat_import_map` | people of a Slack import (original name; linked to a member by email), Slack ids → ours |
+
+**Who sees what** is decided in one place and applied to every way out:
+
+- A public channel: everyone in the workspace who is not a guest. Guests, private channels, DMs and
+  groups: their members only.
+- API: every route goes through `mustRead` / `mustPost` (404 for what you may not see).
+- Live socket: frames carry an audience. The host sends each socket only frames for its person,
+  plus «watching» frames for the channel it has open, after checking it may read that channel.
+- Search: only channels the person may read.
+- Admins manage every channel (archive, rename, members, default) without reading private ones.
+- Deactivated people (`deactivated` from the directory) are refused everywhere; their name stays on
+  what they wrote.
+
+**Messages.** Stored in Slack's own format: `&lt;` escaping, `<@persona>`, `<#canal>`,
+`<!channel>`, `<!here>`, `<url|texto>`, `*negrita*`, `_cursiva_`, `~tachado~`, code. That makes the
+import lossless. Mentions of anyone who is not a member (or an import ghost) become plain text.
+Threads have replies with «también enviar al canal». Messages support reactions, pins, edits by
+their author, and deletes by their author or an admin (audited). A first message with replies stays
+as «Mensaje eliminado». Link previews are fetched by the server after the message is out
+(`link-preview.mjs`):
+- only http(s) on ports 80/443, no credentials, no private, loopback, link-local, CGNAT or multicast
+  address, as a literal or after DNS-over-HTTPS resolution;
+- the same checks on each of at most 3 redirects;
+- 4 s and 512 KB at most, HTML only.
+
+Files go to R2 (`workspaces/<id>/chat/<channel>/<file>/<name>`, 100 MB each). They are served inline
+only for images, audio, video and PDF; everything else downloads, with `sandbox` CSP and `nosniff`.
+An upload never sent is deleted after a day.
+
+**Search** (`GET /api/chat/search?q=`): words by prefix (accents and case folded, every word must
+match), `from:@persona` (including what they wrote before joining, through the import),
+`in:#canal` / `in:@persona`, `has:file|link|pin`, `before:` / `after:` / `on:` (YYYY-MM-DD), and
+`during:` (YYYY-MM or YYYY), with Spanish aliases (de:, en:, tiene:, antes:, después:, el:, durante:).
+
+FTS5 works in DO SQLite (Phase 0 checked it) but is **not used**: its index keeps every word in
+the clear and would undo the encryption. Instead, `chat_terms` keeps an HMAC (under a per-workspace
+key) of each word's 3- and 5-letter prefix, or of the whole word under 3 letters. The candidates
+are decrypted and checked word by word.
+
+**Unread and drafts.** Each person has `read_seq` per channel. Unread counts stop at 100 («99+»).
+Your own message reads everything before it. «Marcar como leído», and «marcar como no leído desde
+aquí» (sets `read_seq` to the message before). The channel opens at the first unread with a «Nuevo»
+line, and «Ir a lo no leído» / «Ir al final». Drafts are per person and channel (sealed).
+
+**Notifications.**
+- A new message makes a `chat_mentions` row for the people it is for: a DM, a direct mention,
+  @canal, @aquí (only who is active), replies in a thread they took part in, or their keywords.
+- Preferences per channel: `all` / `mentions` (the default for channels; DMs are `all`) /
+  `nothing`, plus mute (only direct mentions get through).
+- A Web Push goes to their devices when the preferences allow it, they are not in «no molestar»
+  (until a time, or a daily schedule in their own time zone), and **no screen of theirs is active**.
+  Presence comes from the sockets: `active`, or `away` when every screen of theirs says so (hidden
+  tab or 10 minutes idle).
+- Push (`server/cloud/webpush.mjs`): VAPID ES256 and aes128gcm with WebCrypto only. It posts only to
+  the known push services (FCM, Mozilla, Windows, Apple) and deletes a subscription on 404/410.
+  The service worker is `public/colmena-sw.js`, registered only in the hosted app.
+- The mail digest: mentions still unseen after `digestMinutes` (default 30, 5–1440) are mailed once
+  through the mail provider (`cloud/src/mail.js`, kind `digest`). On the dev fallback they go to
+  the dev outbox. A person can turn it off; «no molestar» delays it.
+
+**Typing and presence** never touch storage:
+- A screen sends `{type:"typing", channel}` at most every 3 s; the object relays it to the channel's
+  other people (and whoever watches it).
+- `{type:"presence", state}` and `{type:"watch", channel}` live in the socket's attachment, so they
+  survive hibernation.
+- Keep-alives are still answered by `setWebSocketAutoResponse` without waking the object.
+
+**Admin** (owners and admins):
+- The directory side, in the Worker: roles; deactivate/reactivate (every session ends, sockets
+  close, the name stays); allowed email domains (public mail providers refused; someone an admin
+  removed does not come back on their own); invitations, including the ones an import makes.
+- The workspace side: channels (archive, default for newcomers); retention (`retentionDays`, 0 =
+  forever: older messages, their index entries, mentions and files go, 500 at a time, hourly).
+- `GET /api/chat/admin/export.zip`: a streamed ZIP with `workspace.json`, `people.json`,
+  `channels.json`, `channels/<name>/messages-NNNN.json` (5,000 each), `audit.json` and `files/`
+  (`?files=0` without them).
+- The audit log covers every admin action, from the Worker (`Workspace#audit`) and from the
+  workspace (archive, rename, default, members of a channel someone is not in, settings, export,
+  import, retention, deleting someone else's message).
+
+### Slack import (`server/cloud/slack-import.mjs`, `slack-export.mjs`, `zip.mjs`)
+
+The admin uploads the export ZIP in parts of 64 MB (`POST /api/chat/import` → `PUT …/parts/:n`,
+streamed to R2), then starts it. The object reads the ZIP with range reads: the central directory
+(ZIP64 supported), then one day file at a time, so memory stays at about one day file. It runs in
+steps from the alarm (2,000 messages per step, the next one 250 ms later). The state (phase, cursor,
+counts) is saved after every day file, and each message is keyed by (import, channel, ts), so a
+repeated or resumed step never imports twice.
+
+- **Users** become «ghosts» with their original name, title and colour. Those whose email is a
+  member are linked to them at once. The rest (not bots, not deleted) become **pending invitations**
+  (`importInvitations` in the directory, never mailed; the person sees them under «Invitaciones
+  para ti» when signing in with that address). When someone joins later with that email, the ghost
+  is linked, they get its channels, and `from:` finds what they wrote.
+- **Channels**: `channels.json` (public), `groups.json` (private), `dms.json`, `mpims.json`, with
+  their members. Name clashes get a suffix, and an empty channel with the same name (the seeded
+  #general) is reused. Archived channels stay archived.
+- **Messages**:
+  - mention markup is converted (`<@U…>` to our person or ghost; `<#C…|name>` to our channel;
+    `<!channel>`, `<!here>`, links and emoji shortcodes kept or converted);
+  - threads (with broadcasts), reactions, edits and pins are kept;
+  - joins, leaves, topic changes and the like are skipped;
+  - bot messages keep their bot's name, and the original author and time are kept;
+  - imported history is not unread to anyone.
+- **Files**: copied to R2 when the export holds them (`__uploads/<id>/<name>`); otherwise the
+  message keeps a link to the original.
+- The screen (`/admin/importar`) shows upload progress, the import's progress (it survives a reload)
+  and a summary. Test data comes only from `server/cloud/slack-synthetic.mjs`
+  (`node cloud/scripts/slack-export.mjs --out x.zip [--big 50000]`), which also states the exact
+  counts a correct import must find.
+
+### Sign-in with Google, Microsoft and GitHub (`cloud/src/oauth.js`)
+
+Each provider appears on `/entrar` («Continuar con …») only when both its client id and secret
+are set (`GET /auth/providers`).
+
+- **The flow**: the authorization code flow with PKCE (S256), plus:
+  - a `state` of 32 random bytes, kept hashed in the directory (10 minutes, single use);
+  - an OIDC `nonce` (Google, Microsoft);
+  - a browser-binding cookie `__Host-colmena-oauth` (HttpOnly, SameSite=Lax, 10 minutes; its hash
+    is stored with the state), so a callback finished in another browser (login CSRF) fails.
+- **The id_token** comes straight from the token endpoint over TLS, so its signature is not verified
+  (OIDC Core 3.1.3.7); `iss`, `aud`, `exp`, `iat` and `nonce` are.
+- **Accounts are linked by verified email**: only verified emails get in, and signing in with Google
+  as `ana@…` opens the account `ana@…` already has.
+- **Failures** land on `/entrar?error=<code>` (`denied`, `state`, `unverified`, `ms-email`,
+  `provider`, `rate`, `account`). No token ever goes into a URL or a log.
+- **Outgoing requests** go only to the providers' fixed URLs, with a 10 s timeout.
+
+Redirect URIs (exactly these):
+
+- `https://colmena-nube.klast-lab-fa693a.workers.dev/auth/oauth/google/callback`
+- `https://colmena-nube.klast-lab-fa693a.workers.dev/auth/oauth/microsoft/callback`
+- `https://colmena-nube.klast-lab-fa693a.workers.dev/auth/oauth/github/callback`
+
+(For `wrangler dev`, add `http://127.0.0.1:8790/auth/oauth/<provider>/callback`, or use a separate
+dev app. GitHub OAuth apps take only one callback URL each.)
+
+**Google.**
+1. https://console.cloud.google.com/ → pick or create a project → *Google Auth Platform* (APIs &
+   Services → OAuth consent screen).
+2. User type *External*, app name «Colmena», a support email.
+3. Scopes `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`. They are non-sensitive,
+   so no review is needed.
+4. *Publish app*: in *Testing*, only listed test users can sign in.
+5. *Clients* → *Create client* → Application type **Web application** → Authorized redirect URI:
+   the Google one above.
+6. Copy the client ID and secret.
+
+**Microsoft.**
+1. https://entra.microsoft.com/ → *Identity* → *Applications* → *App registrations* → *New
+   registration*, name «Colmena».
+2. Supported account types: **Accounts in any organizational directory and personal Microsoft
+   accounts**. That matches `MICROSOFT_TENANT` unset (`common`). For one company only, pick
+   *single tenant* and set `MICROSOFT_TENANT` to its tenant ID.
+3. Redirect URI: platform **Web**, with the Microsoft URI above.
+4. *Certificates & secrets* → *New client secret*: copy its **Value**, and renew it before it
+   expires.
+5. *Token configuration* → *Add optional claim* → **ID** → tick **`email`** and **`xms_edov`**. Work
+   and school accounts are trusted only when `xms_edov` («email domain owner verified») is true;
+   without that claim they are refused. Personal accounts (tenant
+   `9188040d-6c67-4c5b-b112-36a304b66dad`) are trusted as they are.
+6. The client ID is the *Application (client) ID* on *Overview*.
+
+**GitHub.**
+1. https://github.com/settings/developers (or the organization's *Developer settings*) → *OAuth
+   Apps* → *New OAuth App*.
+2. Name «Colmena»; Homepage URL `https://colmena-nube.klast-lab-fa693a.workers.dev`;
+   Authorization callback URL: the GitHub one above.
+3. *Generate a new client secret*.
+
+Scopes are asked per sign-in (`read:user user:email`), and only the **primary, verified** address is
+used.
+
+Secrets, from `cloud/` (each command asks for the value; nothing is echoed):
+
+    E:\NexoBot\relay\cloudflare\node_modules\.bin\wrangler secret put GOOGLE_CLIENT_ID
+    E:\NexoBot\relay\cloudflare\node_modules\.bin\wrangler secret put GOOGLE_CLIENT_SECRET
+    E:\NexoBot\relay\cloudflare\node_modules\.bin\wrangler secret put MICROSOFT_CLIENT_ID
+    E:\NexoBot\relay\cloudflare\node_modules\.bin\wrangler secret put MICROSOFT_CLIENT_SECRET
+    E:\NexoBot\relay\cloudflare\node_modules\.bin\wrangler secret put GITHUB_CLIENT_ID
+    E:\NexoBot\relay\cloudflare\node_modules\.bin\wrangler secret put GITHUB_CLIENT_SECRET
+
+Optional: `MICROSOFT_TENANT`, a tenant ID, `organizations` or `consumers`. A secret takes effect
+without a redeploy; to switch a provider off, delete either of its pair with `wrangler secret delete`.
+
+### Big values (`Store#spill`)
+
+A Durable Object row holds 2 MB at most. On the DO driver, a stored body over 1.8 MB (step
+histories, receipts) is cut into 1 MB rows of `colmena_spill`, and the record keeps a marker.
+Reading puts it back together, encrypted or not. Rewriting it smaller or removing it deletes the
+pieces.
+
+**Why not R2.** The store is synchronous on purpose (about 2,200 call sites; Phase 0), and an R2
+read cannot be awaited inside `Store.get`. The bytes therefore stay in the object's own SQLite (10 GB
+per object). What is binary and large by nature already goes to R2: uploads, import parts, mission
+files. The desktop (node:sqlite) has no such limit and never spills.
+
+### Screens (`src/chat/`, `src/screens/Canal*.jsx`, `Buscar`, `Personas`, `AdminEmpresa`)
+
+- **Places**:
+  - `/canal/:id`: the timeline by pages, the «Nuevo» line, a thread panel (`?hilo=`), a message in
+    context (`?m=`), the composer (mentions, files by button, paste or drop, drafts, typing),
+    reactions, pins, edit and delete, people and pins dialogs, notification preferences, archive,
+    leave;
+  - `/canales`: browse, join, create, new message or group, «Para ti»;
+  - `/buscar`: search;
+  - `/personas`: the directory, profiles, local time, status, «ausente», «no molestar»,
+    keywords, digest and push on this device;
+  - `/admin/personas|canales|ajustes|importar|registro`.
+- **The sidebar** (hosted only) adds search, people, the company, «Canales» and «Mensajes directos»
+  with unread and «para ti» counts.
+- **The phone**: the top bar carries the channel's name; the heading stays for screen readers
+  (`.r-sr-phone`, also used by rooms now).
+- **Hooks into shared files** are small: `Sidebar.jsx` (two lines), `lib/store.jsx` (chat frames),
+  `lib/cloud.js` (`sendLive`), `routes.jsx`, `responsive.css` (one helper).
+- Everything works at 375 px, in light and dark.
+
+### Secrets and resources (added)
+
+| Name | What | Where |
+| --- | --- | --- |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Web Push | Worker secrets, made by `cloud/scripts/vapid-keys.mjs` into `.local/cloud-vapid.env`, set with `wrangler secret bulk` from a file |
+| `VAPID_SUBJECT`, `PUBLIC_URL` | push contact; the site for links in mails sent from alarms | `[vars]` |
+| `GOOGLE_*`, `MICROSOFT_*`, `GITHUB_*` | sign-in providers | not set yet (above) |
+
+No new Cloudflare resources: the R2 bucket `colmena-nube-files` and the two DO classes are Phase 1's.
+
+### Tests and measurements
+
+- **Node**: `npm test` (1,616 tests, all passing) adds:
+  - `tests/cloud-chat.test.mjs`: visibility through API, feed and search; DMs; threads, mentions,
+    unread and drafts; edits, deletes, reactions and pins; search filters and the keyed index;
+    files and their headers; notification rules, «no molestar» and the digest; retention; admin,
+    deactivation and export; the Slack import of the synthetic export in small steps; link-preview
+    SSRF; 50,000 messages by pages; big values.
+  - `tests/cloud-slack-export.test.mjs` (ZIP, parsing, conversion), `tests/cloud-webpush.test.mjs`
+    (RFC 8291 vector, VAPID, allowlist), `tests/cloud-oauth.test.mjs` (URLs, PKCE, state, nonce,
+    claims, verified email) and more cases in `tests/cloud-directory.test.mjs`.
+- **Deployed**:
+  - `node scripts/e2e-chat.mjs --url … --env … --big 50000 --sockets 50`: 48/48 checks with three
+    test people (channels public and private, isolation over API, socket and search, DMs, threads,
+    mentions, unread, typing, presence, files, previews, push subscriptions, the import, admin
+    settings, export, deactivation, audit);
+  - `node scripts/e2e.mjs`: Phase 1, 44/44;
+  - `node scripts/e2e-browser-chat.mjs --shots …`: 13/13 in Chromium, laptop and 375 px phone,
+    screenshots in `.local/shots/cloud-phase2/`.
+
+Measured on the deployed Worker from a client in Spain (2026-11-14):
+
+| Measure | Result |
+| --- | --- |
+| A round trip to the workspace (`GET /api/chat/presence`: Worker, directory session, object) | p50 337 ms |
+| Fan-out: one post to 50 open sockets, post start → last socket | p50 380 ms, max 616 ms (first round, cold) |
+| … of which first socket → last socket | p50 9 ms |
+| Open a channel of 50,000 messages (first page of 50) | p50 341 ms, max 348 ms; an older page 337 ms; a page in the middle 330 ms |
+| Search inside it | 349 ms |
+| Slack import of a synthetic export with 50,023 messages (554 KB ZIP) | 53 s, in the background |
+| Same tests in Node (no network): first page of 50,000 | 5 ms; search 45 ms |
+
+The fan-out itself costs about 40 ms over one request's round trip, and the 50 sockets get the
+frame within 9 ms of each other. The rest of every number is the network and the per-request
+directory lookup.
+
+### Left for phase 3
+
+- Bots in channels (the runtime has no AI account in the cloud yet).
+- Real mail: a sending domain (Phase 1 › Mail), so links, invitations and the digest leave the dev
+  outbox.
+- The OAuth apps (above): the code is deployed, the buttons appear once the secrets exist.
+- Push is checked as far as headless Chromium allows: the worker registers, but headless refuses
+  `pushManager.subscribe` («permission denied» in incognito). A real phone or desktop browser
+  should be tried once.
+- A per-request directory round trip dominates latency: cache sessions in the Worker
+  (a few seconds) or move the directory to D1 read replicas.
+- Search ranks by recency, not relevance; a `-palabra` exclusion and phrase search are not there.
+- Imports: Enterprise Grid exports (one folder per workspace) are not split; very large file
+  copies happen inside steps (no per-file resume).
+- Slack bridge (live two-way) was not built; the import is one-off.
+- Each DO is single-threaded: very busy companies (hundreds of people) should watch CPU per request.
