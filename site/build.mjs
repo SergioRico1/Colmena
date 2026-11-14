@@ -18,13 +18,13 @@ import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFi
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pixelBotSvg } from "../src/lib/pixelBot.js";
-import { seededLooks } from "../server/bot-looks.mjs";
+import { FACTORY, seededLooks } from "../server/bot-looks.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.join(here, "src");
 const out = path.join(here, "dist");
 
-// The demo people's bots: the same names and colours a real Colmena gives a person (each
+// The demo people's bots: the colours a real Colmena gives a person (each
 // person's bots share a hue family; server/bot-looks.mjs › seededLooks). Shapes and props mark
 // the role. Lucía is the visitor's stand-in; Marcos and Ana are teammates.
 const PEOPLE = { lucia: "demo-c", marcos: "marcos", ana: "ana" };
@@ -41,7 +41,12 @@ export const BOTS = {};
 for (const [person, key] of Object.entries(PEOPLE)) {
   const looks = seededLooks(key);
   for (const [id, r] of Object.entries(ROLES)) {
-    BOTS[person === "lucia" ? id : `${person}.${id}`] = { ...r, name: looks[id].name, color: looks[id].color };
+    // Names are the ones every company starts with on app.colmena.team (Nora, Vera, Tomás…), so
+    // the bots a visitor meets after «Crear mi empresa» are the ones the page showed.
+    // Lucía's set is the company's own six, in the colours the hosted app gives them (Atlas keeps
+    // a seeded hue: the factory ink would vanish on the ink bands).
+    const color = person === "lucia" && id !== "atlas" ? FACTORY[id].color : looks[id].color;
+    BOTS[person === "lucia" ? id : `${person}.${id}`] = { ...r, name: FACTORY[id].name, color };
   }
 }
 
