@@ -1,10 +1,87 @@
 # Conectores de Colmena
 
+## Marketplace (2026-11-14)
+
+Ajustes › Apps y carpetas › **Marketplace** (`src/components/v2/settings/Marketplace.jsx`; cada app en
+`/ajustes/apps?app=<id>`): todas las apps con su conexión oficial, búsqueda, categorías, estado
+(Conectada, Falta tu permiso, Disponible pronto, Beta, Vista previa), qué pueden hacer los bots, sus
+líneas rojas, cómo se conecta, el formulario de su tipo, tus conexiones con «Probar» y «Desconectar»,
+y las fuentes. Igual en el escritorio y en la nube; funciona a 375 px, claro y oscuro.
+
+El catálogo es un dato (`server/mcp/catalog.mjs`): proveedor, nombre, logo, categoría, descripción,
+endpoint, transporte, tipo de autenticación, estado, lectura/escritura, líneas rojas, pasos,
+«verificado el» y fuentes. Solo entra lo comprobado en la documentación del proveedor; lo no
+comprobable queda con `listed: false` (sigue reconectando lo que ya existía). Tipos:
+
+| auth | Qué es | Ejemplos |
+| --- | --- | --- |
+| `oauth` | MCP remoto del proveedor con OAuth y registro dinámico: un clic | Notion, Linear, Atlassian (v2), monday, ClickUp, Miro, Airtable, Stripe, Square, Close, Wix, Sentry, Supabase, Cloudflare, Calendly, Holded, Factorial, Zapier |
+| `token` | MCP remoto con una clave pegada, en la cabecera del proveedor | GitHub (token personal), Intercom, PostHog, Brevo, Google Maps (`X-Goog-Api-Key`) |
+| `mail` | Conector de correo de Colmena por IMAP/SMTP con contraseña de aplicación | Gmail, Workspace, iCloud, Yahoo, Fastmail |
+| `composio` | Apps de Composio con **tu propia cuenta de Composio** (o la de la empresa) | Gmail, Google Calendar, Drive, Sheets, Outlook, Slack, HubSpot, Asana, «Otras apps» |
+| `google` | El cliente OAuth propio de Colmena (un único cliente, solo permisos sensibles, sin CASA) | Google Analytics (servidor oficial que ejecuta Colmena), BigQuery. «Disponible pronto» hasta que exista el cliente |
+
+Bloqueadas aunque exista el cliente («Disponible pronto» con el motivo): los MCP de Workspace (Calendar,
+Docs, Sheets…) por las condiciones del Developer Preview, y Google Ads porque su permiso es
+restringido. Guías: `docs/GMAIL-CONTRASENA-APLICACION.md`, `docs/GOOGLE-ANALYTICS-ADS.md` y la lista
+del propietario `docs/GOOGLE-CLIENTE-COLMENA.md`.
+
+### Piezas
+
+- `server/mcp/hub.mjs`: registros `mcpServers` con `auth`, `run`, `owner` y `account`. `owner: null` es
+  de la empresa (todos sus bots); el id de una persona es solo suyo: nadie más lo ve, lo usa ni lo
+  quita, y solo los turnos de esa persona lo reciben. Las apps `perPerson` (correo, Google, Calendly,
+  Factorial, GitHub) son siempre personales; las demás, para la empresa si conecta un propietario o
+  administrador sin «Mis propias apps», si no personales. Los miembros nunca conectan para todos.
+- `server/mcp/google.mjs`: PKCE S256, estado, `access_type=offline`, intercambio, renovación
+  (dos minutos antes de caducar, y una vez forzada tras un 401), revocación al desconectar, y las
+  credenciales `authorized_user` para los servidores locales. Rechaza cualquier permiso restringido.
+- `server/mcp/local.mjs`: servidores oficiales locales por stdio a través de la costura de procesos
+  (`server/machine/seam.mjs`): hijo de este ordenador (`pipx run --spec …`) o la máquina de la empresa
+  (`POST /machine/mcp`, `/opt/mcp/bin/*` en la imagen). Las credenciales viven solo en una carpeta
+  privada del proceso (0600), fuera de las copias de la máquina, y se borran al pararlo.
+- `server/mcp/mail.mjs`: IMAP (buscar, leer sin marcar, carpetas, borradores con APPEND, mover,
+  etiquetas de Gmail, leído) y SMTP (envío; copia en Enviados salvo Gmail) por una costura TCP:
+  `node:tls` en el escritorio, `connect()` de `cloudflare:sockets` en la nube (`cloud/src/tcp.js`;
+  el puerto 25 está bloqueado: 465 o 587). Microsoft se rechaza con su motivo (exige OAuth).
+- `server/mcp/routes.mjs`: `GET /api/mcp/catalog`, `POST /api/mcp/connect {catalogId|url, token?,
+  mail?, scope?}`, `POST /api/mcp/servers/:id/test` («Probar»), `DELETE`, y `GET|PUT|DELETE
+  /api/mcp/composio` (tu propia clave de Composio, comprobada contra Composio antes de guardarla).
+
+### Composio con tu propia cuenta
+
+Composio deja de ser solo infraestructura del operador: cada persona puede crear su cuenta gratuita
+(composio.dev; el plan gratuito, a 14-11-2026: 10.000 llamadas al mes, 5 conexiones compartidas,
+hasta 10 cuentas por app) y pegar su clave. Escritorio: `connections.manage("configure")` (DPAPI).
+Nube: el perfil de Composio de la persona (`p-<id>` en el almacén `connections`) con **su** clave,
+`apps-mine:<id>` con `ownKey: true`; gana sobre la de la empresa para esa persona y un cambio de la
+clave de la empresa no la toca. La clave de empresa (`PUT /api/cloud/apps/key`) sigue igual. Los
+datos pasan por Composio, un tercero, y la pantalla lo dice. Condiciones de Composio: no prohíben
+expresamente que un usuario use su clave dentro de otro producto, pero la licencia excluye «resale or
+commercial use of the platform»: conviene confirmarlo por escrito con Composio.
+
+### Líneas rojas de las herramientas MCP (`mcpPolicy`, `server/mcp/tools.mjs`)
+
+- **Línea roja** (siempre espera tu OK, nunca «Permitir siempre»): verbos que envían, responden,
+  reenvían, borran, pagan, cobran, reembolsan, publican, invitan, comparten, reservan, despliegan,
+  fusionan o ejecutan SQL; `destructiveHint: true`; dinero o publicación por nombre o por app (la
+  misma regla que Composio, `movesMoneyOrPublishes`); y un cambio que llega a personas
+  (`openWorldHint` con message/email/campaign…). Las anotaciones del servicio nunca quitan una línea roja.
+- **Libre**: `readOnlyHint: true`, un verbo de lectura, o un nombre que dice «readonly».
+- **Con OK**: cualquier otro cambio (se queda en tu cuenta).
+- Un envío con forma de correo (to + asunto/cuerpo) se revisa como un correo (`kind: "send"`,
+  `email`), editable en «Revisar»; sale como lo dejaste. Un borrador dice para quién y qué lleva.
+  Aprobación previa, delegación y «Rutinas sin supervisión» siguen como estaban.
+
+Pruebas: `tests/marketplace.test.mjs` (catálogo, Google falso con PKCE/estado/renovación, servidores
+locales por la costura en escritorio y máquina, correo con buzón falso, líneas rojas, secretos
+cifrados y aislamiento entre empresas y personas, rutas).
+
 ## Implementacion
 
 Motor reutilizado: NEXO alpha.29, app/ai/composio.mjs y sus listas auditadas de lectura. Licencia conservada en licenses/NEXO.txt. Adaptaciones: identidad colmena-composio-v1, usuario remoto propio y vault explicito bajo LOCALAPPDATA/Colmena/connections. No se leen ni migran secretos de NEXO.
 
-Composio es infraestructura interna. La UI no incluye su nombre, clave, configuracion ni endpoint para introducirla. El operador puede provisionar COLMENA_COMPOSIO_KEY en el entorno del proceso servidor; la clave se valida, se cifra con Windows DPAPI y se elimina del entorno del proceso. Nunca debe incluirse en el bundle, repositorio, URL, argumentos de terminal ni logs. Sin provisionamiento se indica indisponibilidad del servicio, no se pide una clave al usuario.
+(Hasta el 2026-11-14; ahora cada persona puede usar su propia cuenta de Composio: ver «Marketplace».) Composio era infraestructura interna. La UI no incluía su nombre, clave, configuracion ni endpoint para introducirla. El operador puede provisionar COLMENA_COMPOSIO_KEY en el entorno del proceso servidor; la clave se valida, se cifra con Windows DPAPI y se elimina del entorno del proceso. Nunca debe incluirse en el bundle, repositorio, URL, argumentos de terminal ni logs. Sin provisionamiento se indica indisponibilidad del servicio, no se pide una clave al usuario.
 
 Este provisionamiento es adecuado para desarrollo local. Una distribucion publica necesita un backend gestionado con identidad de usuario, cuotas y aislamiento por tenant. NO distribuir una clave de proyecto compartida dentro del instalador: DPAPI local no la oculta al propietario de Windows. Esa infraestructura no esta desplegada.
 
@@ -24,7 +101,7 @@ El motor conserva propuestas privadas, caducidad, revalidacion de esquema/cuenta
 - Confirmacion para otras escrituras: eventos de Calendar, cambios de documentos, borrados, etc. No se habilitan extrapolando el dialogo de correo.
 - 09b/09c son lienzos de 1440px de ancho fijo. No existe variante movil. Las listas extensas de cuentas/catalogo necesitan estado de desbordamiento o paginacion definido; no se ha inventado otra composicion.
 - Navegacion de ajustes NEXO (General, Espacios, Privacidad, etc.) no tiene pantallas Colmena suministradas; enlaces desactivados. Los controles decorativos de ventana del original no gobiernan una ventana del navegador web.
-- Servidores MCP propios: disponibles por HTTP/SSE con OAuth (registro dinamico, PKCE, tokens en DPAPI) en `server/mcp/hub.mjs`; los servidores locales por stdio no se admiten.
+- Servidores MCP propios: disponibles por HTTP/SSE con OAuth (registro dinamico, PKCE, tokens en DPAPI) en `server/mcp/hub.mjs`; los servidores locales por stdio solo para los oficiales del Marketplace (`server/mcp/local.mjs`).
 - En la nube (docs/CLOUD.md › Phase 3): la clave de Composio es de la empresa (la pone quien administra, cifrada en el almacén del espacio); MCP vuelve a `https://<sitio>/api/mcp/oauth/callback` en lugar de una dirección local; las líneas rojas de una rutina las deciden su dueño y la persona de la empresa en quien delegó, sin buzón.
 
 ## Líneas rojas de las rutinas: «Aprobado por adelantado» (`server/preapprovals.mjs`)
