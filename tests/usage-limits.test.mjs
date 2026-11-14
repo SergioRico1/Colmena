@@ -52,6 +52,12 @@ test("limits: which limit a provider error is and when it renews", () => {
   assert.equal(usageLimitOf({ status: 429, detail: '{"error":{"message":"Rate limit exceeded. Try again in 3 hours"}}' }, { at }).kind, "usage");
   assert.equal(usageLimitOf({ status: 402, detail: "insufficient_quota" }, { at }).kind, "usage");
   assert.equal(usageLimitOf({ status: 500 }, { at }), null);
+  // OpenAI's per-minute 429 («Rate limit reached … (TPM)») is a rate limit, retried in place.
+  const tpm = { status: 429, providerCode: "rate_limit_exceeded", detail: '{"error":{"message":"Rate limit reached for gpt-5 in organization org-x on tokens per min (TPM): Limit 30000, Used 29000, Requested 2000. Please try again in 6s.","type":"tokens","code":"rate_limit_exceeded"}}', headers: { "x-ratelimit-reset-tokens": "6s" } };
+  assert.deepEqual([usageLimitOf(tpm, { at }).kind, usageLimitOf(tpm, { at }).label], ["rate", "límite de peticiones por minuto"]);
+  assert.equal(usageLimitOf({ status: 429, detail: "Rate limit reached for requests" }, { at }).kind, "rate");
+  // A quota named in the same answer still counts as a usage limit.
+  assert.equal(usageLimitOf({ status: 429, detail: "Rate limit reached: You exceeded your current quota, please check your plan" }, { at }).kind, "usage");
   const clock = new Date(resetFromText("You've hit your limit · resets 3pm (Europe/Madrid)", at));
   assert.equal(clock.getHours(), 15);
   assert.ok(clock.getTime() > at);

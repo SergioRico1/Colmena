@@ -153,6 +153,10 @@ function windowOf(error) {
 }
 
 const USAGE_WORDS = /usage[_ ]limit|usage_not_included|limit reached|insufficient_quota|quota|exceeded your current|plan limit|hit your limit|out of (credits|usage)|monthly limit|weekly limit|subscription/i;
+// OpenAI's per-minute 429 says «Rate limit reached for <model> … on tokens per min (TPM)»: its
+// «limit reached» is a rate limit, not a plan that ran out. Those words are taken out before the
+// usage words are looked for (a quota named in the same text still counts).
+const RATE_PHRASES = /rate[_ ]limit(?:s|_exceeded)?(?:\s+(?:reached|exceeded))?|(?:tokens|requests) per (?:min(?:ute)?|second|day)\b|\((?:TPM|RPM|TPD|RPD)\)/gi;
 
 /**
  * {kind, window, resetsAt, label} for a provider error that is a limit, else null.
@@ -167,7 +171,7 @@ export function usageLimitOf(error, { at = Date.now() } = {}) {
   const is429 = error.status === 429 || /usage_limit_reached|rate_limit_exceeded|usage_not_included/.test(String(error.providerCode || ""));
   if (!is429 && !(error.status === 402 && USAGE_WORDS.test(said))) return null;
   const reset = resetFromHeaders(error.headers, at) ?? resetFromText(detail, at) ?? resetFromText(error.message, at);
-  const words = USAGE_WORDS.test(said);
+  const words = USAGE_WORDS.test(said.replace(RATE_PHRASES, " "));
   const far = reset !== null && reset - at >= RATE_MAX_MS;
   const window = windowOf(error);
   const kind = words || far || window || error.status === 402 ? "usage" : "rate";
