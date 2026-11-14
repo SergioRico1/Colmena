@@ -417,6 +417,21 @@ light and dark, one column from 390 px up. The app itself is the desktop's UI, m
 by the Worker (`<meta name="colmena-host" content="cloud">`); on phones it still has the
 desktop layout until the responsive shell lands (separate work).
 
+**The living hive and the guided start (2026-11-14).** Every page before the app sits in the home
+page's honeycomb (`src/cloud/Hive.jsx`, geometry in `src/lib/hive.js`): the team's pixel bots in a
+rosette round the mark, flying out and back, gathering by the card while the mail travels; still
+with reduced motion, stopped while hidden. «Revisa tu correo» goes on by itself when the link is
+used in another tab of the same browser (a `BroadcastChannel` from `/entrar/verificar` plus
+`/auth/me` while visible; another device is never visible there). After creating a company or
+accepting an invitation, `/empezar` (`src/cloud/Setup.jsx`) guides: owners and admins AI key →
+bots (keep, rename, put aside, make one) → invite → a first request to Atlas in #general; members
+AI key → bots → request; guests bots → in. Every step skippable; the step is kept per person
+(`GET/PUT /api/cloud/onboarding`, `cloud` record `onboarding:<person>`, also in `/api/state`
+`cloud.onboarding`) and Inicio resumes one left half-way. Only API keys connect on the web (the
+providers' terms, above); without one the bots sleep, in the onboarding and in the sidebar. The
+invitation preview adds first names of the people already in and the company's bots
+(`Workspace#teamPreview`) while it is open.
+
 ### Secrets and resources
 
 | Name | What | Where |
