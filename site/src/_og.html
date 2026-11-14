@@ -4,37 +4,47 @@
 <meta charset="utf-8">
 <title>og</title>
 <style>{{css}}
+{{css home}}
 html,body{margin:0;width:1200px;height:630px;overflow:hidden;background:#12131A;color-scheme:light}
-.og{position:relative;width:1200px;height:630px;padding:64px 72px;display:grid;grid-template-columns:1fr 360px;gap:48px;align-items:center;color:#F1F1F4}
-.og .brand{color:#F1F1F4;margin-bottom:40px}
+.og{position:relative;width:1200px;height:630px;padding:60px 72px;display:grid;grid-template-columns:1fr 400px;gap:56px;align-items:center;color:#F1F1F4}
+.og::before{-webkit-mask-image:radial-gradient(90% 90% at 85% 20%,#000 0,transparent 75%);mask-image:radial-gradient(90% 90% at 85% 20%,#000 0,transparent 75%)}
+.og .brand{color:#F1F1F4;margin-bottom:36px}
 .og .brand img{width:44px;height:44px}
 .og .wordmark{font-size:34px}
-.og h1{color:#F1F1F4;font-size:76px;line-height:.98;letter-spacing:-.035em;font-weight:700;max-width:11ch}
-.og p{margin-top:24px;color:#C9CBD3;font-size:24px;line-height:1.4;max-width:30ch}
-.og-card{background:#FFF7E0;border:1px solid #EDBE45;border-radius:20px;padding:22px;color:#12131A;box-shadow:0 24px 48px -24px rgba(0,0,0,.6)}
-.og-card .who{display:flex;align-items:center;gap:10px;margin-bottom:14px;font:600 18px/1.2 var(--sans)}
-.og-card .who small{font-weight:400;color:#5C606C;font-size:14px}
-.og-card .chip-need{height:30px;font-size:15px;padding:0 12px}
-.og-card b.t{display:block;margin-top:14px;font:600 20px/1.3 var(--sans)}
-.og-card .l{margin-top:8px;color:#6B4E00;font-size:16px}
-.og-card .send{margin-top:18px;display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border-radius:11px;background:#12131A;color:#fff;font:600 16px/1 var(--sans)}
-.og-bots{position:absolute;left:72px;bottom:56px;display:flex;gap:14px;align-items:flex-end}
+.og h1{color:#FFFFFF;font-size:72px;line-height:.96;letter-spacing:-.04em;font-weight:700;max-width:12ch}
+.og p.sub{margin-top:22px;color:#C9CBD3;font-size:25px;line-height:1.35;max-width:26ch}
+.og-card{background:#FFFFFF;border-radius:20px;padding:22px;color:#12131A;box-shadow:0 0 0 1px rgba(255,255,255,.1),0 30px 60px -24px rgba(0,0,0,.7)}
+.og-card .who{display:flex;align-items:center;gap:12px;font:600 18px/1.2 var(--sans)}
+.og-card .who small{font-weight:400;color:#5C606C;font-size:14px;display:block;margin-top:3px}
+.og-card .say{margin-top:12px;font-size:17px;line-height:1.45;color:#33363F}
+.og-ask{margin-top:14px;border:1px solid #EDBE45;background:#FFF7E0;border-radius:14px;padding:16px}
+.og-ask .chip-need{height:28px;font-size:14px;padding:0 12px}
+.og-ask b.t{display:block;margin-top:12px;font:600 19px/1.3 var(--sans)}
+.og-ask .l{display:flex;align-items:center;gap:10px;margin-top:12px;font:600 12px/1 var(--sans);letter-spacing:.02em;color:#6B4E00}
+.og-ask .l::before,.og-ask .l::after{content:"";flex:1;border-top:1.5px dashed #EDBE45}
+.og-ask .send{margin-top:14px;display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border-radius:11px;background:#12131A;color:#fff;font:600 16px/1 var(--sans)}
+.og-ask .send .ic{width:18px;height:18px}
+.og-bots{position:absolute;left:72px;bottom:0;display:flex;gap:14px;align-items:flex-end}
 </style>
 </head>
 <body>
-<div class="og">
+<div class="og ink">
   <div>
     <div class="brand"><img src="/logo-mark-128.png" alt=""><span class="wordmark">Colmena</span></div>
-    <h1>Tu equipo y tus bots, en el mismo chat.</h1>
+    <h1>Tu equipo y sus bots, en el mismo chat.</h1>
+    <p class="sub">El chat de trabajo que sustituye a Slack. Lo que sale fuera espera tu OK.</p>
   </div>
   <div class="og-card">
-    <div class="who">{{bot vera 40 espera}}<span>{{name vera}} <small>bot de Lucía</small></span></div>
-    <span class="chip-need">{{icon HandPalm}}Te necesita</span>
-    <b class="t">Enviar un correo</b>
-    <p class="l" style="margin-top:6px;color:#6B4E00;font-size:16px;max-width:none">Nada sale sin tu OK.</p>
-    <span class="send">{{icon PaperPlaneTilt}}Enviar</span>
+    <div class="who">{{bot vera 44 espera}}<span>{{name vera}}<small>bot de Lucía · Redacción</small></span></div>
+    <p class="say">Te dejo el correo preparado. No sale hasta que lo apruebes.</p>
+    <div class="og-ask">
+      <span class="chip-need">{{icon HandPalm}}Te necesita</span>
+      <b class="t">Enviar un correo</b>
+      <p class="l">Línea roja: enviar</p>
+      <span class="send">{{icon PaperPlaneTilt}}Enviar</span>
+    </div>
   </div>
-  <div class="og-bots">{{bot atlas 48 trabajando}}{{bot nora 48}}{{bot tomas 48}}{{bot iris 48}}{{bot vera 48}}{{bot bruno 48}}</div>
+  <div class="og-bots">{{bot atlas 48}}{{bot marcos.nora 48}}{{bot tomas 48 trabajando}}{{bot ana.vera 48}}{{bot iris 48}}{{bot marcos.bruno 48}}</div>
 </div>
 </body>
 </html>
