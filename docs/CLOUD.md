@@ -1,6 +1,7 @@
 # Colmena in the cloud
 
-Status: **Phase 0** (the store on Durable Objects, proven locally). This document is the start of
+Status: **Phase 1** (accounts, companies and the real server in each workspace, deployed; Phase 0
+proved the store on Durable Objects). This document is the start of
 the cloud architecture; it grows with each phase. The desktop stays as it is: everything here is
 additive, and the desktop's default paths do not change.
 
@@ -9,7 +10,7 @@ additive, and the desktop's default paths do not change.
 | Piece | Cloudflare product | Holds |
 | --- | --- | --- |
 | One workspace (a team, a company) | Durable Object `Workspace`, SQLite-backed, EU jurisdiction | the store (`records`, `events`), live sockets, the scheduler's alarms |
-| Accounts, sign-in, workspace directory | Worker + D1 | users, memberships, which DO serves which workspace |
+| Accounts, sign-in, workspace directory | Worker + Durable Object `Directory` (SQLite, EU) | people, sessions, memberships, invitations (Phase 1 › Accounts: why not D1) |
 | Files (uploads, deliverables, spilled tool output, generated documents) | R2 | blobs, addressed from records |
 | Processes (code engines, project dev servers, office conversions, CLIs) | Containers | anything that spawns or needs a real filesystem |
 | The desktop | Electron + the local agent | what must run on the person's computer |
@@ -123,7 +124,7 @@ The skips: one environment-dependent test of the suite, and the "default driver 
   two WebSocket clients seeing each other's writes (one writing over the socket, one over HTTP),
   1,000 sequential puts and gets, an in-object bench and a 50-client fan-out.
 
-Run: `cd cloud && npm run dev`, then `npm run smoke` (or `node scripts/smoke.mjs --url …`).
+(Phase 1 replaced this smoke and its routes with `cloud/scripts/e2e.mjs`; the numbers below are Phase 0's.)
 
 Local results (`wrangler dev --local`, Windows laptop, encrypted workspace, 200-byte records,
 all 16 checks passing):
@@ -254,3 +255,204 @@ forwards the rest to a Container or to the person's desktop agent. The concrete 
 2. Split `tools.mjs`'s registry from the tool implementations.
 3. A files seam (`files.mjs`, `spill.mjs`, deliverables) with a local-disk and an R2 backend.
 4. Scheduler timers → DO alarms; in-memory runtime state that must survive eviction → records.
+
+## Phase 1: a hosted Colmena a team signs into
+
+Deployed as the Worker `colmena-nube` (https://colmena-nube.klast-lab-fa693a.workers.dev). The
+Phase 0 routes (`/w/:workspace/*` with the shared `CLOUD_TOKEN`) are gone: people sign in.
+
+```
+browser ──► Worker colmena-nube (cloud/src/worker.js)
+             ├─ /auth/*    ──RPC──► Directory DO (one, EU): people, links, sessions, companies, roles, invitations
+             ├─ /api/*     ──fetch─► Workspace DO "ws:<id>" (one per company, EU): server/cloud/host.mjs
+             │                       = the desktop's Express app (server/app.mjs) on the encrypted store
+             ├─ /api/live  ──WebSocket (hibernation)──► the same object: each person's live frames
+             └─ pages      ──► static assets (../dist): the app behind sign-in; cloud.html for
+                               /entrar, /entrar/verificar, /empresa, /invitacion
+Workspace DO ──► R2 colmena-nube-files (EU), workspaces/<id>/<mission>/<file>
+```
+
+### Accounts and companies (`cloud/src/directory-core.js`, `directory.js`)
+
+- **Why a Durable Object and not D1.** When this was built the deploy token had no D1 scope; it
+  has since been widened, but the directory stayed a SQLite DO on purpose: every operation is a
+  synchronous `transactionSync` (a link used once, a session rotated, the last owner kept), it
+  lives in the EU like the workspaces, and the same code runs on `server/do-sql-fake.mjs` in the
+  tests. Moving it to D1 means making `DirectoryCore` async; nothing else would change. One object
+  serialises every sign-in of the deployment; fine for a few hundred people, a D1 move (or a
+  shard per email domain) before it is thousands.
+- **Better Auth** was considered and not used: it wants a Kysely/Drizzle database adapter (D1 or
+  Postgres), not a DO's synchronous SQL, and brings far more than magic links. The own
+  implementation is small and keeps the shape the other providers need: an `identities` table
+  (provider, subject → person) and `signInWith({provider, subject, email})`, so Google,
+  Microsoft and GitHub are an OAuth callback each (phase 2).
+- **Sign-in link.** `POST /auth/link {email, next}` answers the same whether the address exists.
+  32 random bytes; the directory keeps their SHA-256. Valid 15 minutes, once; using one closes
+  every other open link of that address. Limits: 5 per address and 20 per IP per 15 minutes; 60
+  verifications per IP. The link is `/entrar/verificar#t=…`: the token is in the fragment (never
+  sent to the server in a URL, never logged) and is used with one press of a button
+  (`POST /auth/verify`), so mail scanners that open links do not burn it. `next` is only ever a
+  path of this site.
+- **Sessions.** Cookie `__Host-colmena` (HttpOnly, Secure, SameSite=Lax, Path=/, no Domain; on
+  plain-HTTP `wrangler dev` it is `colmena_local` without Secure). Stored hashed; 30 days at most,
+  ended after 14 days unused; the token is replaced every 6 hours of use (the old one works one
+  more minute for requests in flight); logout deletes it. **CSRF:** every write needs an
+  `Origin` equal to the site (or `Sec-Fetch-Site: same-origin`) and the session's CSRF token in
+  `X-Colmena-Token` (the desktop's header, served by `/api/bootstrap` as before); the WebSocket
+  needs the Origin.
+- **Roles.** owner, admin, member, guest. Owners name admins and owners and the last owner always
+  stays; admins invite, remove and switch people between member and guest; members use the
+  company; guests read and write in the conversations they can see and change nothing else
+  (`server/cloud/host.mjs › GUEST_WRITES`).
+- **Invitations.** By email, 7 days, bound to that address (accepting needs to be signed in with
+  it), once; a new one replaces the open one. Whoever invites also gets the link to pass on.
+  **Removing someone** deletes the membership, ends every session they have and closes their
+  open sockets in the company (`Workspace#revokePerson`).
+- **Directory.** `GET /auth/workspace` lists the people of the current company with their roles;
+  the company keeps its own copy (`members` records, `syncMembers` after every change), which is
+  what the app shows and what the workspace checks every request against.
+
+Routes: `POST /auth/link|verify|logout|workspaces|workspaces/select|invitations/preview|
+invitations/accept|workspace/invitations|workspace/leave`, `GET|PATCH /auth/me`,
+`GET|PATCH /auth/workspace`, `PATCH|DELETE /auth/workspace/members/:id`,
+`DELETE /auth/workspace/invitations/:id`, `GET /auth/dev/mail` (admin token only).
+
+### Mail (`cloud/src/mail.js`)
+
+First provider configured wins: Cloudflare Email Sending (a `[[send_email]]` binding named
+`SEND_EMAIL` plus the var `MAIL_FROM_ADDRESS`), then a Resend-shaped HTTP API (secret
+`RESEND_API_KEY`, sender `MAIL_FROM`). With neither, the **dev fallback**: the link goes to the
+Worker's log (`wrangler tail colmena-nube`) and to a 30-minute outbox in the directory, readable
+only with `Authorization: Bearer <ADMIN_BOOTSTRAP_TOKEN>` at `GET /auth/dev/mail?email=…`. The
+public response never contains it. Invitations also show their link to whoever invited.
+
+Today there is no sending domain: `wrangler email sending list` finds none and no zone has Email
+Routing. To turn real mail on, the owner:
+
+1. adds (or picks) a domain as a zone in this Cloudflare account;
+2. `wrangler email sending enable <domain>` and adds the DNS records it lists
+   (`wrangler email sending dns …`);
+3. in `cloud/wrangler.toml`: `[[send_email]] name = "SEND_EMAIL"` and
+   `MAIL_FROM_ADDRESS = "colmena@<domain>"` under `[vars]`; `npm run deploy`.
+
+(Or, with Resend: `wrangler secret put RESEND_API_KEY` and a verified `MAIL_FROM`.) The dev
+outbox and `/auth/dev/mail` switch themselves off as soon as a provider is configured.
+
+### The real server in each company (`cloud/src/workspace.js`, `server/cloud/host.mjs`)
+
+- **Loading.** The desktop's server bundles (9.4 MB, 2.2 MB gzipped) and loads in workerd: the
+  module-scope `new URL(…, import.meta.url)` calls became `modulePath()` (null where modules are
+  not files), `prompts/` and the seed skills are read through `server/bundled.mjs` (the cloud
+  build registers them as text: `cloud/scripts/gen-assets.mjs`), the `createRequire`s are lazy,
+  and `app.mjs`'s optional modules are static imports.
+- **Serving.** `createApp` runs unchanged behind Cloudflare's Node HTTP server support: the
+  object listens on a port of its isolate and hands each request to `handleAsNodeRequest`
+  (bodies are read whole first: a refusal that never reads its body must not leave a half-read
+  stream). `createApp({hosted})` swaps the loopback/token check for the host's guard, adds the
+  host's routes and overlays `/api/state` (the person's name, `cloud: {workspace, me, members,
+  hidden}`, the company as the sidebar's one team, the desktop welcome skipped).
+- **Who asks.** The Worker sends `X-Colmena-Person` ({id, name, email, role}) and drops any such
+  header a browser sent; the guard checks the person is in the company's own list and runs the
+  whole request as them (`asPerson`, AsyncLocalStorage).
+- **Live channel.** `/api/events`' body became `openFeed(write)`; the object opens one feed per
+  socket (hibernation API, tagged with the person) and filters what each person may see. The
+  client keeps EventSource's shape (`src/lib/cloud.js › liveSource`); keep-alives are answered by
+  `setWebSocketAutoResponse` without waking the object. Measured deployed: a message appears on
+  the other person's screen 0.8–1.2 s after the send starts (one POST plus the fan-out, from a
+  client in Spain to the EU object).
+- **Desktop-only places** answer 404 `{desktopOnly: true}` (`/api/peers`, `teams`, `code`,
+  `computer`, `projects`, `voice`, `voice-live`, `dictation`, `backup`, `encryption`,
+  `password-managers`, `browser-sessions`, `vault`, `logins`, `sign-in-grants`, `folders`,
+  `webhooks`, `diagnostics`, `drag`, `auth`), and the screens hide «Código». Bots and providers
+  load with no AI account (`noProvider`): rooms and chats open; a bot named in a message waits
+  (phase 3).
+- **Files** (`server/file-store.mjs`): the store's folder is mounted on a backend, so
+  `files.mjs` (attachments, deliverables, read_file) and the work-file routes read and write
+  there instead of a disk. Deployed: R2 `colmena-nube-files` (EU), `workspaces/<id>/…`; without
+  the binding (`wrangler dev`) the object's own SQLite (`colmena_files`, 1.5 MB per file).
+  Editing a work file in place (`PUT …/workfiles/file`) and Office previews still use the disk:
+  not available in the cloud yet.
+- **Timers.** The scheduler is not started (no AI yet); `Workspace#alarm` is the place routines
+  come back to in phase 3 (it runs the question sweep as background work today).
+
+### Identity (`server/identity.mjs`)
+
+`currentPerson()` is `DESKTOP_PERSON` everywhere on the desktop; the host runs each request,
+socket flush and alarm as a person (or `SYSTEM_PERSON`). What is per person:
+
+- **Who wrote a message:** a hosted person's message gets `by` {id, name}; the screens show
+  someone else's by name and avatar and yours as «Tú» (`authorView`).
+- **Who decided an approval:** `decidedBy`.
+- **Read state:** notifications' `read`/`readAt` → `readBy` {person: at}; rooms' `seenAt` →
+  `seenBy`. Read as a person, a record shows their own values; the stored ones stay what
+  background work set. `unread` in a room counts other people's messages too.
+- Workspace-wide: settings, bots, skills, memory, notes.
+- **Conversations of people** (`mission.people`): a hosted sala is shared by the whole company;
+  what names no bot is only said (no turn). **Direct messages** (`POST /api/cloud/dm {person}`)
+  have an `audience`: only those two see them in `/api/state`, open them or get their live
+  frames. The E2EE mailbox stays desktop ⇄ desktop.
+
+### Secrets (`server/envelope-vault.mjs`)
+
+Master secret `VAULT_MASTER_KEY` (Worker secret) → per-company key (random, wrapped AES-256-GCM
+under the master, stored in the company's store as `cloud/vault-key` with the master's id) →
+per-secret data key (random, wraps the secret; both bound to company, namespace and profile).
+It has the shape of the DPAPI vault (`load/save/remove`), so `SiteVault`, `SecretStore` and
+`McpHub` take it unchanged. Rotating the master: list the new one first and the old one after;
+each company's key is rewrapped the first time it is opened. The database itself stays
+encrypted as in Phase 0 (key derived from `WORKSPACE_KEYS` and the company id).
+
+### Web (`cloud.html`, `src/cloud/`)
+
+A second Vite entry (built with the app into `dist/`): sign-in, «Revisa tu correo», the link,
+companies (create, open, people with roles, invite with a copyable link, pending invitations,
+direct message, remove, leave) and the invitation. Spanish, Colmena's tokens, Phosphor icons,
+light and dark, one column from 390 px up. The app itself is the desktop's UI, marked as hosted
+by the Worker (`<meta name="colmena-host" content="cloud">`); on phones it still has the
+desktop layout until the responsive shell lands (separate work).
+
+### Secrets and resources
+
+| Name | What | Where |
+| --- | --- | --- |
+| `WORKSPACE_KEYS` | master of the per-company database keys (Phase 0) | Worker secret |
+| `VAULT_MASTER_KEY` | master of the envelope vault | Worker secret, `.local/cloud-phase1.env` |
+| `ADMIN_BOOTSTRAP_TOKEN` | reads the dev mail | Worker secret, `.local/cloud-phase1.env` |
+| `RESEND_API_KEY` or `SEND_EMAIL` + `MAIL_FROM_ADDRESS` | real mail | not set yet |
+| `CLOUD_TOKEN` | Phase 0's shared token | still set, unused: can be deleted |
+| R2 `colmena-nube-files` (EU) | mission files | bound as `FILES` |
+| DO classes `Workspace` (v1), `Directory` (v2) | | migrations in `cloud/wrangler.toml` |
+
+### Running and testing
+
+- Desktop: `npm test` adds `tests/cloud-directory.test.mjs` (links, limits, sessions, rotation,
+  roles, invitations, isolation, other providers), `tests/cloud-host.test.mjs` (identity seam,
+  per-person fields, the guard, rooms of people, direct messages, guests, the live feed per
+  person, two companies, files without a disk, the envelope vault) and
+  `tests/cloud-auth.test.mjs` (cookie, origin and CSRF, mail fallback, envelope encryption).
+- Local: `npm run build` at the root, then in `cloud/`: `npm run dev` (secrets from
+  `../.local/cloud.env`: `WORKSPACE_KEYS`, `VAULT_MASTER_KEY`, `ADMIN_BOOTSTRAP_TOKEN`).
+- `npm run e2e -- --url … --env …` (44 checks: sign-in, single use, CSRF, company, invitation
+  bound to its address, room in real time over the socket, authors, files, direct messages,
+  guests, isolation between two companies, a forged person header, removal ending sessions and
+  sockets, logout) and `node scripts/e2e-browser.mjs --url … --env … --shots …` (the same story
+  in Chromium: a laptop and a phone, screenshots of every step).
+- Deploy: `npm run build` at the root, then `cd cloud && npm run deploy`.
+
+### Left for phase 2
+
+- Slack replacement: channels public and private with membership (today every sala is the whole
+  company's), threads and mentions of people, presence and typing over the socket, search across
+  the history filtered by what each person may see (`/api/search` and the bots' history search do
+  not filter by audience yet), Web Push and mail of unread, retention and export, the Slack
+  import and bridge.
+- The sidebar's «Personas» group and «Nuevo mensaje directo» inside the app (today the company
+  page lists people and opens direct messages); a profile page to rename yourself
+  (`PATCH /auth/me` exists).
+- Google, Microsoft and GitHub sign-in on `signInWith` (an OAuth callback each).
+- A real mail provider (above), then dropping the dev outbox.
+- Notifications per person (who they are for) and per-person settings beyond the name (theme,
+  sidebar) — today those are the company's.
+- Big values: the R2 spill of records over 2 MB, a records-level export, importing desktop data.
+- The directory as one object: shard or move to D1 before thousands of people.
+- Editing work files and Office previews without a disk; generated documents need phase 4.
