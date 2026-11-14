@@ -23,7 +23,9 @@ import { RelayClient } from "./relay-client.mjs";
 
 // The mailbox every Colmena uses unless Ajustes › Personas or COLMENA_RELAY_URL say another:
 // Colmena's own on Cloudflare (relay/cloudflare/, deployed 2026-10-24).
-export const DEFAULT_RELAY = "https://colmena.klast-lab-fa693a.workers.dev";
+// The mailbox (relay/cloudflare). The old workers.dev address is the same Worker and keeps working
+// for installs that saved it.
+export const DEFAULT_RELAY = "https://buzon.colmena.team";
 /** Where someone you invite gets Colmena (the newest release, Windows and Mac). */
 export const DOWNLOAD_URL = "https://github.com/SergioRico1/Colmena/releases/latest";
 export const PEER_LIMITS = Object.freeze({
@@ -311,7 +313,7 @@ export class Peers extends EventEmitter {
     const invites = this.store.list("peerInvites").filter((i) => i.status === "open" && Date.parse(i.expiresAt) > this.clock());
     return {
       me: this.address ? { address: this.address, name: this.myName(), status: this.myStatus() } : null,
-      relay: { url: this.relayUrl(), status: this.relayStatus.status, error: this.relayStatus.error },
+      relay: { url: this.relayUrl(), custom: !!this.config().relayUrl, status: this.relayStatus.status, error: this.relayStatus.error },
       contacts: this.contacts().filter((c) => ["active", "pending", "known"].includes(c.status)).map((c) => this.contactView(c)).sort((a, b) => a.name.localeCompare(b.name, "es")),
       // What each code is for (a room's share, a team, or neither: to talk), so every screen lists its own.
       invites: invites.map((i) => this.inviteRow(i)),

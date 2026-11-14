@@ -13,6 +13,7 @@ import JoinSheet from "../../people/JoinSheet.jsx";
 import PeopleIntro, { HELP_URL } from "../people/PeopleIntro.jsx";
 import { Chevron, FieldRow, Group, LINE, LinkRow, Segmented, SwitchRow, Text, inputStyle, pill, rowStyle } from "./rows.jsx";
 import { C } from "../../../lib/theme.js";
+import { btn } from "./v3.jsx";
 
 // Ajustes › Contactos y equipos (design/V2Personas.dc.html, paso personas): who you talk to from
 // Colmena, who uses this computer (a link to its page), what each one's bot may ask you, your safety words with each, invitations not yet
@@ -189,17 +190,23 @@ function ErrandTools({ act }) {
 function RelayGroup({ relay, act }) {
   const [draft, setDraft] = useState(relay.url || "");
   useEffect(() => { setDraft(relay.url || ""); }, [relay.url]);
+  // The address is plumbing: it shows only when asked for, when it was changed, or when the mailbox fails.
+  const [advanced, setAdvanced] = useState(false);
+  const showField = advanced || relay.custom || (relay.status && relay.status !== "online" && relay.status !== "connecting");
   const color = relay.status === "online" ? C.ok : relay.status === "connecting" ? C.honeyRing : relay.status === "offline" ? C.error : C.text4;
   const save = () => { const v = draft.trim(); if (v !== (relay.url || "")) act.act(() => patch("/peers/settings", { relayUrl: v || null })); };
   return (
-    <Group id="pp-rl" title="Cómo os llegan los mensajes" anchor="buzon" note="Si alguien no está conectado, su sobre espera en el buzón hasta 7 días. Tus correos, tu calendario, tus archivos y lo que saben de ti tus bots nunca salen de aquí: solo lo que escribís y lo que tú apruebas compartir.">
-      <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "18px 20px", borderBottom: LINE }}>
+    <Group id="pp-rl" title="Cómo os llegan los mensajes" anchor="buzon" note="Si alguien no está conectado, su mensaje le espera en el buzón hasta 7 días. Tus correos, tu calendario, tus archivos y lo que saben de ti tus bots no pasan por él: solo lo que escribís y lo que tú apruebas compartir.">
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "18px 20px", borderBottom: showField ? LINE : "0" }}>
         <span aria-hidden="true" style={{ width: "10px", height: "10px", flex: "none", borderRadius: "var(--r-circle)", background: color, boxShadow: `0 0 0 4px ${color}26` }} />
         <Text title={RELAY_LABEL[relay.status] || "Buzón"} sub={relay.status === "online" ? "Cada mensaje sale cerrado con llave desde este ordenador y solo lo abre el de la otra persona: el buzón guarda sobres que no puede leer." : relay.error || "Sin buzón no se puede hablar con nadie."} />
+        {showField ? null : <button type="button" onClick={() => setAdvanced(true)} style={{ ...btn("ghost", 32), flex: "none" }}>Avanzado</button>}
       </div>
-      <FieldRow title="Dirección del buzón" sub="Todas las personas que habláis tenéis que usar el mismo." last>
-        <input className="c-quiet" type="url" aria-label="Dirección del buzón" value={draft} placeholder="https://buzon.ejemplo.com" spellCheck={false} onChange={(e) => setDraft(e.target.value)} onBlur={save} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} style={inputStyle} />
-      </FieldRow>
+      {showField ? (
+        <FieldRow title="Dirección del buzón" sub={relay.custom ? "Has puesto una dirección propia. Déjala vacía para volver a la de Colmena." : "Solo si tu equipo usa un buzón propio: todas las personas que habláis tenéis que usar el mismo."} last>
+          <input className="c-quiet" type="url" aria-label="Dirección del buzón" value={draft} placeholder="https://buzon.colmena.team" spellCheck={false} onChange={(e) => setDraft(e.target.value)} onBlur={save} onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }} style={inputStyle} />
+        </FieldRow>
+      ) : null}
     </Group>
   );
 }
