@@ -86,7 +86,7 @@
           const hole = holes.some((h) => x > h.l && x < h.r && y > h.t && y < h.b);
           cells.push({ c, r, x, y, w: hole ? 0 : weight(x, y), ph: Math.random() * 6.283, glow: 0, rgb: "255,255,255", hold: 0, delay: 0 });
         }
-        const pick = () => { for (let n = 0; n < 400; n++) { const k = cells[(Math.random() * cells.length) | 0]; if (k.w > 0.6 && k.x > 20 && k.x < W - 20 && k.y > 60 && k.y < H - 40) return k; } return cells[(cells.length / 2) | 0]; };
+        const pick = () => { for (let n = 0; n < 400; n++) { const k = cells[(Math.random() * cells.length) | 0]; if (k.w > 0.6 && k.x > 2 * R && k.x < W - 2 * R && k.y > 60 && k.y < H - 2 * R) return k; } return cells[(cells.length / 2) | 0]; };
         bots = COLORS.slice(0, wide ? 6 : 4).map((hex) => {
           const from = pick();
           return { rgb: rgb(hex), hex, from, to: from, t0: 0, dur: 1, wait: Math.random() * 1500 };
@@ -191,16 +191,19 @@
         draw(0);
         addEventListener("resize", () => { layout(); bots.forEach((b) => { b.to.glow = 1; b.to.rgb = b.rgb; }); draw(0); });
       } else {
+        // «Pausar» under the demo stills the hive too: one control for all the hero's motion.
+        let held = false;
+        addEventListener("colmena:hive", (ev) => { if (ev.detail === "pause") held = true; if (ev.detail === "play") { held = false; go(); } });
         const frame = (now) => {
           raf = 0;
-          if (!shown || document.hidden) return;
+          if (!shown || held || document.hidden) return;
           raf = requestAnimationFrame(frame);
           if (now - last < 32) return; // about 30 frames a second is plenty for a background
           step(now, Math.min(100, now - (prev || now)));
           prev = now; last = now;
           draw(now);
         };
-        const go = () => { if (!raf && shown && !document.hidden) { prev = 0; raf = requestAnimationFrame(frame); } };
+        const go = () => { if (!raf && shown && !held && !document.hidden) { prev = 0; raf = requestAnimationFrame(frame); } };
         if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => { shown = e.isIntersecting; go(); }).observe(hero);
         document.addEventListener("visibilitychange", go);
         let rt = 0;
@@ -339,6 +342,7 @@
     playBtn.setAttribute("aria-pressed", String(!playing));
     playLabel.textContent = playing ? "Pausar" : "Reanudar";
     app.classList.toggle("paused", !playing);
+    hive(playing ? "play" : "pause");
     wake();
   });
   if ("IntersectionObserver" in window) {

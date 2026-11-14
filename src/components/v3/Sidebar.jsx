@@ -457,6 +457,8 @@ export default function Sidebar({ active = "inicio" }) {
         ))}
       </> : null}
 
+      {/* Hosted: channels are the team's rooms; the Salas group shows only once one exists. */}
+      {store.cloud && !model.rooms.length ? null : <>
       {groupHead("salas", "Salas", model.rooms.length, "Nueva sala", () => openNew("sala"), roomsNew)}
       {closed.salas ? null : (
         <div id="v3-group-salas" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
@@ -466,6 +468,10 @@ export default function Sidebar({ active = "inicio" }) {
         </div>
       )}
 
+      </>}
+
+      {/* Hosted: direct messages live in ChannelsNav; this group is the desktop's mailbox people. */}
+      {store.cloud ? null : <>
       {groupHead("personas", "Personas", model.people.length, "Nuevo mensaje", () => setSheet("dm"), { unread: sum(model.people, "unread"), waiting: sum(model.people, "waiting") })}
       {closed.personas ? null : (
         <div id="v3-group-personas" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
@@ -473,6 +479,7 @@ export default function Sidebar({ active = "inicio" }) {
           {model.people.length ? null : <span style={{ padding: "4px 8px 6px", fontSize: "var(--t-meta)", lineHeight: "1.4", color: C.text3 }}>{"Tus mensajes directos aparecen aquí. "}<button type="button" onClick={() => setSheet("dm")} style={{ padding: "0", border: "0", background: "transparent", color: C.text2, font: "inherit", fontWeight: "600", textDecoration: "underline", textUnderlineOffset: "3px", cursor: "pointer" }}>{"Nuevo mensaje"}</button></span>}
         </div>
       )}
+      </>}
       {groupHead("bots", "Bots", model.bots.length, "Nuevo bot", () => navigate("/equipo/nuevo"), { unread: sum(model.bots, "unread"), waiting: sum(model.bots, "waiting") })}
       {closed.bots ? null : (
         <div id="v3-group-bots" style={{ display: "flex", flexDirection: "column", gap: "1px" }}>

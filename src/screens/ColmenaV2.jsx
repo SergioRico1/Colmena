@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, UserPlus } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NewBot from "../components/v2/team/NewBot.jsx";
@@ -48,8 +48,12 @@ function Team({ query = {} }) {
   const { bots = [], peers = null } = store;
   const hiddenBot = useHidden("bot");
   const [expert] = useExpert();
+  // Hosted Colmena: the team is the company (store.cloud). Its people are invited and managed
+  // on /empresa (cloud.html); the desktop's teams, codes and «Personas» mailbox don't exist there.
+  const hosted = !!store.cloud;
   // «Invita a tu equipo» on Inicio opens the invitation here (/equipo?invitar=1).
-  const [invite, setInvite] = useState(query.invitar === "1");
+  const [invite, setInvite] = useState(query.invitar === "1" && !hosted);
+  useEffect(() => { if (hosted && query.invitar === "1") window.location.replace("/empresa#personas"); }, [hosted, query.invitar]);
   const team = bots.filter((b) => b.enabled !== false && !hiddenBot(b.id));
   // Who works and what waits for you: the same model as the sidebar (lib/sidebar.js), so the
   // header, each card and the foot of the sidebar can never disagree. The number is the one
@@ -67,10 +71,12 @@ function Team({ query = {} }) {
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: "12px 16px" }}>
           <div style={{ minWidth: 0 }}>
             <h1 style={H1}>{"Equipo"}</h1>
-            <p style={LEAD}>{"Quién trabaja contigo: tus bots y las personas con las que te conectas."}</p>
+            <p style={LEAD}>{hosted ? "Quién trabaja contigo: las personas de tu empresa y los bots." : "Quién trabaja contigo: tus bots y las personas con las que te conectas."}</p>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            <button type="button" onClick={() => setInvite(true)} className="u4-sec" style={{ ...B.secondary, ...B.lg }}><UserPlus size={16} />{"Invitar"}</button>
+            {hosted
+              ? <a href="/empresa#personas" target="_self" className="u4-sec" style={{ ...B.secondary, ...B.lg }}><UserPlus size={16} />{"Invitar"}</a>
+              : <button type="button" onClick={() => setInvite(true)} className="u4-sec" style={{ ...B.secondary, ...B.lg }}><UserPlus size={16} />{"Invitar"}</button>}
             <a href="/equipo/nuevo" className="u4-pri" style={{ ...B.primary, ...B.lg }}>
               <Plus size={16} weight="bold" />
               {"Nuevo bot"}
@@ -78,7 +84,7 @@ function Team({ query = {} }) {
           </div>
         </header>
         {/* Your team as everyone in it sees it: people, roles and each one's bots (or «Solo tú»). */}
-        <TeamSection />
+        {hosted ? <CompanyPeople cloud={store.cloud} /> : <TeamSection />}
         <section aria-labelledby="bots-t" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <h2 id="bots-t" style={H2}>{"Bots"}</h2>
@@ -93,10 +99,43 @@ function Team({ query = {} }) {
             </a>
           </div>
         </section>
-        <EquipoPeople peers={peers} />
+        {hosted ? null : <EquipoPeople peers={peers} />}
       </main>
       {invite ? <InviteSheet context={inviteTo} onClose={() => setInvite(false)} /> : null}
     </Shell>
+  );
+}
+
+const ROLE_LABEL = { owner: "Propietario", admin: "Administra", member: "Miembro", guest: "Invitado" };
+const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "?";
+
+/** Hosted: the company's people as the server lists them (state.cloud.members), and where to invite. */
+function CompanyPeople({ cloud }) {
+  const people = (cloud.members || []).filter((m) => !m.deactivated);
+  const me = cloud.me?.id;
+  return (
+    <section aria-labelledby="people-t" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <h2 id="people-t" style={H2}>{`Personas de ${cloud.workspace?.name || "tu empresa"}`}</h2>
+        <span style={COUNT}>{people.length}</span>
+      </div>
+      <ul aria-label="Personas de la empresa" style={{ ...CARD, margin: 0, padding: 0, listStyle: "none" }}>
+        {people.map((m, i) => (
+          <li key={m.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", borderTop: i ? line() : 0 }}>
+            <span aria-hidden="true" style={{ flex: "none", width: "32px", height: "32px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", background: C.chip, color: C.text2, fontSize: "var(--t-meta)", fontWeight: 600 }}>{initials(m.name)}</span>
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "1px" }}>
+              <span style={{ ...ONE, fontSize: "var(--t-ui)", fontWeight: 600, color: C.text }}>{m.name}{m.id === me ? " (tú)" : ""}</span>
+              {m.email ? <span style={{ ...ONE, fontSize: "var(--t-meta)", color: C.text3 }}>{m.email}</span> : null}
+            </span>
+            <span style={TAG}>{ROLE_LABEL[m.role] || ROLE_LABEL.member}</span>
+          </li>
+        ))}
+        <li style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", padding: "12px 14px", borderTop: people.length ? line() : 0 }}>
+          <span style={{ flex: "1 1 260px", fontSize: "var(--t-meta)", lineHeight: 1.45, color: C.text3 }}>{people.length > 1 ? "Invita a más gente, cambia papeles o saca a alguien en «Empresa y personas»." : "Solo estás tú. Invita a tu equipo por correo: cada persona entra con un enlace y llega a #general."}</span>
+          <a href="/empresa#personas" target="_self" className="u4-sec" style={B.secondary}><UserPlus size={15} />{people.length > 1 ? "Empresa y personas" : "Invitar"}</a>
+        </li>
+      </ul>
+    </section>
   );
 }
 

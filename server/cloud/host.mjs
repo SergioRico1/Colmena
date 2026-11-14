@@ -200,7 +200,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   chat.push = pushSend;
   pushRef = pushSend;
   // Bots named in channels answer in the thread (channel-bots.mjs), as the person who named them.
-  const channelBots = new ChannelBots({ store, runtime, chat, log });
+  const channelBots = new ChannelBots({ store, runtime, chat, canThink: (person) => bots.provider.connectedFor(person.id), log });
   const importer = new SlackImport({ chat, blobs: blobStore, log });
 
   // ---- the workspace's own routes (people, direct messages); after the guard like the rest
