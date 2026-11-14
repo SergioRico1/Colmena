@@ -4,11 +4,15 @@
 //
 // Templates in site/src/*.html (and site/src/<dir>/index.html) are copied with these markers
 // replaced:
-//   {{bot <id> <size> [mood] [label]}}  a pixel bot drawn by src/lib/pixelBot.js, the app's own
-//                                       renderer, in its role shape and the demo person's colour
+//   {{bot [person.]<id> <size> [mood] [label]}}  a pixel bot drawn by src/lib/pixelBot.js, the app's
+//                                       own renderer, in its role shape and its person's colour
+//                                       (person: lucia, the default, marcos or ana)
+//   {{name [person.]<id>}}              that bot's name
 //   {{icon <Name>}}                     a Phosphor icon (site/src/icons.json, extracted from
 //                                       @phosphor-icons/react; viewBox 0 0 256 256)
-//   {{css}}                             site/src/styles.css, inlined
+//   {{css}}                             site/src/styles.css, inlined (every page)
+//   {{css <name>}}                      site/src/<name>.css, inlined (one page's own styles)
+//   {{js <name>}}                       site/src/<name>.js, inlined
 // Fonts (site/fonts) and static files (site/static) are copied as they are.
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -20,9 +24,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const src = path.join(here, "src");
 const out = path.join(here, "dist");
 
-// The demo person's bots: the same names and colours a real Colmena would give a person whose
-// key is "demo-c" (server/bot-looks.mjs › seededLooks). Shapes and props mark the role.
-const looks = seededLooks("demo-c");
+// The demo people's bots: the same names and colours a real Colmena gives a person (each
+// person's bots share a hue family; server/bot-looks.mjs › seededLooks). Shapes and props mark
+// the role. Lucía is the visitor's stand-in; Marcos and Ana are teammates.
+const PEOPLE = { lucia: "demo-c", marcos: "marcos", ana: "ana" };
 const ROLES = {
   atlas: { shape: "hex", role: "coordinador" },
   nora: { shape: "capsule", role: "investigacion" },
@@ -32,10 +37,16 @@ const ROLES = {
   bruno: { shape: "arch", role: "codigo" },
 };
 const seedOf = (id) => [...id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
-export const BOTS = Object.fromEntries(Object.entries(ROLES).map(([id, r]) => [id, { ...r, name: looks[id].name, color: looks[id].color }]));
+export const BOTS = {};
+for (const [person, key] of Object.entries(PEOPLE)) {
+  const looks = seededLooks(key);
+  for (const [id, r] of Object.entries(ROLES)) {
+    BOTS[person === "lucia" ? id : `${person}.${id}`] = { ...r, name: looks[id].name, color: looks[id].color };
+  }
+}
 
 const icons = JSON.parse(readFileSync(path.join(src, "icons.json"), "utf8"));
-const css = readFileSync(path.join(src, "styles.css"), "utf8");
+const cssOf = (name = "styles") => readFileSync(path.join(src, `${name}.css`), "utf8").replace(/\s*\n\s*/g, "\n").trim();
 
 // Drawings repeat (a bot at several sizes, an icon in every channel name): each is defined once
 // as a <symbol> in a hidden sprite at the top of <body>, and every use points at it.
@@ -45,7 +56,7 @@ function bot(id, size, mood = "libre", label = "") {
   if (!b) throw new Error(`unknown bot ${id}`);
   const svg = pixelBotSvg({ shape: b.shape, color: b.color, role: b.role, seed: seedOf(id), size: Number(size), mood });
   const n = /viewBox="0 0 (\d+) /.exec(svg)[1];
-  const key = `b-${id}-${mood}-${n}`;
+  const key = `b-${id.replace(".", "-")}-${mood}-${n}`;
   if (!sprite.has(key)) sprite.set(key, `<symbol id="${key}" viewBox="0 0 ${n} ${n}">${svg.replace(/^<svg[^>]*>/, "").replace(/<\/svg>$/, "")}</symbol>`);
   // "label" names the drawing after the bot (it then carries meaning); without it, it is decoration.
   const a11y = label === "label" ? `role="img" aria-label="${b.name}, bot"` : 'aria-hidden="true"';
@@ -61,9 +72,10 @@ function icon(name) {
 function render(html) {
   sprite = new Map();
   const page = html
-    .replace(/\{\{css\}\}/g, () => css.replace(/\s*\n\s*/g, "\n").trim())
-    .replace(/\{\{bot ([a-z]+) (\d+)(?: ([a-z]+))?(?: ([^}]+))?\}\}/g, (_, id, size, mood, label) => bot(id, size, mood || "libre", label || ""))
-    .replace(/\{\{name ([a-z]+)\}\}/g, (_, id) => BOTS[id].name)
+    .replace(/\{\{css(?: ([a-z-]+))?\}\}/g, (_, name) => cssOf(name))
+    .replace(/\{\{js ([a-z-]+)\}\}/g, (_, name) => readFileSync(path.join(src, `${name}.js`), "utf8").trim())
+    .replace(/\{\{bot ([a-z.]+) (\d+)(?: ([a-z]+))?(?: ([^}]+))?\}\}/g, (_, id, size, mood, label) => bot(id, size, mood || "libre", label || ""))
+    .replace(/\{\{name ([a-z.]+)\}\}/g, (_, id) => BOTS[id].name)
     .replace(/\{\{icon ([A-Za-z:]+)\}\}/g, (_, name) => icon(name));
   if (!sprite.size) return page;
   return page.replace(/<body([^>]*)>/, (m) => `${m}\n<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">${[...sprite.values()].join("")}</svg>`);
@@ -91,4 +103,4 @@ function walk(dir, rel = "") {
 walk(src);
 cpSync(path.join(here, "fonts"), path.join(out, "fonts"), { recursive: true, filter: (f) => !f.endsWith(".txt") });
 cpSync(path.join(here, "static"), out, { recursive: true });
-console.log("built", out, Object.values(BOTS).map((b) => `${b.name} ${b.color}`).join(", "));
+console.log("built", out, Object.entries(BOTS).map(([id, b]) => `${id} ${b.name} ${b.color}`).join(", "));

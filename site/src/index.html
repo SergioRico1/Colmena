@@ -3,354 +3,504 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Colmena: tu equipo y tus bots, en el mismo chat</title>
-<meta name="description" content="Colmena es el chat de trabajo donde las personas de tu empresa hablan entre ellas y con sus bots. Los bots investigan, redactan y preparan el trabajo; enviar, comprar, publicar y borrar esperan tu OK.">
+<title>Colmena: tu equipo y sus bots, en el mismo chat</title>
+<meta name="description" content="Colmena es el chat de trabajo que sustituye a Slack: canales, hilos y mensajes para tu equipo, y bots de IA que investigan, hacen documentos y esperan tu OK antes de enviar, comprar, publicar o borrar.">
 <link rel="canonical" href="https://colmena.team/">
-<meta name="theme-color" content="#F5F5F2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16171C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#12131A">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_ES">
 <meta property="og:site_name" content="Colmena">
 <meta property="og:url" content="https://colmena.team/">
-<meta property="og:title" content="Colmena: tu equipo y tus bots, en el mismo chat">
-<meta property="og:description" content="El chat de trabajo para las personas de tu empresa y sus bots. Lo que sale fuera espera tu OK.">
+<meta property="og:title" content="Colmena: tu equipo y sus bots, en el mismo chat">
+<meta property="og:description" content="El chat de trabajo que sustituye a Slack, con bots que hacen el trabajo. Lo que sale fuera espera tu OK.">
 <meta property="og:image" content="https://colmena.team/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Colmena: tu equipo y tus bots, en el mismo chat.">
+<meta property="og:image:alt" content="Colmena: un bot deja preparado un correo y espera tu OK para enviarlo.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/geist-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<style>{{css}}</style>
+<script>document.documentElement.className = matchMedia("(prefers-reduced-motion: reduce)").matches ? "js still" : "js motion";</script>
+<style>{{css}}
+{{css home}}</style>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
-<div class="shell">
-  <nav class="side" aria-label="Canales">
-    <a class="brand" href="/"><img src="/logo-mark-64.png" width="30" height="30" alt=""><span class="wordmark">Colmena</span></a>
-    <a class="need" href="#borrador" data-need>{{icon HandPalm}}Te necesita<span class="count" aria-label="1 cosa">1</span></a>
-    <p class="side-group" id="g-canales">Canales</p>
-    <ul aria-labelledby="g-canales">
-      <li><a class="chan-link" href="#general" data-spy="general">{{icon Hash}}general</a></li>
-      <li><a class="chan-link" href="#lo-que-hacen" data-spy="lo-que-hacen">{{icon Hash}}lo-que-hacen</a></li>
-      <li><a class="chan-link" href="#lineas-rojas" data-spy="lineas-rojas">{{icon Hash}}lineas-rojas</a></li>
-      <li><a class="chan-link" href="#entre-personas" data-spy="entre-personas">{{icon Hash}}entre-personas</a></li>
-      <li><a class="chan-link" href="#donde-funciona" data-spy="donde-funciona">{{icon Hash}}donde-funciona</a></li>
-      <li><a class="chan-link" href="#privacidad" data-spy="privacidad">{{icon Hash}}privacidad-y-ia</a></li>
-    </ul>
-    <p class="side-group" id="g-bots">Bots de Lucía</p>
-    <ul class="side-bots" aria-labelledby="g-bots">
-      <li class="side-bot">{{bot atlas 20 trabajando}}{{name atlas}}<small>trabajando</small></li>
-      <li class="side-bot">{{bot nora 20}}{{name nora}}<small>libre</small></li>
-      <li class="side-bot">{{bot vera 20 espera}}{{name vera}}<small>espera</small></li>
-    </ul>
-    <div class="side-foot">
-      <div class="me"><span class="av" style="background:#E8D8F0" aria-hidden="true">LN</span><span><b>Lucía</b><small>Ejemplo</small></span></div>
+
+<header class="top">
+  <div class="top-row">
+    <a class="brand" href="/" aria-label="Colmena, inicio"><img src="/logo-mark-64.png" width="30" height="30" alt=""><span class="wordmark">Colmena</span></a>
+    <nav class="top-nav" aria-label="Secciones">
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#que-hace">Qué hace</a>
+      <a href="#slack">Desde Slack</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+    <div class="top-actions">
+      <a class="btn btn-ghost" href="https://app.colmena.team/">Entrar</a>
+      <a class="btn btn-paper" href="https://app.colmena.team/">Crear mi empresa</a>
     </div>
-  </nav>
+  </div>
+</header>
 
-  <div class="col">
-    <header class="top">
-      <div class="top-row">
-        <a class="brand" href="/"><img src="/logo-mark-64.png" width="28" height="28" alt=""><span class="wordmark">Colmena</span></a>
-        <div class="top-actions">
-          <a class="btn btn-line" href="https://app.colmena.team/">Entrar</a>
-          <a class="btn btn-ink" href="https://app.colmena.team/">Crear mi empresa</a>
-        </div>
+<main id="contenido">
+
+<!-- ── Hero: one encargo, live ───────────────────────────── -->
+<section class="hero ink" aria-labelledby="h-hero">
+  <div class="hero-in">
+    <div class="hero-copy">
+      <h1 id="h-hero">Tu equipo y sus bots, en el mismo chat.</h1>
+      <p class="hero-lead">Colmena es el chat de trabajo que sustituye a Slack. Tu equipo habla en canales, hilos y mensajes directos, y sus bots de IA investigan, hacen documentos y te esperan antes de enviar nada.</p>
+      <div class="cta">
+        <a class="btn btn-paper btn-lg" href="https://app.colmena.team/">Crear mi empresa {{icon ArrowRight}}</a>
+        <a class="btn btn-ghost btn-lg" href="https://app.colmena.team/">Entrar</a>
       </div>
-      <nav class="strip" aria-label="Secciones">
-        <a href="#general" data-spy="general">{{icon Hash}}general</a>
-        <a href="#lo-que-hacen" data-spy="lo-que-hacen">{{icon Hash}}lo-que-hacen</a>
-        <a href="#lineas-rojas" data-spy="lineas-rojas">{{icon Hash}}lineas-rojas</a>
-        <a href="#entre-personas" data-spy="entre-personas">{{icon Hash}}entre-personas</a>
-        <a href="#donde-funciona" data-spy="donde-funciona">{{icon Hash}}donde-funciona</a>
-        <a href="#privacidad" data-spy="privacidad">{{icon Hash}}privacidad-y-ia</a>
-      </nav>
-    </header>
+      <p class="hero-fine">Entras con un enlace que te llega al correo, sin contraseñas.</p>
+    </div>
 
-    <main id="contenido">
-      <section class="chan hero" id="general" aria-labelledby="h-general">
-        <div class="chan-bar" aria-hidden="true">{{icon Hash}}general<span>Qué es Colmena</span></div>
-        <div class="wrap">
-          <div>
-            <h1 class="h1" id="h-general">Tu equipo y tus bots, en el mismo chat.</h1>
-            <p class="lead">El chat de trabajo donde tu empresa habla, sus bots hacen el trabajo y nada sale fuera sin tu OK.</p>
-            <div class="cta">
-              <a class="btn btn-ink btn-lg" href="https://app.colmena.team/">Crear mi empresa {{icon ArrowRight}}</a>
-              <a class="btn btn-line btn-lg" href="https://app.colmena.team/">Entrar</a>
-            </div>
-            <p class="fine">Sin contraseñas: entras con un enlace que te llega al correo.</p>
-          </div>
-
-          <div class="pane" role="group" aria-label="Ejemplo de un canal de Colmena">
-            <div class="pane-head">{{icon Hash}}compras<span class="tag">Ejemplo</span></div>
-            <ol class="msgs">
-              <li class="msg">
-                <span class="av" style="background:#D2EBE3" aria-hidden="true">MR</span>
-                <div><p class="who"><b>Marcos</b><time>9:12</time></p>
+    <div class="stage">
+      <div class="app" data-demo role="group" aria-label="Ejemplo: un encargo en un canal de Colmena">
+        <aside class="app-side" aria-hidden="true">
+          <div class="app-co"><span class="co-mark">CR</span>Cerámica Ruiz</div>
+          <div class="app-need" data-need>{{icon HandPalm}}Te necesita<span class="app-count" data-count>1</span></div>
+          <p class="app-group">Canales</p>
+          <ul>
+            <li>{{icon Hash}}general</li>
+            <li class="on">{{icon Hash}}compras</li>
+            <li>{{icon Hash}}ventas</li>
+            <li>{{icon Lock}}dirección</li>
+          </ul>
+          <p class="app-group">Bots de Lucía</p>
+          <ul class="app-bots">
+            <li><span class="mood" data-mood="nora" data-name="{{name nora}}"><span class="m-rest">{{bot nora 20}}</span><span class="m-work">{{bot nora 20 trabajando}}</span></span>{{name nora}}<small data-state="nora">libre</small></li>
+            <li><span class="mood" data-mood="vera" data-name="{{name vera}}"><span class="m-rest">{{bot vera 20}}</span><span class="m-work">{{bot vera 20 trabajando}}</span></span>{{name vera}}<small data-state="vera">libre</small></li>
+            <li>{{bot tomas 20}}{{name tomas}}<small>libre</small></li>
+          </ul>
+        </aside>
+        <div class="app-main">
+          <div class="app-head">{{icon Hash}}<b>compras</b><span class="app-meta">3 personas · 2 bots</span><span class="tag">Ejemplo</span></div>
+          <div class="feed-win">
+            <ol class="feed" data-feed>
+              <li class="msg" data-k>
+                <span class="av" style="--av:#D2EBE3" aria-hidden="true">MR</span>
+                <div><p class="who"><b>Marcos</b><time>10:31</time></p>
                 <p>¿Tenemos ya la comparativa de embalaje? El jueves hay que contestar al proveedor.</p></div>
               </li>
-              <li class="msg">
-                <span class="av" style="background:#E8D8F0" aria-hidden="true">LN</span>
-                <div><p class="who"><b>Lucía</b><time>9:14</time></p>
-                <p><span class="mention">@{{name nora}}</span> compara las tres ofertas, y <span class="mention">@{{name vera}}</span> prepara la respuesta para la que salga mejor.</p></div>
+              <li class="msg" data-k>
+                <span class="av" style="--av:#E8D8F0" aria-hidden="true">LR</span>
+                <div><p class="who"><b>Lucía</b><time>10:33</time></p>
+                <p><span class="mention">@{{name nora}}</span> compara las tres ofertas, y <span class="mention">@{{name vera}}</span> prepara la respuesta para la mejor.</p></div>
               </li>
               <li class="msg">
                 <span class="av-bot">{{bot nora 36}}</span>
-                <div><p class="who"><b>{{name nora}}</b><small>bot de Lucía · Investigación</small></p>
-                <p>He comparado las tres ofertas con sus plazos. La más barata no llega a tiempo; Embalajes Norte sí, y es la segunda en precio.</p>
-                <div class="file"><span class="fi">{{icon FileXls}}</span><span><b>Comparativa de ofertas.xlsx</b><small>Hoja de cálculo</small></span></div></div>
+                <div><p class="who" data-k><b>{{name nora}}</b><small>bot de Lucía · Investigación</small></p>
+                <ol class="steps" aria-label="Pasos del trabajo">
+                  <li data-k data-step>{{icon CircleNotch}}{{icon CheckCircle}}<span>Leer las tres ofertas del correo</span></li>
+                  <li data-k data-step>{{icon CircleNotch}}{{icon CheckCircle}}<span>Comparar precio y plazo de entrega</span></li>
+                  <li data-k data-step>{{icon CircleNotch}}{{icon CheckCircle}}<span>Hacer la hoja de cálculo</span></li>
+                </ol>
+                <p class="steps-sum">{{icon CheckCircle}}3 pasos: leer las ofertas, comparar, hacer la hoja</p>
+                <p data-k>Embalajes Norte entrega el jueves y es la segunda en precio. La más barata no llega a tiempo.</p>
+                <div class="file" data-k><span class="fi">{{icon FileXls}}</span><span><b>Comparativa de ofertas.xlsx</b><small>Hoja de cálculo · 3 ofertas</small></span></div></div>
               </li>
-              <li class="msg" id="borrador">
+              <li class="msg">
                 <span class="av-bot">{{bot vera 36 espera}}</span>
-                <div><p class="who"><b>{{name vera}}</b><small>bot de Lucía · Redacción</small></p>
-                <p>Te dejo el correo preparado. No sale hasta que lo apruebes.</p>
-                <div class="draft" data-draft>
-                  <div class="draft-top"><span class="chip-need">{{icon HandPalm}}Te necesita</span><b>Enviar un correo</b></div>
+                <div><p class="who" data-k><b>{{name vera}}</b><small>bot de Lucía · Redacción</small></p>
+                <p data-k>Te dejo el correo preparado. No sale hasta que lo apruebes.</p>
+                <div class="ask" data-k data-ask>
+                  <div class="ask-top"><span class="chip-need">{{icon HandPalm}}Te necesita</span><b>Enviar un correo</b></div>
                   <dl><dt>Para</dt><dd>pedidos@embalajes-norte.example</dd><dt>Asunto</dt><dd>Aceptamos vuestra oferta</dd></dl>
-                  <p class="body" data-body>Hola: aceptamos la oferta con entrega el jueves. ¿Nos confirmáis la hora? Un saludo, Lucía.</p>
-                  <div class="draft-actions">
+                  <p class="ask-line"><span>Línea roja: enviar</span></p>
+                  <div class="ask-actions">
                     <button class="btn btn-ink" type="button" data-send>{{icon PaperPlaneTilt}}Enviar</button>
-                    <button class="btn btn-line" type="button" data-edit aria-pressed="false">{{icon PencilSimple}}Editar</button>
+                    <span class="ask-edit">{{icon PencilSimple}}Editar</span>
                   </div>
                   <p class="sent">{{icon Check}}Enviado. Lo aprobó Lucía.</p>
                 </div></div>
               </li>
             </ol>
-            <div class="composer" aria-hidden="true">Escribe en #compras</div>
-            <p class="sr" aria-live="polite" data-live></p>
           </div>
+          <div class="composer" aria-hidden="true"><span>Escribe en #compras</span><span class="typing" data-typing><i></i><i></i><i></i><b data-typing-who>{{name nora}}</b> está trabajando</span></div>
+          <span class="cursor" data-cursor aria-hidden="true">{{icon Cursor}}</span>
         </div>
-      </section>
-
-      <section class="chan" id="lo-que-hacen" aria-labelledby="h-hacen">
-        <div class="chan-bar" aria-hidden="true">{{icon Hash}}lo-que-hacen<span>Los bots</span></div>
-        <div class="wrap">
-          <h2 class="h2" id="h-hacen">Bots que terminan el trabajo.</h2>
-          <p class="lead">Lo pides en el chat, como a un compañero. El bot que sabe hacerlo lo hace y te entrega el resultado: un informe, una hoja de cálculo, una presentación, un correo listo. Cada persona tiene sus propios bots, con su nombre y su color.</p>
-          <ul class="roster" role="list">
-            <li class="member">{{bot atlas 64 libre label}}<div><h3>{{name atlas}} <small>· Coordinación</small></h3><p>Convierte un encargo grande en pasos, lo reparte entre el equipo y te entrega una síntesis respaldada por su trabajo.</p></div></li>
-            <li class="member">{{bot nora 64 libre label}}<div><h3>{{name nora}} <small>· Investigación</small></h3><p>Busca en la web con su propio navegador, contrasta datos y cita las fuentes que de verdad consultó.</p></div></li>
-            <li class="member">{{bot tomas 64 libre label}}<div><h3>{{name tomas}} <small>· Datos y finanzas</small></h3><p>Hojas de cálculo de Excel con sus fórmulas, cifras comprobadas y unidades revisadas. Si un dato falta, lo dice.</p></div></li>
-            <li class="member">{{bot iris 64 libre label}}<div><h3>{{name iris}} <small>· Diseño</small></h3><p>Presentaciones listas para abrir y propuestas visuales concretas.</p></div></li>
-            <li class="member">{{bot vera 64 libre label}}<div><h3>{{name vera}} <small>· Redacción</small></h3><p>Documentos de Word y correos con tu tono, preparados para que tú decidas si salen.</p></div></li>
-            <li class="member">{{bot bruno 64 libre label}}<div><h3>{{name bruno}} <small>· Código</small></h3><p>Programa en tu repositorio, en una rama aparte, con puntos para deshacer cada paso.</p><span class="where">{{icon Desktop}}En la app de escritorio</span></div></li>
-          </ul>
-          <div class="after">
-            <div>
-              <h3>{{icon Clock}}Rutinas a su hora</h3>
-              <p>Lo que se repite se hace solo: el resumen de los lunes, revisar el correo cada mañana. Tú solo ves lo que necesita tu OK.</p>
-            </div>
-            <div>
-              <h3>{{icon Users}}Como un equipo</h3>
-              <p>Se consultan y se pasan el trabajo entre ellos, y siempre ves quién está haciendo qué.</p>
-            </div>
-          </div>
-          <p class="note">Hoy los bots trabajan desde la app de escritorio, en tu ordenador y con tu cuenta de IA.</p>
-        </div>
-      </section>
-
-      <section class="chan" id="lineas-rojas" aria-labelledby="h-rojas">
-        <div class="chan-bar" aria-hidden="true">{{icon Hash}}lineas-rojas<span>Lo que espera tu OK</span></div>
-        <div class="wrap">
-          <h2 class="h2" id="h-rojas">Nada sale sin tu OK.</h2>
-          <p class="lead">Las líneas rojas no se cruzan solas. Todo lo demás avanza sin interrumpirte, y lo que espera por ti aparece en «Te necesita», para responderlo en un paso.</p>
-          <div class="split">
-            <div class="side-a">
-              <h3>{{icon Check}}Sin preguntarte</h3>
-              <ul class="acts">
-                <li>{{icon Binoculars}}Investigar y navegar</li>
-                <li>{{icon Envelope}}Leer tu correo y tus archivos</li>
-                <li>{{icon PencilSimple}}Redactar borradores</li>
-                <li>{{icon FileXls}}Analizar datos y hacer documentos</li>
-              </ul>
-            </div>
-            <div class="side-b">
-              <h3><span class="chip-need">{{icon HandPalm}}Te necesita</span></h3>
-              <ul class="acts">
-                <li>{{icon PaperPlaneTilt}}Enviar</li>
-                <li>{{icon ShoppingCart}}Comprar</li>
-                <li>{{icon Megaphone}}Publicar</li>
-                <li>{{icon Trash}}Borrar</li>
-              </ul>
-            </div>
-          </div>
-          <div class="after">
-            <div>
-              <h3>{{icon CalendarCheck}}Apruébalo antes</h3>
-              <p>Una rutina trabaja a su hora aunque no estés. Lo que ya te pidió una vez puedes dejarlo aprobado de antemano, y lo demás te espera.</p>
-            </div>
-            <div>
-              <h3>{{icon UserSwitch}}O que decida alguien de tu equipo</h3>
-              <p>Elige a una persona de tu equipo para que también pueda aprobar las líneas rojas de una rutina tuya. Vale la respuesta que llegue antes.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="chan" id="entre-personas" aria-labelledby="h-personas">
-        <div class="chan-bar" aria-hidden="true">{{icon Hash}}entre-personas<span>El chat de tu equipo</span></div>
-        <div class="wrap">
-          <h2 class="h2" id="h-personas">Y entre vosotros, todo lo de un chat de equipo.</h2>
-          <p class="lead">Colmena sustituye a Slack: tu empresa habla en el mismo sitio donde trabajan sus bots.</p>
-          <div class="people">
-            <ul class="feats">
-              <li><b>{{icon Hash}}Canales</b><span>Públicos para toda la empresa o privados para quien elijas.</span></li>
-              <li><b>{{icon ChatCircleDots}}Hilos</b><span>Responde a un mensaje sin llenar el canal.</span></li>
-              <li><b>{{icon ChatsCircle}}Mensajes directos</b><span>A una persona o a un grupo pequeño.</span></li>
-              <li><b>{{icon At}}Menciones</b><span>Lo que es para ti, reunido en «Para ti».</span></li>
-              <li><b>{{icon MagnifyingGlass}}Búsqueda</b><span>En todo el historial que puedes ver.</span></li>
-              <li><b>{{icon Users}}Personas e invitados</b><span>Invita por correo; los invitados solo ven sus conversaciones.</span></li>
-            </ul>
-            <div class="slack">
-              <h3>{{icon SlackLogo}}Trae tu Slack</h3>
-              <p>Sube la exportación de tu espacio de Slack y Colmena la importa con sus canales y su historia.</p>
-              <ul>
-                <li>{{icon Check}}Canales públicos y privados, mensajes directos y grupos</li>
-                <li>{{icon Check}}Hilos, reacciones, mensajes fijados y archivos</li>
-                <li>{{icon Check}}Quien escribía allí aparece con su nombre; al entrar con su correo, recupera lo suyo</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="chan" id="donde-funciona" aria-labelledby="h-donde">
-        <div class="chan-bar" aria-hidden="true">{{icon Hash}}donde-funciona<span>Navegador, móvil y escritorio</span></div>
-        <div class="wrap">
-          <h2 class="h2" id="h-donde">En el navegador, en el móvil y en tu ordenador.</h2>
-          <div class="places">
-            <div class="place">
-              <div class="place-icons">{{icon Globe}}{{icon DeviceMobile}}</div>
-              <h3>Web y móvil</h3>
-              <p>Entra desde cualquier navegador, también en el teléfono, sin instalar nada. Aquí está el chat de tu equipo; los bots trabajan desde la app de escritorio.</p>
-              <ul>
-                <li>{{icon Check}}<span>Canales, hilos y mensajes directos en el bolsillo</span></li>
-                <li>{{icon Check}}<span>Tema claro u oscuro, el que use tu dispositivo</span></li>
-              </ul>
-              <div class="cta"><a class="btn btn-ink" href="https://app.colmena.team/">Abrir Colmena {{icon ArrowRight}}</a></div>
-            </div>
-            <div class="place place-desk">
-              <div class="place-icons">{{icon Desktop}}{{icon WindowsLogo}}{{icon AppleLogo}}</div>
-              <h3>La app de escritorio</h3>
-              <p>Para Windows y Mac. Trae un agente local para que tus bots trabajen también en tu ordenador.</p>
-              <ul>
-                <li>{{icon Desktop}}<span><b>Tu ordenador.</b> Un navegador propio que puedes mirar y tomar cuando quieras.</span></li>
-                <li>{{icon FolderOpen}}<span><b>Tus carpetas.</b> Solo las que tú le das.</span></li>
-                <li>{{icon Password}}<span><b>Tu gestor de contraseñas.</b> 1Password o Bitwarden para entrar donde haga falta; las contraseñas nunca pasan por el chat.</span></li>
-                <li>{{icon Code}}<span><b>Código.</b> Claude Code, Codex y OpenCode trabajando en tus repositorios.</span></li>
-              </ul>
-              <div class="cta"><a class="btn btn-ink" href="https://github.com/SergioRico1/Colmena/releases/latest">{{icon DownloadSimple}}Descargar para Windows o Mac</a></div>
-              <p class="fine">En la página de descarga eliges el instalador de tu sistema.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="chan" id="privacidad" aria-labelledby="h-privacidad">
-        <div class="chan-bar" aria-hidden="true">{{icon Hash}}privacidad-y-ia<span>Tus datos y tu IA</span></div>
-        <div class="wrap pair">
-          <div>
-            <h2 class="h2" id="h-privacidad">Tus datos, cifrados y en la UE.</h2>
-            <ul class="facts">
-              <li>{{icon Key}}<span><b>Una clave por empresa.</b> Cada empresa guarda sus datos cifrados con su propia clave.</span></li>
-              <li>{{icon Globe}}<span><b>En la Unión Europea.</b> Las conversaciones y los archivos se guardan en servidores de la UE.</span></li>
-              <li>{{icon LockKey}}<span><b>Tus claves, guardadas aparte.</b> Las claves de tus cuentas de IA y de tus apps se guardan cifradas y nunca se muestran enteras.</span></li>
-              <li>{{icon Desktop}}<span><b>En el escritorio, en tu ordenador.</b> Con la app de escritorio, tus bots, chats y cuentas se guardan en tu equipo.</span></li>
-            </ul>
-          </div>
-          <div id="tu-ia">
-            <h2 class="h2" id="h-ia">Con tu propia IA.</h2>
-            <p class="lead">Conecta tu cuenta de ChatGPT o de Claude, o usa tus claves de API. Tus bots piensan con la IA que ya tienes.</p>
-            <ul class="engines" aria-label="Cuentas de IA que puedes conectar">
-              <li class="big">ChatGPT</li>
-              <li class="big">Claude</li>
-              <li>OpenCode Go</li>
-              <li>Gemini</li>
-              <li>OpenRouter</li>
-              <li>DeepSeek</li>
-              <li>Kimi</li>
-              <li>Tu propio servidor</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section class="close" aria-labelledby="h-close">
-        <div class="wrap">
-          <div class="lineup" aria-hidden="true">{{bot atlas 80 trabajando}}{{bot nora 80}}{{bot tomas 80}}{{bot iris 80 trabajando}}{{bot vera 80}}{{bot bruno 80}}</div>
-          <h2 id="h-close">Crea tu empresa y trae a tu equipo.</h2>
-          <p>Abre tu espacio, invita a las personas y pon a trabajar a sus bots. Lo que salga fuera, lo decides tú.</p>
-          <div class="cta">
-            <a class="btn btn-ink btn-lg" href="https://app.colmena.team/">Crear mi empresa {{icon ArrowRight}}</a>
-            <a class="btn btn-line btn-lg" href="https://app.colmena.team/">Entrar</a>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="foot">
-      <div class="wrap">
-        <a class="brand" href="/"><img src="/logo-mark-64.png" width="26" height="26" alt="" loading="lazy"><span class="wordmark">Colmena</span></a>
-        <nav aria-label="Pie de página"><ul>
-          <li><a href="https://app.colmena.team/">Entrar</a></li>
-          <li><a href="https://github.com/SergioRico1/Colmena/releases/latest">Descargar</a></li>
-          <li><a href="/privacidad/">Privacidad</a></li>
-          <li><a href="/aviso-legal/">Aviso legal</a></li>
-        </ul></nav>
-        <small>© 2026 Colmena</small>
       </div>
-    </footer>
+      <div class="beats">
+        <button class="play" type="button" data-play aria-pressed="false">{{icon Pause}}{{icon Play}}<span data-play-label>Pausar</span></button>
+        <ol class="beat-list" aria-label="El encargo, en cuatro tiempos">
+          <li data-beat><span class="bar"><i></i></span>Pides</li>
+          <li data-beat><span class="bar"><i></i></span>Trabaja</li>
+          <li data-beat><span class="bar"><i></i></span>Entrega</li>
+          <li data-beat><span class="bar"><i></i></span>Apruebas</li>
+        </ol>
+      </div>
+      <p class="sr" aria-live="polite" data-live></p>
+    </div>
   </div>
-</div>
-<script>
-(() => {
-  // The channel you are reading lights up in the sidebar and the strip.
-  const links = [...document.querySelectorAll("[data-spy]")];
-  const ids = [...new Set(links.map((a) => a.dataset.spy))];
-  const mark = (id) => links.forEach((a) => (a.dataset.spy === id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
-  // The section whose top has passed a third of the screen is the one you are reading.
-  const sections = ids.map((id) => document.getElementById(id)).filter(Boolean);
-  let current = null, queued = false;
-  const update = () => {
-    queued = false;
-    const line = innerHeight * 0.35;
-    let best = sections[0].id;
-    for (const s of sections) if (s.getBoundingClientRect().top <= line) best = s.id;
-    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) best = sections[sections.length - 1].id;
-    if (best === current) return;
-    current = best;
-    mark(best);
-    const s = document.querySelector('.strip [data-spy="' + best + '"]');
-    if (s && s.offsetParent) s.parentElement.scrollTo({ left: s.offsetLeft - 16, behavior: "smooth" });
-  };
-  addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
-  addEventListener("resize", update);
-  update();
+  <div class="crowd" aria-hidden="true">{{bot atlas 44}}{{bot marcos.nora 44}}{{bot tomas 44 trabajando}}{{bot ana.vera 44}}{{bot iris 44}}{{bot marcos.bruno 44}}{{bot ana.nora 44 trabajando}}{{bot bruno 44}}</div>
+</section>
 
-  // The demo draft: «Enviar» sends it (in the example), «Editar» lets you change the text.
-  const draft = document.querySelector("[data-draft]");
-  const live = document.querySelector("[data-live]");
-  const body = draft.querySelector("[data-body]");
-  const edit = draft.querySelector("[data-edit]");
-  draft.querySelector("[data-send]").addEventListener("click", () => {
-    body.removeAttribute("contenteditable");
-    draft.setAttribute("data-sent", "");
-    document.querySelectorAll("[data-need]").forEach((n) => n.setAttribute("data-done", ""));
-    live.textContent = "Correo enviado. Es un ejemplo: no ha salido ningún correo.";
-    draft.querySelector(".sent").setAttribute("tabindex", "-1");
-    draft.querySelector(".sent").focus({ preventScroll: true });
-  });
-  edit.addEventListener("click", () => {
-    const on = body.getAttribute("contenteditable") !== "true";
-    body.setAttribute("contenteditable", on ? "true" : "false");
-    edit.setAttribute("aria-pressed", String(on));
-    if (on) body.focus();
-  });
-})();
+<!-- ── How it works ─────────────────────────────────────── -->
+<section class="how" id="como-funciona" aria-labelledby="h-how">
+  <div class="wrap">
+    <h2 class="h2" id="h-how">De cero a trabajando, en cuatro pasos.</h2>
+    <ol class="how-steps">
+      <li class="how-step">
+        <div class="how-vis" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <div class="mini-form"><span class="mf-label">Nombre de tu empresa</span><span class="mf-input">Cerámica Ruiz<i class="caret"></i></span><span class="mf-btn">Crear</span></div>
+        </div>
+        <h3><span class="n">1</span>Crea tu empresa</h3>
+        <p>En app.colmena.team, con tu correo. Tu espacio queda listo con su canal #general.</p>
+      </li>
+      <li class="how-step">
+        <div class="how-vis" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <div class="mini-team">
+            <span class="av" style="--av:#E8D8F0">LR</span><span class="av" style="--av:#D2EBE3">MR</span><span class="av" style="--av:#DCE3FA">AS</span>
+            <span class="plus">+</span>
+            {{bot nora 32}}{{bot marcos.vera 32}}{{bot ana.tomas 32}}
+          </div>
+        </div>
+        <h3><span class="n">2</span>Invita a tu equipo y trae tus bots</h3>
+        <p>Invita por correo. Cada persona trae sus propios bots, con su nombre y su color.</p>
+      </li>
+      <li class="how-step">
+        <div class="how-vis" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <div class="mini-msg"><span class="av" style="--av:#E8D8F0">LR</span><span><span class="mention">@{{name tomas}}</span> el resumen de ventas de octubre, por favor</span></div>
+        </div>
+        <h3><span class="n">3</span>Pide en un canal</h3>
+        <p>Como a un compañero. El bot que sabe hacerlo trabaja y te entrega el resultado.</p>
+      </li>
+      <li class="how-step">
+        <div class="how-vis" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <div class="mini-ask"><span class="chip-need">{{icon HandPalm}}Te necesita</span><b>Publicar en la web</b><span class="mini-ok">{{icon Check}}Aprobar</span></div>
+        </div>
+        <h3><span class="n">4</span>Aprueba lo que sale</h3>
+        <p>Enviar, comprar, publicar o borrar espera tu OK. Lo demás avanza sin interrumpirte.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ── Capabilities ─────────────────────────────────────── -->
+<section class="caps" id="que-hace" aria-labelledby="h-caps">
+  <div class="wrap">
+    <h2 class="h2" id="h-caps">Bots que terminan el trabajo.</h2>
+    <p class="lead">No contestan con consejos: te entregan el archivo. Cada uno tiene su oficio, y se pasan el trabajo entre ellos como un equipo.</p>
+
+    <article class="cap" aria-labelledby="h-docs">
+      <div class="cap-text">
+        <h3 class="h3" id="h-docs">Investiga y te hace el documento.</h3>
+        <p>Busca en la web con su propio navegador y cita las fuentes que de verdad consultó. Te deja una hoja de cálculo con sus fórmulas, un Word con tu tono o una presentación lista para abrir.</p>
+        <ul class="ticks">
+          <li>{{icon Check}}Excel, Word y presentaciones de verdad</li>
+          <li>{{icon Check}}Si falta un dato, lo dice</li>
+        </ul>
+      </div>
+      <div class="demo docs" aria-hidden="true">
+        <div class="doc sheet rv">
+          <div class="doc-head">{{icon FileXls}}<b>Ventas octubre.xlsx</b>{{bot tomas 22}}</div>
+          <div class="grid">
+            <span class="hd">Tienda</span><span class="hd">Ventas</span><span class="hd">vs. sept.</span>
+            <span class="rv" style="--i:1">Centro</span><span class="rv num" style="--i:2">18.420 €</span><span class="rv up" style="--i:3">+6 %</span>
+            <span class="rv" style="--i:4">Norte</span><span class="rv num" style="--i:5">12.075 €</span><span class="rv up" style="--i:6">+2 %</span>
+            <span class="rv" style="--i:7">Online</span><span class="rv num" style="--i:8">9.310 €</span><span class="rv dn" style="--i:9">−4 %</span>
+            <span class="rv tot" style="--i:10">Total</span><span class="rv num tot" style="--i:11">39.805 €</span><span class="rv tot fx" style="--i:12">=SUMA(B2:B4)</span>
+          </div>
+        </div>
+        <div class="doc word rv" style="--i:4">
+          <div class="doc-head">{{icon FileDoc}}<b>Propuesta Hotel Mar.docx</b>{{bot vera 22}}</div>
+          <p class="ln w9"></p><p class="ln w7"></p><p class="ln w8"></p><p class="ln w5"></p>
+        </div>
+        <div class="doc deck rv" style="--i:8">
+          <div class="doc-head">{{icon PresentationChart}}<b>Resultados.pptx</b>{{bot iris 22}}</div>
+          <div class="slide"><span class="s-t"></span><span class="s-bars"><i style="--h:40%"></i><i style="--h:65%"></i><i style="--h:52%"></i><i style="--h:88%"></i></span></div>
+        </div>
+        <div class="src rv" style="--i:12">{{icon Binoculars}}Fuentes consultadas: 4 páginas</div>
+        <span class="tag tag-float">Ejemplo</span>
+      </div>
+    </article>
+
+    <article class="cap flip" aria-labelledby="h-routines">
+      <div class="cap-text">
+        <h3 class="h3" id="h-routines">Rutinas que trabajan a su hora.</h3>
+        <p>Lo que se repite se hace solo: el resumen de los lunes, revisar el correo cada mañana, el informe de stock a primeros de mes. Si algo necesita tu OK, te espera en «Te necesita».</p>
+        <ul class="ticks">
+          <li>{{icon Check}}A una hora, o cuando llega un correo o un archivo</li>
+                  </ul>
+      </div>
+      <div class="demo routines" aria-hidden="true">
+        <div class="week">
+          <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+          <i class="sweep"></i>
+        </div>
+        <ul class="rt-list">
+          <li class="rt rv" style="--i:2">{{bot tomas 28}}<span><b>Resumen de ventas</b><small>{{icon ArrowsClockwise}}Cada lunes, 9:00</small></span><em class="done">{{icon Check}}Hecho</em></li>
+          <li class="rt rv" style="--i:5">{{bot vera 28}}<span><b>Revisar el correo</b><small>{{icon ArrowsClockwise}}Cada mañana, 8:30</small></span><em class="done">{{icon Check}}Hecho</em></li>
+          <li class="rt rv" style="--i:8">{{bot nora 28 espera}}<span><b>Responder a reseñas</b><small>{{icon ArrowsClockwise}}Cada viernes, 17:00</small></span><em class="wait">{{icon HandPalm}}Te necesita</em></li>
+          <li class="rt rv" style="--i:11">{{bot tomas 28}}<span><b>Informe de stock</b><small>{{icon CalendarBlank}}El día 1 de cada mes</small></span><em class="next">Próxima: 1 dic.</em></li>
+        </ul>
+        <span class="tag tag-float">Ejemplo</span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ── Red lines: the ink band ──────────────────────────── -->
+<section class="lines ink" id="lineas-rojas" aria-labelledby="h-lines">
+  <div class="wrap">
+    <h2 class="h2" id="h-lines">Nada sale sin tu OK.</h2>
+    <p class="lead">Los bots hacen solos todo lo que se queda dentro. Lo que sale fuera se para en la línea roja y te espera en «Te necesita», para responderlo en un paso.</p>
+    <div class="rule-split">
+      <div class="lane free">
+        <h3>Sin preguntarte</h3>
+        <ul>
+          <li class="rv" style="--i:1">{{icon Binoculars}}Investigar y navegar</li>
+          <li class="rv" style="--i:2">{{icon Envelope}}Leer el correo y los archivos</li>
+          <li class="rv" style="--i:3">{{icon PencilSimple}}Redactar borradores</li>
+          <li class="rv" style="--i:4">{{icon Table}}Analizar datos y hacer documentos</li>
+        </ul>
+      </div>
+      <div class="the-line" aria-hidden="true"><span>Línea roja</span></div>
+      <div class="lane stop">
+        <h3>Espera tu OK</h3>
+        <ul>
+          <li class="rv" style="--i:5">{{icon PaperPlaneTilt}}Enviar<em>{{icon HandPalm}}Te necesita</em></li>
+          <li class="rv" style="--i:6">{{icon ShoppingCart}}Comprar<em>{{icon HandPalm}}Te necesita</em></li>
+          <li class="rv" style="--i:7">{{icon Megaphone}}Publicar<em>{{icon HandPalm}}Te necesita</em></li>
+          <li class="rv" style="--i:8">{{icon Trash}}Borrar<em>{{icon HandPalm}}Te necesita</em></li>
+        </ul>
+      </div>
+    </div>
+    <div class="lines-more">
+      <div class="lm">
+        <div class="lm-vis" aria-hidden="true">
+          <div class="menu"><span class="menu-t">Aprobar y dejarlo aprobado en esta rutina</span><span class="menu-o">Solo la próxima vez</span><span class="menu-o on">{{icon Check}}Siempre</span></div>
+        </div>
+        <h3>Apruébalo antes</h3>
+        <p>Una rutina trabaja aunque no estés. Lo que ya te pidió una vez puedes dejarlo aprobado, solo para la próxima vez o siempre. Pagar y comprar nunca se aprueban por adelantado.</p>
+      </div>
+      <div class="lm">
+        <div class="lm-vis" aria-hidden="true">
+          <div class="delegate"><span class="d-t">Quién decide sus líneas rojas</span><span class="d-p"><span class="av" style="--av:#D2EBE3">MR</span>Marcos<small>además de ti</small></span></div>
+        </div>
+        <h3>O que decida alguien de tu equipo</h3>
+        <p>Elige a una persona para que también pueda aprobar las líneas rojas de una rutina tuya. Vale la respuesta que llegue antes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── More capabilities ────────────────────────────────── -->
+<section class="caps caps-2" aria-labelledby="h-team">
+  <div class="wrap">
+    <article class="cap wide" aria-labelledby="h-team">
+      <div class="cap-text">
+        <h2 class="h2" id="h-team">Y entre vosotros, todo lo de un chat de equipo.</h2>
+        <p>Colmena sustituye a Slack: tu empresa habla en el mismo sitio donde trabajan sus bots.</p>
+      </div>
+      <div class="team-demo" aria-hidden="true">
+        <div class="td-side">
+          <span class="td-g">Canales</span>
+          <span class="td-c">{{icon Hash}}general</span>
+          <span class="td-c on">{{icon Hash}}ventas<b>3</b></span>
+          <span class="td-c">{{icon Hash}}compras</span>
+          <span class="td-c">{{icon Lock}}dirección</span>
+          <span class="td-g">Mensajes directos</span>
+          <span class="td-c"><span class="av sm" style="--av:#DCE3FA">AS</span>Ana</span>
+          <span class="td-c"><span class="av sm" style="--av:#D2EBE3">MR</span>Marcos</span>
+        </div>
+        <div class="td-main">
+          <div class="td-search">{{icon MagnifyingGlass}}<span class="q">de:@ana presupuesto</span></div>
+          <div class="td-msg"><span class="av" style="--av:#DCE3FA">AS</span><div><p class="who"><b>Ana</b><time>ayer</time></p><p>Ya está el <span class="hl">presupuesto</span> del Hotel Mar. <span class="mention">@Lucía</span> ¿lo revisas?</p>
+            <span class="react">👍 2</span><span class="react">{{icon Paperclip}}presupuesto.pdf</span>
+            <span class="thread">{{icon ChatCircleDots}}4 respuestas en el hilo</span></div></div>
+          <div class="td-msg plain"><span class="av" style="--av:#DCE3FA" aria-hidden="true">AS</span><div><p class="who"><b>Ana</b><time>3 nov.</time></p><p>Os paso el <span class="hl">presupuesto</span> de mantenimiento para que lo vea Marcos.</p></div></div>
+        </div>
+        <div class="td-thread">
+          <span class="td-g">Hilo</span>
+          <div class="tt"><span class="av sm" style="--av:#E8D8F0">LR</span><p><b>Lucía</b> Revisado. Solo cambiaría el plazo.</p></div>
+          <div class="tt">{{bot ana.vera 22}}<p><b>{{name ana.vera}}</b> Cambiado a 15 días. Te dejo la versión 2.</p></div>
+        </div>
+        <span class="tag tag-float">Ejemplo</span>
+      </div>
+      <ul class="feats" aria-label="Lo que tiene el chat de equipo">
+        <li>{{icon Hash}}Canales públicos y privados</li>
+        <li>{{icon ChatCircleDots}}Hilos, también enviados al canal</li>
+        <li>{{icon ChatsCircle}}Mensajes directos y grupos</li>
+        <li>{{icon At}}Menciones reunidas en «Para ti»</li>
+        <li>{{icon MagnifyingGlass}}Búsqueda por persona, canal, fecha o archivo</li>
+        <li>{{icon Paperclip}}Reacciones, fijados y archivos</li>
+        <li>{{icon Users}}Invitados que solo ven lo suyo</li>
+        <li>{{icon SlackLogo}}Importación desde Slack</li>
+      </ul>
+    </article>
+
+    <div class="tiles">
+      <article class="tile" aria-labelledby="h-apps">
+        <div class="tile-vis hub" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <svg class="hub-lines" viewBox="0 0 320 200" preserveAspectRatio="none"><path d="M160 100 L40 34"/><path d="M160 100 L280 34"/><path d="M160 100 L28 110"/><path d="M160 100 L292 110"/><path d="M160 100 L70 176"/><path d="M160 100 L250 176"/></svg>
+          <span class="hub-bot">{{bot nora 40 trabajando}}</span>
+          <span class="app-chip a1">Gmail</span><span class="app-chip a2">Google Calendar</span><span class="app-chip a3">Drive</span><span class="app-chip a4">Notion</span><span class="app-chip a5">HubSpot</span><span class="app-chip a6">GitHub</span>
+        </div>
+        <h3>Tus apps, con tu cuenta</h3>
+        <p>Gmail, Outlook, Google Calendar, Drive, Notion, HubSpot, GitHub y más, y tus propios servidores MCP. Leer no pregunta; enviar, sí.</p>
+      </article>
+
+      <article class="tile" aria-labelledby="h-code">
+        <div class="tile-vis code" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <div class="code-top">{{bot bruno 24 trabajando}}<b>Código</b><span class="branch">{{icon GitBranch}}arreglar-pedidos</span></div>
+          <div class="engines-row"><span class="on">Claude Code</span><span>Codex</span><span>OpenCode</span></div>
+          <ol class="code-steps">
+            <li>{{icon CheckCircle}}Encontrar el fallo del formulario</li>
+            <li>{{icon CheckCircle}}Corregir la validación<span class="diff"><b>+12</b> <i>−3</i></span></li>
+            <li>{{icon CheckCircle}}Pasar las pruebas</li>
+          </ol>
+          <span class="undo">{{icon ArrowCounterClockwise}}Deshacer cambios</span>
+        </div>
+        <h3 id="h-code">Código, en tu repositorio</h3>
+        <p>Claude Code, Codex u OpenCode trabajan en una rama aparte, con un punto para deshacer cada paso.</p>
+        <p class="where">{{icon Desktop}}En la app de escritorio</p>
+      </article>
+
+      <article class="tile" aria-labelledby="h-where">
+        <div class="tile-vis devices" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <div class="dv-win"><span class="dv-bar"><i></i><i></i><i></i></span><span class="dv-row">{{icon Browser}}Navegador propio del bot</span><span class="dv-row">{{icon FolderOpen}}Solo las carpetas que le das</span><span class="dv-row">{{icon Password}}1Password o Bitwarden</span></div>
+          <div class="dv-phone"><span class="dv-notch"></span><span class="dv-need">{{icon HandPalm}}Te necesita<b>1</b></span><span class="dv-l"><b>#ventas</b>Ana: Ya está el presupuesto…</span><span class="dv-l"><b>Marcos</b>¿Comemos a las 2?</span></div>
+        </div>
+        <h3 id="h-where">En la web, en el móvil y en tu ordenador</h3>
+        <p>El chat y tus bots funcionan en cualquier navegador, también en el teléfono: mencionas a un bot en un canal y te responde en el hilo. La app de escritorio para Windows y Mac añade un agente local para que trabajen también en tu ordenador.</p>
+        <p class="where"><a href="https://github.com/SergioRico1/Colmena/releases/latest">{{icon DownloadSimple}}Descargar para Windows o Mac</a></p>
+      </article>
+
+      <article class="tile" aria-labelledby="h-ai">
+        <div class="tile-vis ai" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+          <span class="ai-q">¿Con qué IA piensan tus bots?</span>
+          <span class="ai-o on"><i></i>Clave de API<small>OpenAI, Anthropic, Gemini…</small></span>
+          <span class="ai-o"><i></i>Suscripción de ChatGPT<small>desde la app de escritorio</small></span>
+          <span class="ai-o"><i></i>Suscripción de Claude<small>desde la app de escritorio</small></span>
+        </div>
+        <h3 id="h-ai">Con tu propia IA</h3>
+        <p>En la web, con tu clave de API: OpenAI, Anthropic, Gemini, OpenRouter, DeepSeek, Kimi u OpenCode Go. Con tu suscripción de ChatGPT o de Claude, desde la app de escritorio.</p>
+      </article>
+    </div>
+
+    <article class="cap privacy flip" aria-labelledby="h-priv">
+      <div class="cap-text">
+        <h2 class="h2" id="h-priv">Tus datos, cifrados y en la UE.</h2>
+        <ul class="facts">
+          <li>{{icon Key}}<span><b>Una clave por empresa.</b> Cada mensaje, archivo y borrador se guarda cifrado con la clave de tu empresa.</span></li>
+          <li>{{icon MapPin}}<span><b>En la Unión Europea.</b> Las conversaciones y los archivos se guardan en servidores de la UE.</span></li>
+          <li>{{icon LockKey}}<span><b>Tus claves, aparte.</b> Las de tu IA y tus apps se guardan cifradas y nunca se muestran enteras.</span></li>
+          <li>{{icon Desktop}}<span><b>En el escritorio, en tu ordenador.</b> Tus bots, sus chats y tus cuentas se quedan en tu equipo.</span></li>
+        </ul>
+      </div>
+      <div class="vaults" aria-hidden="true"><span class="tag tag-float">Ejemplo</span>
+        <div class="vault mine"><span class="v-co"><span class="co-mark">CR</span>Cerámica Ruiz</span><span class="v-key">{{icon Key}}clave propia</span><span class="v-data"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <div class="vault"><span class="v-co"><span class="co-mark">OE</span>Otra empresa</span><span class="v-key">{{icon Key}}otra clave</span><span class="v-data"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>
+        <span class="eu">{{icon MapPin}}Servidores en la UE</span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ── From Slack ───────────────────────────────────────── -->
+<section class="slack ink" id="slack" aria-labelledby="h-slack">
+  <div class="wrap">
+    <div class="slack-copy">
+      <h2 class="h2" id="h-slack">Cambia de Slack en una tarde.</h2>
+      <p class="lead">Exporta tu espacio de Slack, sube el ZIP y Colmena lo importa en segundo plano, con sus canales y su historia.</p>
+      <ol class="slack-steps">
+        <li><b>Exporta</b> tu espacio desde la administración de Slack.</li>
+        <li><b>Sube el ZIP</b> en Colmena, en «Importar de Slack».</li>
+        <li><b>Sigue trabajando</b> mientras se importa. Puedes cerrar la página.</li>
+        <li><b>Cada persona entra con su correo</b> y recupera sus canales y lo que escribió.</li>
+      </ol>
+      <ul class="slack-keep">
+        <li>{{icon Check}}Canales públicos y privados, mensajes directos y grupos</li>
+        <li>{{icon Check}}Hilos, reacciones, mensajes fijados y archivos</li>
+        <li>{{icon Check}}Cada mensaje con su autor y su hora</li>
+      </ul>
+    </div>
+    <div class="import" aria-hidden="true">
+      <div class="imp-head">{{icon FileZip}}<b>slack-export.zip</b><span class="imp-pct" data-pct>100 %</span></div>
+      <span class="imp-bar"><i></i></span>
+      <ul class="imp-list">
+        <li class="rv" style="--i:2">{{icon Hash}}general<span data-count-to="12480">12.480</span></li>
+        <li class="rv" style="--i:4">{{icon Hash}}ventas<span data-count-to="5210">5.210</span></li>
+        <li class="rv" style="--i:6">{{icon Hash}}compras<span data-count-to="2964">2.964</span></li>
+        <li class="rv" style="--i:8">{{icon Lock}}dirección<span data-count-to="841">841</span></li>
+        <li class="rv" style="--i:10">{{icon ChatsCircle}}mensajes directos<span data-count-to="9377">9.377</span></li>
+      </ul>
+      <div class="imp-who rv" style="--i:12"><span class="av" style="--av:#DCE3FA">AS</span><span><b>Ana entró con ana@ceramicaruiz.example</b><small>Recupera sus canales y lo que escribió en Slack</small></span></div>
+      <span class="tag tag-float">Ejemplo</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ──────────────────────────────────────────────── -->
+<section class="faq" id="preguntas" aria-labelledby="h-faq">
+  <div class="wrap">
+    <h2 class="h2" id="h-faq">Lo que nos preguntan.</h2>
+    <div class="qs">
+      <details>
+        <summary>¿Cuánto cuesta?{{icon Plus}}</summary>
+        <p>Todavía no hemos publicado los precios. Cuando los tengamos, estarán en esta página. Lo que tus bots gastan pensando va a tu propia cuenta de IA, no a la nuestra.</p>
+      </details>
+      <details>
+        <summary>¿Dónde están mis datos y quién puede leerlos?{{icon Plus}}</summary>
+        <p>En servidores de la Unión Europea. Cada empresa tiene su propia clave, y los mensajes, archivos y borradores se guardan cifrados con ella. En la app de escritorio, tus bots, sus chats y tus cuentas se guardan en tu ordenador.</p>
+      </details>
+      <details>
+        <summary>¿Qué IA usan los bots?{{icon Plus}}</summary>
+        <p>La tuya. En la web, cada persona pone su clave de API de OpenAI, Anthropic, Gemini, OpenRouter, DeepSeek, Kimi u OpenCode Go. Las suscripciones de ChatGPT y de Claude se usan desde la app de escritorio, en tu ordenador: sus condiciones no permiten usarlas en un servicio alojado.</p>
+      </details>
+      <details>
+        <summary>¿Funciona en el móvil?{{icon Plus}}</summary>
+        <p>Sí. Entras desde el navegador del teléfono, sin instalar nada: canales, hilos, mensajes directos, tus bots y lo que te necesita. Las rutinas siguen trabajando aunque no tengas nada abierto.</p>
+      </details>
+      <details>
+        <summary>¿Qué pasa con nuestro historial de Slack?{{icon Plus}}</summary>
+        <p>Viene contigo. Subes la exportación de Slack y Colmena importa los canales, los mensajes directos, los hilos, las reacciones, los fijados y los archivos que trae la exportación. Quien escribía allí aparece con su nombre, y al entrar con su correo recupera lo suyo. La importación se hace una vez: no hay un puente en directo con Slack.</p>
+      </details>
+      <details>
+        <summary>¿Puede un bot enviar algo sin que yo lo vea?{{icon Plus}}</summary>
+        <p>No. Enviar, comprar, publicar y borrar esperan siempre el OK de una persona. En una rutina puedes dejar aprobado de antemano algo que ya te pidió, o que lo apruebe alguien de tu equipo; pagar y comprar nunca se aprueban por adelantado.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ── Close ────────────────────────────────────────────── -->
+<section class="close ink" aria-labelledby="h-close">
+  <div class="wrap">
+    <div class="lineup" aria-hidden="true">{{bot atlas 72}}{{bot nora 72 trabajando}}{{bot marcos.tomas 72}}{{bot ana.iris 72}}{{bot vera 72 espera}}{{bot marcos.bruno 72 trabajando}}</div>
+    <h2 id="h-close">Abre tu Colmena hoy.</h2>
+    <p>Crea tu empresa, invita a tu equipo y pon a trabajar a sus bots. Lo que salga fuera, lo decides tú.</p>
+    <div class="cta">
+      <a class="btn btn-paper btn-lg" href="https://app.colmena.team/">Crear mi empresa {{icon ArrowRight}}</a>
+      <a class="btn btn-ghost btn-lg" href="https://app.colmena.team/">Entrar</a>
+    </div>
+    <p class="close-dl"><a href="https://github.com/SergioRico1/Colmena/releases/latest">{{icon DownloadSimple}}Descargar la app de escritorio para Windows o Mac</a></p>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <a class="brand" href="/"><img src="/logo-mark-64.png" width="26" height="26" alt="" loading="lazy"><span class="wordmark">Colmena</span></a>
+    <nav aria-label="Pie de página"><ul>
+      <li><a href="https://app.colmena.team/">Entrar</a></li>
+      <li><a href="https://github.com/SergioRico1/Colmena/releases/latest">Descargar</a></li>
+      <li><a href="/privacidad/">Privacidad</a></li>
+      <li><a href="/aviso-legal/">Aviso legal</a></li>
+    </ul></nav>
+    <small>© 2026 Colmena</small>
+  </div>
+</footer>
+<script>
+{{js home}}
 </script>
 </body>
 </html>
