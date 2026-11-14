@@ -417,6 +417,21 @@ light and dark, one column from 390 px up. The app itself is the desktop's UI, m
 by the Worker (`<meta name="colmena-host" content="cloud">`); on phones it still has the
 desktop layout until the responsive shell lands (separate work).
 
+**The living hive and the guided start (2026-11-14).** Every page before the app sits in the home
+page's honeycomb (`src/cloud/Hive.jsx`, geometry in `src/lib/hive.js`): the team's pixel bots in a
+rosette round the mark, flying out and back, gathering by the card while the mail travels; still
+with reduced motion, stopped while hidden. «Revisa tu correo» goes on by itself when the link is
+used in another tab of the same browser (a `BroadcastChannel` from `/entrar/verificar` plus
+`/auth/me` while visible; another device is never visible there). After creating a company or
+accepting an invitation, `/empezar` (`src/cloud/Setup.jsx`) guides: owners and admins AI key →
+bots (keep, rename, put aside, make one) → invite → a first request to Atlas in #general; members
+AI key → bots → request; guests bots → in. Every step skippable; the step is kept per person
+(`GET/PUT /api/cloud/onboarding`, `cloud` record `onboarding:<person>`, also in `/api/state`
+`cloud.onboarding`) and Inicio resumes one left half-way. Only API keys connect on the web (the
+providers' terms, above); without one the bots sleep, in the onboarding and in the sidebar. The
+invitation preview adds first names of the people already in and the company's bots
+(`Workspace#teamPreview`) while it is open.
+
 ### Secrets and resources
 
 | Name | What | Where |
@@ -821,9 +836,17 @@ usage-limit pause («Limitado») and its renewal live in their own config.
   person must turn on «device code login» in their ChatGPT security settings. Checked against a fake
   auth server only: no real account was used.
 - **Claude setup-token**: the desktop's path (`connectAnthropic({method: "token"})`).
-- Both subscription paths are **off** until an owner or admin turns them on (Empresa › «IA y apps»,
-  `PUT /api/cloud/ai/policy`) after reading the warning; turning one off stops saved credentials at
-  once. Routes: `GET /api/cloud/ai`, `POST /api/cloud/ai/chatgpt/device`, `…/device/poll`.
+- Both subscription paths are **on by default** since 2026-11-14 (the owner decided «directo en la
+  web» after being told it goes against both providers' terms and that they may limit accounts).
+  Before connecting one, each person confirms one line (`SUBSCRIPTION_CONSENT`, «Entendido,
+  conectar»; `POST /api/cloud/ai/consent {provider}`, kept per person in their config `consent`);
+  without it nothing is asked of OpenAI or Anthropic (409 `COLMENA_CONSENT`). An owner or admin can
+  still turn either off (Empresa › «IA y apps», `PUT /api/cloud/ai/policy`); that stops saved
+  credentials at once. Routes: `GET /api/cloud/ai` (also `consent`, `consentLines`),
+  `POST /api/cloud/ai/chatgpt/device`, `…/device/poll`. The screens: «Conecta tu IA» in `/empezar`
+  and Ajustes › Tu cuenta de IA offer, for ChatGPT and Claude, an API key, the desktop app
+  (recommended) and «Iniciar sesión con …» on the web (`src/components/SubscriptionSignIn.jsx`).
+  Nothing here was checked against a real OpenAI or Anthropic account, only against fakes.
 - Screens: Ajustes › «Tu cuenta de IA» (`src/components/v2/settings/CloudAccount.jsx`) and Empresa ›
   «IA y apps» (`AdminEmpresa.jsx`).
 

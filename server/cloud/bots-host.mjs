@@ -30,7 +30,7 @@ import { AppTools } from "../apptools.mjs";
 import { Webhooks } from "../webhooks.mjs";
 import { now } from "../store.mjs";
 import { SYSTEM_PERSON, asPerson, currentPerson, isPerson } from "../identity.mjs";
-import { personalProviders, aiPolicy, setAiPolicy, SUBSCRIPTION_WARNING } from "./ai.mjs";
+import { personalProviders, aiPolicy, setAiPolicy, SUBSCRIPTION_CONSENT, SUBSCRIPTION_WARNING } from "./ai.mjs";
 import { fakeApps } from "./fake-model.mjs";
 import { cloudWebFetch, dohLookup } from "./web-cloud.mjs";
 import { computerExtraTools } from "../computer/wire.mjs";
@@ -254,16 +254,22 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   function routes(app) {
     const admin = (req) => { const me = currentPerson(); if (!MANAGERS.has(me.role)) throw Object.assign(Error("Solo quien administra la empresa puede cambiar esto."), { status: 403 }); return me; };
     const wrap = (fn) => async (req, res) => {
-      try { res.json(await fn(req, res)); } catch (error) { res.status(error.status || 400).json({ error: error.message }); }
+      try { res.json(await fn(req, res)); } catch (error) { res.status(error.status || 400).json({ error: error.message, ...(error.code ? { code: error.code } : {}), ...(error.consent ? { consent: error.consent } : {}) }); }
     };
     app.get("/api/cloud/ai", wrap(() => {
       const me = currentPerson();
-      return { policy: aiPolicy(store), warnings: SUBSCRIPTION_WARNING, engines: provider.engines?.() || [], connected: provider.connectedFor(me.id), fake: fakeOn(), chatgpt: provider.hub(me.id).config().chatgpt || null };
+      return { policy: aiPolicy(store), warnings: SUBSCRIPTION_WARNING, engines: provider.engines?.() || [], connected: provider.connectedFor(me.id), fake: fakeOn(), chatgpt: provider.hub(me.id).config().chatgpt || null, consent: provider.hub(me.id).config().consent || {}, consentLines: SUBSCRIPTION_CONSENT };
     }));
     app.put("/api/cloud/ai/policy", wrap((req) => {
       const me = admin(req);
       const body = req.body || {};
       return { policy: setAiPolicy(store, { chatgptLogin: body.chatgptLogin, claudeToken: body.claudeToken }, me.id), warnings: SUBSCRIPTION_WARNING };
+    }));
+    // «Entendido, conectar»: this person read the line for this provider (kept per person).
+    app.post("/api/cloud/ai/consent", wrap((req) => {
+      const me = currentPerson();
+      if (me.role === "guest") throw Object.assign(Error("Los invitados no conectan cuentas de IA."), { status: 403 });
+      return { consent: provider.hub(me.id).consent(String(req.body?.provider || "")) };
     }));
     app.post("/api/cloud/ai/chatgpt/device", wrap(() => provider.hub(currentPerson().id).session.start()));
     app.post("/api/cloud/ai/chatgpt/device/poll", wrap(async () => {

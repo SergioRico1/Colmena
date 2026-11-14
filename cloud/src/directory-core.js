@@ -549,7 +549,15 @@ export class DirectoryCore {
     if (!TOKEN.test(String(secret || ""))) throw new DirectoryError("Esa invitación no es válida.", 404, "invite");
     const i = this.row("SELECT i.*, w.name AS workspace, u.name AS inviter FROM invitations i JOIN workspaces w ON w.id=i.workspace_id LEFT JOIN users u ON u.id=i.invited_by WHERE i.hash=?", hash(secret));
     if (!i || i.revoked_at) throw new DirectoryError("Esa invitación no es válida.", 404, "invite");
-    return { workspace: i.workspace, inviter: i.inviter || "Alguien", email: i.email, role: i.role, accepted: !!i.accepted_at, expired: i.expires_at < this.clock() };
+    const expired = i.expires_at < this.clock(), open = !i.accepted_at && !expired;
+    // Who is already in: first names only, and only while the invitation is open (whoever holds
+    // the link is about to meet them). `workspaceId` is for the Worker, which strips it.
+    const people = open
+      ? this.rows("SELECT u.name, u.email FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.workspace_id=? AND m.deactivated_at IS NULL ORDER BY m.created_at, m.rowid LIMIT 9", i.workspace_id)
+        .map((u) => String(u.name || u.email.split("@")[0]).trim().split(/\s+/)[0].slice(0, 40))
+      : [];
+    const count = open ? this.row("SELECT COUNT(*) AS n FROM memberships WHERE workspace_id=? AND deactivated_at IS NULL", i.workspace_id).n : 0;
+    return { workspace: i.workspace, inviter: i.inviter || "Alguien", email: i.email, role: i.role, accepted: !!i.accepted_at, expired, people, count, workspaceId: open ? i.workspace_id : null };
   }
   /** The signed-in person takes the invitation: only the address it was sent to can. */
   acceptInvitation(secret, userId) {

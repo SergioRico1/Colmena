@@ -122,10 +122,17 @@ test("invitations: only for their address, once, for 7 days; a new one replaces 
   fails(() => core.acceptInvitation(first.token, cora.user.id), 404, "invite");
   const preview = core.previewInvitation(second.token);
   assert.deepEqual([preview.workspace, preview.email, preview.role, preview.expired], ["Norte", "cora@example.org", "member", false]);
+  // Who is already in, by first name only, while the invitation is open (the Worker strips the id).
+  assert.equal(preview.count, 1);
+  assert.equal(preview.people.length, 1);
+  assert.ok(!preview.people[0].includes("@"), "a first name, never an address");
+  assert.equal(preview.workspaceId, ws.id);
   const beto = signIn(core, "beto@example.com");
   fails(() => core.acceptInvitation(second.token, beto.user.id), 403, "email");
   assert.equal(core.acceptInvitation(second.token, cora.user.id).role, "member");
   assert.equal(core.acceptInvitation(second.token, cora.user.id).workspaceId, ws.id, "accepting twice is harmless");
+  const used = core.previewInvitation(second.token);
+  assert.deepEqual([used.accepted, used.people, used.count, used.workspaceId], [true, [], 0, null], "a used invitation shows nobody");
   fails(() => core.invite(ws.id, ana.user.id, { email: "cora@example.org" }), 409, "member");
   const late = core.invite(ws.id, ana.user.id, { email: "late@example.com" });
   advance(LIMITS.inviteMs + 1);

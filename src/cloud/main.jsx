@@ -1,7 +1,7 @@
 // Hosted Colmena's pages before the app (docs/CLOUD.md › Phase 1 › Web): sign in by email link,
-// the link itself, your companies (create, open, manage) and an invitation. A separate Vite
+// the link itself, your companies (create, open, manage), the guided start and an invitation. A separate Vite
 // entry (cloud.html) so they load without a session; the Worker serves them at /entrar,
-// /entrar/verificar, /empresa and /invitacion.
+// /entrar/verificar, /empresa, /empezar and /invitacion.
 import "@fontsource/geist/400.css";
 import "@fontsource/geist/500.css";
 import "@fontsource/geist/600.css";
@@ -14,6 +14,7 @@ import { createRoot } from "react-dom/client";
 import { SignIn, Verify } from "./SignIn.jsx";
 import { Companies } from "./Companies.jsx";
 import { Invitation } from "./Invitation.jsx";
+import { Setup } from "./Setup.jsx";
 import { ApproveDesktop, DesktopSignIn } from "./Desktop.jsx";
 
 function Page() {
@@ -23,6 +24,7 @@ function Page() {
   if (path === "/entrar/escritorio/aprobar") return <ApproveDesktop />;
   if (path === "/entrar") return <SignIn />;
   if (path === "/invitacion") return <Invitation />;
+  if (path === "/empezar") return <Setup />;
   return <Companies />;
 }
 

@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import ProviderMark from "../ProviderMark.jsx";
-import { Check, Copy, ExternalLink } from "../../Icon.js";
 import { useAction, useResource, useStore } from "../../../lib/store.jsx";
 import { del, post, put } from "../../../lib/api.js";
 import { later } from "../../../lib/undoToast.js";
 import { ENGINE_NAMES, KEY_ENGINES } from "../../../lib/engineNames.js";
 import { Alert, Chip, LINE, UNDO_MS, anchorOf, btn, danger, field, mono } from "./v3.jsx";
-import { ClaudePanel, OpenCodePanel, Warning } from "./Engines.jsx";
+import { ClaudePanel, OpenCodePanel } from "./Engines.jsx";
+import SubscriptionSignIn from "../../SubscriptionSignIn.jsx";
+import DesktopRoute from "../../DesktopRoute.jsx";
 import { ConnectOther, KeyPanel } from "./OtherAis.jsx";
 
 // Ajustes › «Tu cuenta de IA» in hosted Colmena (docs/CLOUD.md › Phase 3; src/lib/cloud.js): the
@@ -66,70 +67,25 @@ function OpenAiKey({ onDone }) {
   );
 }
 
-/** ChatGPT by device code: the code, big; where to type it; polled until it is connected. */
-function ChatGptCode({ warning }) {
-  const { run } = useStore();
-  const act = useAction();
-  const [code, setCode] = useState(null); // {userCode, verificationUrl, interval, expiresAt}
-  const [state, setState] = useState(null); // "expired" | "connected"
-  const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
-  const timer = useRef(null);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  useEffect(() => {
-    if (!code) return undefined;
-    let alive = true;
-    const tick = async () => {
-      try {
-        const r = await post("/cloud/ai/chatgpt/device/poll");
-        if (!alive) return;
-        if (r?.status === "connected") { setCode(null); setState("connected"); run(async () => null).catch(() => {}); return; }
-        if (r?.status === "expired" || r?.status === "none") { setCode(null); setState("expired"); return; }
-        timer.current = setTimeout(tick, Math.max(3, Number(r?.interval) || code.interval || 5) * 1000);
-      } catch (e) {
-        if (alive) { setCode(null); setError(e.message); }
-      }
-    };
-    timer.current = setTimeout(tick, Math.max(3, code.interval || 5) * 1000);
-    return () => { alive = false; clearTimeout(timer.current); };
-  }, [code, run]);
-  const start = () => { setError(null); setState(null); act.act(() => post("/cloud/ai/chatgpt/device")).then((r) => r?.userCode && setCode(r)); };
-  const copy = async () => { try { await navigator.clipboard.writeText(code.userCode); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch {} };
+/** One of the two ways to connect ChatGPT or Claude, under its own small heading. */
+function Way({ title, sub, children }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <Warning text={warning} />
-      {code ? (
-        <div role="status" style={{ display: "flex", flexDirection: "column", gap: "10px", padding: "14px 16px", borderRadius: "var(--r-md)", background: "var(--c-sunken)" }}>
-          <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-2)" }}>Abre la página de OpenAI, inicia sesión y escribe este código:</span>
-          <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
-            <strong style={{ font: `600 clamp(24px, 7vw, 34px)/1.1 ${mono}`, letterSpacing: ".08em", color: "var(--c-text)", overflowWrap: "anywhere" }}>{code.userCode}</strong>
-            <button type="button" onClick={copy} aria-label={copied ? "Copiado" : "Copiar el código"} title={copied ? "Copiado" : "Copiar"} style={btn("ghost", 34)}>{copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}{copied ? "Copiado" : "Copiar"}</button>
-          </span>
-          <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px" }}>
-            <a href={code.verificationUrl} target="_blank" rel="noopener noreferrer" style={btn("dark", 40)}>Abrir la página de OpenAI<ExternalLink size={14} aria-hidden="true" /></a>
-            <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>Esperando a que lo escribas… El código caduca en 15 minutos.</span>
-          </span>
-          <button type="button" onClick={() => setCode(null)} style={{ ...btn("ghost", 32), alignSelf: "flex-start" }}>Cancelar</button>
-        </div>
-      ) : (
-        <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px" }}>
-          <button type="button" disabled={act.busy} onClick={start} style={btn("outline", 40)}>{act.busy ? "Pidiendo el código…" : "Iniciar sesión con ChatGPT (código)"}</button>
-          {state === "expired" ? <span role="status" style={{ fontSize: "var(--t-ui)", color: "var(--c-honey-text)" }}>El código ha caducado. Pide otro.</span> : null}
-          {state === "connected" ? <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "var(--t-ui)", color: "var(--c-ok-ink)" }}><Check size={16} aria-hidden="true" />Conectada</span> : null}
-        </span>
-      )}
-      <Alert>{error || act.error}</Alert>
-    </div>
+    <section style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <h3 style={{ margin: 0, display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 10px", font: "600 var(--t-ui)/1.3 'Geist', sans-serif", color: "var(--c-text)" }}>{title}<span style={{ fontWeight: 400, fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{sub}</span></h3>
+      {children}
+    </section>
   );
 }
 
 export default function CloudAccount() {
-  const { ai = null } = useStore();
+  const { ai = null, run } = useStore();
   const { data, error } = useResource("/cloud/ai");
+  // The sign-in flows speak to the workspace with the app's own helper; done, the state reloads.
+  const call = (path, _method, body) => post(path, body);
+  const signedIn = () => { setOpen(null); run(async () => null).catch(() => {}); };
   const act = useAction();
   const [open, setOpen] = useState(null);
   const policy = data?.policy || ai?.policy || {};
-  const warnings = data?.warnings || {};
   const engines = data?.engines || [];
   const engine = (id) => engines.find((e) => e.id === id) || { id, connected: false, label: ENGINE_NAMES[id] };
   const fake = data?.fake ?? ai?.fake;
@@ -147,7 +103,6 @@ export default function CloudAccount() {
     : gpt.connected ? gpt.detail || "Clave de API"
     : IDLE.openai;
   const claude = engine("anthropic");
-  const claudeWays = ["api_key", ...(policy.claudeToken ? ["token"] : [])];
   const note = (e) => (e.limit ? `Ha llegado a su ${e.limit.label || "límite de uso"}. Es tu límite: los bots esperan o usan otra de tus cuentas.` : e.resting ? "Descansa unos minutos: ha llegado a su límite." : e.connected ? e.detail || "Conectada" : IDLE[e.id] || "");
 
   return (
@@ -161,13 +116,20 @@ export default function CloudAccount() {
         <Account id="openai" info={gpt} note={gptNote} open={open === "openai"} setOpen={toggle("openai")} disconnect={disconnect("openai", viaChatGpt ? "chatgpt" : "apikey")}>
           {!gpt.connected ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "18px", padding: PAD, borderTop: LINE }}>
-              <OpenAiKey onDone={() => setOpen(null)} />
-              {policy.chatgptLogin ? <ChatGptCode warning={warnings.chatgpt} /> : null}
+              <Way title="Con clave de API" sub="Pagas por uso"><OpenAiKey onDone={() => setOpen(null)} /></Way>
+              <Way title="Con tu suscripción de ChatGPT" sub="Recomendado: desde la app de escritorio"><DesktopRoute plan="ChatGPT" compact /></Way>
+              {policy.chatgptLogin !== false ? <Way title="Iniciar sesión con ChatGPT aquí" sub="En la web"><SubscriptionSignIn provider="chatgpt" info={data} call={call} onConnected={signedIn} /></Way> : null}
             </div>
           ) : null}
         </Account>
         <Account id="anthropic" info={claude} note={note(claude)} open={open === "anthropic"} setOpen={toggle("anthropic")} disconnect={disconnect("anthropic", "anthropic")}>
-          {!claude.connected ? <ClaudePanel key={claudeWays.join()} ways={claudeWays} warning={warnings.claude} onDone={() => setOpen(null)} style={{ padding: PAD, borderBottom: 0, borderTop: LINE }} /> : null}
+          {!claude.connected ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "18px", padding: PAD, borderTop: LINE }}>
+              <Way title="Con clave de API" sub="Pagas por uso"><ClaudePanel ways={["api_key"]} onDone={() => setOpen(null)} style={{ padding: 0, border: 0 }} /></Way>
+              <Way title="Con tu suscripción de Claude" sub="Recomendado: desde la app de escritorio"><DesktopRoute plan="Claude" compact /></Way>
+              {policy.claudeToken !== false ? <Way title="Iniciar sesión con Claude aquí" sub="En la web"><SubscriptionSignIn provider="claude" info={data} call={call} onConnected={signedIn} /></Way> : null}
+            </div>
+          ) : null}
         </Account>
         <Account id="opencode-go" info={engine("opencode-go")} note={note(engine("opencode-go"))} open={open === "opencode-go"} setOpen={toggle("opencode-go")} disconnect={disconnect("opencode-go", "opencode-go")}>
           {!engine("opencode-go").connected ? <OpenCodePanel onDone={() => setOpen(null)} style={{ padding: PAD, borderBottom: 0, borderTop: LINE }} /> : null}

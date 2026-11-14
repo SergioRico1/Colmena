@@ -1,17 +1,24 @@
-/* Hosted Colmena's own pages (/entrar, /empresa, /invitacion): the app's tokens (styles/base.css),
-   one narrow column that works from a phone up, ink primary buttons, honey only for what waits. */
-html,body{margin:0;min-height:100%;background:var(--c-app);color:var(--c-text);font:400 var(--t-body)/var(--lh-body) 'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+/* Hosted Colmena's own pages (/entrar, /empresa, /empezar, /invitacion): the app's tokens
+   (styles/base.css), the living hive behind (Hive.jsx), the page's card set in a clearing of the
+   comb, ink primary buttons, honey only for what waits. */
+html,body{margin:0;min-height:100%;background:var(--c-page);color:var(--c-text);font:400 var(--t-body)/var(--lh-body) 'Geist',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
 *,*::before,*::after{box-sizing:border-box}
 ::selection{background:var(--c-accent-soft);color:var(--c-text)}
 :focus{outline:none}
 :focus-visible{outline:2px solid var(--c-focus);outline-offset:2px;border-radius:var(--r-sm)}
 a{color:var(--c-accent-ink);text-underline-offset:3px}
 
-.cl-shell{min-height:100dvh;display:flex;flex-direction:column;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-.cl-top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:960px;width:100%;margin:0 auto;min-height:44px}
-.cl-main{flex:1;display:flex;flex-direction:column;width:100%;max-width:440px;margin:0 auto;padding-top:clamp(32px,12vh,120px)}
-.cl-main.wide{max-width:720px;padding-top:clamp(24px,6vh,56px)}
-.cl-foot{max-width:960px;width:100%;margin:40px auto 0;color:var(--c-text-3);font-size:var(--t-caption);text-align:center}
+.cl-shell{position:relative;isolation:isolate;min-height:100dvh;display:flex;flex-direction:column;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.cl-top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1120px;width:100%;margin:0 auto;min-height:44px}
+.cl-nav{display:flex;align-items:center}
+.cl-brand{display:flex;align-items:center;min-height:44px;text-decoration:none;border-radius:var(--r-sm)}
+.cl-main{flex:1;display:flex;flex-direction:column;gap:24px;width:100%;max-width:480px;margin:0 auto;padding-top:clamp(24px,9vh,96px)}
+.cl-main.wide{max-width:760px;padding-top:clamp(20px,5vh,48px)}
+/* On a laptop the card sits left of centre, so the hive has room to live beside it. */
+@media (min-width:1024px){.cl-main:not(.wide){margin-left:max(16px,calc((100% - 1120px) / 2))}}
+.cl-card{position:relative;display:flex;flex-direction:column;padding:clamp(22px,3.4vw,36px);border:1px solid var(--c-line);border-radius:var(--r-xl);background:var(--c-card);box-shadow:var(--c-shadow-pop)}
+.cl-hive{position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none}
+.cl-foot{max-width:1120px;width:100%;margin:40px auto 0;color:var(--c-text-3);font-size:var(--t-caption);text-align:center}
 
 .cl-title{margin:0 0 8px;font:600 var(--t-headline)/var(--lh-headline) 'Geist',sans-serif;letter-spacing:-0.02em;text-wrap:balance}
 .cl-lead{margin:0 0 28px;color:var(--c-text-2);font-size:var(--t-body);max-width:52ch;text-wrap:pretty}
@@ -31,6 +38,8 @@ a{color:var(--c-accent-ink);text-underline-offset:3px}
 .cl-input:hover,.cl-select:hover{border-color:var(--c-text-4)}
 .cl-input:focus-visible,.cl-select:focus-visible{outline:none;border-color:var(--c-focus);box-shadow:0 0 0 3px var(--c-accent-soft)}
 .cl-input[aria-invalid=true]{border-color:var(--c-error)}
+.cl-input.mono{font-family:'Geist Mono',ui-monospace,monospace;font-size:var(--t-ui)}
+textarea.cl-input{min-height:88px;font-family:inherit;line-height:1.45}
 
 .cl-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border:0;border-radius:var(--r-pill);background:var(--c-btn);color:var(--c-btn-text);font:600 var(--t-ui)/1 'Geist',sans-serif;text-decoration:none;cursor:pointer;transition:background .15s ease,transform .12s ease}
 .cl-btn:hover{background:var(--c-btn-hover)}
@@ -48,7 +57,7 @@ a{color:var(--c-accent-ink);text-underline-offset:3px}
 .cl-divider::before,.cl-divider::after{content:"";flex:1;height:1px;background:var(--c-line)}
 .cl-tag.off{background:var(--c-sunken);color:var(--c-text-3)}
 .cl-item.off .cl-item-name{color:var(--c-text-3)}
-.cl-link{padding:0;border:0;background:none;color:var(--c-accent-ink);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.cl-link{display:inline-flex;align-items:center;min-height:32px;padding:0;border:0;background:none;color:var(--c-accent-ink);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 
 .cl-error{display:flex;gap:8px;align-items:flex-start;margin:0;padding:10px 12px;border-radius:var(--r-md);background:var(--c-error-soft);color:var(--c-error);font-size:var(--t-meta)}
 .cl-note{margin:0;color:var(--c-text-3);font-size:var(--t-meta);text-wrap:pretty}
@@ -57,8 +66,12 @@ a{color:var(--c-accent-ink);text-underline-offset:3px}
 /* «Revisa tu correo»: the one moment these pages have — the envelope settles in. */
 .cl-sent{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
 .cl-sent-mark{display:grid;place-items:center;width:56px;height:56px;border-radius:var(--r-lg);background:var(--c-sunken);color:var(--c-text);animation:cl-settle .6s cubic-bezier(.16,1,.3,1) both}
+/* The page's mark is a cell of the comb (Roster.jsx › Cell): it settles in once. */
+.cl-mark{margin-bottom:4px;color:var(--c-text);animation:cl-settle .6s cubic-bezier(.16,1,.3,1) both}
+.cl-mark[data-lit]{color:var(--c-ok-ink)}
+.cl-card > .cl-mark{margin-bottom:18px}
 @keyframes cl-settle{from{transform:translateY(-10px) rotate(-6deg);filter:blur(2px)}to{transform:none;filter:none}}
-@media (prefers-reduced-motion:reduce){.cl-sent-mark{animation:none}}
+@media (prefers-reduced-motion:reduce){.cl-sent-mark,.cl-mark{animation:none}}
 
 .cl-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--c-line)}
 .cl-item{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 0;border-bottom:1px solid var(--c-line)}
@@ -91,4 +104,101 @@ a{color:var(--c-accent-ink);text-underline-offset:3px}
 .cl-desk-code{display:inline-flex;align-self:flex-start;padding:14px 22px;border-radius:var(--r-lg);background:var(--c-sunken);border:1px solid var(--c-line);font:600 var(--t-headline)/1 'Geist Mono',ui-monospace,monospace;letter-spacing:.12em;color:var(--c-text)}
 /* Inside the desktop app the frameless window's own title bar sits on top (base.css gives #root its height). */
 .cl-shell.in-desktop{padding-top:16px}
-html.colmena-desktop:has(.cl-shell){background:var(--c-app)}
+html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
+
+/* ── The comb's cells and the roster (Roster.jsx) ─────────────────────────── */
+.cl-cell{position:relative;flex:none;display:grid;place-items:center;width:64px;height:72px}
+.cl-cell.sm{width:40px;height:45px}
+.cl-cell.lg{width:96px;height:108px}
+.cl-cell-hex{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.cl-cell-hex path{fill:var(--c-sunken);stroke:var(--c-line-strong);stroke-width:1.5;vector-effect:non-scaling-stroke;transition:fill .4s ease,stroke .4s ease}
+[data-theme=dark] .cl-cell-hex path{fill:var(--c-chip)}
+.cl-cell[data-state=empty] .cl-cell-hex path{fill:transparent;stroke-dasharray:3 4}
+.cl-cell[data-state=asleep] .cl-cell-in{opacity:.55;filter:grayscale(.85)}
+.cl-cell[data-state=off] .cl-cell-in{opacity:.3;filter:grayscale(1)}
+.cl-cell[data-state=off] .cl-cell-hex path{fill:transparent}
+.cl-cell[data-lit] .cl-cell-hex path{fill:var(--c-ok-soft);stroke:var(--c-ok)}
+.cl-cell-in{position:relative;display:grid;place-items:center;transition:opacity .5s ease,filter .5s ease}
+.cl-person{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--r-circle);background:var(--c-chip);color:var(--c-text-2);font:600 var(--t-meta)/1 'Geist',sans-serif}
+.cl-cell.sm .cl-person{width:24px;height:24px;font-size:var(--t-micro)}
+
+/* Six to a row (three on a narrow card), every other one half a cell lower: a strip of comb. */
+.cl-card{container-type:inline-size}
+.cl-roster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:10px 4px}
+/* Every other cell half a cell lower (a strip of comb); the names below keep one baseline. */
+.cl-roster:not(.compact) .cl-roster-item:nth-child(even) .cl-cell{margin-top:22px}
+.cl-roster:not(.compact) .cl-roster-item:nth-child(odd) .cl-roster-text{margin-top:22px}
+@container (max-width:360px){.cl-roster{--cols:3 !important}}
+.cl-roster-item{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
+.cl-roster-text{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:100%}
+.cl-roster-name{font:600 var(--t-meta)/1.25 'Geist',sans-serif;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-roster-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:var(--t-caption);line-height:1.3;color:var(--c-text-3);overflow:hidden;overflow-wrap:anywhere;text-wrap:balance}
+.cl-roster.compact{display:flex;flex-wrap:wrap;gap:2px;padding-bottom:12px}
+.cl-roster.compact .cl-roster-item:nth-child(even){transform:translateY(12px)}
+.cl-roster.compact .cl-roster-item{gap:0}
+/* A cell that arrives settles into the comb once. */
+.cl-roster-item[data-in] .cl-cell{animation:cl-hatch .55s cubic-bezier(.16,1,.3,1) both}
+@keyframes cl-hatch{from{transform:scale(.55) translateY(6px);opacity:0}60%{opacity:1}to{transform:none;opacity:1}}
+
+/* ── Steps of /empezar and the cards' parts ────────────────────────────────── */
+/* The steps as a row of comb cells: done ones filled, the current one in ink, one lit cell for «now». */
+.cl-steps{list-style:none;display:flex;gap:4px;margin:0 0 20px;padding:0}
+.cl-steps li{display:block;width:20px;height:22px}
+.cl-steps svg{display:block;width:100%;height:100%;overflow:visible}
+.cl-steps path{fill:transparent;stroke:var(--c-line-strong);stroke-width:1.5}
+.cl-steps li[data-done] path{fill:var(--c-text-4);stroke:var(--c-text-4)}
+.cl-steps li[aria-current] path{fill:var(--c-text);stroke:var(--c-text)}
+.cl-kick{display:flex;align-items:center;gap:8px;margin:0 0 6px;color:var(--c-text-3);font:500 var(--t-meta)/1.3 'Geist',sans-serif;font-variant-numeric:tabular-nums}
+.cl-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:22px}
+.cl-actions .cl-skip{margin-left:auto}
+.cl-skip{min-height:44px;padding:0 4px;border:0;background:none;color:var(--c-text-3);font:500 var(--t-ui)/1 'Geist',sans-serif;cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:color .15s ease,text-decoration-color .15s ease}
+.cl-skip:hover{color:var(--c-text);text-decoration-color:currentColor}
+.cl-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
+.cl-choice{position:relative;display:flex;align-items:center;gap:10px;min-height:48px;padding:8px 12px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card);color:var(--c-text);font:500 var(--t-ui)/1.2 'Geist',sans-serif;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.cl-choice:hover{background:var(--c-hover)}
+.cl-choice:has(input:checked){border-color:var(--c-text);box-shadow:inset 0 0 0 1px var(--c-text)}
+.cl-choice:has(input:focus-visible){outline:2px solid var(--c-focus);outline-offset:2px}
+.cl-choice input{position:absolute;opacity:0;pointer-events:none}
+/* «Cómo la conectas»: two ways side by side for ChatGPT and Claude. */
+.cl-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
+.cl-way{position:relative;display:flex;align-items:center;min-height:56px;padding:10px 14px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card);cursor:pointer;transition:border-color .15s ease,background .15s ease}
+.cl-way:hover{background:var(--c-hover)}
+.cl-way:has(input:checked){border-color:var(--c-text);box-shadow:inset 0 0 0 1px var(--c-text)}
+.cl-way:has(input:focus-visible){outline:2px solid var(--c-focus);outline-offset:2px}
+.cl-way input{position:absolute;opacity:0;pointer-events:none}
+.cl-way span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cl-way b{font:600 var(--t-ui)/1.25 'Geist',sans-serif;color:var(--c-text)}
+.cl-way small{font-size:var(--t-caption);color:var(--c-text-3)}
+@container (max-width:340px){.cl-ways{grid-template-columns:minmax(0,1fr)}}
+.cl-help summary{list-style:none;display:flex;align-items:center;gap:8px}
+.cl-help summary::-webkit-details-marker{display:none}
+.cl-help summary svg{transition:transform .2s ease}
+.cl-help[open] summary svg{transform:rotate(180deg)}
+.cl-help{margin:4px 0 0;border-radius:var(--r-md);background:var(--c-sunken);font-size:var(--t-meta);color:var(--c-text-2)}
+.cl-help summary{padding:10px 12px;cursor:pointer;font-weight:500;color:var(--c-text-2);border-radius:var(--r-md)}
+.cl-help ol{margin:0;padding:0 14px 12px 32px;display:flex;flex-direction:column;gap:6px;line-height:1.5}
+.cl-done{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:var(--r-md);background:var(--c-ok-soft);color:var(--c-ok-ink);font-size:var(--t-ui)}
+.cl-stage{display:flex;align-items:center;gap:18px;margin:4px 0 18px}
+.cl-stage-text{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cl-stage-name{margin:0;font:600 var(--t-title)/var(--lh-title) 'Geist',sans-serif;letter-spacing:-0.01em}
+.cl-stage-role{font-size:var(--t-meta);color:var(--c-text-3)}
+.cl-quote{margin:0;font-size:var(--t-body);color:var(--c-text-2);text-wrap:pretty}
+.cl-ask{margin:0;padding:14px 16px;border-radius:var(--r-md);background:var(--c-sunken);font-size:var(--t-body);line-height:1.5;color:var(--c-text)}
+.cl-ask b{font-weight:600;color:var(--c-accent-ink)}
+.cl-below{display:flex;flex-direction:column;gap:10px}
+.cl-team{gap:4px}
+.cl-below-label{margin:0;color:var(--c-text-3);font-size:var(--t-meta)}
+/* With a subscription: the desktop route first (recommended), the web sign-in under a hairline. */
+.cl-plan{display:flex;flex-direction:column}
+.cl-plan-way{display:flex;flex-direction:column;gap:10px;padding:14px 0}
+.cl-plan-way + .cl-plan-way{border-top:1px solid var(--c-line)}
+.cl-plan-way:first-child{padding-top:4px}
+.cl-plan-head{margin:0;font:600 var(--t-ui)/1.35 'Geist',sans-serif;color:var(--c-text);text-wrap:balance}
+.cl-listening{display:flex;align-items:center;gap:10px;color:var(--c-text-3);font-size:var(--t-meta)}
+.cl-listening i{flex:none;width:8px;height:8px;border-radius:var(--r-circle);background:var(--c-text-4);animation:cl-breathe 2.4s ease-in-out infinite}
+@keyframes cl-breathe{50%{opacity:.25}}
+
+@media (prefers-reduced-motion:reduce){
+  .cl-roster-item[data-in] .cl-cell,.cl-listening i{animation:none}
+  .cl-cell-in,.cl-cell-hex path{transition:none}
+}

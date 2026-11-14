@@ -145,16 +145,28 @@ test("AI accounts are per person: keys, config and vault apart; the terms switch
   assert.equal((await ana("POST", "/auth/local", { baseUrl: "http://127.0.0.1:1234", model: "x" })).status, 404);
   assert.equal((await ana("GET", "/state")).data.ai.mine, true);
   assert.equal((await beto("GET", "/state")).data.ai.mine, false);
-  // Subscriptions: off by default; a member cannot turn them on; with them off nothing is asked of OpenAI.
-  assert.deepEqual([aiPolicy(store).chatgptLogin, aiPolicy(store).claudeToken], [false, false]);
+  // Subscriptions: ON by default (the owner's decision); only an admin turns them off; nothing is
+  // asked of OpenAI or Anthropic until the person confirms the line for that provider.
+  assert.deepEqual([aiPolicy(store).chatgptLogin, aiPolicy(store).claudeToken], [true, true], "the default is on");
   const before = calls.length;
-  assert.equal((await beto("POST", "/cloud/ai/chatgpt/device", {})).status, 403);
-  assert.equal(calls.length, before, "no request to OpenAI while the switch is off");
-  assert.match((await beto("POST", "/auth/anthropic", { method: "token", secret: "sk-ant-oat01-" + "x".repeat(80) })).data.error, /desactivado/);
-  assert.equal((await beto("PUT", "/cloud/ai/policy", { chatgptLogin: true })).status, 403);
+  const noConsent = await beto("POST", "/cloud/ai/chatgpt/device", {});
+  assert.deepEqual([noConsent.status, noConsent.data.code, noConsent.data.consent], [409, "COLMENA_CONSENT", "chatgpt"]);
+  assert.equal(calls.length, before, "no request to OpenAI without the person's consent");
+  assert.equal((await beto("POST", "/auth/anthropic", { method: "token", secret: "sk-ant-oat01-" + "x".repeat(80) })).status, 409);
+  assert.equal(calls.length, before, "no request to Anthropic without the person's consent");
   const info = (await beto("GET", "/cloud/ai")).data;
+  assert.match(info.consentLines.chatgpt, /condiciones de OpenAI/);
+  assert.match(info.consentLines.claude, /condiciones de Anthropic/);
+  assert.deepEqual(info.consent, {});
+  assert.equal((await beto("PUT", "/cloud/ai/policy", { chatgptLogin: false })).status, 403, "a member cannot turn it off");
+  assert.equal((await beto("POST", "/cloud/ai/consent", { provider: "nadie" })).status, 400);
+  assert.ok((await beto("POST", "/cloud/ai/consent", { provider: "chatgpt" })).data.consent.chatgpt);
+  assert.deepEqual(Object.keys((await ana("GET", "/cloud/ai")).data.consent), [], "consent is per person");
+  // An admin turns the switch off: refused even with consent, and nothing is asked of OpenAI.
+  assert.equal((await ana("PUT", "/cloud/ai/policy", { chatgptLogin: false })).data.policy.chatgptLogin, false);
+  assert.equal((await beto("POST", "/cloud/ai/chatgpt/device", {})).status, 403);
+  assert.equal(calls.length, before);
   assert.match(info.warnings.claude, /prohíbe/);
-  assert.match(info.warnings.chatgpt, /Sign in with ChatGPT/);
   assert.equal((await ana("PUT", "/cloud/ai/policy", { chatgptLogin: true })).data.policy.chatgptLogin, true);
   const code = (await beto("POST", "/cloud/ai/chatgpt/device", {})).data;
   assert.deepEqual([code.userCode, code.verificationUrl], ["ABCD-1234", CODEX.verifyUrl]);
@@ -178,9 +190,16 @@ test("ChatGPT device code: the code is exchanged at the Codex callback and the t
     return new Response("{}", { status: 404 });
   };
   const { host, as, store } = await company(t, { fake: false, fetchImpl });
-  await as(ANA)("PUT", "/cloud/ai/policy", { chatgptLogin: true });
+  await as(BETO)("POST", "/cloud/ai/consent", { provider: "chatgpt" });
   await as(BETO)("POST", "/cloud/ai/chatgpt/device", {});
   assert.equal((await as(BETO)("POST", "/cloud/ai/chatgpt/device/poll", {})).data.status, "connected");
+  // Beto's subscription is his: Ana has nothing, his tokens are sealed in his namespace only, and
+  // a turn of Ana's never reaches his account.
+  assert.equal(host.bots.provider.connectedFor(ANA.id), false);
+  assert.equal(host.bots.provider.connectedFor(BETO.id), true);
+  assert.ok(store.list("sealedSecrets").some((s) => String(s.id).startsWith("ai-" + BETO.id + ":")));
+  assert.ok(!store.list("sealedSecrets").some((s) => String(s.id).startsWith("ai-" + ANA.id + ":")));
+  assert.equal(asPerson(ANA, () => host.bots.provider.status().kind), null, "Ana's turns do not think with Beto's plan");
   const exchange = seen.find((s) => s.url.endsWith("/oauth/token"));
   const form = new URLSearchParams(exchange.body);
   assert.deepEqual([form.get("grant_type"), form.get("code"), form.get("code_verifier"), form.get("redirect_uri"), form.get("client_id")], ["authorization_code", "code-1", "ver-1", CODEX.redirectUri, CODEX.clientId]);
@@ -196,6 +215,42 @@ test("ChatGPT device code: the code is exchanged at the Codex callback and the t
   assert.equal(asPerson(BETO, () => host.bots.provider.status().kind), null);
   await assert.rejects(hub.session.accessToken(), /desactivado/);
   assert.equal(store.list("providers").length >= 1, true);
+});
+
+test("Claude setup-token: consent first, the token checked live, kept in the person's vault only", async (t) => {
+  const sse = (events) => new Response(events.map((e) => `event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`).join(""), { headers: { "content-type": "text/event-stream" } });
+  const okStream = () => sse([
+    { type: "message_start", message: { id: "msg_1", type: "message", role: "assistant", model: "claude-haiku-5-5", content: [], stop_reason: null, usage: { input_tokens: 3, output_tokens: 1 } } },
+    { type: "content_block_start", index: 0, content_block: { type: "text", text: "" } },
+    { type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "ok" } },
+    { type: "content_block_stop", index: 0 },
+    { type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 1 } },
+    { type: "message_stop" },
+  ]);
+  const good = "sk-ant-oat01-" + "g".repeat(90), bad = "sk-ant-oat01-" + "b".repeat(90);
+  const seen = [];
+  const fetchImpl = async (url, init = {}) => {
+    const auth = new Headers(init.headers || {}).get("authorization") || "";
+    seen.push({ url: String(url), auth });
+    if (String(url).includes("/v1/messages")) return auth.endsWith(bad) ? Response.json({ type: "error", error: { type: "authentication_error", message: "invalid" } }, { status: 401 }) : okStream();
+    return new Response("{}", { status: 404 });
+  };
+  const { host, as, store } = await company(t, { fake: false, fetchImpl });
+  const beto = as(BETO);
+  assert.equal((await beto("POST", "/auth/anthropic", { method: "token", secret: good })).status, 409, "no consent, no connection");
+  assert.equal(seen.length, 0, "and nothing asked of Anthropic");
+  await beto("POST", "/cloud/ai/consent", { provider: "claude" });
+  const refused = await beto("POST", "/auth/anthropic", { method: "token", secret: bad });
+  assert.notEqual(refused.status, 200);
+  assert.match(refused.data.error, /no acepta este token/);
+  assert.equal((await beto("POST", "/auth/anthropic", { method: "token", secret: good })).status, 200, "a good token is checked live and kept");
+  assert.equal(host.bots.provider.hub(BETO.id).config().anthropic.method, "token");
+  assert.ok(!JSON.stringify(host.bots.provider.hub(BETO.id).config()).includes("gggggggggg"), "the token never in the config");
+  assert.ok(store.list("sealedSecrets").some((s) => String(s.id).startsWith("ai-" + BETO.id + ":")));
+  assert.equal(host.bots.provider.connectedFor(ANA.id), false, "Ana does not get Beto's plan");
+  // An admin can still turn the token off: it stops being an account at once.
+  await as(ANA)("PUT", "/cloud/ai/policy", { claudeToken: false });
+  assert.equal(host.bots.provider.connectedFor(BETO.id), false);
 });
 
 test("a bot named in a channel answers in the thread, as the person who named it; guests cannot start bots", async (t) => {

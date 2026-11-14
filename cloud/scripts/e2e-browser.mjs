@@ -67,8 +67,26 @@ try {
   await A.fill("input[maxlength='60']", "Estudio de prueba " + run);
   await shot(A, "laptop-3-crear-empresa");
   await A.getByRole("button", { name: "Crear y entrar" }).click();
-  await A.waitForURL((u) => new URL(u).pathname === "/" || new URL(u).pathname.startsWith("/bienvenida"), { timeout: 20000 });
+  // The guided start (/empezar): her AI first, the bots asleep until then, every step skippable.
+  await A.waitForURL(/\/empezar/, { timeout: 30000 });
   check("Ana signs in and creates a company", true);
+  await A.getByRole("heading", { name: "Despierta a tus bots" }).waitFor({ timeout: 30000 });
+  const ways = (await A.getByText("Con clave de API").count()) > 0 && (await A.getByText("Iniciar sesión con ChatGPT").count()) > 0;
+  check("ChatGPT offers two ways: an API key or signing in with the plan", ways);
+  await A.getByText("Iniciar sesión con ChatGPT").click();
+  check("the plan's way recommends the desktop app and asks for one confirmation", (await A.getByText(/Recomendado: desde la app de escritorio/).count()) > 0 && (await A.getByRole("button", { name: "Entendido, conectar" }).count()) > 0);
+  await shot(A, "laptop-3b-empezar-ia");
+  await A.getByRole("button", { name: "Ahora no" }).click();
+  await A.getByRole("heading", { name: "Conoce a tus bots" }).waitFor();
+  check("skipping the AI leaves the bots asleep, with a way to wake them", await A.getByText("Están dormidos: conecta tu IA para despertarlos.").count() > 0);
+  await A.getByRole("button", { name: "Me quedo con él" }).click();
+  await A.getByRole("heading", { name: "Nora" }).waitFor();
+  await A.reload();
+  await A.getByRole("heading", { name: "Conoce a tus bots" }).waitFor({ timeout: 20000 });
+  check("leaving and coming back resumes at the same step", true);
+  await shot(A, "laptop-3c-empezar-bots");
+  await A.getByRole("button", { name: "Ir a Colmena" }).click();
+  await A.waitForURL((u) => new URL(u).pathname === "/", { timeout: 20000 });
 
   // ---- invitation from the company page
   await A.goto(BASE + "/empresa");
@@ -145,6 +163,10 @@ try {
   await C.fill("input[maxlength='60']", "Taller Sur " + run);
   await shot(C, "phone-6-crear-empresa");
   await C.getByRole("button", { name: "Crear y entrar" }).click();
+  await C.waitForURL(/\/empezar/, { timeout: 30000 });
+  await C.getByRole("heading", { name: "Despierta a tus bots" }).waitFor({ timeout: 30000 });
+  await shot(C, "phone-6b-empezar");
+  await C.getByRole("button", { name: "Ir a Colmena" }).click();
   await C.waitForURL((u) => new URL(u).pathname === "/", { timeout: 20000 });
   const isolated = await C.evaluate(async (id) => { const s = await (await fetch("/api/state")).json(); return !s.missions.some((m) => m.id === id); }, room.missionId);
   check("another company sees nothing of the first", isolated);

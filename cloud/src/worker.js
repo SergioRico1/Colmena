@@ -24,7 +24,7 @@ import { SECURITY_HEADERS, csrfOk, fail, json, pagePolicy, sameOrigin, sameSecre
 
 export { Directory, Workspace, Machine };
 
-const CLOUD_PAGES = /^\/(entrar|entrar\/verificar|entrar\/escritorio|entrar\/escritorio\/aprobar|empresa|empresa\/nueva|invitacion)\/?$/;
+const CLOUD_PAGES = /^\/(entrar|entrar\/verificar|entrar\/escritorio|entrar\/escritorio\/aprobar|empresa|empresa\/nueva|empezar|invitacion)\/?$/;
 const ID = /^[0-9a-f-]{36}$/;
 const namespace = (env, binding) => (env.JURISDICTION ? binding.jurisdiction(env.JURISDICTION) : binding);
 const directoryStub = (env) => { const n = namespace(env, env.DIRECTORY); return n.get(n.idFromName("directory")); };
@@ -207,7 +207,16 @@ async function auth(request, env, url) {
   if (p === "/auth/invitations/preview" && m === "POST") {
     if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
     const data = await body(request);
-    return json(await dir(env, "previewInvitation", String(data.token || "")));
+    const { workspaceId, ...preview } = await dir(env, "previewInvitation", String(data.token || ""));
+    // The company's bots, to show them in the hive (names, roles, looks; nothing else). A slow or
+    // failing workspace never holds the page: it shows the people alone.
+    let bots = [];
+    if (workspaceId) {
+      try {
+        bots = await Promise.race([workspaceStub(env, workspaceId).teamPreview(workspaceId), new Promise((resolve) => setTimeout(() => resolve([]), 2500))]);
+      } catch (error) { console.error(`invite preview bots: ${error?.message || error}`); }
+    }
+    return json({ ...preview, bots: Array.isArray(bots) ? bots : [] });
   }
   // Dev mail (no provider yet, or a reserved test address): only for the holder of ADMIN_BOOTSTRAP_TOKEN.
   if (p === "/auth/dev/mail" && m === "GET") {
