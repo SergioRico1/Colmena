@@ -122,17 +122,26 @@ html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
 .cl-person{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--r-circle);background:var(--c-chip);color:var(--c-text-2);font:600 var(--t-meta)/1 'Geist',sans-serif}
 .cl-cell.sm .cl-person{width:24px;height:24px;font-size:var(--t-micro)}
 
-/* Six to a row (three on a narrow card), every other one half a cell lower: a strip of comb. */
+/* Four to a row (three on a narrow card), every other one half a cell lower: a strip of comb.
+   Four keeps each column wide enough for the longest role («Investigación») on one line, so a
+   role wraps only between words, never inside one. */
 .cl-card{container-type:inline-size}
-.cl-roster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:10px 4px}
+.cl-roster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:10px 4px}
 /* Every other cell half a cell lower (a strip of comb); the names below keep one baseline. */
 .cl-roster:not(.compact) .cl-roster-item:nth-child(even) .cl-cell{margin-top:22px}
 .cl-roster:not(.compact) .cl-roster-item:nth-child(odd) .cl-roster-text{margin-top:22px}
-@container (max-width:360px){.cl-roster{--cols:3 !important}}
+@container (max-width:400px){
+  .cl-roster{--cols:3}
+  /* Three to a row: the middle column is the lower one. */
+  .cl-roster:not(.compact) .cl-roster-item:nth-child(n) .cl-cell{margin-top:0}
+  .cl-roster:not(.compact) .cl-roster-item:nth-child(n) .cl-roster-text{margin-top:22px}
+  .cl-roster:not(.compact) .cl-roster-item:nth-child(3n+2) .cl-cell{margin-top:22px}
+  .cl-roster:not(.compact) .cl-roster-item:nth-child(3n+2) .cl-roster-text{margin-top:0}
+}
 .cl-roster-item{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;text-align:center}
 .cl-roster-text{display:flex;flex-direction:column;gap:1px;min-width:0;max-width:100%}
 .cl-roster-name{font:600 var(--t-meta)/1.25 'Geist',sans-serif;color:var(--c-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cl-roster-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:var(--t-caption);line-height:1.3;color:var(--c-text-3);overflow:hidden;overflow-wrap:anywhere;text-wrap:balance}
+.cl-roster-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:var(--t-caption);line-height:1.3;color:var(--c-text-3);overflow:hidden;overflow-wrap:normal;word-break:normal;hyphens:manual;text-wrap:balance}
 .cl-roster.compact{display:flex;flex-wrap:wrap;gap:2px;padding-bottom:12px}
 .cl-roster.compact .cl-roster-item:nth-child(even){transform:translateY(12px)}
 .cl-roster.compact .cl-roster-item{gap:0}
@@ -159,6 +168,17 @@ html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
 .cl-choice:has(input:checked){border-color:var(--c-text);box-shadow:inset 0 0 0 1px var(--c-text)}
 .cl-choice:has(input:focus-visible){outline:2px solid var(--c-focus);outline-offset:2px}
 .cl-choice input{position:absolute;opacity:0;pointer-events:none}
+/* A provider's name stays on one line: a tighter tile on a phone, one column on the narrowest. */
+.cl-choice{white-space:nowrap}
+/* «OpenCode Go», the longest, is 92 px at 14 px: room enough down to a 297 px card (a 375 px
+   phone), at 13 px down to 292, one column below that. */
+@container (max-width:400px){.cl-choice{gap:8px;padding:8px 9px}}
+@container (max-width:296px){.cl-choice{font-size:var(--t-meta)}}
+@container (max-width:291px){.cl-choices{grid-template-columns:minmax(0,1fr)}}
+/* The choice made (after «Entendido, conectar»): one quiet line with «Cambiar». */
+.cl-chosen{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:48px;margin:0;padding:8px 14px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-card);color:var(--c-text-2);font:400 var(--t-ui)/1.3 'Geist',sans-serif}
+.cl-chosen b{font-weight:600;color:var(--c-text)}
+.cl-chosen .cl-link{margin-left:auto;min-height:44px;font-weight:500}
 /* «Cómo la conectas»: two ways side by side for ChatGPT and Claude. */
 .cl-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
 .cl-way{position:relative;display:flex;align-items:center;min-height:56px;padding:10px 14px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card);cursor:pointer;transition:border-color .15s ease,background .15s ease}

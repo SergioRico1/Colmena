@@ -124,9 +124,10 @@ function SetupToken({ call, onConnected }) {
 
 /**
  * The whole second way for one provider: the consent line until it is given, then the flow.
- * `info`: GET /api/cloud/ai ({consent, consentLines, policy}); `onConnected` refreshes the screen.
+ * `info`: GET /api/cloud/ai ({consent, consentLines, policy}); `onConnected` refreshes the screen;
+ * `onConsented` hears «Entendido, conectar» (the guided start then folds the choices above).
  */
-export default function SubscriptionSignIn({ provider, info, call, onConnected }) {
+export default function SubscriptionSignIn({ provider, info, call, onConnected, onConsented }) {
   const flow = FLOWS[provider];
   const [consented, setConsented] = useState(!!info?.consent?.[provider]);
   const [busy, setBusy] = useState(false);
@@ -139,7 +140,7 @@ export default function SubscriptionSignIn({ provider, info, call, onConnected }
     return (
       <>
         <Consent line={info?.consentLines?.[provider] || `Usar tu suscripción de ${flow.name} desde un servicio alojado va contra las condiciones de ${flow.company}: pueden limitar tu cuenta.`} busy={busy}
-          onAccept={async () => { setBusy(true); setError(null); try { await call("/cloud/ai/consent", "POST", { provider }); setConsented(true); } catch (e) { setError(e.message); } setBusy(false); }} />
+          onAccept={async () => { setBusy(true); setError(null); try { await call("/cloud/ai/consent", "POST", { provider }); setConsented(true); onConsented?.(); } catch (e) { setError(e.message); } setBusy(false); }} />
         <Alert>{error}</Alert>
       </>
     );

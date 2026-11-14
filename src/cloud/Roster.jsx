@@ -42,7 +42,7 @@ export function PersonCell({ name, size = "md" }) {
  */
 export function Roster({ items, label, compact = false }) {
   return (
-    <ul className={"cl-roster" + (compact ? " compact" : "")} aria-label={label} style={compact ? undefined : { "--cols": items.length <= 6 ? 6 : items.length <= 8 ? 4 : 6 }}>
+    <ul className={"cl-roster" + (compact ? " compact" : "")} aria-label={label} lang="es">
       {items.map((it) => (
         <li key={it.key} className="cl-roster-item" data-kind={it.kind} data-in={it.fresh ? "" : undefined}>
           {it.kind === "bot" ? <BotCell bot={it.bot} asleep={it.asleep} off={it.off} lit={it.lit} size={compact ? "sm" : "md"} />

@@ -33,17 +33,21 @@ export const DESKTOP_GAINS = Object.freeze([
 
 const btn = (strong) => ({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", minHeight: "40px", padding: "0 16px", borderRadius: "var(--r-pill)", border: strong ? 0 : "1px solid var(--c-line-strong)", background: strong ? "var(--c-btn)" : "transparent", color: strong ? "var(--c-btn-text)" : "var(--c-text)", font: "600 var(--t-ui)/1 'Geist', sans-serif", textDecoration: "none", whiteSpace: "nowrap" });
 
-/** The three downloads, the visitor's own first and strongest. */
+/**
+ * The three downloads, the visitor's own first and strongest. The other two stay together: all
+ * three on one row when they fit, else the main one on its row and the pair on the next (never
+ * one button alone on the last row).
+ */
 export function Downloads({ small = false }) {
   const os = detectOs();
-  const list = [...DOWNLOADS].sort((a, b) => (a.id === os ? -1 : b.id === os ? 1 : 0));
+  const [main, ...rest] = [...DOWNLOADS].sort((a, b) => (a.id === os ? -1 : b.id === os ? 1 : 0));
+  const quiet = { minHeight: "36px", padding: "0 12px", fontSize: "var(--t-meta)" };
   return (
     <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
-      {list.map((d, i) => (
-        <a key={d.id} href={d.href} rel="noopener" style={{ ...btn(i === 0), ...(small || i ? { minHeight: "36px", padding: "0 12px", fontSize: "var(--t-meta)" } : {}) }}>
-          {i === 0 ? <Download size={16} aria-hidden="true" /> : null}{i === 0 ? d.label : d.short}
-        </a>
-      ))}
+      <a href={main.href} rel="noopener" style={{ ...btn(true), ...(small ? quiet : {}) }}><Download size={16} aria-hidden="true" />{main.label}</a>
+      <span style={{ display: "inline-flex", flexWrap: "nowrap", alignItems: "center", gap: "8px" }}>
+        {rest.map((d) => <a key={d.id} href={d.href} rel="noopener" aria-label={d.label} style={{ ...btn(false), ...quiet }}>{d.short}</a>)}
+      </span>
     </span>
   );
 }

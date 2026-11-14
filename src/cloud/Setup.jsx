@@ -78,11 +78,14 @@ const Problem = ({ text }) => (text ? <p className="cl-error" role="alert"><Circ
 // ChatGPT and Claude each offer two ways, side by side: an API key, or signing in with the
 // person's own plan (components/SubscriptionSignIn.jsx, after one line about the terms). The
 // other providers connect with a key.
-const SIGN_IN = { openai: { provider: "chatgpt", label: "Iniciar sesión con ChatGPT" }, anthropic: { provider: "claude", label: "Iniciar sesión con Claude" } };
+const SIGN_IN = { openai: { provider: "chatgpt", name: "ChatGPT", label: "Iniciar sesión con ChatGPT" }, anthropic: { provider: "claude", name: "Claude", label: "Iniciar sesión con Claude" } };
 
 function AiStep({ ai, onConnected, next, skip }) {
   const [engine, setEngine] = useState("openai");
   const [way, setWay] = useState("key"); // "key" | "plan", for ChatGPT and Claude
+  // After «Entendido, conectar» the choices fold into one line («ChatGPT · con tu suscripción»
+  // and «Cambiar»): the person has chosen, and the sign-in below is what is left to do.
+  const [chosen, setChosen] = useState(false);
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -114,6 +117,13 @@ function AiStep({ ai, onConnected, next, skip }) {
         </>
       ) : (
         <div className="cl-form">
+          {chosen && byPlan ? (
+            <p className="cl-chosen">
+              <ProviderMark engine={engine} size={20} tile={false} />
+              <span><b>{signIn.name}</b> · con tu suscripción</span>
+              <button type="button" className="cl-link" onClick={() => { setChosen(false); requestAnimationFrame(() => document.querySelector("input[name=engine]:checked")?.focus()); }}>Cambiar</button>
+            </p>
+          ) : (<>
           <fieldset className="cl-choices">
             <legend className="cl-label" style={{ marginBottom: 8 }}>Elige tu IA</legend>
             {PROVIDERS.map((x) => (
@@ -136,6 +146,7 @@ function AiStep({ ai, onConnected, next, skip }) {
               </label>
             </fieldset>
           ) : null}
+          </>)}
           {byPlan ? (
             <div className="cl-plan">
               <section className="cl-plan-way" aria-labelledby="plan-desk">
@@ -144,7 +155,7 @@ function AiStep({ ai, onConnected, next, skip }) {
               </section>
               <section className="cl-plan-way" aria-labelledby="plan-web">
                 <h2 className="cl-plan-head" id="plan-web">{`O ${signIn.label.charAt(0).toLowerCase() + signIn.label.slice(1)} aquí, en la web`}</h2>
-                <SubscriptionSignIn key={signIn.provider} provider={signIn.provider} info={ai} call={app} onConnected={onConnected} />
+                <SubscriptionSignIn key={signIn.provider} provider={signIn.provider} info={ai} call={app} onConnected={onConnected} onConsented={() => setChosen(true)} />
               </section>
             </div>
           ) : (
