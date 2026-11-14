@@ -50,6 +50,19 @@ export function scan() {
     }
     return true;
   };
+  /**
+   * In the accessibility tree, whatever its size: a visually hidden heading (the 1 px clip a phone
+   * uses where its top bar already shows the name) still counts in the outline; display:none,
+   * visibility:hidden, aria-hidden and inert ones do not.
+   */
+  const exposed = (el) => {
+    if (el.closest("[inert]")) return false;
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      const s = getComputedStyle(n);
+      if (s.display === "none" || s.visibility === "hidden" || n.getAttribute("aria-hidden") === "true") return false;
+    }
+    return true;
+  };
   /** The colour behind an element, or null when a picture or gradient sits there. */
   const backdrop = (el) => {
     const layers = [];
@@ -140,7 +153,7 @@ export function scan() {
   const mains = [...document.querySelectorAll("main,[role=main]")].filter(shown);
   if (mains.length !== 1) out.landmarks.push({ what: `${mains.length} main landmarks` });
   if (![...document.querySelectorAll("nav,[role=navigation]")].some(shown) && !location.pathname.startsWith("/bienvenida")) out.landmarks.push({ what: "no navigation landmark" });
-  const heads = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6,[role=heading]")].filter(shown).map((h) => ({ level: Number(h.getAttribute("aria-level") || h.tagName[1]), text: h.textContent.trim().slice(0, 40) }));
+  const heads = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6,[role=heading]")].filter(exposed).map((h) => ({ level: Number(h.getAttribute("aria-level") || h.tagName[1]), text: h.textContent.trim().slice(0, 40) }));
   const h1 = heads.filter((h) => h.level === 1);
   if (h1.length !== 1) out.headings.push({ what: `${h1.length} h1 (${h1.map((h) => "«" + h.text + "»").join(", ")})` });
   heads.reduce((prev, h) => { if (prev && h.level > prev.level + 1) out.headings.push({ what: `h${prev.level} «${prev.text}» → h${h.level} «${h.text}» skips a level` }); return h; }, null);
