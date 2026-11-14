@@ -122,17 +122,23 @@ html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
 .cl-person{display:grid;place-items:center;width:34px;height:34px;border-radius:var(--r-circle);background:var(--c-chip);color:var(--c-text-2);font:600 var(--t-meta)/1 'Geist',sans-serif}
 .cl-cell.sm .cl-person{width:24px;height:24px;font-size:var(--t-micro)}
 
-/* Four to a row (three on a narrow card), every other one half a cell lower: a strip of comb.
-   Four keeps each column wide enough for the longest role («Investigación») on one line, so a
-   role wraps only between words, never inside one. */
+/* Four to a row, or three when the team divides by three (Roster.jsx › data-cols) and on a narrow
+   card, every other one half a cell lower: a strip of comb. At most four keeps each column wide
+   enough for the longest role («Investigación») on one line, so a role wraps only between
+   words, never inside one. */
 .cl-card{container-type:inline-size}
 .cl-roster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:10px 4px}
 /* Every other cell half a cell lower (a strip of comb); the names below keep one baseline. */
 .cl-roster:not(.compact) .cl-roster-item:nth-child(even) .cl-cell{margin-top:22px}
 .cl-roster:not(.compact) .cl-roster-item:nth-child(odd) .cl-roster-text{margin-top:22px}
+/* Three to a row: the middle column is the lower one. */
+.cl-roster[data-cols="3"]{--cols:3}
+.cl-roster[data-cols="3"]:not(.compact) .cl-roster-item:nth-child(n) .cl-cell{margin-top:0}
+.cl-roster[data-cols="3"]:not(.compact) .cl-roster-item:nth-child(n) .cl-roster-text{margin-top:22px}
+.cl-roster[data-cols="3"]:not(.compact) .cl-roster-item:nth-child(3n+2) .cl-cell{margin-top:22px}
+.cl-roster[data-cols="3"]:not(.compact) .cl-roster-item:nth-child(3n+2) .cl-roster-text{margin-top:0}
 @container (max-width:400px){
   .cl-roster{--cols:3}
-  /* Three to a row: the middle column is the lower one. */
   .cl-roster:not(.compact) .cl-roster-item:nth-child(n) .cl-cell{margin-top:0}
   .cl-roster:not(.compact) .cl-roster-item:nth-child(n) .cl-roster-text{margin-top:22px}
   .cl-roster:not(.compact) .cl-roster-item:nth-child(3n+2) .cl-cell{margin-top:22px}
@@ -176,9 +182,10 @@ html.colmena-desktop:has(.cl-shell){background:var(--c-page)}
 @container (max-width:296px){.cl-choice{font-size:var(--t-meta)}}
 @container (max-width:291px){.cl-choices{grid-template-columns:minmax(0,1fr)}}
 /* The choice made (after «Entendido, conectar»): one quiet line with «Cambiar». */
-.cl-chosen{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;min-height:48px;margin:0;padding:8px 14px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-card);color:var(--c-text-2);font:400 var(--t-ui)/1.3 'Geist',sans-serif}
+.cl-chosen{display:flex;align-items:center;gap:10px;min-height:48px;margin:0;padding:8px 14px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-card);color:var(--c-text-2);font:400 var(--t-ui)/1.3 'Geist',sans-serif}
+.cl-chosen > span{flex:1 1 0;min-width:0}
 .cl-chosen b{font-weight:600;color:var(--c-text)}
-.cl-chosen .cl-link{margin-left:auto;min-height:44px;font-weight:500}
+.cl-chosen .cl-link{flex:none;min-height:44px;font-weight:500}
 /* «Cómo la conectas»: two ways side by side for ChatGPT and Claude. */
 .cl-ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
 .cl-way{position:relative;display:flex;align-items:center;min-height:56px;padding:10px 14px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card);cursor:pointer;transition:border-color .15s ease,background .15s ease}
