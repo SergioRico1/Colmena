@@ -1,0 +1,23 @@
+# colmena.team: the product home page, static assets behind a tiny Worker (site/worker.js) that
+# sends www to the apex and sets headers. The app itself is the Worker colmena-nube at
+# app.colmena.team; nothing here touches it.
+# Build: `node site/build.mjs`; deploy from site/: `wrangler deploy`.
+name = "colmena-home"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+preview_urls = false
+
+# colmena.team and www (www redirects to the apex in worker.js). Custom domains only add their
+# own records; the zone's other records (mail, app.colmena.team for colmena-nube) stay as they are.
+routes = [
+  { pattern = "colmena.team", custom_domain = true },
+  { pattern = "www.colmena.team", custom_domain = true },
+]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
+run_worker_first = true
