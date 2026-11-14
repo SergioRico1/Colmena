@@ -209,7 +209,11 @@ window («de 5 horas», «semanal») and renewal time from `Retry-After`, Anthro
 `anthropic-ratelimit-unified-*`, OpenAI's `x-ratelimit-reset-*`, ChatGPT's exhausted
 `x-codex-*` windows, the `usage_limit_reached` body (`resets_at` / `resets_in_seconds`) or
 Claude Code's texts («usage limit reached|<epoch>», «resets 3pm»). Every adapter keeps those
-headers on its errors (`limitHeaders`).
+headers on its errors (`limitHeaders`). OpenAI's per-minute 429 («Rate limit reached for … on tokens
+per min (TPM)») is a rate limit: rate phrases are taken out before the usage words are looked for, so
+its «limit reached» no longer reads as a plan that ran out (a quota named in the same text still does).
+
+In the cloud each person has their own hub, limits included (docs/CLOUD.md › Phase 3 › AI accounts).
 
 - `ProviderHub#markLimited` stores the limit in `providers/main.limits[engine]` (survives a
   restart); the engine is `resting` until it renews (or 20 min when the time is unknown) and

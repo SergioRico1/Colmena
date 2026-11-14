@@ -25,6 +25,7 @@ El motor conserva propuestas privadas, caducidad, revalidacion de esquema/cuenta
 - 09b/09c son lienzos de 1440px de ancho fijo. No existe variante movil. Las listas extensas de cuentas/catalogo necesitan estado de desbordamiento o paginacion definido; no se ha inventado otra composicion.
 - Navegacion de ajustes NEXO (General, Espacios, Privacidad, etc.) no tiene pantallas Colmena suministradas; enlaces desactivados. Los controles decorativos de ventana del original no gobiernan una ventana del navegador web.
 - Servidores MCP propios: disponibles por HTTP/SSE con OAuth (registro dinamico, PKCE, tokens en DPAPI) en `server/mcp/hub.mjs`; los servidores locales por stdio no se admiten.
+- En la nube (docs/CLOUD.md › Phase 3): la clave de Composio es de la empresa (la pone quien administra, cifrada en el almacén del espacio); MCP vuelve a `https://<sitio>/api/mcp/oauth/callback` en lugar de una dirección local; las líneas rojas de una rutina las deciden su dueño y la persona de la empresa en quien delegó, sin buzón.
 
 ## Líneas rojas de las rutinas: «Aprobado por adelantado» (`server/preapprovals.mjs`)
 

@@ -1,7 +1,8 @@
 # Colmena in the cloud
 
-Status: **Phase 2** (team messaging: channels, threads, search, notifications, the Slack import and
-sign-in with Google, Microsoft and GitHub, deployed). Phase 1: accounts, companies and the real server
+Status: **Phase 3** (bots work in the cloud: per-person AI accounts, durable runtime on alarms,
+routines, approvals, connectors and bots in channels, deployed). Phase 2: team messaging, the Slack
+import and OAuth sign-in. Phase 1: accounts, companies and the real server
 in each workspace; Phase 0 proved the store on Durable Objects. This document is the start of the
 cloud architecture; it grows with each phase. The desktop stays as it is: everything here is
 additive, and the desktop's default paths do not change.
@@ -772,3 +773,172 @@ directory lookup.
   copies happen inside steps (no per-file resume).
 - Slack bridge (live two-way) was not built; the import is one-off.
 - Each DO is single-threaded: very busy companies (hundreds of people) should watch CPU per request.
+
+(Phase 3 below did the first item; the rest is still open.)
+
+## Phase 3: the bots work in the cloud
+
+```
+browser ──► Worker colmena-nube (app.colmena.team)
+             ├─ /api/*                     ──► Workspace DO: runtime, scheduler and connections
+             │                                  (server/cloud/bots-host.mjs) beside team messaging
+             ├─ /api/mcp/oauth/callback    ──► an MCP server's sign-in back on the public site
+             ├─ /hooks/<workspace>/h/<id>  ──► a routine's webhook address (public, 64 KB)
+             └─ /auth/dev/test/*           ──► tests only (FAKE_MODEL_TOKEN): fake model, probe, eviction
+Workspace DO alarm   ──► routines due · question waits · renewed limits · polled triggers ·
+                         a heartbeat every 20 s while bots work · Phase 2's upkeep
+Workspace DO wake-up ──► work an eviction cut goes on by itself (Runtime#resumeInterrupted)
+```
+
+### AI accounts, per person (`server/cloud/ai.mjs`)
+
+Each person thinks with their own account. A bot's turn uses the account of **the person who
+asked**: whoever last wrote in that conversation or named the bot (`mission.askedBy`); for a routine,
+its owner (`automation.ownerId`, stamped when it is made). Limits and errors are theirs: the
+usage-limit pause («Limitado») and its renewal live in their own config.
+
+- `PersonHub` is the desktop's `ProviderHub` for one person: choices in `providers/person:<id>`
+  (method, last four characters, pins, limits), secrets in the envelope vault under `ai-<id>`. No
+  local model, no Claude Code CLI; «Servidor propio» only on a public `https://` address (`cloudBaseUrl`).
+- `personalProviders()` has ProviderHub's surface and answers as the hub of `currentPerson()`.
+  `Runtime#launch` runs each mission as its owner (`bots-host.mjs`), so every model call of the turn
+  (side jobs included) uses that person's account. Background work as nobody reports «connected»
+  when anyone in the company has an account, so routines start.
+- API keys: OpenAI, Anthropic, OpenCode Go, Gemini, OpenRouter, DeepSeek, Kimi and a public custom
+  server, through the desktop's own routes (`/api/auth/apikey|anthropic|opencode`, `/api/ai/accounts/*`).
+  Desktop-only ones (`/api/auth/start|cancel|logout|models|local|anthropic/cli`) answer 404.
+- **ChatGPT by device code** (`CodexDeviceSession`, what `codex login --device-auth` does):
+  `POST https://auth.openai.com/api/accounts/deviceauth/usercode {client_id}` → `device_auth_id`,
+  `user_code`, `interval`; the person types the code at `https://auth.openai.com/codex/device`; the
+  screen polls `…/deviceauth/token {device_auth_id, user_code}` (403/404 = pending) →
+  `authorization_code`, `code_verifier`; then `POST https://auth.openai.com/oauth/token` with
+  `redirect_uri=https://auth.openai.com/deviceauth/callback` and the Codex client id. Tokens go to the
+  vault; calls go to `https://chatgpt.com/backend-api/codex/responses` with `chatgpt-account-id`. Each
+  person must turn on «device code login» in their ChatGPT security settings. Checked against a fake
+  auth server only: no real account was used.
+- **Claude setup-token**: the desktop's path (`connectAnthropic({method: "token"})`).
+- Both subscription paths are **off** until an owner or admin turns them on (Empresa › «IA y apps»,
+  `PUT /api/cloud/ai/policy`) after reading the warning; turning one off stops saved credentials at
+  once. Routes: `GET /api/cloud/ai`, `POST /api/cloud/ai/chatgpt/device`, `…/device/poll`.
+- Screens: Ajustes › «Tu cuenta de IA» (`src/components/v2/settings/CloudAccount.jsx`) and Empresa ›
+  «IA y apps» (`AdminEmpresa.jsx`).
+
+#### What the providers' terms say (read 2026-11-14)
+
+| Provider | A hosted multi-user service using a person's consumer subscription | Sources |
+| --- | --- | --- |
+| Anthropic | **Forbidden.** The Claude Code legal page says Anthropic does not permit developers to route requests through Free, Pro, Max or Ultra plan credentials on behalf of their users, nor to collect, store or intermediate those credentials, and may enforce without notice (narrow exception: hosting the unmodified Claude Code binary with each user signing in through Anthropic). `claude setup-token` is documented for CI and scripts. | https://code.claude.com/docs/en/legal-and-compliance · https://code.claude.com/docs/en/authentication · https://www.anthropic.com/legal/consumer-terms |
+| OpenAI | **Not permitted in practice.** The Terms of Use forbid sharing credentials or making an account available to anyone else; the Codex auth docs say to treat its tokens like a password and to use API keys for programmatic use. OpenAI's route for other apps, «Sign in with ChatGPT», asks paid or remotely hosted apps to join a waitlist (commercial access is a limited trial). | https://openai.com/policies/row-terms-of-use/ · https://learn.chatgpt.com/docs/auth · https://developers.openai.com/cookbook/articles/sign-in-with-chatgpt · https://developers.openai.com/siwc/quickstart.md |
+| Both | **Allowed:** API keys under each provider's commercial terms, used by the key owner's own people. | https://www.anthropic.com/legal/commercial-terms · https://openai.com/policies/services-agreement/ |
+
+So both subscription paths ship disabled behind the admin switch with that warning
+(`SUBSCRIPTION_WARNING`). The clean way to offer ChatGPT plans is to apply for «Sign in with ChatGPT»
+as a hosted app (its own OAuth client and public redirect), not the Codex client.
+
+### The runtime made durable (`server/cloud/bots-host.mjs`, `cloud/src/workspace.js`)
+
+- **Nothing waits on a timer of the object.** What must happen later is in the store: missions,
+  steps and histories, approvals with `waitUntil`, routines with `nextRun` and `queue`, limits with
+  `resumeAt`. `host.nextAlarm()` is the earliest of those, plus a 20 s heartbeat while bots work and a
+  60 s poll for email/calendar/web triggers; the object sets its alarm after every write and every
+  alarm. `host.tick()` runs `Scheduler#tick` (routines, snoozed rooms, `resumeLimited`, notice rounds),
+  `Runtime#sweepQuestions`, the rooms' work tick and the trigger poll. Scheduler, watcher and trigger
+  engine are never `start()`ed in the cloud. The in-memory timers left (a turn's idle watchdog, a
+  question's wake-up, the 1.5 s approval notice) are shortcuts the alarm also covers.
+- **Eviction.** A new `Runtime` marks running missions `paused` + `interrupted`; when the object boots,
+  `host.resume()` → `resumeInterrupted()` relaunches each as its owner and tells the steps that were
+  half-way to check before repeating anything (at most 3 times in 15 minutes). App actions caught
+  half-way stay «sin confirmar» and are never repeated. A deploy does the same as the test route
+  (`DurableObjectState#abort`).
+- **CPU and concurrency.** A model call is I/O: the runtime awaits it and the object keeps serving.
+  Measured below, messaging latency does not move with 6 bots working, so bot turns stay in the
+  workspace object; a DO per mission or Queues are not needed yet.
+
+### Routines, triggers and approvals
+
+- Routines fire from the alarm with nobody connected, as their owner.
+- **Webhooks**: no longer desktop-only. A routine's address is
+  `https://<site>/hooks/<workspace>/h/<43 random characters>`; the Worker takes at most 64 KB, drops
+  cookies, authorization and Cloudflare headers and always answers 202; the workspace runs the
+  desktop's checks (`Webhooks#handle`: signature, filters, duplicates, brakes).
+- **Approvals reach the right person.** Each approval gets `for`: the person who asked, or for a
+  routine its owner and their delegate (`approver: {personId}`, a member of the same company, set on
+  the same screen as the desktop: `PUT /api/automations/:id/approver {contactId: <person id>}`). They get
+  it in their Bandeja (a `notifications` record with the same `for`) and by Web Push. Nobody else sees
+  it in `/api/state`; deciding it (`/api/approvals/*`, `/api/connections/review/*`) answers 403 to
+  anyone else. No mailbox is involved.
+- **Pre-approvals** apply unchanged in a routine's runs.
+- **Routine times are UTC** in the cloud: the calendar arithmetic uses the machine's local time,
+  which is UTC in a Worker. A company time zone is left for phase 4.
+
+### Connectors
+
+- **Composio**: one key per company (`PUT /api/cloud/apps/key`, admins), in the vault.
+- **MCP over HTTP/SSE**: the redirect is `https://<site>/api/mcp/oauth/callback` (`McpHub({redirect})`);
+  the PKCE verifier is kept with its state in the vault, so a callback that lands on a fresh object
+  still finishes. The Worker lets that one GET through without the origin check (it only completes a
+  sign-in whose state the workspace holds).
+- **web_fetch** (`server/cloud/web-cloud.mjs`): the desktop's reader over `fetch`; each hop's host is
+  resolved by DNS over HTTPS and refused when any address is private, loopback, link-local, CGNAT,
+  multicast or reserved (Workers cannot reach private networks anyway). Search is each provider's
+  hosted search, as on the desktop.
+- **Deliverables**: `create_document`, `create_spreadsheet` and decks write the .docx/.xlsx/.pptx and
+  their companion files through the mounted file store (R2, `writeCompanionFile`). Office→PDF
+  previews and computer use stay off; the screens hide them (and the terminal, browser and folders).
+
+### Bots in channels (`server/cloud/channel-bots.mjs`)
+
+- `<@bot:nora>` in a channel or thread starts (or continues) the conversation behind that thread; the
+  answer is posted in the thread by `bot:nora` with the bot's name, and notifies who took part. Several
+  bots named at once work as a team (Atlas plans). Later replies in the thread go on with the same bots.
+- A private channel's, group's or DM's conversation has the channel's people as its audience.
+- Every company has the seeded bots (Atlas, Nora, Tomás, Iris, Vera, Bruno) plus its own; memory,
+  SOUL and learning are the workspace's records.
+- **Roles**: owners, admins and members use bots; guests read what bots say and never start bot
+  work. Owners and admins edit any bot; members create bots and edit their own (`createdBy`).
+- Hosted copy no longer says «tu ordenador» (bots work «en la nube de tu empresa, con la cuenta de IA
+  de quien les pide algo»); Ajustes hides this computer's places.
+
+### The fake model (`server/cloud/fake-model.mjs`)
+
+Deterministic answers (`[[plan:a,b]]`, `[[app:SLUG]]`, `[[slow:ms]]`) and a Composio-shaped test
+app whose actions only record that they ran. Used only when the Worker has the secret
+`FAKE_MODEL_TOKEN` **and** that workspace's flag was set with it (`POST /auth/dev/test/fake-model`);
+without the secret the test routes answer 404.
+
+| Name | What | Where |
+| --- | --- | --- |
+| `FAKE_MODEL_TOKEN` | tests only: the fake model, probe and eviction routes | Worker secret, `.local/cloud-phase3.env` |
+
+No new Cloudflare resources or DO classes.
+
+### Tests and measurements
+
+- **Node**: `tests/cloud-bots.test.mjs` (12): the fake model and its flag; per-person accounts, vault
+  namespaces and the terms switch; the device-code exchange; a mention answered in its thread; a plan
+  with two bots while messaging stays fast; an eviction resumed on the next wake-up; a routine on the
+  alarm with the approval for owner and delegate only and a pre-approval; bots by role; webhooks at
+  the public address; MCP on a public redirect across a restart; web_fetch SSRF. Plus the 429 case in
+  `tests/usage-limits.test.mjs`.
+- **Deployed** (app.colmena.team, 2026-11-14): `node scripts/e2e-bots.mjs --url … --env …` 34/34;
+  `node scripts/e2e-browser-bots.mjs --shots ../.local/shots/cloud-phase3` 9/9 (laptop and 375 px phone);
+  regressions `e2e.mjs` 44/44, `e2e-chat.mjs` 48/48.
+
+| Measure (deployed, client in Spain) | Result |
+| --- | --- |
+| A mention in a channel → the bot's answer in the thread (fake model) | 0.37–0.47 s |
+| A plan with two bots (plan, two parts, synthesis) → all three bots in the thread | 0.95–1.2 s |
+| Posting a message, idle | p50 350 ms, p95 425 ms |
+| Posting a message with 6 bots of 3 people working | p50 345 ms, p95 361 ms |
+| Object evicted mid-turn → the answer arrives (12 s turn, nobody asking) | 17.1 s |
+| A routine at its minute with nobody connected | its approval was there at the minute |
+
+### Left for phase 4
+
+- Office→PDF previews and computer use (Containers); editing work files in place.
+- Routine times in the company's time zone (today UTC in the cloud).
+- Per-person Composio accounts; Composio and real OAuth apps verified with real accounts.
+- «Sign in with ChatGPT» as an approved hosted app instead of the Codex device code.
+- The Claude Code / Codex / OpenCode engines («Código») in Containers.
+- Event triggers that listen live (a room message, files) instead of the 60 s poll.
+- Real accounts: no real API key or subscription was used; adapters are tested against fakes.
