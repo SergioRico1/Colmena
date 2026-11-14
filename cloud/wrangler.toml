@@ -1,0 +1,29 @@
+# Colmena hosted, Phase 0 (docs/CLOUD.md): one SQLite-backed Durable Object per workspace,
+# running the desktop's own store (server/store.mjs, bundled by wrangler) on DO SQL.
+# Local only so far: npm run dev (wrangler dev --local), then npm run smoke.
+# Secrets (never in this file): CLOUD_TOKEN (the shared test token every request carries) and
+# WORKSPACE_KEYS (64 hex chars: the master the per-workspace database keys derive from).
+# Locally they come from ../.local/cloud.env (gitignored).
+name = "colmena-nube"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = false
+
+[vars]
+# Workspaces live in the EU: the jurisdiction is chosen per namespace at runtime
+# (env.WORKSPACE.jurisdiction("eu")); wrangler.toml has no field for it. workerd does not
+# implement jurisdictions, so `npm run dev` clears it (--var JURISDICTION:).
+JURISDICTION = "eu"
+
+[[durable_objects.bindings]]
+name = "WORKSPACE"
+class_name = "Workspace"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Workspace"]
+
+[observability]
+enabled = false

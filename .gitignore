@@ -75,3 +75,6 @@ eval/report/
 
 # Impeccable's local hook cache
 .impeccable/hook.cache.json
+
+# Wrangler local secrets (cloud/ reads them from .local/cloud.env instead)
+.dev.vars
