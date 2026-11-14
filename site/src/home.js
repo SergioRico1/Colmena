@@ -350,3 +350,15 @@
   }
   document.addEventListener("visibilitychange", wake);
 })();
+
+// Phones cannot install the desktop app: there the web is the main way in, the download stays second.
+(() => {
+  if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+  for (const web of document.querySelectorAll("[data-web]")) {
+    const dl = web.parentElement?.querySelector("[data-dl]");
+    if (!dl) continue;
+    web.classList.replace("btn-ghost", "btn-paper");
+    dl.classList.replace("btn-paper", "btn-ghost");
+    web.parentElement.insertBefore(web, dl);
+  }
+})();

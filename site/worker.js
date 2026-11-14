@@ -44,6 +44,14 @@ export default {
       url.hostname = APEX;
       return Response.redirect(url.toString(), 301);
     }
+    // /descargar alone: the installer for the visitor's system (Windows or Mac); phones and
+    // anything else get the list of downloads.
+    if (/^\/descargar\/?$/.test(url.pathname)) {
+      const ua = request.headers.get("User-Agent") || "";
+      const platform = /Android|iPhone|iPad|iPod/i.test(ua) ? null : /Windows/i.test(ua) ? "windows" : /Macintosh|Mac OS X/i.test(ua) ? "mac" : null;
+      if (platform) return (await download(platform, ctx)) || Response.redirect(RELEASES, 302);
+      return Response.redirect("https://" + APEX + "/#descargar", 302);
+    }
     const dl = /^\/descargar\/([a-z-]+)\/?$/.exec(url.pathname);
     if (dl) return (await download(dl[1], ctx)) || Response.redirect(RELEASES, 302);
     const res = await env.ASSETS.fetch(request);
