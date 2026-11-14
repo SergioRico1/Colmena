@@ -107,6 +107,10 @@ html.colmena-web [data-desktop-only]{display:none!important}
   aside[role="dialog"][aria-modal="true"]{position:fixed!important;inset:0!important;width:100%!important;max-width:100%!important;height:100dvh!important;border-radius:0!important}
 }
 
+/* A heading the phone's top bar already says (a room's or a channel's name): kept for screen
+   readers, not drawn twice. */
+@media (max-width: 639.98px){.r-sr-phone{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;padding:0!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}}
+
 /* ── Layout helpers screens opt into ─────────────────────────────────────────────────────── */
 @media (max-width: 1023.98px){
   .r-stack-tab{flex-direction:column!important;align-items:stretch!important}

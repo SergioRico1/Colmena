@@ -17,6 +17,13 @@ export async function signOut() {
   location.assign("/entrar?salir=1");
 }
 
+let openSocket = null;
+/** Says something small over the open live socket (typing, away/active, the open channel); false when closed. */
+export function sendLive(frame) {
+  if (!openSocket || openSocket.readyState !== 1) return false;
+  try { openSocket.send(JSON.stringify(frame)); return true; } catch { return false; }
+}
+
 /** The hosted live channel with EventSource's shape: onopen, onmessage({data}), onerror, close(). */
 class LiveSocket {
   constructor(path) {
@@ -29,7 +36,10 @@ class LiveSocket {
     this.ws = new WebSocket(url);
     this.ws.onopen = () => {
       this.readyState = 1;
+      openSocket = this.ws;
       this.onopen?.({});
+      // Team messaging (src/chat/store.js) says again which channel is open and whether you are away.
+      window.dispatchEvent(new Event("colmena:live-open"));
       // Answered by the object without waking it (setWebSocketAutoResponse).
       this.ping = setInterval(() => { try { this.ws.send('{"type":"ping"}'); } catch {} }, 25000);
     };

@@ -27,6 +27,8 @@ import { MenuButton } from "../Menu.js";
 import { signOut } from "../../lib/cloud.js";
 import { Menu as MenuIcon, X } from "../Icon.js";
 import { useBreakpoint } from "../../lib/breakpoint.js";
+import ChannelsNav from "../../chat/ChannelsNav.jsx";
+import { useChatTitle } from "../../chat/title.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
 // design/v4/colmena-v4.html › .side). Top to bottom: the window's three dots and the wordmark,
@@ -198,7 +200,8 @@ export default function Sidebar({ active = "inicio" }) {
   const desktop = typeof window !== "undefined" && !!window.colmenaWindow?.close;
   // The phone's top bar says where you are: the conversation's name, or the place's.
   const convRow = here ? [...model.rooms, ...model.people, ...model.bots].find((r) => r.href === here) : null;
-  const topTitle = convRow ? convRow.title || convRow.name : PLACES.find((p) => p.id === current)?.label || PLACE_TITLES[current] || "Colmena";
+  const chatTitle = useChatTitle();
+  const topTitle = chatTitle ? chatTitle : convRow ? convRow.title || convRow.name : PLACES.find((p) => p.id === current)?.label || PLACE_TITLES[current] || "Colmena";
   // «Nuevo» opens from the top bar on a phone while the drawer is closed, from the bar otherwise.
   const newInBar = bp !== "phone" || drawer;
   // A sheet opened from the bar shows over the content, not under the drawer.
@@ -560,6 +563,8 @@ export default function Sidebar({ active = "inicio" }) {
 
       {/* The only part that scrolls: the groups. The window never does. */}
       <div ref={scroller} onScroll={(e) => { scrolled = e.currentTarget.scrollTop; measure(); }} className="v3-scroll" style={{ flex: "1", minHeight: "0", alignSelf: "stretch", display: "flex", flexDirection: "column", alignItems: folded ? "center" : "stretch", gap: folded ? "2px" : "0", padding: folded ? "8px 0 10px" : "4px 10px 10px", borderTop: line(), overflowY: "auto", overflowX: "hidden", overscrollBehavior: "contain", ...(fade ? { WebkitMaskImage: fade, maskImage: fade } : {}), ...noDrag }}>
+        {/* Hosted: channels and direct messages (src/chat/ChannelsNav.jsx). */}
+        {store.cloud && !folded ? <ChannelsNav pathname={pathname} /> : null}
         {folded ? rail : groups}
       </div>
 

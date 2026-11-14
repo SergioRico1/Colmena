@@ -470,7 +470,7 @@ function Room({ id, query }) {
                           <button type="submit" style={{ ...outline, height: "34px", background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" }}>{"Guardar"}</button>
                           <button type="button" onClick={() => setRenaming(null)} style={{ ...outline, height: "34px" }}>{"Cancelar"}</button>
                         </form>
-                      ) : <h1 style={{ margin: 0, flex: "none", maxWidth: "50%", display: "flex", alignItems: "center", gap: "6px", font: "600 var(--t-lead)/1.2 'Geist', sans-serif", letterSpacing: "-0.01em", overflow: "hidden", whiteSpace: "nowrap" }}>
+                      ) : <h1 className="r-sr-phone" style={{ margin: 0, flex: "none", maxWidth: "50%", display: "flex", alignItems: "center", gap: "6px", font: "600 var(--t-lead)/1.2 'Geist', sans-serif", letterSpacing: "-0.01em", overflow: "hidden", whiteSpace: "nowrap" }}>
                         {taskTalk ? null : place.private ? <LockSimple size={19} style={{ flex: "none", color: "var(--c-text-3)" }} aria-label="Privada" /> : <Hash size={19} style={{ flex: "none", color: "var(--c-text-3)" }} />}
                         <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>{taskTalk ? `Conversación de la tarea «${taskTalk.title}»` : title}</span>
                       </h1>}

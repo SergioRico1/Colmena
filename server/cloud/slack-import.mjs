@@ -34,7 +34,7 @@ export class SlackImport {
     if (!s) return null;
     const { cursor: _c, plan: _p, pendingInvites: _i, ...rest } = s;
     const total = s.plan?.totalDays || 0;
-    return { ...rest, progress: s.status === "done" ? 1 : total ? Math.min(0.99, (s.plan.doneDays || 0) / total) : 0 };
+    return { ...rest, partSize: IMPORT_LIMITS.partSize, progress: s.status === "done" ? 1 : total ? Math.min(0.99, (s.plan.doneDays || 0) / total) : 0 };
   }
   /** The import running or waiting to run, if any. */
   active() { const s = this.latest(); return s && ["queued", "running"].includes(s.status) ? s : null; }
@@ -85,6 +85,7 @@ export class SlackImport {
     if (!s || ["done", "failed", "cancelled"].includes(s.status)) return this.view(s);
     s.status = "cancelled";
     this.chat.audit(person, "import.cancel", { type: "import", id });
+    this.removeParts(s).catch(() => {});
     return this.view(this.save(s));
   }
   async source(s) {

@@ -263,7 +263,7 @@ export class TeamChat {
         schedule: s ? { on: !!s.on, from: hm(s.from) || "22:00", to: hm(s.to) || "08:00", days: Array.isArray(s.days) ? [...new Set(s.days.filter((x) => Number.isInteger(x) && x >= 0 && x <= 6))] : [] } : (p.dnd?.schedule || null),
       };
     }
-    if ("keywords" in patch) p.keywords = [...new Set((Array.isArray(patch.keywords) ? patch.keywords : []).map((k) => cleanLine(k, 40).toLowerCase()).filter((k) => k.length >= 2))].slice(0, CHAT_LIMITS.keywords);
+    if ("keywords" in patch) p.keywords = [...new Set((Array.isArray(patch.keywords) ? patch.keywords : []).map((k) => cleanLine(k, 40).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()).filter((k) => k.length >= 2))].slice(0, CHAT_LIMITS.keywords);
     if ("digest" in patch) p.digest = patch.digest !== false;
     this.setProfile(person.id, p);
     this.emit({ type: "chat.profile", person: person.id, profile: this.publicProfile(person.id, p) }, { people: "all" });
@@ -567,6 +567,13 @@ export class TeamChat {
     }
     const mem = this.membership(id, person.id);
     return { ...this.page(rows), hasBefore, hasAfter, readSeq: mem?.read_seq ?? null, lastSeq: row.last_seq };
+  }
+  /** Where a message sits in a channel's timeline (a reply: its thread's first message), to open a page around it. */
+  seqOf(person, channelId, messageId) {
+    this.mustRead(person, channelId);
+    const row = this.mrow(messageId);
+    if (!row || row.channel !== channelId) fail("No existe ese mensaje.", 404, "message");
+    return row.thread && !row.top ? row.thread : row.seq;
   }
   /** A thread: its first message and every reply, in order. Opening it clears its mentions of you. */
   thread(person, messageId) {

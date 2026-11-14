@@ -39,6 +39,13 @@ export const routes = [
   { path: "/chat/:bot", screen: "Conversacion" },
   { path: "/sala/:id", screen: "Room" }, // every room, private or with people (docs/CONTRACT.md §18)
   { path: "/con/:id", screen: "PeopleChat" }, // a direct conversation with a person; a group opens as its room (/sala/:id)
+  // Hosted team messaging (src/chat/, docs/CLOUD.md › Phase 2): channels, search, people, admin.
+  { path: "/canales", screen: "Canales" },
+  { path: "/canal/:id", screen: "Canal" },
+  { path: "/buscar", screen: "Buscar" },
+  { path: "/personas", screen: "Personas" },
+  { path: "/admin", screen: "AdminEmpresa" },
+  { path: "/admin/:tab", screen: "AdminEmpresa" },
   { path: "/personas/como-funciona", screen: "PeopleHelp" },
   { path: "/sala/:id/directo", screen: "Room" },
   { path: "/sala/:id/debate", screen: "DebateV2" },

@@ -77,7 +77,7 @@ export function chatRoutes(app, { chat, importer, blobs, workspace, presence, pu
   app.get("/api/chat/channels/:id/messages", run((req) => {
     const q = req.query || {};
     const num = (v) => (v == null || v === "" ? null : Number(v));
-    return chat.history(me(), req.params.id, { before: num(q.before), after: num(q.after), around: num(q.around), limit: num(q.limit) || undefined });
+    return chat.history(me(), req.params.id, { before: num(q.before), after: num(q.after), around: q.message ? chat.seqOf(me(), req.params.id, String(q.message)) : num(q.around), limit: num(q.limit) || undefined });
   }));
   app.post("/api/chat/channels/:id/messages", run((req, res) => { res.status(201); return chat.post(me(), req.params.id, body(req)); }));
   app.get("/api/chat/channels/:id/pins", run((req) => chat.pins(me(), req.params.id)));

@@ -127,6 +127,11 @@ export function StoreProvider({ children }) {
         } catch {
           return;
         }
+        // Hosted team messaging (src/chat/store.js) takes its own frames.
+        if (typeof event.type === "string" && event.type.startsWith("chat.")) {
+          window.dispatchEvent(new CustomEvent("colmena:chat", { detail: event }));
+          return;
+        }
         if (event.type === "browser_frame") {
           window.dispatchEvent(new CustomEvent("colmena:browser_frame", { detail: event }));
           return;

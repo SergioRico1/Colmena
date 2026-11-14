@@ -1,0 +1,23 @@
+/* The sidebar's team messaging (src/chat/ChannelsNav.jsx), in the sidebar's own scale. */
+.cn{display:flex;flex-direction:column;padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid var(--c-line)}
+.cn-places{display:flex;flex-direction:column;gap:1px;padding:4px 0 2px}
+.cn-group{margin-top:8px}
+.cn-group-head{display:flex;align-items:center;gap:2px}
+.cn-group-btn{flex:1;min-width:0;height:28px;display:flex;align-items:center;gap:4px;padding:0 4px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text-3);font:600 var(--t-caption)/1 'Geist',sans-serif;text-align:left;cursor:pointer}
+.cn-group-btn:hover{color:var(--c-text)}
+.cn-group-btn > span:first-of-type{flex:1;min-width:0}
+.cn-add{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:var(--r-sm);color:var(--c-text-3)}
+.cn-add:hover{background:var(--c-sidebar-hover);color:var(--c-text)}
+.cn-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.cn-row{display:flex;align-items:center;gap:8px;min-height:30px;padding:0 8px;border-radius:var(--r-sm);color:var(--c-text-2);font:400 var(--t-ui)/1.2 'Geist',sans-serif;text-decoration:none;box-sizing:border-box}
+.cn-row:hover{background:var(--c-sidebar-hover);color:var(--c-text)}
+.cn-row[aria-current="page"]{background:var(--c-selected);color:var(--c-text);font-weight:500;box-shadow:var(--c-shadow-lift)}
+.cn-row.is-unread{color:var(--c-text);font-weight:600}
+.cn-row.is-muted{color:var(--c-text-4)}
+.cn-icon{flex:none;width:20px;display:grid;place-items:center;color:var(--c-text-3)}
+.cn-row.is-unread .cn-icon,.cn-row[aria-current="page"] .cn-icon{color:var(--c-text)}
+.cn-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cn-more{color:var(--c-text-3)}
+.cn-empty{padding:4px 8px 6px;font-size:var(--t-meta);line-height:1.4;color:var(--c-text-3)}
+[data-theme="dark"] .cn-row[aria-current="page"]{box-shadow:none}
+@media (pointer: coarse){.cn-row{min-height:44px}.cn-group-btn{height:40px}.cn-add{width:40px;height:40px}}
