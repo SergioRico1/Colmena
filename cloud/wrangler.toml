@@ -1,9 +1,9 @@
-# Colmena hosted, Phase 0 (docs/CLOUD.md): one SQLite-backed Durable Object per workspace,
-# running the desktop's own store (server/store.mjs, bundled by wrangler) on DO SQL.
-# Local only so far: npm run dev (wrangler dev --local), then npm run smoke.
-# Secrets (never in this file): CLOUD_TOKEN (the shared test token every request carries) and
-# WORKSPACE_KEYS (64 hex chars: the master the per-workspace database keys derive from).
-# Locally they come from ../.local/cloud.env (gitignored).
+# Colmena hosted, Phase 1 (docs/CLOUD.md): the Worker serves the built UI, signs people in
+# (Directory DO) and runs each company's server in its own Workspace DO (SQLite, EU).
+# Build first: `npm run build` at the repository root (the UI into ../dist), then here
+# `npm run assets` (prompts bundled as text). Local: `npm run dev`; deploy: `npm run deploy`.
+# Secrets (never in this file): WORKSPACE_KEYS, VAULT_MASTER_KEY, ADMIN_BOOTSTRAP_TOKEN and,
+# when there is a mail provider, RESEND_API_KEY. Locally they come from ../.local/cloud.env.
 name = "colmena-nube"
 main = "src/worker.js"
 compatibility_date = "2026-10-01"
@@ -12,18 +12,36 @@ workers_dev = true
 preview_urls = false
 
 [vars]
-# Workspaces live in the EU: the jurisdiction is chosen per namespace at runtime
-# (env.WORKSPACE.jurisdiction("eu")); wrangler.toml has no field for it. workerd does not
-# implement jurisdictions, so `npm run dev` clears it (--var JURISDICTION:).
+# Workspaces and the directory live in the EU: the jurisdiction is chosen per namespace at
+# runtime (env.WORKSPACE.jurisdiction("eu")); wrangler.toml has no field for it. workerd does
+# not implement jurisdictions, so `npm run dev` clears it (--var JURISDICTION:).
 JURISDICTION = "eu"
+# The sender of real mail once RESEND_API_KEY is set (a verified address of that account).
+MAIL_FROM = "Colmena <onboarding@resend.dev>"
+
+[assets]
+directory = "../dist"
+binding = "ASSETS"
+# Every request goes through the Worker first: it decides who sees the app.
+run_worker_first = true
+html_handling = "none"
+not_found_handling = "none"
 
 [[durable_objects.bindings]]
 name = "WORKSPACE"
 class_name = "Workspace"
 
+[[durable_objects.bindings]]
+name = "DIRECTORY"
+class_name = "Directory"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Workspace"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Directory"]
 
 [observability]
 enabled = false

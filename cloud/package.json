@@ -1,11 +1,13 @@
 {
   "name": "colmena-nube",
   "private": true,
-  "description": "Colmena hosted: one Durable Object per workspace running server/store.mjs on DO SQLite (docs/CLOUD.md)",
+  "description": "Colmena hosted: the Worker colmena-nube, a Directory DO for accounts and one Workspace DO per company running the desktop's server (docs/CLOUD.md)",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local --port 8790 --ip 127.0.0.1 --persist-to ../.local/cloud-state --env-file ../.local/cloud.env --var JURISDICTION:",
-    "smoke": "node scripts/smoke.mjs"
+    "assets": "node scripts/gen-assets.mjs",
+    "dev": "node scripts/gen-assets.mjs && wrangler dev --local --port 8790 --ip 127.0.0.1 --persist-to ../.local/cloud-state --env-file ../.local/cloud.env --var JURISDICTION:",
+    "deploy": "node scripts/gen-assets.mjs && wrangler deploy",
+    "e2e": "node scripts/e2e.mjs"
   },
   "devDependencies": {
     "wrangler": "4.150.0"

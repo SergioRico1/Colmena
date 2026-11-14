@@ -76,5 +76,8 @@ eval/report/
 # Impeccable's local hook cache
 .impeccable/hook.cache.json
 
+# The cloud Worker's bundled prompts (cloud/scripts/gen-assets.mjs)
+cloud/src/assets.js
+
 # Wrangler local secrets (cloud/ reads them from .local/cloud.env instead)
 .dev.vars

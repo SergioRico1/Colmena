@@ -1,195 +1,242 @@
-// Colmena hosted, Phase 0 (docs/CLOUD.md): the Worker routes /w/:workspace/* to that
-// workspace's Durable Object, and the object runs the desktop's own store (server/store.mjs) on
-// its SQLite through the DO adapter (server/store-driver.mjs › DoDriver). Store changes go out
-// over hibernating WebSockets (the cloud's replacement for the desktop's SSE).
-//   GET  /w/:ws/info                      {workspace, driver, encrypted, kinds}
-//   GET  /w/:ws/records/:kind             every record of a kind
-//   GET  /w/:ws/records/:kind/:id         one record (404 when missing)
-//   PUT  /w/:ws/records/:kind/:id         store a record (JSON body; its id is the path's)
-//   POST /w/:ws/bench?n=1000              n puts and n gets inside the object (timings in ms)
-//   GET  /w/:ws/ws                        WebSocket: {"op":"put",kind,data,req} in;
-//                                         {"type":"change",…} and {"type":"ack",req} out
-// Every request carries the shared test token (secret CLOUD_TOKEN): `Authorization: Bearer …`,
-// or for a WebSocket the subprotocols ["colmena.v1", "token.<token>"]. Without a configured
-// token, or without WORKSPACE_KEYS (the master of the per-workspace database keys), it refuses.
-import { DurableObject } from "cloudflare:workers";
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { Store } from "../../server/store.mjs";
-import { DoDriver } from "../../server/store-driver.mjs";
+// Colmena hosted, Phase 1 (docs/CLOUD.md): the Worker `colmena-nube`.
+//   /auth/*   sign-in by email link, sessions, companies, roles, invitations (the Directory DO)
+//   /api/*    the signed-in person's company: its Workspace DO runs the desktop's server
+//   /api/live that company's live channel (a hibernating WebSocket)
+//   pages     the built UI (Workers static assets): the app for people signed in and in a
+//             company; /entrar, /empresa and /invitacion (cloud.html) for everyone
+// Secrets: WORKSPACE_KEYS (64 hex: the master of the per-workspace database keys),
+// VAULT_MASTER_KEY (the master of the secrets' envelope encryption), ADMIN_BOOTSTRAP_TOKEN
+// (reads the dev mail while there is no mail provider), RESEND_API_KEY (optional: real mail).
+import { Directory } from "./directory.js";
+import { Workspace } from "./workspace.js";
+import { sendMail } from "./mail.js";
+import { SECURITY_HEADERS, csrfOk, fail, json, pagePolicy, sameOrigin, sameSecret, sessionCookie, sessionToken, withHeaders } from "./http.js";
 
-const NAME = /^[a-z0-9][a-z0-9-]{0,62}$/;
-const KIND = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
-const ID = /^[A-Za-z0-9_.:-]{1,200}$/;
-const PROTOCOL = "colmena.v1";
-const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
-const fail = (status, error) => json({ error }, status);
+export { Directory, Workspace };
 
-function sameSecret(given, expected) {
-  if (typeof given !== "string" || typeof expected !== "string" || !expected) return false;
-  const a = Buffer.from(given), b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
+const CLOUD_PAGES = /^\/(entrar|entrar\/verificar|empresa|empresa\/nueva|invitacion)\/?$/;
+const ID = /^[0-9a-f-]{36}$/;
+const namespace = (env, binding) => (env.JURISDICTION ? binding.jurisdiction(env.JURISDICTION) : binding);
+const directoryStub = (env) => { const n = namespace(env, env.DIRECTORY); return n.get(n.idFromName("directory")); };
+const workspaceStub = (env, id) => { const n = namespace(env, env.WORKSPACE); return n.get(n.idFromName("ws:" + id)); };
+
+class HttpError extends Error {
+  constructor(status, message, extra = {}) { super(message); this.status = status; this.extra = extra; }
 }
-function tokenOf(request) {
-  const bearer = /^Bearer (\S+)$/.exec(request.headers.get("Authorization") || "")?.[1];
-  if (bearer) return bearer;
-  const protocols = (request.headers.get("Sec-WebSocket-Protocol") || "").split(",").map((s) => s.trim());
-  return protocols.find((p) => p.startsWith("token."))?.slice(6) || null;
-}
-/** The 32-byte database key of one workspace: HMAC-SHA256 of its name under the master secret. */
-function workspaceKey(master, workspace) {
-  if (!/^[0-9a-f]{64}$/i.test(master || "")) throw Error("WORKSPACE_KEYS is not configured.");
-  return createHmac("sha256", Buffer.from(master, "hex")).update("colmena-workspace-key-v1\u0000" + workspace).digest();
+/** One directory operation by RPC; its errors come back as HttpError with their status. */
+async function dir(env, method, ...args) {
+  const r = await directoryStub(env).call(method, ...args);
+  if (!r.ok) throw new HttpError(r.status || 500, r.error || "Error.", r.code ? { code: r.code } : {});
+  return r.value;
 }
 
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 0 });
-    const m = /^\/w\/([^/]+)(\/.*)?$/.exec(url.pathname);
-    if (!m) return fail(404, "Not found.");
-    if (!env.CLOUD_TOKEN || !env.WORKSPACE_KEYS) return fail(503, "Not configured.");
-    if (!sameSecret(tokenOf(request), env.CLOUD_TOKEN)) return fail(401, "Unauthorized.");
-    const workspace = decodeURIComponent(m[1]);
-    if (!NAME.test(workspace)) return fail(400, "Invalid workspace name.");
-    const namespace = env.JURISDICTION ? env.WORKSPACE.jurisdiction(env.JURISDICTION) : env.WORKSPACE;
-    const stub = namespace.get(namespace.idFromName(workspace));
-    const headers = new Headers(request.headers);
-    headers.set("X-Colmena-Workspace", workspace);
-    headers.set("X-Colmena-Path", m[2] || "/");
-    return stub.fetch(new Request(request, { headers }));
+  async fetch(request, env, ctx) {
+    try {
+      return await route(request, env, ctx);
+    } catch (error) {
+      if (error instanceof HttpError) return fail(error.status, error.message, error.extra);
+      console.error("colmena-nube: " + (error?.stack || error));
+      return fail(500, "Algo ha fallado. Prueba otra vez.");
+    }
   },
 };
 
-export class Workspace extends DurableObject {
-  constructor(ctx, env) {
-    super(ctx, env);
-    this.store = null;
-    this.workspace = null;
+async function route(request, env, ctx) {
+  const url = new URL(request.url);
+  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 1 });
+  if (!env.WORKSPACE_KEYS) return fail(503, "Colmena en la nube no está configurada todavía.");
+  if (url.pathname.startsWith("/auth/")) return auth(request, env, url, ctx);
+  if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return api(request, env, url);
+  return page(request, env, url);
+}
+
+// ------------------------------------------------------------------ who is asking
+/** The signed-in person, or null; `cookie`: the Set-Cookie a replaced (or dead) token needs. */
+async function who(request, env, url) {
+  const token = sessionToken(request);
+  if (!token) return null;
+  const s = await dir(env, "session", token);
+  if (!s) return { cookie: sessionCookie(url, null) };
+  return { ...s, token: s.rotated?.token || token, cookie: s.rotated ? sessionCookie(url, s.rotated.token, s.rotated.expiresAt - Date.now()) : null };
+}
+const finish = (response, me) => (me?.cookie ? withHeaders(response, { "Set-Cookie": me.cookie }) : response);
+/** `origin`: an Origin header is required (a WebSocket: it cannot carry the CSRF header). */
+async function must(request, env, url, { write = false, origin = false } = {}) {
+  if (!sameOrigin(request, { write: write || origin })) throw new HttpError(403, "Petición externa no permitida.");
+  const me = await who(request, env, url);
+  if (!me?.user) throw new HttpError(401, "Inicia sesión.", { signIn: "/entrar" });
+  if (write && !csrfOk(request, me.session.csrf)) throw new HttpError(403, "Tu sesión ha cambiado. Recarga la página.");
+  return me;
+}
+async function body(request) {
+  if (!(request.headers.get("Content-Type") || "").includes("application/json")) throw new HttpError(415, "Se requiere JSON.");
+  const text = await request.text();
+  if (text.length > 20000) throw new HttpError(413, "La petición es demasiado grande.");
+  try { return text ? JSON.parse(text) : {}; } catch { throw new HttpError(400, "La petición no es un JSON válido."); }
+}
+const ipOf = (request) => request.headers.get("CF-Connecting-IP") || "local";
+const personOf = (me) => ({ id: me.user.id, name: me.user.name, email: me.user.email, role: me.session.role });
+
+/** The workspace's own list of people follows the directory's (and its name). */
+async function syncWorkspace(env, workspaceId) {
+  const [members, workspace] = await Promise.all([dir(env, "members", workspaceId), dir(env, "workspace", workspaceId)]);
+  await workspaceStub(env, workspaceId).syncMembers(workspaceId, members, workspace?.name || null);
+  return members;
+}
+async function mailOut(env, mail) {
+  return sendMail(env, mail, { keep: (m) => dir(env, "keepDevMail", m) });
+}
+
+// ------------------------------------------------------------------ /auth
+async function auth(request, env, url) {
+  const p = url.pathname, m = request.method;
+  // Sign-in: a link by mail. The same answer whether or not the address has an account.
+  if (p === "/auth/link" && m === "POST") {
+    if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
+    const data = await body(request);
+    const link = await dir(env, "requestLink", { email: data.email, ip: ipOf(request), next: data.next });
+    const sent = await mailOut(env, { to: link.email, kind: "signin", url: url.origin + "/entrar/verificar#t=" + link.token });
+    return json({ ok: true, email: link.email, delivery: sent.sent ? "email" : "dev" }, 202);
   }
-  /** The workspace's store, opened once per wake-up (the name comes with every request and socket). */
-  open(workspace) {
-    if (this.store) {
-      if (workspace !== this.workspace) throw Error("Workspace mismatch.");
-      return this.store;
-    }
-    const store = new Store(null, { driver: new DoDriver(this.ctx.storage), keyProvider: () => workspaceKey(this.env.WORKSPACE_KEYS, workspace) });
-    // The same object always serves the same name (idFromName); written once, checked after.
-    const mark = store.get("cloud", "workspace");
-    if (!mark) store.put("cloud", { id: "workspace", name: workspace, createdAt: new Date().toISOString() }, { silent: true });
-    else if (mark.name !== workspace) throw Error("Workspace mismatch.");
-    store.listeners.add((change) => this.broadcast(change));
-    this.store = store;
-    this.workspace = workspace;
-    return store;
+  if (p === "/auth/verify" && m === "POST") {
+    if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
+    const data = await body(request);
+    const done = await dir(env, "verifyLink", { token: String(data.token || ""), agent: request.headers.get("User-Agent"), ip: ipOf(request) });
+    if (done.session.workspaceId) await syncWorkspace(env, done.session.workspaceId);
+    return json({ ok: true, user: done.user, next: done.next, isNew: done.isNew, workspaceId: done.session.workspaceId }, 200, { "Set-Cookie": sessionCookie(url, done.session.token, done.session.expiresAt - Date.now()) });
   }
-  broadcast(change) {
-    const text = JSON.stringify({ type: "change", change });
-    for (const ws of this.ctx.getWebSockets()) {
-      try { ws.send(text); } catch {}
-    }
+  // What an invitation shows before signing in (the token in the body, never in a URL).
+  if (p === "/auth/invitations/preview" && m === "POST") {
+    if (!sameOrigin(request, { write: true })) throw new HttpError(403, "Petición externa no permitida.");
+    const data = await body(request);
+    return json(await dir(env, "previewInvitation", String(data.token || "")));
   }
-  async fetch(request) {
-    const workspace = request.headers.get("X-Colmena-Workspace");
-    const route = request.headers.get("X-Colmena-Path") || "/";
-    let store;
-    try {
-      store = this.open(workspace);
-    } catch (error) {
-      return fail(500, error.message);
-    }
-    const url = new URL(request.url);
-    if (route === "/ws") {
-      if (request.headers.get("Upgrade") !== "websocket") return fail(426, "WebSocket expected.");
-      const pair = new WebSocketPair();
-      this.ctx.acceptWebSocket(pair[1]);
-      pair[1].serializeAttachment({ workspace });
-      return new Response(null, { status: 101, webSocket: pair[0], headers: { "Sec-WebSocket-Protocol": PROTOCOL } });
-    }
-    if (route === "/info" && request.method === "GET") {
-      const kinds = Object.fromEntries(this.ctx.storage.sql.exec("SELECT kind, count(*) AS n FROM records GROUP BY kind").toArray().map((r) => [r.kind, r.n]));
-      return json({ workspace, driver: store.db.kind, encrypted: store.encrypted, kinds, sockets: this.ctx.getWebSockets().length, bytes: this.ctx.storage.sql.databaseSize });
-    }
-    if (route === "/bench" && request.method === "POST") {
-      const n = Math.min(Math.max(Number(url.searchParams.get("n")) || 1000, 1), 10000);
-      const t0 = performance.now();
-      for (let i = 0; i < n; i++) store.put("bench", { id: "b" + i, n: i, text: "x".repeat(200) }, { silent: true });
-      const t1 = performance.now();
-      for (let i = 0; i < n; i++) if (!store.get("bench", "b" + i)) return fail(500, "Lost a record.");
-      const t2 = performance.now();
-      const listed = store.list("bench").length;
-      const t3 = performance.now();
-      // Deployed, workerd's clock only advances on I/O (Spectre mitigation), so these may read 0:
-      // the smoke also times the whole request from outside, minus one empty round trip.
-      return json({ n, putMs: t1 - t0, getMs: t2 - t1, listMs: t3 - t2, listed });
-    }
-    if (route === "/selftest" && request.method === "POST") return json(this.selftest());
-    const r = /^\/records\/([^/]+)(?:\/([^/]+))?$/.exec(route);
-    if (r) {
-      const kind = decodeURIComponent(r[1]), id = r[2] ? decodeURIComponent(r[2]) : null;
-      if (!KIND.test(kind) || kind === "cloud" || (id !== null && !ID.test(id))) return fail(400, "Invalid kind or id.");
-      if (request.method === "GET" && id === null) return json(store.list(kind));
-      if (request.method === "GET") {
-        const record = store.get(kind, id);
-        return record ? json(record) : fail(404, "No such record.");
-      }
-      if (request.method === "PUT" && id !== null) {
-        let body;
-        try { body = await request.json(); } catch { return fail(400, "JSON body expected."); }
-        if (!body || typeof body !== "object" || Array.isArray(body)) return fail(400, "A JSON object expected.");
-        return json(store.put(kind, { ...body, id }));
-      }
-    }
-    return fail(404, "Not found.");
+  // Dev mail (no provider yet): only for the holder of ADMIN_BOOTSTRAP_TOKEN.
+  if (p === "/auth/dev/mail" && m === "GET") {
+    const bearer = /^Bearer (\S+)$/.exec(request.headers.get("Authorization") || "")?.[1];
+    if (env.RESEND_API_KEY || !env.ADMIN_BOOTSTRAP_TOKEN || !sameSecret(bearer || "", env.ADMIN_BOOTSTRAP_TOKEN)) throw new HttpError(404, "No encontrado.");
+    return json(await dir(env, "devMail", url.searchParams.get("email") || ""));
   }
-  /** What the real DO SQL does with what the fake (server/do-sql-fake.mjs) assumes. */
-  selftest() {
-    const sql = this.ctx.storage.sql;
-    const attempt = (fn) => { try { return { ok: true, value: fn() }; } catch (error) { return { ok: false, error: String(error.message).slice(0, 160) }; } };
-    const out = {};
-    out.begin = attempt(() => sql.exec("BEGIN").toArray());
-    out.pragmaJournal = attempt(() => sql.exec("PRAGMA journal_mode").toArray());
-    out.pragmaTableList = attempt(() => sql.exec("PRAGMA table_list").toArray().length);
-    out.tables = attempt(() => sql.exec("SELECT name FROM sqlite_master WHERE type='table'").toArray().map((r) => r.name));
-    out.multiStatement = attempt(() => sql.exec("CREATE TABLE IF NOT EXISTS selftest (a TEXT, b BLOB); DELETE FROM selftest; SELECT 7 AS x").one().x);
-    out.fts5 = attempt(() => {
-      sql.exec("CREATE VIRTUAL TABLE IF NOT EXISTS selftest_fts USING fts5(text, tokenize='unicode61 remove_diacritics 2')");
-      sql.exec("INSERT INTO selftest_fts(text) VALUES(?)", "Informe de facturación");
-      const hits = sql.exec("SELECT text FROM selftest_fts WHERE selftest_fts MATCH ? ORDER BY bm25(selftest_fts)", '"facturacion"*').toArray().length;
-      sql.exec("DROP TABLE selftest_fts");
-      return hits;
-    });
-    out.blobRoundTrip = attempt(() => {
-      sql.exec("INSERT INTO selftest(b) VALUES(?)", new Uint8Array([1, 2, 3]).buffer);
-      const b = sql.exec("SELECT b FROM selftest").one().b;
-      return { type: Object.prototype.toString.call(b), bytes: [...new Uint8Array(b)] };
-    });
-    out.typedArrayBinding = attempt(() => sql.exec("INSERT INTO selftest(b) VALUES(?)", new Uint8Array([4])).rowsWritten);
-    out.changesAfterWrite = attempt(() => { sql.exec("UPDATE selftest SET a='x'").toArray(); return sql.exec("SELECT changes() AS c, last_insert_rowid() AS r").one(); });
-    out.rowsWrittenOfOneUpdate = attempt(() => sql.exec("UPDATE selftest SET a='y' WHERE rowid=1").rowsWritten);
-    out.value2MBplus = attempt(() => sql.exec("INSERT INTO selftest(a) VALUES(?)", "x".repeat(2 * 1024 * 1024 + 10)).rowsWritten);
-    out.value1MB = attempt(() => sql.exec("INSERT INTO selftest(a) VALUES(?)", "x".repeat(1024 * 1024)).rowsWritten);
-    out.bindings101 = attempt(() => sql.exec("SELECT " + Array(101).fill("?").join(","), ...Array(101).fill(1)).toArray().length);
-    out.nestedTransactionSync = attempt(() => this.ctx.storage.transactionSync(() => this.ctx.storage.transactionSync(() => 1)));
-    out.rowPrototype = attempt(() => Object.getPrototypeOf(sql.exec("SELECT 1 AS x").one()) === Object.prototype);
-    sql.exec("DROP TABLE IF EXISTS selftest");
-    return out;
+
+  if (p === "/auth/me" && m === "GET") {
+    if (!sameOrigin(request)) throw new HttpError(403, "Petición externa no permitida.");
+    const me = await who(request, env, url);
+    if (!me?.user) return finish(fail(401, "Inicia sesión.", { signIn: "/entrar" }), me);
+    const workspaces = await dir(env, "workspacesOf", me.user.id);
+    const current = workspaces.find((w) => w.id === me.session.workspaceId) || null;
+    return finish(json({ user: me.user, workspaces, current, csrf: me.session.csrf, mail: env.RESEND_API_KEY ? "email" : "dev" }), me);
   }
-  async webSocketMessage(ws, message) {
-    let msg;
-    try { msg = JSON.parse(typeof message === "string" ? message : new TextDecoder().decode(message)); } catch { return; }
-    const { workspace } = ws.deserializeAttachment() || {};
-    try {
-      const store = this.open(workspace);
-      if (msg.op === "put" && KIND.test(msg.kind || "") && msg.kind !== "cloud" && ID.test(msg.data?.id || "")) {
-        store.put(msg.kind, msg.data);
-        ws.send(JSON.stringify({ type: "ack", req: msg.req ?? null }));
-      } else if (msg.op === "ping") ws.send(JSON.stringify({ type: "pong", req: msg.req ?? null }));
-      else ws.send(JSON.stringify({ type: "error", req: msg.req ?? null, error: "Unknown or invalid message." }));
-    } catch (error) {
-      ws.send(JSON.stringify({ type: "error", req: msg.req ?? null, error: error.message }));
-    }
+  const write = !["GET", "HEAD"].includes(m);
+  const me = await must(request, env, url, { write });
+  const reply = (data, status = 200) => finish(json(data, status), me);
+  if (p === "/auth/me" && m === "PATCH") {
+    const user = await dir(env, "rename", me.user.id, (await body(request)).name);
+    for (const w of await dir(env, "workspacesOf", me.user.id)) await syncWorkspace(env, w.id);
+    return reply({ user });
   }
-  async webSocketClose(ws, code) {
-    try { ws.close(code, "bye"); } catch {}
+  if (p === "/auth/logout" && m === "POST") {
+    await dir(env, "logout", me.token);
+    return json({ ok: true }, 200, { "Set-Cookie": sessionCookie(url, null) });
   }
+  if (p === "/auth/workspaces" && m === "POST") {
+    const created = await dir(env, "createWorkspace", me.user.id, (await body(request)).name);
+    await dir(env, "selectWorkspace", me.token, created.id);
+    await syncWorkspace(env, created.id);
+    return reply({ workspace: created }, 201);
+  }
+  if (p === "/auth/workspaces/select" && m === "POST") {
+    const { id } = await body(request);
+    if (!ID.test(String(id || ""))) throw new HttpError(400, "Empresa no válida.");
+    const chosen = await dir(env, "selectWorkspace", me.token, id);
+    await syncWorkspace(env, id);
+    return reply(chosen);
+  }
+  if (p === "/auth/invitations/accept" && m === "POST") {
+    const accepted = await dir(env, "acceptInvitation", String((await body(request)).token || ""), me.user.id);
+    await dir(env, "selectWorkspace", me.token, accepted.workspaceId);
+    await syncWorkspace(env, accepted.workspaceId);
+    return reply(accepted);
+  }
+
+  // ---- the current company (owners and admins manage it; everyone sees who is in it)
+  const workspaceId = me.session.workspaceId;
+  if (!workspaceId) throw new HttpError(409, "Elige una empresa.", { choose: "/empresa" });
+  const role = me.session.role;
+  if (p === "/auth/workspace" && m === "GET") {
+    const [workspace, members] = await Promise.all([dir(env, "workspace", workspaceId), dir(env, "members", workspaceId)]);
+    const invitations = ["owner", "admin"].includes(role) ? await dir(env, "invitations", workspaceId, me.user.id) : [];
+    return reply({ workspace, role, me: me.user, members, invitations });
+  }
+  if (p === "/auth/workspace" && m === "PATCH") {
+    const workspace = await dir(env, "renameWorkspace", workspaceId, me.user.id, (await body(request)).name);
+    await syncWorkspace(env, workspaceId);
+    return reply({ workspace });
+  }
+  if (p === "/auth/workspace/invitations" && m === "POST") {
+    const data = await body(request);
+    const made = await dir(env, "invite", workspaceId, me.user.id, { email: data.email, role: data.role || "member" });
+    const link = url.origin + "/invitacion#t=" + made.token;
+    const workspace = await dir(env, "workspace", workspaceId);
+    const sent = await mailOut(env, { to: made.invitation.email, kind: "invite", url: link, workspace: workspace?.name, inviter: me.user.name });
+    // Whoever invites may pass the link on themselves: it only works for that address, signed in.
+    return reply({ invitation: made.invitation, link, delivery: sent.sent ? "email" : "dev" }, 201);
+  }
+  let r = /^\/auth\/workspace\/invitations\/([0-9a-f-]{36})$/.exec(p);
+  if (r && m === "DELETE") return reply(await dir(env, "revokeInvitation", workspaceId, me.user.id, r[1]));
+  r = /^\/auth\/workspace\/members\/([0-9a-f-]{36})$/.exec(p);
+  if (r && m === "PATCH") {
+    const changed = await dir(env, "setRole", workspaceId, me.user.id, r[1], String((await body(request)).role || ""));
+    await syncWorkspace(env, workspaceId);
+    return reply(changed);
+  }
+  if (r && m === "DELETE") {
+    const removed = await dir(env, "removeMember", workspaceId, me.user.id, r[1]);
+    await syncWorkspace(env, workspaceId);
+    await workspaceStub(env, workspaceId).revokePerson(workspaceId, r[1]);
+    return reply(removed);
+  }
+  if (p === "/auth/workspace/leave" && m === "POST") {
+    const removed = await dir(env, "removeMember", workspaceId, me.user.id, me.user.id);
+    await syncWorkspace(env, workspaceId);
+    await workspaceStub(env, workspaceId).revokePerson(workspaceId, me.user.id);
+    return json(removed, 200, { "Set-Cookie": sessionCookie(url, null) });
+  }
+  throw new HttpError(404, "No encontrado.");
+}
+
+// ------------------------------------------------------------------ /api → the company's object
+async function api(request, env, url) {
+  const write = !["GET", "HEAD", "OPTIONS"].includes(request.method);
+  const live = url.pathname === "/api/live";
+  const me = await must(request, env, url, { write, origin: live });
+  if (url.pathname === "/api/bootstrap") return finish(json({ csrf: me.session.csrf }), me);
+  const workspaceId = me.session.workspaceId;
+  if (!workspaceId) return finish(fail(409, "Elige una empresa.", { choose: "/empresa" }), me);
+  const headers = new Headers(request.headers);
+  // Only the Worker says who is asking: whatever a browser sent under these names goes.
+  for (const name of [...headers.keys()]) if (name.toLowerCase().startsWith("x-colmena-") && name.toLowerCase() !== "x-colmena-token") headers.delete(name);
+  headers.delete("Cookie");
+  headers.set("X-Colmena-Workspace", workspaceId);
+  headers.set("X-Colmena-Person", JSON.stringify(personOf(me)));
+  const response = await workspaceStub(env, workspaceId).fetch(new Request(request, { headers }));
+  return live ? response : finish(response, me);
+}
+
+// ------------------------------------------------------------------ pages
+async function page(request, env, url) {
+  if (!["GET", "HEAD"].includes(request.method)) return fail(405, "Método no permitido.");
+  const p = url.pathname;
+  // Files of the build (scripts, styles, fonts, images): public, cached by the platform.
+  if (/\/[^/]+\.[A-Za-z0-9]{1,8}$/.test(p) && !/\.html?$/i.test(p)) return env.ASSETS.fetch(request);
+  const headers = { ...SECURITY_HEADERS, "Content-Security-Policy": pagePolicy(url), "Cache-Control": "no-store" };
+  const asset = (name) => env.ASSETS.fetch(new Request(new URL(name, url), { headers: request.headers }));
+  if (CLOUD_PAGES.test(p)) return withHeaders(await asset("/cloud.html"), headers);
+  const me = await who(request, env, url);
+  const go = (to) => finish(new Response(null, { status: 302, headers: { Location: to, ...SECURITY_HEADERS } }), me);
+  if (!me?.user) return go("/entrar" + (p === "/" ? "" : "?next=" + encodeURIComponent(p + url.search)));
+  if (!me.session.workspaceId) return go("/empresa");
+  // The app, marked as hosted (src/lib/cloud.js reads the mark).
+  const app = new HTMLRewriter().on("head", { element(e) { e.append('<meta name="colmena-host" content="cloud">', { html: true }); } }).transform(await asset("/index.html"));
+  return finish(withHeaders(app, headers), me);
 }
