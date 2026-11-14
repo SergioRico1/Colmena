@@ -31,6 +31,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 ## Unresolved
 
-- Bots in web channels are phase 3 in docs/CLOUD.md at this revision; copy says bots work from the desktop app today and are on their way to web channels.
+- Phase 3 (docs/CLOUD.md) shipped: bots answer @mentions in web channels and routines run in the cloud. Hosted bots use each person's API keys; ChatGPT and Claude subscriptions only through the desktop app (providers' terms). Código stays desktop-only (engines in Containers are phase 4).
 - Owner data for legal pages is pending (`[PENDIENTE: datos del titular]`).
 - Prices are not published; the FAQ says so.
