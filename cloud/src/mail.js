@@ -42,6 +42,9 @@ function page(intro, url, action, foot) {
  */
 export async function sendMail(env, { to, kind, url, workspace = null, inviter = null, items = [], name = null }, { keep = async () => {}, fetchImpl = fetch } = {}) {
   const mail = composeMail(kind, { url, workspace, inviter, items, name });
+  // Reserved test domains (RFC 2606/6761) never reach a real provider: test accounts read their
+  // links from the dev outbox, and the sending domain keeps a clean reputation.
+  if (isTestAddress(to)) return devMail(kind, to, url, keep);
   // Cloudflare Email Sending (a `send_email` binding named SEND_EMAIL, a sending domain on one of
   // the account's zones): preferred when bound.
   if (env.SEND_EMAIL?.send && env.MAIL_FROM_ADDRESS) {
@@ -57,11 +60,18 @@ export async function sendMail(env, { to, kind, url, workspace = null, inviter =
     if (!response.ok) throw Error("mail provider answered " + response.status);
     return { sent: true };
   }
-  // Dev fallback: the log (wrangler tail) and the directory's outbox; never the response.
+  return devMail(kind, to, url, keep);
+}
+
+/** Dev fallback: the log (wrangler tail) and the directory's outbox; never the response. */
+async function devMail(kind, to, url, keep) {
   console.log(`[colmena-nube] correo de desarrollo (${kind}) para ${to}: ${url}`);
   await keep({ email: to, kind, url });
   return { sent: false, dev: true };
 }
+
+/** An address on a reserved test domain: example.com/.net/.org or a .test/.example/.invalid/.localhost name. */
+export const isTestAddress = (to) => /@(?:[^@\s]+\.)?(?:example\.(?:com|net|org)|[^@\s]+\.(?:test|example|invalid|localhost))$/i.test(String(to || "").trim());
 
 /** A real mail provider is configured (no dev fallback). */
 export const hasMail = (env) => !!((env.SEND_EMAIL?.send && env.MAIL_FROM_ADDRESS) || env.RESEND_API_KEY);

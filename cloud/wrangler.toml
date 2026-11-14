@@ -10,6 +10,9 @@ compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 preview_urls = false
+# The app lives at app.colmena.team (workers.dev stays on for tests).
+routes = [{ pattern = "app.colmena.team", custom_domain = true }]
+
 
 [vars]
 # Workspaces and the directory live in the EU: the jurisdiction is chosen per namespace at
@@ -20,11 +23,16 @@ JURISDICTION = "eu"
 # (a [[send_email]] binding named SEND_EMAIL plus MAIL_FROM_ADDRESS on that domain), or Resend
 # (secret RESEND_API_KEY, sender MAIL_FROM). With neither, the dev fallback.
 MAIL_FROM = "Colmena <onboarding@resend.dev>"
+# The sending domain colmena.team (Email Sending enabled, DKIM/SPF/DMARC records on the zone).
+MAIL_FROM_ADDRESS = "acceso@colmena.team"
 # Links in mails sent from a workspace's alarm (the digest of unread mentions) need the site.
-PUBLIC_URL = "https://colmena-nube.klast-lab-fa693a.workers.dev"
+PUBLIC_URL = "https://app.colmena.team"
 # Web Push (server/cloud/webpush.mjs): the VAPID pair is the secrets VAPID_PUBLIC_KEY and
 # VAPID_PRIVATE_KEY (cloud/scripts/vapid-keys.mjs); this is who push services may contact.
-VAPID_SUBJECT = "https://colmena-nube.klast-lab-fa693a.workers.dev"
+VAPID_SUBJECT = "https://app.colmena.team"
+
+[[send_email]]
+name = "SEND_EMAIL"
 
 [assets]
 directory = "../dist"

@@ -11,7 +11,7 @@
 // SECRET (optional: each pair turns on «Continuar con …» on /entrar; cloud/src/oauth.js).
 import { Directory } from "./directory.js";
 import { Workspace } from "./workspace.js";
-import { hasMail, sendMail } from "./mail.js";
+import { hasMail, isTestAddress, sendMail } from "./mail.js";
 import { OAuthError, authorizationUrl, bindingCookie, bindingFromRequest, enabledProviders, exchangeCode, providerConfig } from "./oauth.js";
 import { SECURITY_HEADERS, csrfOk, fail, json, pagePolicy, sameOrigin, sameSecret, sessionCookie, sessionToken, withHeaders } from "./http.js";
 
@@ -197,11 +197,12 @@ async function auth(request, env, url) {
     const data = await body(request);
     return json(await dir(env, "previewInvitation", String(data.token || "")));
   }
-  // Dev mail (no provider yet): only for the holder of ADMIN_BOOTSTRAP_TOKEN.
+  // Dev mail (no provider yet, or a reserved test address): only for the holder of ADMIN_BOOTSTRAP_TOKEN.
   if (p === "/auth/dev/mail" && m === "GET") {
     const bearer = /^Bearer (\S+)$/.exec(request.headers.get("Authorization") || "")?.[1];
-    if (hasMail(env) || !env.ADMIN_BOOTSTRAP_TOKEN || !sameSecret(bearer || "", env.ADMIN_BOOTSTRAP_TOKEN)) throw new HttpError(404, "No encontrado.");
-    return json(await dir(env, "devMail", url.searchParams.get("email") || ""));
+    const email = url.searchParams.get("email") || "";
+    if ((hasMail(env) && !isTestAddress(email)) || !env.ADMIN_BOOTSTRAP_TOKEN || !sameSecret(bearer || "", env.ADMIN_BOOTSTRAP_TOKEN)) throw new HttpError(404, "No encontrado.");
+    return json(await dir(env, "devMail", email));
   }
 
   if (p === "/auth/me" && m === "GET") {
