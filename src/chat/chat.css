@@ -51,7 +51,7 @@
 
 /* ── Counts, dots, chips ──────────────────────────────────────────────────────────────────── */
 .ch-count{flex:none;display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:var(--r-pill);background:var(--c-unread-bg);color:var(--c-unread-fg);font:600 var(--t-micro)/1 'Geist',sans-serif;font-variant-numeric:tabular-nums}
-.ch-count.is-strong{background:var(--c-accent);color:var(--c-on-accent)}
+.ch-count.is-strong{background:var(--c-accent-ink);color:var(--c-on-accent)}
 .ch-dot{flex:none;display:inline-block;width:8px;height:8px;border-radius:var(--r-circle);box-sizing:border-box}
 .ch-dot.is-on{background:var(--c-ok)}
 .ch-dot.is-away{border:1.5px solid var(--c-text-3)}

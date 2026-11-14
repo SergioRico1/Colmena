@@ -72,6 +72,30 @@ export const auth = {
   },
 };
 
+/**
+ * The company's own server (/api/*, the app's routes), for the guided start: the workspace's CSRF
+ * token comes from /api/bootstrap once, as the app gets it.
+ */
+let appToken = null;
+export async function app(path, method = "GET", data) {
+  const headers = {};
+  if (method !== "GET") {
+    if (!appToken) { try { appToken = (await (await fetch("/api/bootstrap", { credentials: "same-origin" })).json()).csrf; } catch { appToken = null; } }
+    headers["Content-Type"] = "application/json";
+    if (appToken) headers["X-Colmena-Token"] = appToken;
+  }
+  let response;
+  try {
+    response = await fetch("/api" + path, { method, headers, credentials: "same-origin", ...(data !== undefined ? { body: JSON.stringify(data) } : {}) });
+  } catch {
+    throw new AuthError("No hay conexión. Comprueba tu red y vuelve a probar.", 0);
+  }
+  let out = null;
+  try { out = await response.json(); } catch {}
+  if (!response.ok) throw new AuthError(out?.error || "No se pudo completar. Prueba otra vez.", response.status, out);
+  return out;
+}
+
 /** The token a mail link carries after «#t=» (never sent to the server in a URL). */
 export function tokenFromHash() {
   const t = new URLSearchParams(location.hash.slice(1)).get("t");

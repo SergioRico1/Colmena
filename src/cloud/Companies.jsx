@@ -6,6 +6,8 @@ import { ArrowRight, ChatCircleText, Check, CircleAlert, Copy, DoorOpen, LogOut,
 import { Shell } from "./Shell.jsx";
 import { auth, me, unnamed } from "./api.js";
 import { YourName } from "./YourName.jsx";
+import { Roster } from "./Roster.jsx";
+import { SEEDED_TEAM } from "../lib/hive.js";
 
 const ROLE_LABEL = { owner: "Propietario", admin: "Administra", member: "Miembro", guest: "Invitado" };
 const initials = (name) => String(name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || "").join("") || "?";
@@ -24,16 +26,16 @@ export function Companies() {
       <button type="button" className="cl-iconbtn" onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={18} /></button>
     </div>
   ) : null;
-  if (!who) return <Shell wide right={right}>{error ? <Problem text={error} /> : <div className="cl-skeleton" style={{ width: "40%", height: 28 }} />}</Shell>;
+  if (!who) return <Shell right={right}>{error ? <Problem text={error} /> : <div className="cl-skeleton" style={{ width: "40%", height: 28 }} />}</Shell>;
   const open = async (id) => {
     setError(null);
     try { await auth.select(id); location.assign("/"); } catch (e) { setError(e.message); }
   };
   const hasAny = who.workspaces.length > 0;
   return (
-    <Shell wide right={right}>
+    <Shell wide={hasAny || !!who.current} right={right} asleep={!hasAny}>
       <h1 className="cl-title">{hasAny ? "Tus empresas" : "Crea tu empresa"}</h1>
-      <p className="cl-lead">{hasAny ? "Elige dónde trabajar o crea otra. Cada empresa tiene sus propios canales, personas y bots." : "El chat de tu equipo y de sus bots: canales, hilos y mensajes directos. Empiezas en #general, con seis bots que trabajan con tu cuenta de IA. ¿Te han invitado a una empresa que ya existe? Abre el enlace de tu invitación."}</p>
+      <p className="cl-lead">{hasAny ? "Elige dónde trabajar o crea otra. Cada empresa tiene sus propios canales, personas y bots." : "El chat de tu equipo y de sus bots. Ponle nombre y tus seis bots llegan con ella. ¿Te han invitado a una que ya existe? Abre el enlace de tu invitación."}</p>
       <Problem text={error} />
       <ForYou onError={setError} />
       {hasAny ? (
@@ -92,6 +94,22 @@ function ForYou({ onError }) {
   );
 }
 
+/**
+ * The team arriving: one seeded bot takes its cell per letter of the company's name (all six
+ * once it has six), asleep until an AI account wakes them in /empezar.
+ */
+function Arriving({ count }) {
+  const items = SEEDED_TEAM.map((b, i) => (i < count
+    ? { kind: "bot", key: b.id, bot: b, asleep: true, name: b.name, line: b.role, fresh: true }
+    : { kind: "empty", key: b.id }));
+  return (
+    <div className="cl-below" style={{ marginTop: 22 }}>
+      <p className="cl-below-label" id="arriving-label">{count >= SEEDED_TEAM.length ? "Tu equipo ya está aquí, dormido. Lo despiertas en el paso siguiente." : "Tu equipo llega con el nombre."}</p>
+      <Roster items={items} label="Los bots de tu empresa" />
+    </div>
+  );
+}
+
 function CreateCompany({ first, user, onError }) {
   const [openForm, setOpen] = useState(first);
   const askName = first && unnamed(user);
@@ -105,7 +123,8 @@ function CreateCompany({ first, user, onError }) {
     try {
       if (askName && person.trim()) await auth.rename(person.trim());
       await auth.createWorkspace(name.trim());
-      location.assign("/");
+      // The guided start: your AI, your bots, your team, a first request (Setup.jsx).
+      location.assign("/empezar");
     } catch (err) { setBusy(false); onError(err.message); }
   };
   if (!openForm) return <button type="button" className="cl-btn ghost small" style={{ marginTop: 16, alignSelf: "flex-start" }} onClick={() => setOpen(true)}><Plus size={14} />Crear otra empresa</button>;
@@ -117,9 +136,10 @@ function CreateCompany({ first, user, onError }) {
         <input className="cl-input" autoFocus={first && !askName} maxLength={60} required placeholder="Por ejemplo, Estudio Norte" value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <div className="cl-row">
-        <button className="cl-btn" type="submit" disabled={busy || !name.trim() || (askName && !person.trim())}>{busy ? "Creando…" : "Crear y entrar"}</button>
+        <button className="cl-btn" type="submit" disabled={busy || !name.trim() || (askName && !person.trim())}>{busy ? "Creando…" : "Crear y entrar"}{busy ? null : <ArrowRight size={16} />}</button>
         {first ? null : <button type="button" className="cl-btn ghost" onClick={() => setOpen(false)}>Cancelar</button>}
       </div>
+      {first ? <Arriving count={Math.min(SEEDED_TEAM.length, name.trim().length)} /> : null}
     </form>
   );
 }

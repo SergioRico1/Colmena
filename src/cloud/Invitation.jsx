@@ -6,6 +6,7 @@ import { ArrowRight, CircleAlert, UsersThree } from "../components/Icon.js";
 import { Shell } from "./Shell.jsx";
 import { auth, me, tokenFromHash, unnamed } from "./api.js";
 import { YourName } from "./YourName.jsx";
+import { Roster } from "./Roster.jsx";
 
 const KEY = "colmena:invitation";
 const ROLE = { admin: "para administrarla", member: "como miembro", guest: "como invitado" };
@@ -39,7 +40,8 @@ export function Invitation() {
       if (unnamed(view.who?.user) && person.trim()) await auth.rename(person.trim());
       await auth.acceptInvite(token);
       forget();
-      location.replace("/");
+      // The guided start, short for someone who joins: your AI, the company's bots, a first request.
+      location.replace("/empezar");
     } catch (error) {
       setBusy(false);
       setView((v) => ({ ...v, failure: error.message }));
@@ -57,8 +59,21 @@ export function Invitation() {
   const { invite, who } = view;
   const wrongPerson = who?.user && who.user.email !== invite.email;
   const closed = invite.accepted || invite.expired;
+  // Who is already in the hive: the people (circles) and the company's bots.
+  const team = closed ? [] : [
+    ...(invite.people || []).map((name, i) => ({ kind: "person", key: "p" + i, name, fresh: true })),
+    ...(invite.bots || []).map((b) => ({ kind: "bot", key: "b" + b.id, bot: b, name: b.name, line: b.role, fresh: true })),
+  ];
+  const others = Math.max(0, (invite.count || 0) - (invite.people || []).length);
+  const hiveBots = (invite.bots || []).length ? invite.bots : undefined;
   return (
-    <Shell>
+    <Shell bots={hiveBots} below={team.length ? (
+      <section className="cl-card cl-team" aria-labelledby="team-head">
+        <h2 className="cl-h2" id="team-head" style={{ marginTop: 0 }}>Quién hay en {invite.workspace}</h2>
+        <p className="cl-sub">{[invite.count === 1 ? "1 persona" : `${invite.count || 0} personas`, (invite.bots || []).length ? `${invite.bots.length} bots` : null].filter(Boolean).join(" y ")}{others ? `. Ves a ${(invite.people || []).length} de ellas.` : "."}</p>
+        <Roster items={team} label={`Personas y bots de ${invite.workspace}`} />
+      </section>
+    ) : null}>
       <span className="cl-sent-mark" style={{ marginBottom: 20 }}><UsersThree size={28} /></span>
       <h1 className="cl-title">{invite.inviter} te invita a {invite.workspace}</h1>
       <p className="cl-lead">Entrarás {ROLE[invite.role] || "como miembro"}. La invitación es para <strong>{invite.email}</strong>.</p>

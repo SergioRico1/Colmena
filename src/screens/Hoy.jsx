@@ -60,6 +60,14 @@ export default function Hoy({ query = {} }) {
   const store = useStore();
   // Links of v1 (/bandeja?aprobacion=…) open that request in Revisar.
   useEffect(() => { if (query.aprobacion) navigate(`/revisar/${encodeURIComponent(query.aprobacion)}`, { replace: true }); }, [query.aprobacion]);
+  // Hosted Colmena: a guided start left half-way (src/cloud/Setup.jsx) resumes where it was, once
+  // per visit; «Ir a Colmena» there marks it finished, so it never comes back after that.
+  const onboarding = store.cloud?.onboarding;
+  useEffect(() => {
+    if (!onboarding?.started || onboarding.finished) return;
+    try { if (sessionStorage.getItem("colmena.resumed")) return; sessionStorage.setItem("colmena.resumed", "1"); } catch { return; }
+    location.assign("/empezar");
+  }, [onboarding?.started, onboarding?.finished]); // eslint-disable-line react-hooks/exhaustive-deps
   const { bots, missions, approvals, automations = [], settings = {}, paused, blocks = [] } = store;
   const goals = useResource("/goals").data;
   const needs = needsOf(store);

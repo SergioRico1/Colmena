@@ -26,7 +26,7 @@ export const ROUTES = [
 ];
 
 /* Runs inside the page. Everything it needs is declared in its body. */
-function scan() {
+export function scan() {
   const parse = (c) => {
     const m = /rgba?\(([^)]+)\)/.exec(c || "");
     if (!m) return null;

@@ -124,6 +124,18 @@ test("a room of people: each message names its author, no bot takes a turn, unre
   assert.deepEqual(detail.data.people.map((p) => p.name).sort(), ["Ana", "Beto", "Gil"]);
 });
 
+test("the guided start: each person's step is kept, resumes, ends once; guests may keep theirs", async (t) => {
+  const { as } = await company(t, "Norte", [ANA, BETO, GIL]);
+  assert.deepEqual((await as(ANA)("GET", "/cloud/onboarding")).data.onboarding, { started: false, step: "ia", finished: false }, "nobody is sent back to a start they never had");
+  assert.equal((await as(ANA)("PUT", "/cloud/onboarding", { step: "bots" })).status, 200);
+  assert.equal((await as(ANA)("PUT", "/cloud/onboarding", { step: "nada" })).status, 400);
+  assert.deepEqual((await as(ANA)("GET", "/state")).data.cloud.onboarding, { started: true, step: "bots", finished: false });
+  assert.equal((await as(BETO)("GET", "/cloud/onboarding")).data.onboarding.started, false, "one person's step is not another's");
+  await as(ANA)("PUT", "/cloud/onboarding", { step: "llegada", finished: true });
+  assert.equal((await as(ANA)("PUT", "/cloud/onboarding", { step: "ia" })).data.onboarding.finished, true, "finished stays finished");
+  assert.equal((await as(GIL)("PUT", "/cloud/onboarding", { step: "llegada" })).status, 200, "a guest keeps their own step");
+});
+
 test("a direct message is seen by its two people only; a guest talks but does not manage", async (t) => {
   const { as } = await company(t, "Norte", [ANA, BETO, GIL]);
   const dm = await as(ANA)("POST", "/cloud/dm", { person: BETO.id });

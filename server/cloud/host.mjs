@@ -42,7 +42,9 @@ const DESKTOP_ONLY_P4 = /^\/api\/(peers|teams|computer\/apps|projects|voice|voic
 const ENGINE_CALLS = /^\/api\/code\/tasks(\/[^/]+\/(messages|goal|review|compact|plans\/[^/]+|asks\/[^/]+|edit-from|catch-up))?$|^\/api\/code\/compare\//;
 const PREVIEW_TTL_MS = 12 * 3600 * 1000;
 /** What a guest may change: talking in the conversations they can see, and their own read marks. */
-const GUEST_WRITES = [/^\/api\/chat\//, /^\/api\/missions\/[^/]+\/messages$/, /^\/api\/rooms\/[^/]+\/(messages|seen)$/, /^\/api\/notifications(\/|$)/, /^\/api\/messages\/[^/]+\/reactions$/];
+const GUEST_WRITES = [/^\/api\/cloud\/onboarding$/,/^\/api\/chat\//, /^\/api\/missions\/[^/]+\/messages$/, /^\/api\/rooms\/[^/]+\/(messages|seen)$/, /^\/api\/notifications(\/|$)/, /^\/api\/messages\/[^/]+\/reactions$/];
+/** The guided start's steps (src/cloud/Setup.jsx), in order. */
+export const ONBOARDING_STEPS = Object.freeze(["ia", "bots", "equipo", "llegada"]);
 const MISSION_PATH = /^\/api\/(missions|rooms)\/([^/]+)/;
 const MEMBER_FIELDS = (m) => ({ id: m.id, name: m.name || m.email || "Alguien", email: m.email || null, role: ROLES.includes(m.role) ? m.role : "member", deactivated: !!m.deactivated });
 /** Uploads that are bytes, not JSON (the Durable Object streams them itself; Node gets them here). */
@@ -91,6 +93,11 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   const everyone = () => store.list("members").filter((m) => !m.removedAt).map(MEMBER_FIELDS);
   const members = () => everyone().filter((m) => !m.deactivated);
   const memberOf = (id) => { const m = store.get("members", id); return m && !m.removedAt && !m.deactivated ? MEMBER_FIELDS(m) : null; };
+  /**
+   * Where this person is in the guided start: {started, step, finished}. No record: not started
+   * (people who joined before it existed are never sent back to it).
+   */
+  const onboardingOf = (id) => { const r = store.get("cloud", "onboarding:" + id); return { started: !!r, step: ONBOARDING_STEPS.includes(r?.step) ? r.step : ONBOARDING_STEPS[0], finished: !!r?.finished }; };
   /** Who may see a conversation: everyone in the workspace, or only its `audience` (a direct message). */
   const canSee = (mission, person = currentPerson()) => !mission?.audience || (isPerson(person) && mission.audience.includes(person.id));
   const missionOf = (id) => store.get("missions", id) || (store.get("rooms", id)?.missionId ? store.get("missions", store.get("rooms", id).missionId) : null);
@@ -184,7 +191,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       // The company is the one team the sidebar names (rooms carry no teamId: they show in it).
       teams: [{ id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "Empresa", people: members().length, bots: store.list("bots").filter((b) => b.enabled !== false).length, admin: ["owner", "admin"].includes(me.role), current: true }],
       teamsPending: [],
-      cloud: { workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, timezone: bots.timeZone(), me: { id: me.id, name: me.name, email: me.email, role: me.role }, members: members(), hidden: machine ? CLOUD_HIDDEN.filter((h) => h !== "codigo") : CLOUD_HIDDEN, machine: !!machine, browser: !!browser, apiKeysOnly: true },
+      cloud: { workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, timezone: bots.timeZone(), me: { id: me.id, name: me.name, email: me.email, role: me.role }, members: members(), hidden: machine ? CLOUD_HIDDEN.filter((h) => h !== "codigo") : CLOUD_HIDDEN, machine: !!machine, browser: !!browser, apiKeysOnly: true, onboarding: onboardingOf(me.id) },
     }, me);
   };
 
@@ -244,6 +251,18 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     };
     store.put("missions", mission);
     res.status(201).json({ missionId: mission.id, href: "/sala/" + mission.id });
+  });
+  // The guided start (src/cloud/Setup.jsx): the step each person reached, so leaving and coming
+  // back resumes there. One record per person; `finished` once they reach the end or close it.
+  app.get("/api/cloud/onboarding", (_req, res) => res.json({ onboarding: onboardingOf(currentPerson().id) }));
+  app.put("/api/cloud/onboarding", (req, res) => {
+    const me = currentPerson();
+    const step = String(req.body?.step || "");
+    if (!ONBOARDING_STEPS.includes(step)) return res.status(400).json({ error: "Ese paso no existe." });
+    const before = onboardingOf(me.id);
+    const record = { id: "onboarding:" + me.id, step, finished: req.body?.finished === true || before.finished, at: new Date().toISOString() };
+    store.put("cloud", record, { silent: true });
+    res.json({ onboarding: onboardingOf(me.id) });
   });
   app.get("/api/cloud/me", (_req, res) => res.json({ person: currentPerson(), workspace: state({}).cloud.workspace }));
   // The machine's state for Empresa › Hora y máquina (the Machine DO: running, minutes, cold starts).

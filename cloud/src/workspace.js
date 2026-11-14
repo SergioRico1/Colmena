@@ -299,6 +299,15 @@ export class Workspace extends DurableObject {
     await this.schedule();
     return { ok: true };
   }
+  /**
+   * The company's bots as an invitation shows them before the invitee is in (Invitation.jsx): the
+   * enabled ones, with only what draws them and names them. At most twelve.
+   */
+  async teamPreview(workspaceId) {
+    const host = await this.boot(workspaceId);
+    return host.store.list("bots").filter((b) => b.enabled !== false && !b.archived).slice(0, 12)
+      .map((b) => ({ id: String(b.id), name: String(b.name || "").slice(0, 60), role: String(b.role || "").slice(0, 60), shape: b.shape || "square", color: /^#[0-9a-f]{6}$/i.test(b.color || "") ? b.color : "#5B6680", builtin: !!b.builtin }));
+  }
   /** What the object holds in memory right now: for the e2e (eviction and concurrency checks). */
   async probe(workspaceId) {
     const host = await this.boot(workspaceId);

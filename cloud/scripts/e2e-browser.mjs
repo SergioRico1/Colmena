@@ -67,8 +67,24 @@ try {
   await A.fill("input[maxlength='60']", "Estudio de prueba " + run);
   await shot(A, "laptop-3-crear-empresa");
   await A.getByRole("button", { name: "Crear y entrar" }).click();
-  await A.waitForURL((u) => new URL(u).pathname === "/" || new URL(u).pathname.startsWith("/bienvenida"), { timeout: 20000 });
+  // The guided start (/empezar): her AI first, the bots asleep until then, every step skippable.
+  await A.waitForURL(/\/empezar/, { timeout: 30000 });
   check("Ana signs in and creates a company", true);
+  await A.getByRole("heading", { name: "Despierta a tus bots" }).waitFor({ timeout: 30000 });
+  const terms = await A.getByText(/clave de API: las condiciones de OpenAI y Anthropic/).count();
+  check("the AI step says the web uses API keys, and why", terms > 0);
+  await shot(A, "laptop-3b-empezar-ia");
+  await A.getByRole("button", { name: "Ahora no" }).click();
+  await A.getByRole("heading", { name: "Conoce a tus bots" }).waitFor();
+  check("skipping the AI leaves the bots asleep, with a way to wake them", await A.getByText("Están dormidos: conecta tu IA para despertarlos.").count() > 0);
+  await A.getByRole("button", { name: "Me quedo con él" }).click();
+  await A.getByRole("heading", { name: "Nora" }).waitFor();
+  await A.reload();
+  await A.getByRole("heading", { name: "Conoce a tus bots" }).waitFor({ timeout: 20000 });
+  check("leaving and coming back resumes at the same step", true);
+  await shot(A, "laptop-3c-empezar-bots");
+  await A.getByRole("button", { name: "Ir a Colmena" }).click();
+  await A.waitForURL((u) => new URL(u).pathname === "/", { timeout: 20000 });
 
   // ---- invitation from the company page
   await A.goto(BASE + "/empresa");
