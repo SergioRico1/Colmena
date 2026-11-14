@@ -103,7 +103,10 @@ check("a write without CSRF is refused", (await A.req("/auth/workspaces", { meth
 const stateA = await A.req("/api/state");
 check("the company's server answers /api/state", stateA.status === 200 && stateA.data?.cloud?.me?.id, stateA.status + " " + JSON.stringify(stateA.data)?.slice(0, 300));
 check("its owner is the owner", stateA.data?.cloud?.me?.role === "owner");
-check("desktop-only places are hidden", stateA.data?.cloud?.hidden?.includes("codigo") && (await A.req("/api/code/tasks")).status === 404);
+// Código shows only when the company has a machine (phase 4). Asking for it would wake the
+// container (cold start, cost), so this reads what the app hides; e2e-machine.mjs drives Código itself.
+const cloudA = stateA.data?.cloud || {};
+check("desktop-only places are hidden", Array.isArray(cloudA.hidden) && ["ordenador", "dictado", "carpetas"].every((h) => cloudA.hidden.includes(h)) && cloudA.hidden.includes("codigo") === !cloudA.machine, JSON.stringify({ hidden: cloudA.hidden, machine: cloudA.machine }));
 check("the app page is served marked as hosted", (await (await A.req("/")).response.text()).includes('name="colmena-host"'));
 
 // ---- invitation
