@@ -56,6 +56,18 @@ const WIDTHS = [375, 768, 1280, 1440];
     report.push({ metrics: w, transferredKB: +(bytes / 1024).toFixed(1), requests: files.length, ...m });
     await ctx.close();
   }
+  // The hero demo playing: one frame a second through a whole loop, light, at 1440.
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: "light" });
+    await page.goto(url, { waitUntil: "networkidle" });
+    await page.evaluate(() => document.fonts.ready);
+    const stage = page.locator(".stage");
+    for (let i = 0; i < 16; i++) {
+      await stage.screenshot({ path: path.join(out, `hero-frame-${String(i).padStart(2, "0")}.png`) });
+      await page.waitForTimeout(1000);
+    }
+    await page.close();
+  }
   await browser.close();
   console.log(JSON.stringify(report, null, 1));
 })();
