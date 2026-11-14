@@ -23,6 +23,7 @@ import { Connections } from "../connections.mjs";
 import { ComposioHub } from "../nexo/composio.mjs";
 import { McpHub } from "../mcp/hub.mjs";
 import { mcpExtraTools } from "../mcp/tools.mjs";
+import { machineMcp } from "../mcp/local.mjs";
 import { SiteVault } from "../vault.mjs";
 import { SecretStore, secretsExtraTools } from "../secrets.mjs";
 import { AppTools } from "../apptools.mjs";
@@ -52,7 +53,9 @@ const refuse = (status, error) => ({ status, error });
  * `vault(namespace)` (envelope vault or null), `memberOf(id)` → a member or null, `members()`,
  * `push(personId, payload)` or null, `publicUrl`, `testing` (the Worker allows the fake model).
  */
-export function cloudBots({ store, workspace, rooms = () => null, vault = () => null, memberOf, members, push = null, publicUrl = "", testing = false, fetchImpl = undefined, log = () => {}, computer = null, machine = null }) {
+export function cloudBots({ store, workspace, rooms = () => null, vault = () => null, memberOf, members, push = null, publicUrl = "", testing = false, fetchImpl = undefined, log = () => {}, computer = null, machine = null, google = null, googleEndpoints = null, tcp = null }) {
+  // The marketplace: `google` Colmena's web OAuth client ({clientId, clientSecret, project}, from
+  // the Worker's secrets) or null; `tcp` the Worker's TCP sockets for mail (cloud/src/tcp.js).
   // Phase 4: `computer`, the cloud browser (browser-cloud.mjs); `machine`, the company's container
   // (server/machine/seam.mjs) where run_command runs.
   const fakeOn = () => !!testing && store.get("cloud", TEST_FLAGS_ID)?.fakeModel === true;
@@ -77,8 +80,44 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   });
   runtime.vault = new SiteVault(store, { secrets: vault("vault") });
   runtime.secrets = new SecretStore(store, { values: vault("secrets") });
-  runtime.mcp = new McpHub(store, { secrets: vault("mcp"), redirect: publicUrl ? publicUrl.replace(/\/$/, "") + "/api/mcp/oauth/callback" : null });
+  // The marketplace (docs/CONNECTIONS.md): Colmena's own Google client (Worker secrets, «Disponible
+  // pronto» without it), official local servers in the company's machine, mail over the Worker's
+  // TCP sockets, and personal connections for whoever keeps their apps to themselves.
+  runtime.mcp = new McpHub(store, {
+    secrets: vault("mcp"), redirect: publicUrl ? publicUrl.replace(/\/$/, "") + "/api/mcp/oauth/callback" : null,
+    google: google ? { web: google, ...(googleEndpoints ? { endpoints: googleEndpoints } : {}), ...(fetchImpl ? { fetchImpl } : {}) } : null,
+    local: machine ? machineMcp(machine) : null,
+    localCommand: (e) => ({ command: "/opt/mcp/bin/" + e.local.command, args: [] }),
+    tcp, personal: (id) => personalApps(id),
+  });
   runtime.appTools = new AppTools(connections);
+  // Composio with a person's own account (the marketplace): their key, in the vault under their
+  // profile, checked live; it wins over the company's for them («Mis propias apps» on). Nobody
+  // else's turns ever use it. Removing it puts them back on the company's key, if there is one.
+  runtime.composioKey = {
+    async status() {
+      const me = currentPerson();
+      const v = vault("connections");
+      const mine = isPerson(me) && store.get("cloud", "apps-mine:" + me.id)?.ownKey === true;
+      const company = !!(await v?.load({ profile: "default" }).catch(() => null))?.apiKey;
+      return { configured: mine || company, mine, company, canRemove: mine };
+    },
+    async setKey(key) {
+      const me = currentPerson();
+      if (!isPerson(me) || me.role === "guest") throw Object.assign(Error("Los invitados no conectan apps."), { status: 403 });
+      if (fakeOn()) { store.put("cloud", { id: "apps-mine:" + me.id, on: true, ownKey: true, at: now() }, { silent: true }); return; }
+      await composio.dispatch(personProfile(me.id), "configure", { key });
+      store.put("cloud", { id: "apps-mine:" + me.id, on: true, ownKey: true, at: now() }, { silent: true });
+      for (const fn of store.listeners) try { fn({ type: "changed-local", kinds: ["account"] }); } catch {}
+    },
+    async removeKey() {
+      const me = currentPerson();
+      if (!isPerson(me)) return;
+      await vault("connections")?.remove(personProfile(me.id));
+      store.put("cloud", { id: "apps-mine:" + me.id, on: false, ownKey: false, at: now() }, { silent: true });
+      for (const fn of store.listeners) try { fn({ type: "changed-local", kinds: ["account"] }); } catch {}
+    },
+  };
   const mcpTools = mcpExtraTools(runtime, runtime.mcp);
   const secretTools = secretsExtraTools(runtime, runtime.secrets);
   // The browser and run_command (Phase 4). Opening files and apps of a computer stays on the
@@ -239,7 +278,8 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
       if (!/^[A-Za-z0-9_-]{16,200}$/.test(key)) throw Object.assign(Error("Esa clave no tiene el formato de una clave de Composio."), { status: 400 });
       await asPerson(SYSTEM_PERSON, () => connections.manage("configure", { key }));
       // People with apps of their own keep their Composio user; only the key changes.
-      for (const r of store.list("cloud").filter((x) => String(x.id).startsWith("apps-mine:") && x.on)) await linkPersonalApps(r.id.slice(10)).catch((e) => log("apps: " + (e?.message || e)));
+      // (Someone with a Composio account of their own keeps it.)
+      for (const r of store.list("cloud").filter((x) => String(x.id).startsWith("apps-mine:") && x.on && !x.ownKey)) await linkPersonalApps(r.id.slice(10)).catch((e) => log("apps: " + (e?.message || e)));
       return { ok: true };
     }));
     // GitHub for «Código» (Phase 4): a token of the company (admins) or of a person, in the vault.
@@ -268,8 +308,10 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
       const me = currentPerson();
       if (me.role === "guest") throw Object.assign(Error("Los invitados no conectan apps."), { status: 403 });
       const on = req.body?.on === true;
-      if (on) await linkPersonalApps(me.id);
-      store.put("cloud", { id: "apps-mine:" + me.id, on, at: now() }, { silent: true });
+      const ownKey = store.get("cloud", "apps-mine:" + me.id)?.ownKey === true;
+      // A Composio account of their own is never replaced by the company's key.
+      if (on && !ownKey) await linkPersonalApps(me.id);
+      store.put("cloud", { id: "apps-mine:" + me.id, on, ownKey, at: now() }, { silent: true });
       for (const fn of store.listeners) try { fn({ type: "changed-local", kinds: ["account"] }); } catch {}
       return { on };
     }));
@@ -286,7 +328,7 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
       const q = req.query || {};
       let ok = false;
       try { ok = await runtime.mcp.publicCallback({ state: String(q.state || ""), code: q.code ? String(q.code) : null, error: q.error ? String(q.error) : null }); } catch (e) { log("mcp: " + (e?.message || e)); }
-      res.redirect(302, "/ajustes/conexiones?mcp=" + (ok ? "ok" : "error"));
+      res.redirect(302, "/ajustes/apps?mcp=" + (ok ? "ok" : "error"));
     });
   }
 

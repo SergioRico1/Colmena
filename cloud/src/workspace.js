@@ -19,6 +19,8 @@ import { uploadFile, fileHeaders } from "../../server/cloud/chat-routes.mjs";
 import { sendMail } from "./mail.js";
 import { machineClient } from "../../server/machine/seam.mjs";
 import { renderingDriver } from "./browser.js";
+import { workerTcp } from "./tcp.js";
+import { googleClient } from "../../server/mcp/google.mjs";
 
 const CODE = /^\/api\/code(\/|$)/;
 const PREVIEW = /^\/__preview\/([A-Za-z0-9_-]{32})(\/.*)?$/;
@@ -82,7 +84,10 @@ export class Workspace extends DurableObject {
         defer: (promise) => { const p = Promise.resolve(promise).catch((e) => console.error("workspace deferred: " + (e?.stack || e))); try { this.ctx.waitUntil(p); } catch {} return p; },
         presence: () => this.presence(),
         // Phase 5: the open sockets of each person's computers (server/agent-link/hub.mjs).
-        agentSockets: (tag) => this.ctx.getWebSockets(tag).map((ws) => this.agentSocket(ws)) });
+        agentSockets: (tag) => this.ctx.getWebSockets(tag).map((ws) => this.agentSocket(ws)),
+        // The marketplace: Colmena's own Google client (Worker secrets; absent = «Disponible pronto»)
+        // and outbound TCP for the mail connector.
+        google: googleClient(this.env, "web"), tcp: workerTcp() });
       const server = http.createServer(host.app);
       const port = nextPort++;
       await new Promise((resolve) => server.listen(port, resolve));

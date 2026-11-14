@@ -3,8 +3,14 @@
 // the sign-in happens in the system browser and comes back to a loopback address only this
 // connection listens on. Tokens live in the Windows DPAPI store, never in SQLite.
 //
-// Records (SQLite, kind 'mcpServers'): {id, name, url, catalogId, status, tools:[…], toolsAt,
-// error, createdAt, connectedAt}. status: 'connecting' | 'connected' | 'needs_auth' | 'error'.
+// Records (SQLite, kind 'mcpServers'): {id, name, url, catalogId, auth, run, owner, account,
+// status, tools:[…], toolsAt, error, createdAt, connectedAt}. status: 'connecting' | 'connected' |
+// 'needs_auth' | 'error'. auth (docs/CONNECTIONS.md › Marketplace): 'oauth' (dynamic client
+// registration, the default of older records), 'token' (a pasted key in a header), 'google'
+// (Colmena's own Google client, ./google.mjs), 'mail' (IMAP/SMTP, ./mail.mjs). run: 'remote',
+// 'local' (an official open-source server through the process seam, ./local.mjs) or 'builtin'.
+// owner: null = the company's (everyone's bots use it); a person's id = theirs alone (hosted
+// workspaces): only that person sees it, and only their bots' turns get it.
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -17,6 +23,11 @@ import { now } from "../store.mjs";
 import { validateWebUrl } from "../web.mjs";
 import { windowsVault } from "../nexo/credential-vault.mjs";
 import { catalogEntry } from "./catalog.mjs";
+import { currentPerson, isPerson } from "../identity.mjs";
+import { GOOGLE_ENDPOINTS, adcFile, authorizeUrl as googleAuthorizeUrl, exchangeCode, pkce, refreshTokens, revoke as googleRevoke, stale } from "./google.mjs";
+import { LocalMcpHost } from "./local.mjs";
+import { MailConnector, mailSettings, nodeTcp } from "./mail.mjs";
+import { localMachine } from "../machine/seam.mjs";
 
 const AUTH_WINDOW_MS = 10 * 60000;
 const CALL_TIMEOUT_MS = 120000;
@@ -24,10 +35,14 @@ const MAX_TOOLS = 200;
 const clip = (t, n) => { const s = String(t ?? "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
 const binding = (id) => ({ profile: "mcp-" + id, hostId: os.hostname() || "local", clientId: "colmena-mcp", subject: "local" });
 
-export const serverView = (s) => ({
-  id: s.id, name: s.name, url: s.url, catalogId: s.catalogId || null, status: s.status, error: s.error || null,
+export const serverView = (s, me = currentPerson()) => ({
+  id: s.id, name: s.name, url: s.auth === "mail" ? null : s.url, catalogId: s.catalogId || null, status: s.status, error: s.error || null,
+  auth: s.auth || "oauth", run: s.run || "remote", scope: s.owner ? "mine" : "company", mine: !!s.owner && s.owner === me?.id, account: s.account || null,
   toolCount: (s.tools || []).length, createdAt: s.createdAt || null, connectedAt: s.connectedAt || null,
 });
+const MANAGERS = new Set(["owner", "admin"]);
+const TOKEN = /^[\x21-\x7e]{8,4000}$/;
+const unauthorized = (error) => error instanceof UnauthorizedError || error?.name === "UnauthorizedError" || /\b401\b|unauthori[sz]ed|invalid_token/i.test(String(error?.message || ""));
 
 /** Short id for a server: «Jira y Confluence» → jira-y-confluence (unique). */
 function slugFor(name, taken) {
@@ -75,8 +90,22 @@ export class McpHub {
    * `redirect`: a public callback URL (the cloud: https://<site>/api/mcp/oauth/callback) instead of
    * a loopback listener per sign-in; the browser comes back there and the host calls publicCallback.
    */
-  constructor(store, { secrets, transports = null, onChange = null, redirect = null } = {}) {
+  /**
+   * Marketplace options: `google` {web, desktop, endpoints, fetchImpl} (./google.mjs; without a client
+   * the Google entries read «Disponible pronto»); `local` the host of official local servers (desktop:
+   * a LocalMcpHost on this computer; cloud: machineMcp of the company's machine; null = none);
+   * `localCommand(entry)` → {command, args}; `tcp` the TCP seam for mail (./mail.mjs);
+   * `personal(personId)` whether that person keeps their apps to themselves («Mis propias apps»);
+   * `allowPlain` tests only (plain IMAP/SMTP on loopback).
+   */
+  constructor(store, { secrets, transports = null, onChange = null, redirect = null, google = null, local = undefined, localCommand = null, tcp = null, personal = () => false, allowPlain = false } = {}) {
     this.redirect = redirect;
+    this.google = google;
+    this.local = local === undefined ? new LocalMcpHost({ spawn: localMachine.spawn, dir: path.join(store.directory || os.tmpdir(), "mcp-run") }) : local;
+    this.localCommand = localCommand || ((e) => ({ command: "pipx", args: ["run", "--spec", e.local.package + "==" + e.local.version, e.local.command] }));
+    this.tcp = tcp || nodeTcp({ allowPlain });
+    this.personal = personal;
+    this.allowPlain = allowPlain;
     this.store = store;
     this.secrets = secrets === undefined ? windowsVault(path.join(store.directory, "mcp")) : secrets;
     this.transports = transports; // tests: (url, provider) => transport
@@ -92,12 +121,40 @@ export class McpHub {
     if (!redirect) for (const s of store.list("mcpServers")) if (["connecting", "needs_auth"].includes(s.status) && !(s.tools || []).length) store.patch("mcpServers", s.id, { status: "error", error: "La autorización no se completó. Vuelve a conectar." });
   }
   get available() { return !!this.secrets; }
-  servers() { return this.store.list("mcpServers").map(serverView).sort((a, b) => a.name.localeCompare(b.name, "es")); }
-  connected() { return this.store.list("mcpServers").filter((s) => s.status === "connected"); }
+  /** Colmena's Google client for this place (the web one with a public redirect, else the desktop one). */
+  googleClient() { return (this.redirect ? this.google?.web : this.google?.desktop) || null; }
+  /** A record the person acting may see: the company's, or their own. Never someone else's. */
+  visible(s, me = currentPerson()) { return !s.owner || (!!me?.id && s.owner === me.id); }
+  servers() { return this.store.list("mcpServers").filter((s) => this.visible(s)).map((s) => serverView(s)).sort((a, b) => a.name.localeCompare(b.name, "es")); }
+  connected() { return this.store.list("mcpServers").filter((s) => s.status === "connected" && this.visible(s)); }
   server(id) {
     const s = this.store.get("mcpServers", id);
-    if (!s) throw Object.assign(Error("Esa conexión ya no existe."), { status: 404 });
+    if (!s || !this.visible(s)) throw Object.assign(Error("Esa conexión ya no existe."), { status: 404 });
     return s;
+  }
+  /**
+   * Whose a new connection is: nobody's on the desktop; the person's own for apps that are always
+   * personal, when they ask for it or keep their apps to themselves; the company's when an owner or
+   * admin connects it for everyone (members never connect for the whole company).
+   */
+  ownerFor(entry, scope = null) {
+    const me = currentPerson();
+    if (!isPerson(me)) return null;
+    if (me.role === "guest") throw Object.assign(Error("Los invitados no conectan apps."), { status: 403 });
+    if (entry?.perPerson || scope === "mine") return me.id;
+    if (scope === "company") {
+      if (!MANAGERS.has(me.role)) throw Object.assign(Error("Solo quien administra la empresa conecta apps para todos."), { status: 403 });
+      return null;
+    }
+    return this.personal(me.id) || !MANAGERS.has(me.role) ? me.id : null;
+  }
+  /** The record for an entry (or an address) and owner: the existing one, or a new one. */
+  record(entry, owner, { url, name = null, account = null }) {
+    const existing = this.store.list("mcpServers").find((s) => (s.owner || null) === owner && (entry ? s.catalogId === entry.id && (s.account || null) === account : s.url === url));
+    if (existing) return existing;
+    const base = entry?.auth === "mail" ? "correo " + account.split("@")[0] : (entry?.name || name || "mcp") + (account ? " " + account.split("@")[0] : "");
+    const id = slugFor(base, new Set(this.store.list("mcpServers").map((s) => s.id)));
+    return this.store.put("mcpServers", { id, name: entry ? (account ? entry.name + " · " + account : entry.name) : clip(name, 60) || "MCP", url, catalogId: entry?.id || null, auth: entry?.auth || "oauth", run: entry?.run || "remote", owner, account, status: "connecting", tools: [], createdAt: now() });
   }
   cachedSecret(id) { return this.cache.get(id) || null; }
   async secret(id) {
@@ -116,15 +173,34 @@ export class McpHub {
     this.onChange?.(s);
     return s;
   }
+  tokenHeaders(s, token) {
+    if (!token) throw Error("Falta la clave de " + s.name + ": vuelve a conectarlo.");
+    const spec = catalogEntry(s.catalogId)?.token || { header: "Authorization", scheme: "Bearer" };
+    return { [spec.header]: (spec.scheme ? spec.scheme + " " : "") + token };
+  }
+  headerTransport(url, headers, kind = "http") {
+    if (this.transports) return this.transports(url, null, kind, headers);
+    const requestInit = { headers };
+    return kind === "sse" ? new SSEClientTransport(new URL(url), { requestInit, eventSourceInit: { fetch: (u, init) => fetch(u, { ...init, headers: { ...(init?.headers || {}), ...headers } }) } }) : new StreamableHTTPClientTransport(new URL(url), { requestInit });
+  }
   transportFor(url, provider, kind = "http") {
     if (this.transports) return this.transports(url, provider, kind);
     return kind === "sse" ? new SSEClientTransport(new URL(url), { authProvider: provider }) : new StreamableHTTPClientTransport(new URL(url), { authProvider: provider });
   }
   /** Connects (Streamable HTTP, falling back to SSE). Throws UnauthorizedError when it needs a sign-in. */
   async open(s, provider) {
+    if (s.auth === "mail") {
+      const mail = (await this.secret(s.id))?.mail;
+      if (!mail) throw Error("Faltan los datos del buzón: vuelve a conectarlo.");
+      return { client: new MailConnector(mail, { tcp: this.tcp }), transport: null };
+    }
+    if (s.run === "local") return { client: this.localClient(s), transport: null };
+    let headers = null;
+    if (s.auth === "token") headers = this.tokenHeaders(s, (await this.secret(s.id))?.token);
+    if (s.auth === "google") headers = { Authorization: "Bearer " + (await this.googleTokens(s.id)).access_token };
     const attempt = async (kind) => {
       const client = new Client({ name: "Colmena", version: "1.0.0" });
-      const transport = this.transportFor(s.url, provider, kind);
+      const transport = headers ? this.headerTransport(s.url, headers, kind) : this.transportFor(s.url, provider, kind);
       await client.connect(transport);
       return { client, transport };
     };
@@ -154,15 +230,19 @@ export class McpHub {
    * «Conectar»: from the catalogue (catalogId) or a URL. Returns {server, authorizeUrl?}: open
    * authorizeUrl in the browser; the record turns 'connected' by itself when the sign-in returns.
    */
-  async connect({ catalogId = null, url = null, name = null } = {}) {
-    if (!this.secrets) throw Error("Las conexiones MCP necesitan el almacén cifrado de Windows (aplicación de escritorio).");
+  async connect({ catalogId = null, url = null, name = null, token = null, mail = null, scope = null } = {}) {
+    if (!this.secrets) throw Error("Las conexiones MCP necesitan el almacén cifrado (en el escritorio, el de Windows).");
     const entry = catalogId ? catalogEntry(catalogId) : null;
-    if (catalogId && (!entry || entry.via !== "mcp")) throw Error("Esa app no se conecta por MCP.");
+    if (catalogId && (!entry || entry.auth === "composio")) throw Object.assign(Error(entry ? entry.name + " se conecta con tu cuenta de Composio." : "Esa app no está en el catálogo."), { status: 400 });
+    if (entry?.blocked) throw Object.assign(Error("Disponible pronto. " + entry.blocked), { status: 409 });
+    const owner = this.ownerFor(entry, scope);
+    if (entry?.auth === "google") return this.connectGoogle(entry, owner);
+    if (entry?.auth === "mail") return this.connectMail(entry, owner, mail);
+    if (entry?.auth === "token" || (!entry && token)) return this.connectToken(entry, owner, { url, name, token });
     const target = validateWebUrl(entry?.url || url);
     if (target.protocol !== "https:") throw Error("La conexión tiene que ser https.");
-    const existing = this.store.list("mcpServers").find((s) => s.url === target.href);
-    const id = existing?.id || slugFor(entry?.name || name || target.hostname.replace(/^mcp\./, ""), new Set(this.store.list("mcpServers").map((s) => s.id)));
-    const s = existing ? this.patch(id, { status: "connecting", error: null }) : this.store.put("mcpServers", { id, name: entry?.name || clip(name, 60) || target.hostname, url: target.href, catalogId: entry?.id || null, status: "connecting", tools: [], createdAt: now() });
+    const id = this.record(entry, owner, { url: target.href, name: name || target.hostname.replace(/^mcp\./, "") }).id;
+    const s = this.patch(id, { status: "connecting", error: null, url: target.href });
     this.close(id);
     this.cancelPending(id);
     const state = randomBytes(16).toString("hex");
@@ -189,6 +269,103 @@ export class McpHub {
       this.pending.set(id, { provider, state, loopback, timer });
       this.patch(id, { status: "needs_auth" });
       return { server: serverView(this.server(id)), authorizeUrl: provider.authorizeUrl };
+    }
+  }
+  /** A key or token pasted by the person (or an admin for the company), sent in the entry's header. */
+  async connectToken(entry, owner, { url = null, name = null, token = null }) {
+    const value = String(token || "").trim();
+    if (!TOKEN.test(value)) throw Object.assign(Error("Pega la clave o el token completo."), { status: 400 });
+    const target = validateWebUrl(entry?.url || url);
+    if (target.protocol !== "https:") throw Error("La conexión tiene que ser https.");
+    const id = this.record(entry, owner, { url: target.href, name: name || target.hostname }).id;
+    this.close(id);
+    this.patch(id, { auth: "token", run: "remote", status: "connecting", error: null });
+    await this.saveSecret(id, { token: value }, true);
+    try {
+      const live = await this.open(this.server(id));
+      this.live.set(id, live);
+      this.patch(id, { connectedAt: now() });
+      await this.refreshTools(id, live.client);
+      return { server: serverView(this.server(id)) };
+    } catch (error) {
+      const label = entry?.name || this.server(id).name;
+      const message = unauthorized(error) ? label + " no aceptó esa clave. Comprueba que está completa y que tiene permisos." : "No se pudo conectar con " + label + ": " + clip(error?.message, 200);
+      this.patch(id, { status: "error", error: message });
+      throw Object.assign(Error(message), { status: 422 });
+    }
+  }
+  /** A mailbox with an app password: tested (IMAP and SMTP, nothing sent) before it is kept. */
+  async connectMail(entry, owner, mail) {
+    let settings;
+    try { settings = mailSettings(mail || {}, { allowPlain: this.allowPlain }); } catch (e) { throw Object.assign(e, { status: 400 }); }
+    await new MailConnector(settings, { tcp: this.tcp }).test().catch((e) => { throw Object.assign(Error(e.message), { status: 422 }); });
+    const id = this.record(entry, owner, { url: "mail:" + settings.email, account: settings.email }).id;
+    await this.saveSecret(id, { mail: settings }, true);
+    this.close(id);
+    this.patch(id, { status: "connected", error: null, connectedAt: now(), url: "mail:" + settings.email });
+    await this.refreshTools(id, await this.client(id));
+    return { server: serverView(this.server(id)) };
+  }
+  /** Google with Colmena's own client: PKCE + state, the person's sign-in, back to the redirect. */
+  async connectGoogle(entry, owner) {
+    const client = this.googleClient();
+    if (!client) throw Object.assign(Error("Disponible pronto: Colmena todavía no tiene su conexión con Google."), { status: 409 });
+    const id = this.record(entry, owner, { url: entry.endpoint || "local:" + entry.id }).id;
+    this.close(id);
+    this.cancelPending(id);
+    const state = randomBytes(16).toString("hex");
+    const { verifier, challenge } = pkce();
+    const loopback = this.redirect ? { redirect: this.redirect, close() {} } : await this.listen(id, state);
+    await this.saveSecret(id, { pending: { state, verifier, at: Date.now(), google: true } });
+    const timer = setTimeout(() => this.cancelPending(id, "La autorización no se completó a tiempo. Vuelve a conectar."), AUTH_WINDOW_MS);
+    timer.unref?.();
+    this.pending.set(id, { google: true, verifier, redirect: loopback.redirect, state, loopback, timer });
+    this.patch(id, { status: "needs_auth", error: null });
+    return { server: serverView(this.server(id)), authorizeUrl: googleAuthorizeUrl({ client, endpoints: this.google?.endpoints || GOOGLE_ENDPOINTS, redirect: loopback.redirect, scopes: entry.scopes, state, challenge }) };
+  }
+  /** The person's Google tokens, refreshed when about to expire (and saved back). */
+  async googleTokens(id, { force = false } = {}) {
+    let tokens = (await this.secret(id))?.google;
+    if (!tokens) throw Object.assign(Error("Falta el permiso de Google: vuelve a conectar."), { code: "invalid_grant" });
+    if (force || stale(tokens)) {
+      const client = this.googleClient();
+      if (!client) throw Error("Colmena ya no tiene su conexión con Google configurada.");
+      tokens = await refreshTokens({ client, endpoints: this.google?.endpoints || GOOGLE_ENDPOINTS, tokens, fetchImpl: this.google?.fetchImpl || fetch });
+      await this.saveSecret(id, { google: tokens });
+    }
+    return tokens;
+  }
+  /** An official local server (Analytics…) as a client: through the seam, with the person's credential. */
+  localClient(s) {
+    const entry = catalogEntry(s.catalogId);
+    if (!entry?.local) throw Error("Ese servidor local ya no está en el catálogo.");
+    if (!this.local) throw Error("Aquí no se pueden ejecutar servidores locales.");
+    const spec = async () => {
+      const client = this.googleClient();
+      if (!client) throw Error("Colmena ya no tiene su conexión con Google configurada.");
+      const tokens = await this.googleTokens(s.id);
+      const { command, args } = this.localCommand(entry);
+      const env = { GOOGLE_APPLICATION_CREDENTIALS: "${file:adc.json}", ...(client.project && entry.local.env?.project ? { [entry.local.env.project]: client.project } : {}) };
+      return { command, args, env, files: { "adc.json": adcFile(client, tokens) } };
+    };
+    return {
+      listTools: async () => ({ tools: await this.local.listTools(s.id, await spec()) }),
+      callTool: async ({ name, arguments: args }) => this.local.callTool(s.id, await spec(), name, args || {}),
+      close: () => this.local.close(s.id),
+    };
+  }
+  /** «Probar»: talks to it again (mail: signs in to IMAP and SMTP) and re-reads its tools. */
+  async test(id) {
+    const s = this.server(id);
+    this.close(id);
+    try {
+      if (s.auth === "mail") await new MailConnector((await this.secret(id)).mail, { tcp: this.tcp }).test();
+      await this.refreshTools(id, await this.client(id, { retry: true }));
+      return { ok: true, server: serverView(this.server(id)) };
+    } catch (error) {
+      const message = clip(error?.message, 240);
+      if (this.server(id).status === "connected") this.patch(id, { error: message });
+      return { ok: false, error: message, server: serverView(this.server(id)) };
     }
   }
   /** One loopback listener per sign-in: http://127.0.0.1:<port>/callback?code&state. */
@@ -226,6 +403,7 @@ export class McpHub {
         const p = (await this.secret(s.id))?.pending;
         if (p?.state === state && Date.now() - p.at < AUTH_WINDOW_MS) {
           id = s.id;
+          if (p.google) { this.pending.set(id, { google: true, verifier: p.verifier, redirect: this.redirect, state, loopback: { close() {} }, timer: null }); break; }
           const provider = new Provider(this, id, { redirect: this.redirect, state });
           provider.verifier = p.verifier;
           this.pending.set(id, { provider, state, loopback: { close() {} }, timer: null });
@@ -245,9 +423,17 @@ export class McpHub {
     this.pending.delete(id);
     clearTimeout(p.timer);
     try {
-      const s = this.server(id);
-      const probe = this.transportFor(s.url, p.provider);
-      await probe.finishAuth(code);
+      const s = this.store.get("mcpServers", id);
+      if (!s) return false;
+      if (p.google) {
+        const client = this.googleClient();
+        if (!client) throw Error("Colmena ya no tiene su conexión con Google configurada.");
+        const tokens = await exchangeCode({ client, endpoints: this.google?.endpoints || GOOGLE_ENDPOINTS, code, verifier: p.verifier, redirect: p.redirect, fetchImpl: this.google?.fetchImpl || fetch });
+        await this.saveSecret(id, { google: tokens, pending: null });
+      } else {
+        const probe = this.transportFor(s.url, p.provider);
+        await probe.finishAuth(code);
+      }
       const live = await this.open(s, p.provider);
       this.live.set(id, live);
       this.patch(id, { connectedAt: now() });
@@ -269,17 +455,25 @@ export class McpHub {
     if (error && this.store.get("mcpServers", id)?.status !== "connected") this.patch(id, { status: "error", error });
   }
   /** A live client for a connected server (reconnects with the saved tokens; refresh is automatic). */
-  async client(id) {
+  async client(id, { retry = false } = {}) {
     const s = this.server(id);
-    if (s.status !== "connected") throw Error(s.name + " no está conectado. Conéctalo en Ajustes › Conexiones.");
+    if (s.status !== "connected" && !retry) throw Error(s.name + " no está conectado. Conéctalo en Ajustes › Apps.");
     if (this.live.has(id)) return this.live.get(id).client;
     const provider = new Provider(this, id);
     try {
-      const live = await this.open(s, provider);
+      let live;
+      try {
+        live = await this.open(s, provider);
+      } catch (error) {
+        // Google: an access token revoked early; one forced refresh, then a new sign-in.
+        if (s.auth !== "google" || !unauthorized(error)) throw error;
+        await this.googleTokens(id, { force: true });
+        live = await this.open(s, provider);
+      }
       this.live.set(id, live);
       return live.client;
     } catch (error) {
-      if (error instanceof UnauthorizedError || error?.name === "UnauthorizedError") {
+      if (unauthorized(error) || error?.code === "invalid_grant") {
         this.patch(id, { status: "needs_auth", error: "La sesión con " + s.name + " ha caducado. Vuelve a conectarlo." });
         throw Error("La sesión con " + s.name + " ha caducado: pide a la persona que lo vuelva a conectar en Ajustes › Conexiones.");
       }
@@ -302,11 +496,19 @@ export class McpHub {
   close(id) {
     const live = this.live.get(id);
     this.live.delete(id);
-    try { live?.client?.close(); } catch {}
+    try { live?.client?.close?.(); } catch {}
   }
   async remove(id) {
-    this.server(id);
+    const s = this.server(id);
+    const me = currentPerson();
+    // A company connection is removed by an owner or admin; a personal one by its person.
+    if (isPerson(me) && !s.owner && !MANAGERS.has(me.role)) throw Object.assign(Error("Solo quien administra la empresa quita las apps de todos."), { status: 403 });
     this.close(id);
+    if (s.auth === "google") {
+      const secret = await this.secret(id).catch(() => null);
+      if (secret?.google) await googleRevoke({ endpoints: this.google?.endpoints || GOOGLE_ENDPOINTS, tokens: secret.google, fetchImpl: this.google?.fetchImpl || fetch });
+    }
+    if (s.run === "local") await this.local?.close?.(id);
     this.cancelPending(id);
     this.cache.delete(id);
     try { await this.secrets?.remove?.(binding(id).profile); } catch {}
@@ -316,6 +518,7 @@ export class McpHub {
   }
   shutdown() {
     for (const id of [...this.live.keys()]) this.close(id);
+    void this.local?.shutdown?.();
     for (const id of [...this.pending.keys()]) this.cancelPending(id);
   }
 }

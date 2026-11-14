@@ -55,7 +55,9 @@ const noSession = () => ({ status: () => null, models: [], start: async () => { 
  * envelope vault (none: secrets unavailable); `files`: where mission files live (SqlFiles or
  * R2Files, server/file-store.mjs); `log`.
  */
-export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m), publicUrl = "", testing = false, fetchImpl = undefined, machine = null, browserDriver = null, machineInfo = null, agentSockets = () => [] }) {
+export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m), publicUrl = "", testing = false, fetchImpl = undefined, machine = null, browserDriver = null, machineInfo = null, agentSockets = () => [], google = null, googleEndpoints = null, tcp = null }) {
+  // The marketplace: `google` Colmena's web Google client (null = «Disponible pronto»), `tcp` the
+  // Worker's TCP sockets for mail (cloud/src/tcp.js). Both reach cloudBots.
   // Phase 4: `machine` (server/machine/seam.mjs › machineClient, the company's container: «Código»,
   // run_command, Office previews) and `browserDriver` (Browser Rendering pages: browser-cloud.mjs).
   // Phase 5 (the local agent): `agentSockets(tag)` lists the open agent sockets of a device
@@ -121,7 +123,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     checkUrl: async (u) => { await assertPublicUrl(u, { resolve: dohLookup(fetchImpl || fetch) }); },
   }) : null;
   const bots = cloudBots({
-    computer: browser, machine,
+    computer: browser, machine, google, googleEndpoints, tcp,
     store, workspace, vault: (ns) => (masters.length ? vault(ns) : null), memberOf, members, publicUrl, testing, fetchImpl, log,
     push: (personId, payload) => pushRef?.(personId, payload), rooms: () => appRef?.locals?.rooms,
   });

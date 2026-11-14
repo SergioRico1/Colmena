@@ -472,13 +472,15 @@ export class ConnectorCache {
   }
 }
 
-export function connectorsView(accounts, bots, folders) {
-  return Object.keys(TOOLKITS).map((key) => {
+export function connectorsView(accounts, bots, folders, mcp = []) {
+  // Direct connections of the marketplace (MCP servers, the mail connector) count as connected apps too.
+  const direct = mcp.map((s) => ({ id: "mcp:" + s.id, name: s.name, connected: true, botCount: 0 }));
+  return [...Object.keys(TOOLKITS).map((key) => {
     const connected =
       accounts.some((a) => a.status === "ACTIVE" && TOOLKITS[key].includes(String(a.toolkit).toLowerCase())) || (key === "carpeta" && folders.length > 0);
     const botCount = TOOL_KEYS.includes(key) ? bots.filter((b) => b.enabled && b.tools?.[key] && b.tools[key] !== "none").length : 0;
     return { id: key, name: CONNECTOR_NAMES[key], connected, botCount };
-  });
+  }), ...direct];
 }
 
 const safe = (fn, fallback = null) => {
@@ -564,7 +566,7 @@ export function buildState(store, runtime, extras = {}) {
     artifacts: store.listWithout("artifacts", ["content"]).map((a) => artifactSummary(a, ctx.missions)),
     folders,
     people: [user, ...store.list("people").map((p) => pick(p, ["id", "name", "email", "role", "createdAt"]))],
-    connectors: connectorsView(extras.accounts || [], bots, folders),
+    connectors: connectorsView(extras.accounts || [], bots, folders, safe(() => runtime?.mcp?.connected?.(), []) || []),
     ...notificationsState(store),
   };
 }
