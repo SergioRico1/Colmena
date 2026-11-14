@@ -9,7 +9,8 @@ const KEEP_ALIVE_MS = 10 * 60 * 1000;
 export function renderingDriver(binding, { onLaunch = () => {} } = {}) {
   let browser = null, launching = null;
   async function connected() {
-    if (browser?.isConnected()) return browser;
+    // Puppeteer 2 says `connected` (a property); older versions `isConnected()`.
+    if (browser && (typeof browser.isConnected === "function" ? browser.isConnected() : browser.connected !== false)) return browser;
     launching ??= (async () => {
       const t0 = Date.now();
       browser = await puppeteer.launch(binding, { keep_alive: KEEP_ALIVE_MS });

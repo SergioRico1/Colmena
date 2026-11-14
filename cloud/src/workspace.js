@@ -322,14 +322,21 @@ export class Workspace extends DurableObject {
     return { configured: true, ...(await r.json()), minutesPerMonth: this.host.store.get("settings", "main")?.machineMinutes || Number(this.env.MACHINE_MINUTES_PER_MONTH || 600), browserLaunches: this.browserLaunches || [], browserPages: this.host.browser?.open() || 0 };
   }
   /** Test only: the cloud browser opens a page and reads it (Browser Rendering's launch and CDP, measured). */
-  async browserProbe(workspaceId, url) {
+  async browserProbe(workspaceId, url, fields = null) {
     const host = await this.boot(workspaceId);
     if (!host.browser) return { configured: false };
     const t0 = Date.now();
     const args = { missionId: "probe", botId: "probe", url, session: "probe-" + t0 };
     try {
       const page = await host.browser.call("open", args);
-      return { ok: true, ms: Date.now() - t0, title: page.title, elements: page.elements, launches: this.browserLaunches || [] };
+      const out = { ok: true, ms: Date.now() - t0, title: page.title, elements: page.elements, page: String(page.page || "").slice(0, 800), launches: this.browserLaunches || [] };
+      if (Array.isArray(fields) && fields.length) {
+        const t1 = Date.now();
+        out.fill = await host.browser.call("fill", { ...args, fields });
+        out.after = (await host.browser.call("snapshot", { ...args, mode: "elementos", query: "", maxChars: 2000 })).text;
+        out.fillMs = Date.now() - t1;
+      }
+      return out;
     } catch (error) {
       return { ok: false, ms: Date.now() - t0, error: String(error?.message || error).slice(0, 500), launches: this.browserLaunches || [] };
     } finally {

@@ -460,7 +460,7 @@ async function devTest(request, env, url) {
   if (what === "machine" && request.method === "GET") return json(await stub.machineStatus(id));
   if (what === "machine/sleep" && request.method === "POST") return json(await stub.machineSleep(id));
   if (what === "machine/quota" && request.method === "POST") return json(await stub.setMachineQuota(id, data.minutes ?? null));
-  if (what === "browser" && request.method === "POST") return json(await stub.browserProbe(id, String(data.url || "")));
+  if (what === "browser" && request.method === "POST") return json(await stub.browserProbe(id, String(data.url || ""), Array.isArray(data.fields) ? data.fields.slice(0, 10) : null));
   throw new HttpError(404, "No encontrado.");
 }
 

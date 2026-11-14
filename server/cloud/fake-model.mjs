@@ -71,7 +71,9 @@ export async function fakeRespond({ instructions = "", input = [], tools = [], s
         : call("use_tool", { name: next.name, arguments: args }, "fake-tool-" + done.length + "-" + randomUUID().slice(0, 8));
     } else {
       const last = done.length ? textOf(done.at(-1).output) || String(done.at(-1).output || "") : "";
-      result = answer(botNameOf(instructions) + " (modelo de prueba): " + (next ? "no tengo la herramienta " + next.name + "." : "resultado: " + last.replace(/\s+/g, " ").slice(0, 600)));
+      // Earlier results too, shortly (a test can tell which step failed).
+      const before = done.slice(0, -1).map((d) => (textOf(d.output) || String(d.output || "")).replace(/\s+/g, " ").slice(0, 160));
+      result = answer(botNameOf(instructions) + " (modelo de prueba): " + (next ? "no tengo la herramienta " + next.name + "." : "resultado: " + last.replace(/\s+/g, " ").slice(0, 600) + (before.length ? " · antes: " + before.join(" · ") : "")));
     }
   } else {
     const app = /\[\[app:([A-Z0-9_]{3,80})\]\]/.exec(said)?.[1];
