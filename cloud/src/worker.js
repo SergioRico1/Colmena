@@ -47,7 +47,7 @@ export default {
 
 async function route(request, env, ctx) {
   const url = new URL(request.url);
-  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 1 });
+  if (url.pathname === "/health") return json({ ok: true, service: "colmena-nube", phase: 2 });
   if (!env.WORKSPACE_KEYS) return fail(503, "Colmena en la nube no está configurada todavía.");
   if (url.pathname.startsWith("/auth/")) return auth(request, env, url, ctx);
   if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return api(request, env, url);

@@ -87,7 +87,7 @@ const G = new Person("Gil", `gil.${run}@example.com`);
 
 console.log("Colmena hosted e2e against " + BASE);
 // ---- sign-in
-check("health", (await (await fetch(BASE + "/health")).json()).phase === 1);
+check("health", (await (await fetch(BASE + "/health")).json()).phase >= 1);
 check("app needs a session (redirect to /entrar)", (await A.req("/")).response.headers.get("location")?.startsWith("/entrar"));
 check("api needs a session", (await A.req("/api/state")).status === 401);
 check("a cross-site link request is refused", (await A.req("/auth/link", { method: "POST", body: { email: A.email }, origin: "https://evil.example" })).status === 403);
