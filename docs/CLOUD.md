@@ -1097,7 +1097,12 @@ Not checked with a real Composio account.
 
 - «Código»: the API-key note and no «Abrir una carpeta» in the cloud; previews through their link in a
   sandboxed frame.
-- The live browser: clicks on the frame, a box to type, Intro/Tab/Esc/Bajar while you have the control.
+- The live browser (`BrowserLive.jsx`, `LiveStage.jsx`): the frame at the page's own aspect ratio, «Ampliar» (the
+  whole screen on a phone; it opens by itself when you take the control of a frame too narrow to read). With the
+  control the frame is the page: a click lands there and focuses it, typing goes straight to the page (Esc twice,
+  Mayús+Tab or «Soltar el teclado» give the keyboard back), wheel or finger scroll; a toolbar for Tab, Esc,
+  arrows, Subir/Bajar and «Acercar» (2×, where a phone and a tablet start); reload in the address bar (`open`
+  of the same address; the protocol has no «back»). The note and «Devolver el control a Nora» are one step.
 - Empresa › «Hora y máquina»: the zone with the time there, the machine (on or off, minutes this month,
   last cold start) and the company's GitHub token.
 - Ajustes › «Tu cuenta de IA» › «Código y apps en la nube»: your GitHub token and «Mis propias apps».
@@ -1174,7 +1179,7 @@ Rendering 10 h included then $0.09/h):
 - Previews of apps that need absolute paths; WebSocket hot reload through `/vista/`.
 - The text of a Word file is not read in the Worker («No pude leer su contenido» above its pages): the
   pages show (converted in the machine) but text extraction for .docx should move to the machine too.
-- The live view names the bot only while it is browsing («el bot» once its turn ended).
+- (Done) The live view names the bot from the frame when no activity names it.
 - Real accounts: no real API key, GitHub token or Composio account was used.
 
 ## Phase 5: the desktop app is a client of the cloud plus a local agent
