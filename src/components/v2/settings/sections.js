@@ -204,6 +204,8 @@ if (isCloud()) {
       ["otra-ia", "Conectar otra IA", "gemini google openrouter deepseek kimi moonshot servidor propio clave api"],
     ],
   });
+  // This computer's places (browser and dictation, backups and encryption, the mailbox's contacts) do not exist hosted.
+  for (const id of ["sistema", "copias", "contactos"]) SECTIONS.find((s) => s.id === id).desktopOnly = true;
   const apps = SECTIONS.find((s) => s.id === "apps");
   Object.assign(apps, { lead: "Las apps con las que trabajan tus bots.", items: apps.items.filter(([anchor]) => anchor !== "carpetas") });
 }

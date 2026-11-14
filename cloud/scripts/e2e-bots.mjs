@@ -154,12 +154,16 @@ check("the test flag on", (await dev("fake-model", { body: { workspace: WS, on: 
   for (let i = 0; i < 15; i++) idle.push((await B.post(general.id, "idle " + i)).ms);
   const people = [A, B, D];
   const roots = [];
-  for (let i = 0; i < CONCURRENCY; i++) roots.push((await people[i % 3].post(general.id, `<@bot:${["nora", "vera", "iris"][i % 3]}> trabajo largo ${i} [[slow:6000]]`)).data.message.id);
+  for (let i = 0; i < CONCURRENCY; i++) roots.push((await people[i % 3].post(general.id, `<@bot:${["nora", "vera", "iris"][i % 3]}> trabajo largo ${i} [[slow:20000]]`)).data.message.id);
   const busy = [];
-  for (let i = 0; i < 25; i++) busy.push((await D.post(general.id, "mientras trabajan " + i)).ms);
-  const probe = await dev("probe", { method: "GET", query: "?workspace=" + WS });
+  let probe = null;
+  for (let i = 0; i < 25; i++) {
+    busy.push((await D.post(general.id, "mientras trabajan " + i)).ms);
+    if (i === 12) probe = await dev("probe", { method: "GET", query: "?workspace=" + WS });
+  }
   numbers.idlePostMs = { p50: pct(idle, 50), p95: pct(idle, 95) };
   numbers.busyPostMs = { p50: pct(busy, 50), p95: pct(busy, 95), botsWorking: probe.data?.working ?? null };
+  check("the bots were working while messages were measured", (probe?.data?.working || 0) >= 1, JSON.stringify(probe?.data));
   check(`messaging stays responsive with ${CONCURRENCY} bots working (p50 ${numbers.busyPostMs.p50} ms vs ${numbers.idlePostMs.p50} ms idle)`, numbers.busyPostMs.p50 < numbers.idlePostMs.p50 * 2 + 150, JSON.stringify(numbers));
   const t0 = performance.now();
   const all = await Promise.all(roots.map((r) => botReplies(A, r, { timeout: 90000 })));

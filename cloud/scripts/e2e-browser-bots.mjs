@@ -96,7 +96,7 @@ const pa = await laptop.newPage(), pb = await phone.newPage();
 const errors = [];
 for (const [who, p] of [["laptop", pa], ["phone", pb]]) {
   p.on("pageerror", (e) => errors.push(who + ": " + e.message));
-  p.on("console", (m) => { if (m.type() === "error" && !/favicon|Failed to load resource|Push API/.test(m.text())) errors.push(who + " console: " + m.text()); });
+  p.on("console", (m) => { if (m.type() === "error" && !/favicon|Failed to load resource|Push API|cloudflareinsights/.test(m.text())) errors.push(who + " console: " + m.text()); });
 }
 const shot = async (page, name) => { await sleep(600); await page.screenshot({ path: path.join(SHOTS, name + ".png") }); };
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -104,7 +104,7 @@ const settle = (page) => page.waitForLoadState("networkidle").catch(() => {});
 try {
   for (const [page, who] of [[pa, "laptop"], [pb, "phone"]]) {
     await page.goto(BASE + "/ajustes/ia"); await settle(page);
-    await page.getByText("Tu cuenta de IA").first().waitFor({ timeout: 15000 });
+    await page.getByText("ChatGPT").first().waitFor({ timeout: 15000 });
     await shot(page, who + "-01-tu-cuenta-de-ia");
     check(who + ": «Tu cuenta de IA» has no sideways scroll", (await overflow(page)) <= 0);
     const code = page.getByText(/Iniciar sesión con ChatGPT/).first();
