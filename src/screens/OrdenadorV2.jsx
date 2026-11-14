@@ -5,7 +5,10 @@ import { BotPresence } from "../components/v2/Presence.jsx";
 import { BotDot } from "../components/v3/TrabajoHeader.jsx";
 import NotFound from "./NotFound.jsx";
 import { useBrowserFrames } from "../components/computer/useBrowserFrames.js";
-import { ReturnNote, WatchedView, returnBody } from "../components/computer/takeover.jsx";
+import { HandBack, HANDBACK_CSS, WatchedView, botWords, returnBody } from "../components/computer/takeover.jsx";
+import LiveStage, { STAGE_CSS } from "../components/computer/LiveStage.jsx";
+import { isCloud } from "../lib/cloud.js";
+import { useBreakpoint } from "../lib/breakpoint.js";
 import { useRoom } from "../components/room/useRoom.js";
 import { findBot } from "../components/room/common.jsx";
 import { useStore } from "../lib/store.jsx";
@@ -32,6 +35,7 @@ const pill = { height: "28px", padding: "0 10px", display: "inline-flex", alignI
 export default function OrdenadorV2({ params = {}, query = {} }) {
   const { bots, folders = [], ready } = useStore();
   const [expert] = useExpert();
+  const bp = useBreakpoint();
   const room = useRoom(params.id);
   const { mission: m, steps, pending } = room;
   const { frame, available, takeover } = useBrowserFrames(params.id);
@@ -47,6 +51,7 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
   const botId = frame?.botId || query.bot || running?.botId || m.botIds?.[0];
   const bot = findBot(bots, botId);
   const name = bot?.name || "El bot";
+  const w = botWords(bot?.name || null);
   const ask = pending.find((a) => (a.computer || a.redLine) && (!a.botId || a.botId === botId)) || null;
   const host = frame ? hostOf(frame.url) : "";
   const secure = frame ? /^https:/.test(frame.url || "") : false;
@@ -70,10 +75,10 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
 
   const status = outcome?.ok ? "Terminado · " + lower(outcome.text.split(".")[0])
     : ask ? `En ${m.title} · espera tu OK para seguir`
-    : takeover ? `Tienes el control · ${name} mira`
-    : !frame ? (available === false ? "El navegador de los bots solo funciona en la app de escritorio" : `Cuando ${name} abra una página, la verás aquí en directo`)
+    : takeover ? `Lo llevas tú · ${w.who} espera sin tocar nada`
+    : !frame ? (available === false ? "El navegador de los bots solo funciona en la app de escritorio" : `Cuando ${w.who} abra una página, la verás aquí en directo`)
     : active ? (frame.title ? `En «${frame.title}»` : "Navegando") : "Ha terminado";
-  const live = takeover ? { text: "TÚ", bg: C.accentSoft, fg: C.accentInk } : ask ? { text: "EN PAUSA", bg: C.honeySoft, fg: C.honeyText } : { text: "EN VIVO", bg: C.errorSoft, fg: C.error };
+  const live = takeover ? { text: "Lo llevas tú", bg: C.accentSoft, fg: C.accentInk, dot: false } : ask ? { text: "Espera tu OK", bg: C.honeySoft, fg: C.honeyText, dot: false } : active ? { text: "Lo lleva " + w.who, bg: "var(--c-card)", fg: "var(--c-text-2)", dot: true } : null;
 
   const log = steps.filter((s) => s.botId === botId).flatMap((s) => s.activity || []).slice(-8);
   const items = log.map((l) => ({ text: l.text || [l.verb, l.detail].filter(Boolean).join(" · "), time: hhmm(l.at) }));
@@ -89,57 +94,61 @@ export default function OrdenadorV2({ params = {}, query = {} }) {
         <nav aria-label="Miga" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-ui)", color: "var(--c-text-3)", minWidth: 0 }}>
           <a href="/trabajo" onClick={go("/trabajo")} style={{ color: "var(--c-text-3)" }}>Trabajo</a><span aria-hidden="true">›</span>
           <a href={`/encargo/${m.id}`} onClick={go(`/encargo/${m.id}`)} style={{ color: "var(--c-text-3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "360px" }}>{m.title}</a><span aria-hidden="true">›</span>
-          <span style={{ color: "var(--c-text)", fontWeight: 500, whiteSpace: "nowrap" }}>{"Navegador de " + name}</span>
+          <span style={{ color: "var(--c-text)", fontWeight: 500, whiteSpace: "nowrap" }}>{"Navegador " + w.of}</span>
         </nav>
 
         <header style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "14px" }}>
           {bot ? <BotDot bot={bot} size={34} work={active && !takeover && !ask} /> : null}
           <div style={{ flex: "1 1 360px", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-            <h1 style={{ margin: 0, font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>{frame && active ? `${name} está usando su navegador` : `El navegador de ${name}`}</h1>
+            <h1 style={{ margin: 0, font: "700 var(--t-headline)/1.15 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.015em" }}>{frame && active ? `${name} está usando su navegador` : `El navegador ${w.of}`}</h1>
             <span role="status" style={{ fontSize: "var(--t-body)", color: ask ? "var(--c-honey-text)" : "var(--c-text-2)" }}>{status}</span>
           </div>
-          {frame ? (
-            <button type="button" disabled={!!busy} onClick={takeover ? giveBack : take} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: takeover ? "var(--c-btn)" : "var(--c-card)", color: takeover ? "var(--c-btn-text)" : "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy ? "wait" : "pointer", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .16)" }}>
-              {takeover ? (busy === "return" ? "Devolviendo…" : "Devolver el control") : busy === "take" ? "Abriendo…" : "Tomar el control"}
+          {frame && !takeover ? (
+            <button type="button" disabled={!!busy} onClick={take} style={{ height: "36px", padding: "0 14px", border: 0, borderRadius: "var(--r-sm)", background: "var(--c-card)", color: "var(--c-text)", fontSize: "var(--t-ui)", fontWeight: 600, cursor: busy ? "wait" : "pointer", boxShadow: "inset 0 0 0 1px rgb(var(--c-ink-rgb) / .16)" }}>
+              {busy === "take" ? "Abriendo…" : "Tomar el control"}
             </button>
           ) : null}
         </header>
+        <style>{STAGE_CSS + HANDBACK_CSS}</style>
         {takeover && frame ? (
-          <ReturnNote name={name} value={note} onChange={setNote} onSubmit={giveBack} disabled={busy === "return"}
-            style={{ padding: "14px 18px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}
-            inputStyle={{ height: "44px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-hover)", fontSize: "var(--t-body)", padding: "0 18px" }} />
+          <HandBack name={bot?.name || null} value={note} onChange={setNote} onSubmit={giveBack} busy={busy === "return"} disabled={!!busy && busy !== "return"}
+            style={{ background: "var(--c-card)", border: "1px solid var(--c-line)" }} />
         ) : null}
         {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-ui)", color: "var(--c-error)" }}>{error}</p> : null}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
-          <section aria-label="Vista en vivo" style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", overflow: "hidden", transition: "box-shadow .3s ease", boxShadow: `0 0 0 3px ${takeover ? C.accentInk : "transparent"}, 0 30px 60px -34px rgb(var(--c-ink-rgb) / .5)` }}>
+          <section aria-label="Vista en vivo" style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", overflow: "hidden", transition: "box-shadow .3s ease", border: "1px solid var(--c-line)", boxShadow: "0 30px 60px -34px rgb(var(--c-ink-rgb) / .5)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", height: "46px", padding: "0 14px", background: "var(--c-chip)" }}>
-              <span aria-hidden="true" style={{ display: "flex", gap: "6px" }}>{[0, 1, 2].map((i) => <span key={i} style={{ width: "10px", height: "10px", borderRadius: "var(--r-circle)", background: C.lineStrong }} />)}</span>
               <span title={frame?.url || ""} style={{ flex: 1, minWidth: 0, height: "30px", display: "flex", alignItems: "center", gap: "8px", padding: "0 12px", borderRadius: "var(--r-sm)", background: "var(--c-card)", font: "400 var(--t-meta)/1 'Geist Mono', monospace", color: "var(--c-text-2)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
                 <Lock size={12} weight="bold" color={secure ? C.okInk : C.text4} style={{ flex: "none" }} />
                 {frame ? String(frame.url || "").replace(/^https?:\/\//, "") : "sin página abierta"}
               </span>
-              {frame ? (
+              {frame && live ? (
                 <span style={{ flex: "none", height: "24px", padding: "0 10px", display: "inline-flex", alignItems: "center", gap: "6px", borderRadius: "var(--r-pill)", background: live.bg, color: live.fg, fontSize: "var(--t-caption)", fontWeight: 600 }}>
-                  <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "currentColor", animation: ask ? "none" : "breathe 1.4s ease-in-out infinite" }} />
+                  {live.dot ? <span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-circle)", background: "var(--c-ok)", animation: "breathe 1.4s ease-in-out infinite" }} /> : null}
                   {live.text}
                 </span>
               ) : null}
             </div>
-            <WatchedView watching={!!frame?.image && !takeover} name={name} busy={!!busy} onTake={take}
+            <WatchedView watching={!!frame?.image && !takeover} name={w.who} busy={!!busy} onTake={take}
               takeStyle={{ height: "42px", padding: "0 18px", border: 0, borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-body)", fontWeight: 600, cursor: "pointer" }}
               quietStyle={{ height: "42px", padding: "0 16px", border: "1px solid rgb(var(--c-ink-rgb) / .16)", borderRadius: "var(--r-pill)", background: "var(--c-card)", fontSize: "var(--t-body)", cursor: "pointer" }}
-              style={{ minHeight: "440px", background: "var(--c-sunken)", display: "grid", placeItems: "center", overflow: "hidden" }}>
+              style={frame?.image ? { background: "var(--c-card)", padding: "10px" } : { minHeight: "440px", background: "var(--c-sunken)", display: "grid", placeItems: "center", overflow: "hidden" }}>
               {frame?.image ? (
-                <img src={frame.image} alt={"Lo que ve " + name + ": " + (frame.title || host || "página web")} style={{ display: "block", width: "100%", height: "auto", maxHeight: "72vh", objectFit: "contain" }} />
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "10px", boxSizing: "border-box" }}>
+                  <LiveStage frame={frame} alt={"Lo que ve " + w.who + ": " + (frame.title || host || "página web")} label={"Página " + w.of + ": " + (host || frame.url)}
+                    control={takeover && isCloud()} startZoomed={bp !== "laptop"} onInput={(body) => post("/computer/input", { missionId: m.id, ...body })} onError={(e) => setError(e?.message || "La página no ha respondido.")} />
+                </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "40px", textAlign: "center", color: "var(--c-text-3)" }}>
                   {bot ? <BotPresence bot={bot} size={52} state={active ? "work" : "rest"} /> : null}
                   <span style={{ maxWidth: "380px", fontSize: "var(--t-read)", lineHeight: 1.5 }}>{available === false ? "El navegador de los bots solo funciona en la app de escritorio de Colmena." : `${name} no tiene ninguna página abierta ahora mismo.`}</span>
                 </div>
               )}
-              {takeover ? <div role="status" style={{ position: "absolute", left: "16px", bottom: "16px", padding: "8px 14px", borderRadius: "var(--r-pill)", background: "var(--c-btn)", color: "var(--c-btn-text)", fontSize: "var(--t-meta)", animation: "rise .3s ease-out" }}>{`Tienes el control. ${name} espera y mira lo que haces.`}</div> : null}
             </WatchedView>
+            {takeover && frame && !isCloud() ? (
+              <p role="status" style={{ margin: 0, padding: "12px 16px", borderTop: "1px solid var(--c-line)", fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text-2)" }}>{`Haz clic y escribe en la ventana «Colmena · Navegador ${w.of}». Aquí ves lo mismo que allí.`}</p>
+            ) : null}
           </section>
 
           <aside style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: "14px" }}>

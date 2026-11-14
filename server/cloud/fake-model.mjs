@@ -12,6 +12,11 @@
 //   [[tool:NAME {json}]] the bot calls that tool with those arguments, then says what it got back;
 //   anything else        «<Bot> (modelo de prueba): <the first words of what you wrote>».
 import { randomUUID } from "node:crypto";
+import { unwrapExternal } from "../external-content.mjs";
+
+// A tool's result as the fake bot quotes it: the data inside the outside-content marks, not the
+// marks and their notice, which are for the model and never for the people in the room.
+const quoted = (output) => { const s = String(output || ""); return unwrapExternal(s) ?? s; };
 
 export const FAKE_MODEL = "colmena-prueba";
 export const FAKE_MODELS = Object.freeze([
@@ -70,9 +75,9 @@ export async function fakeRespond({ instructions = "", input = [], tools = [], s
       result = names.has(next.name) ? call(next.name, args, "fake-tool-" + done.length + "-" + randomUUID().slice(0, 8))
         : call("use_tool", { name: next.name, arguments: args }, "fake-tool-" + done.length + "-" + randomUUID().slice(0, 8));
     } else {
-      const last = done.length ? textOf(done.at(-1).output) || String(done.at(-1).output || "") : "";
+      const last = done.length ? quoted(textOf(done.at(-1).output) || done.at(-1).output) : "";
       // Earlier results too, shortly (a test can tell which step failed).
-      const before = done.slice(0, -1).map((d) => (textOf(d.output) || String(d.output || "")).replace(/\s+/g, " ").slice(0, 160));
+      const before = done.slice(0, -1).map((d) => quoted(textOf(d.output) || d.output).replace(/\s+/g, " ").slice(0, 160));
       result = answer(botNameOf(instructions) + " (modelo de prueba): " + (next ? "no tengo la herramienta " + next.name + "." : "resultado: " + last.replace(/\s+/g, " ").slice(0, 600) + (before.length ? " · antes: " + before.join(" · ") : "")));
     }
   } else {
@@ -96,7 +101,7 @@ export async function fakeRespond({ instructions = "", input = [], tools = [], s
           : Array.isArray(json.entries) ? "en «" + (json.folder || "la carpeta") + "» hay " + json.entries.map((e) => e.name).join(", ") + "."
           : Array.isArray(json.folders) ? "carpetas: " + json.folders.map((f) => f.label).join(", ") + "." : null;
       } catch {}
-      result = answer(botNameOf(instructions) + " (modelo de prueba): " + (said || out).replace(/\s+/g, " ").slice(0, 1500));
+      result = answer(botNameOf(instructions) + " (modelo de prueba): " + (said || quoted(out)).replace(/\s+/g, " ").slice(0, 1500));
     } else if (tool && !names.has(tool[1]))
       result = answer(botNameOf(instructions) + " (modelo de prueba): no tengo la herramienta " + tool[1] + ".");
     else if (app && names.has("apps_execute") && !done.length)

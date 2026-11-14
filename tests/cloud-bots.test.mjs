@@ -98,6 +98,16 @@ test("fake model: plans, app actions, slow answers, plain answers", async () => 
   assert.equal(lastUserText([{ role: "user", content: [{ type: "input_text", text: "hola" }] }, { type: "function_call_output", output: "{}" }]), "hola");
 });
 
+test("fake model: a tool's result is quoted without the outside-content marks", async () => {
+  const { wrapExternal } = await import("../server/external-content.mjs");
+  const said = '<@bot:nora> abre [[tool:browser_fill|{"fields":[]}]]';
+  const output = wrapExternal(JSON.stringify({ ok: true, filled: [{ ref: "e1" }] }), { source: "browser" });
+  assert.match(output, /CONTENIDO_EXTERNO/, "the bot gets it wrapped");
+  const reply = await fakeRespond({ instructions: "Eres Nora.", tools: [{ name: "browser_fill" }], input: [{ role: "user", content: said }, { type: "function_call_output", call_id: "fake-tool-0-x", output }] });
+  assert.match(reply.text, /^Nora \(modelo de prueba\): resultado: \{"ok":true/);
+  assert.doesNotMatch(reply.text, /CONTENIDO_EXTERNO|\[Colmena\]/, "the room never sees the marks or their notice");
+});
+
 test("the fake model needs the Worker's permission and the workspace's flag", async (t) => {
   const { host, as } = await company(t, { testing: false, fake: false });
   assert.throws(() => host.setTestFlags({ fakeModel: true }), /no están permitidas/);
