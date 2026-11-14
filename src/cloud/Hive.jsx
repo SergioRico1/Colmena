@@ -2,11 +2,14 @@
 // redrawn in the app's tokens): a honeycomb that breathes, the team's pixel bots flying from cell
 // to cell and lighting the cells they land on in their own colour. A clearing stays empty under
 // the page's card. The pages speak to it with `hive(type)`:
-//   type    a key was typed: a bot flies to the card's edge to look
+//   type    a key was typed: a bot flies to the card's edge to look (when its way there is clear)
 //   gather  the bots come close and wait (the mail is on its way)
 //   honey   the cell by the card glows honey: something waits for you
 //   ok      a green wave runs out from the card (signed in, connected)
 // `asleep` draws the bots resting on their cells with their eyes closed (no AI connected yet).
+// Each bot keeps a margin round its sprite: it only sets off on a straight path that stays a
+// sprite and a gap away from every other bot's path (or resting cell) and from the mark, so two
+// sprites never overlap in any frame. Resting bots hold only their cell.
 // Reduced motion draws one still frame. Nothing runs while the page is hidden; ~30 frames a
 // second while it shows. Decorative: aria-hidden, no pointer events.
 import { useEffect, useRef } from "react";
@@ -17,6 +20,32 @@ export const hive = (type) => { try { window.dispatchEvent(new CustomEvent("colm
 
 const HONEY = "255,201,60";
 const rgbOf = (hex) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "")); if (!m) return "91,102,128"; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(","); };
+/** The distance from point p to the segment a–b. */
+const toSegment = (p, a, b) => {
+  const dx = b.x - a.x, dy = b.y - a.y, l = dx * dx + dy * dy;
+  const k = l ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l)) : 0;
+  return Math.hypot(p.x - a.x - k * dx, p.y - a.y - k * dy);
+};
+const cross = (a, b, c) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+/** The distance between the segments a–b and c–d (0 when they cross). */
+export const segmentGap = (a, b, c, d) => {
+  if (Math.sign(cross(a, b, c)) * Math.sign(cross(a, b, d)) < 0 && Math.sign(cross(c, d, a)) * Math.sign(cross(c, d, b)) < 0) return 0;
+  return Math.min(toSegment(a, c, d), toSegment(b, c, d), toSegment(c, a, b), toSegment(d, a, b));
+};
+/**
+ * The square distance (the larger of |dx| and |dy|) between the segments a–b and c–d, sampled
+ * every few pixels: sprites are squares, so two of them overlap when this is under their size.
+ */
+export const squareGap = (a, b, c, d) => {
+  const n = (p, q) => Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 3));
+  const ni = n(a, b), nj = n(c, d);
+  let best = Infinity;
+  for (let i = 0; i <= ni; i++) {
+    const x = a.x + ((b.x - a.x) * i) / ni, y = a.y + ((b.y - a.y) * i) / ni;
+    for (let j = 0; j <= nj; j++) best = Math.min(best, Math.max(Math.abs(x - c.x - ((d.x - c.x) * j) / nj), Math.abs(y - c.y - ((d.y - c.y) * j) / nj)));
+  }
+  return best;
+};
 const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** One bot as a small canvas (its pixel drawing at `px` CSS pixels, sharp at this screen's density). */
@@ -44,7 +73,7 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
     const team = live.current.bots;
     const sleeping = live.current.asleep;
     let R = 22, W = 0, H = 0, cells = [], cols = 0, rows = 0, flyers = [], hole = null, heart = { x: 0, y: 0 }, px = 32, ink = "18,19,26", dark = false, dpr = 1;
-    let speed = 1, gather = false, core = null;
+    let speed = 1, gather = false, core = null, gap = 4;
     const mark = new Image();
     mark.src = "/logo-mark-64.png";
     const rand = seeded(7);
@@ -92,6 +121,8 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
       dpr = Math.min(1.5, devicePixelRatio || 1);
       W = innerWidth; H = innerHeight; // Whole pixels per cell of the bots' 16-cell drawing, and cells to hold them.
       px = W >= 1280 ? 64 : W >= 1024 ? 48 : 32; R = W >= 1280 ? 44 : W >= 1024 ? 34 : 24;
+      // The margin round each sprite: two neighbouring cells (√3·R apart) still hold two bots.
+      gap = Math.max(4, Math.min(px / 8, SQRT3 * R - px - 1));
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ({ cells, cols, rows } = combCells(W, H, R));
@@ -120,9 +151,8 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
         const home = homes[i] || core;
         home.glow = sleeping ? 0.45 : 0.85; home.rgb = f.rgb; home.home = true;
         f.home = home;
-        // Appearing (first time, or back on screen): already home. Otherwise they fly there.
-        if (!f.to || sleeping) { f.from = f.to = home; f.t0 = 0; }
-        else { f.from = f.to; f.to = home; f.t0 = performance.now(); f.dur = 700; f.wait = 800 + rand() * 1600; }
+        // Already home: six bots flying across the comb at once could not keep their margins.
+        f.from = f.to = home; f.t0 = 0; f.dur = 1; f.wait = 800 + rand() * 1600;
       });
     };
     const hexTrace = (x, y, r) => {
@@ -170,10 +200,24 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
         const k = still || sleeping ? 1 : Math.min(1, Math.max(0, (now - f.t0) / f.dur));
         const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
         const x = f.from.x + (f.to.x - f.from.x) * e;
-        const y = f.from.y + (f.to.y - f.from.y) * e - Math.sin(Math.PI * k) * R * 0.45;
+        // A straight line (no hop): the margins are kept along the path itself.
+        const y = f.from.y + (f.to.y - f.from.y) * e;
         const img = face(f.b, sleeping ? "pausa" : k < 1 ? "trabajando" : "libre");
         ctx.drawImage(img, Math.round(x - px / 2), Math.round(y - px / 2), px, px);
       }
+    };
+    // Where a bot is or will be until it lands: its path while it flies, its cell once it rests.
+    const pathOf = (f, now) => (!f.to ? null : now >= f.t0 + f.dur ? [f.to, f.to] : [f.from, f.to]);
+    /** Whether bot `f` may fly from a to b now: clear of every other bot's path and of the mark. */
+    const clearWay = (f, a, b, now) => {
+      if (core && (toSegment(core, a, b) < px / 2 + (R * 0.95) / 2 + gap / 2 || squareGap(core, core, a, b) < px / 2 + (R * 0.95) / 2 + 1)) return false;
+      for (const g of flyers) {
+        if (g === f) continue;
+        const p = pathOf(g, now);
+        // A round margin of `gap`, and the square sprites never touching corner to corner.
+        if (p && (segmentGap(a, b, p[0], p[1]) < px + gap || squareGap(a, b, p[0], p[1]) < px + 2)) return false;
+      }
+      return true;
     };
     const step = (now, dt) => {
       for (const k of cells) if (k.delay <= now && k.hold <= now) k.glow = Math.max(sleeping ? 0.5 * (k.glow > 0.45 ? 1 : 0) : 0, k.glow - dt / 5200);
@@ -182,33 +226,37 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
         if (!f.to || now < f.t0 + f.dur + f.wait) continue;
         const land = f.to;
         if (f.from !== land) { land.glow = 1; land.rgb = f.rgb; land.delay = 0; }
-        // A cell another bot is in or flying to is taken: two never share one.
-        const taken = new Set(flyers.filter((x) => x !== f).map((x) => x.to));
-        const inside = (n) => n.w && n !== core && !taken.has(n) && n.y > 60 && n.y < H - 24 && n.x > 12 && n.x < W - 12;
-        let next = land, away = false;
+        // Another bot's home is never a stop; nor is a cell whose way is not clear (clearWay).
+        const inside = (n) => n.w && n !== core && (!n.home || n === f.home) && n.y > 60 && n.y < H - 24 && n.x > 12 && n.x < W - 12;
+        const ok = (n) => n !== land && inside(n) && clearWay(f, land, n, now);
+        let next = land, away = false, blocked = false;
         if (gather) {
           // Gathered: each walks cell by cell to the card's edge and waits there.
-          const options = neighbours(cells, cols, rows, land).filter(inside).sort((a, b) => fromCard(a) - fromCard(b));
-          if (options[0] && fromCard(options[0]) < fromCard(land) && fromCard(land) > 40) next = options[0];
+          const options = neighbours(cells, cols, rows, land).filter((n) => fromCard(n) < fromCard(land) && ok(n)).sort((a, b) => fromCard(a) - fromCard(b));
+          if (options[0] && fromCard(land) > 40) next = options[0];
         } else if (land === f.home) {
-          // Out on an errand: one or two cells beyond the rosette.
-          // Out on an errand: two to four cells away, now and then all the way to the card's edge.
-          let at = land;
-          const hops = 2 + Math.floor(rand() * 3);
-          for (let i = 0; i < hops; i++) {
-            const out = neighbours(cells, cols, rows, at).filter((n) => inside(n) && !n.home && Math.hypot(n.x - core.x, n.y - core.y) >= Math.hypot(at.x - core.x, at.y - core.y));
-            if (!out.length) break;
-            at = out[Math.floor(rand() * out.length)];
+          // Out on an errand: two to four cells beyond the rosette, on a clear way.
+          for (let tries = 0; tries < 4 && next === land; tries++) {
+            let at = land;
+            const hops = 2 + Math.floor(rand() * 3);
+            for (let i = 0; i < hops; i++) {
+              const out = neighbours(cells, cols, rows, at).filter((n) => inside(n) && !n.home && Math.hypot(n.x - core.x, n.y - core.y) >= Math.hypot(at.x - core.x, at.y - core.y));
+              if (!out.length) break;
+              at = out[Math.floor(rand() * out.length)];
+            }
+            if (ok(at)) next = at;
           }
-          if (rand() < 0.25 && hole) {
-            const edge = cells.filter((k) => inside(k) && fromCard(k) < R * 1.2).sort((a, b) => Math.hypot(a.x - land.x, a.y - land.y) - Math.hypot(b.x - land.x, b.y - land.y))[0];
-            if (edge) at = edge;
-          }
-          next = at;
-          away = true;
-        } else next = f.home;
+          away = next !== land;
+        } else if (clearWay(f, land, f.home, now)) next = f.home;
+        else {
+          // The way home is blocked: one step aside to any clear cell, so two bots never wait on
+          // each other for ever.
+          const aside = neighbours(cells, cols, rows, land).filter((n) => !n.home && ok(n));
+          next = aside.length ? aside[Math.floor(rand() * aside.length)] : land;
+          blocked = true;
+        }
         f.from = land; f.to = next; f.t0 = now; f.dur = (next === land ? 1 : 520 + Math.hypot(next.x - land.x, next.y - land.y) * 1.6) / speed;
-        f.wait = (gather ? 900 + rand() * 1800 : away ? 300 + rand() * 900 : 1400 + rand() * 3200) / speed;
+        f.wait = (blocked ? 200 + rand() * 500 : gather ? 900 + rand() * 1800 : away ? 300 + rand() * 900 : 1400 + rand() * 3200) / speed;
       }
     };
     const center = () => (hole ? { x: (hole.l + hole.r) / 2, y: (hole.t + hole.b) / 2 } : { x: W / 2, y: H / 2 });
@@ -243,9 +291,9 @@ export default function Hive({ bots = [], asleep = false, clear = null }) {
       const placed = flyers.filter((x) => x.to);
       if (type === "type" && placed.length && !sleeping) {
         // One bot comes to the card's edge to look at what you write.
-        const f = placed[Math.floor(rand() * placed.length)];
-        const edge = cells.filter((k) => k.w && k.y > 60 && fromCard(k) < R * 1.2).sort((a, b) => Math.hypot(a.x - f.to.x, a.y - f.to.y) - Math.hypot(b.x - f.to.x, b.y - f.to.y))[0];
-        if (edge && performance.now() > f.t0 + f.dur) { f.from = f.to; f.to = edge; f.t0 = performance.now(); f.dur = 520; f.wait = 900; }
+        const f = placed[Math.floor(rand() * placed.length)], now = performance.now();
+        const edge = now > f.t0 + f.dur && cells.filter((k) => k.w && k !== core && !k.home && k.y > 60 && fromCard(k) < R * 1.2).sort((a, b) => Math.hypot(a.x - f.to.x, a.y - f.to.y) - Math.hypot(b.x - f.to.x, b.y - f.to.y)).find((k) => clearWay(f, f.to, k, now));
+        if (edge) { f.from = f.to; f.to = edge; f.t0 = now; f.dur = 520 + Math.hypot(edge.x - f.from.x, edge.y - f.from.y) * 0.8; f.wait = 900; }
       }
       if (type === "gather") { gather = true; speed = 0.8; }
       if (type === "free") { gather = false; speed = 1; }
