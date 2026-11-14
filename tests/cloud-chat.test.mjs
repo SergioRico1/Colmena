@@ -495,3 +495,25 @@ test("performance: a channel of 50,000 messages opens by pages", async (t) => {
   assert.ok(median < 250, "the first page stays fast: " + median);
   assert.ok(aroundMs < 250);
 });
+
+test("big values: over 2 MB a record is kept in pieces on a Durable Object, encrypted or not", async (t) => {
+  for (const encrypted of [true, false]) {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "colmena-spill-"));
+    const storage = new FakeDurableStorage(path.join(dir, "do.sqlite"));
+    const key = randomBytes(32);
+    const store = new Store(null, { driver: new DoDriver(storage), ...(encrypted ? { keyProvider: () => key } : {}) });
+    t.after(async () => { store.close(); await rm(dir, { recursive: true, force: true }).catch(() => {}); });
+    const big = "x".repeat(5 * 1024 * 1024);
+    store.put("histories", { id: "h1", missionId: "m", body: big, small: 1 });
+    assert.equal(store.get("histories", "h1").body.length, big.length);
+    assert.equal(store.list("histories")[0].body.length, big.length);
+    assert.equal(store.listWithout("histories", ["body"])[0].small, 1);
+    assert.ok(storage.sql.exec("SELECT count(*) AS n FROM colmena_spill").one().n >= 5);
+    store.put("histories", { id: "h1", missionId: "m", body: "pequeño" });
+    assert.equal(store.get("histories", "h1").body, "pequeño");
+    assert.equal(storage.sql.exec("SELECT count(*) AS n FROM colmena_spill").one().n, 0, "pieces go when the value shrinks");
+    store.put("histories", { id: "h2", body: big });
+    store.remove("histories", "h2");
+    assert.equal(storage.sql.exec("SELECT count(*) AS n FROM colmena_spill").one().n, 0);
+  }
+});

@@ -14,6 +14,14 @@ import { Store } from "../../server/store.mjs";
 import { DoDriver } from "../../server/store-driver.mjs";
 import { hostWorkspace } from "../../server/cloud/host.mjs";
 import { R2Files, SqlFiles } from "../../server/file-store.mjs";
+import { R2Blobs, SqlBlobs } from "../../server/cloud/blobs.mjs";
+import { uploadFile, fileHeaders } from "../../server/cloud/chat-routes.mjs";
+import { sendMail } from "./mail.js";
+
+const UPLOAD = /^\/api\/chat\/files$/;
+const IMPORT_PART = /^\/api\/chat\/import\/([0-9a-f-]{36})\/parts\/(\d{1,4})$/;
+const DOWNLOAD = /^\/api\/chat\/files\/([0-9a-f-]{36})$/;
+const json = (data, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 
 const ID = /^[0-9a-f-]{36}$/;
 // Each object's Express server listens on its own port of the isolate (objects can share one).
@@ -52,7 +60,12 @@ export class Workspace extends DurableObject {
       const masters = this.env.VAULT_MASTER_KEY ? [{ kid: "m1", secret: this.env.VAULT_MASTER_KEY }] : [];
       // Mission files: R2 (EU) when the bucket is bound, else this object's own SQLite.
       const files = this.env.FILES ? new R2Files(this.env.FILES, "workspaces/" + workspaceId) : new SqlFiles(this.ctx.storage.sql);
-      const host = hostWorkspace({ store, workspace: { id: workspaceId, name: mark?.title || "" }, masters, files });
+      // Team messaging's files and import parts: R2 (EU) when bound, else this object's SQLite.
+      const blobs = this.env.FILES ? new R2Blobs(this.env.FILES, "workspaces/" + workspaceId) : new SqlBlobs(this.ctx.storage.sql);
+      const vapid = this.env.VAPID_PUBLIC_KEY && this.env.VAPID_PRIVATE_KEY ? { publicKey: this.env.VAPID_PUBLIC_KEY, privateKey: this.env.VAPID_PRIVATE_KEY, subject: this.env.VAPID_SUBJECT || "mailto:avisos@colmena.invalid" } : null;
+      const host = hostWorkspace({ store, workspace: { id: workspaceId, name: mark?.title || "" }, masters, files, blobs, vapid,
+        defer: (promise) => { const p = Promise.resolve(promise).catch((e) => console.error("workspace deferred: " + (e?.stack || e))); try { this.ctx.waitUntil(p); } catch {} return p; },
+        presence: () => this.presence() });
       const server = http.createServer(host.app);
       const port = nextPort++;
       await new Promise((resolve) => server.listen(port, resolve));
@@ -78,7 +91,7 @@ export class Workspace extends DurableObject {
     if (!person?.id) { try { ws.close(4001, "unknown"); } catch {} return; }
     const close = this.host.openFeed(person, (event) => {
       try { ws.send(JSON.stringify(event)); } catch {}
-    });
+    }, { watching: () => { try { return ws.deserializeAttachment()?.watch || null; } catch { return null; } } });
     this.feeds.set(ws, close);
   }
 
@@ -93,6 +106,9 @@ export class Workspace extends DurableObject {
       return Response.json({ error: "El espacio no se pudo abrir. Prueba en unos segundos." }, { status: 503 });
     }
     const url = new URL(request.url);
+    // Team messaging's uploads and downloads stream straight to and from R2 (no body in memory).
+    const streamed = await this.streamed(request, url, person);
+    if (streamed) return streamed;
     if (url.pathname === "/api/live") {
       if (request.headers.get("Upgrade") !== "websocket") return Response.json({ error: "WebSocket expected." }, { status: 426 });
       if (!person?.id || !this.host.members().some((m) => m.id === person.id)) return Response.json({ error: "No perteneces a este espacio." }, { status: 403 });
@@ -102,12 +118,70 @@ export class Workspace extends DurableObject {
       pair[1].serializeAttachment({ person, workspaceId });
       this.attach(pair[1]);
       try { pair[1].send(JSON.stringify({ type: "ready" })); } catch {}
+      this.presenceChanged(person.id);
       return new Response(null, { status: 101, webSocket: pair[0] });
     }
     // The body is read whole first: a route that answers without reading it (a refusal) must not
     // leave a half-read stream behind, which workerd treats as an uncaught error.
     const body = ["GET", "HEAD"].includes(request.method) ? null : await request.arrayBuffer();
-    return handleAsNodeRequest(this.port, new Request(request.url, { method: request.method, headers: request.headers, body }));
+    const response = await handleAsNodeRequest(this.port, new Request(request.url, { method: request.method, headers: request.headers, body }));
+    // A mention (the mail digest) or an import may need the alarm sooner.
+    if (body !== null && url.pathname.startsWith("/api/chat/")) await this.schedule();
+    return response;
+  }
+
+  /** Who is here: each person with an open screen, "active" unless every screen of theirs says away. */
+  presence() {
+    const out = new Map();
+    for (const ws of this.ctx.getWebSockets()) {
+      let a = null;
+      try { a = ws.deserializeAttachment(); } catch {}
+      if (!a?.person?.id) continue;
+      if (out.get(a.person.id) !== "active") out.set(a.person.id, a.state === "away" ? "away" : "active");
+    }
+    return out;
+  }
+  presenceChanged(personId) {
+    if (!this.host) return;
+    this.host.chatEmit({ type: "chat.presence", person: personId, presence: this.presence().get(personId) || "offline" }, { people: "all" });
+  }
+  /** The alarm at the earliest of what the workspace wants (import steps, the digest, upkeep). */
+  async schedule(at = null) {
+    if (!this.host) return;
+    const want = at ?? this.host.nextAlarm(Date.now());
+    const current = await this.ctx.storage.getAlarm();
+    if (!current || want < current) await this.ctx.storage.setAlarm(want);
+  }
+  /** Uploads (files, import parts) and file downloads, streamed; null for every other request. */
+  async streamed(request, url, person) {
+    const upload = request.method === "PUT" && UPLOAD.test(url.pathname);
+    const part = request.method === "PUT" ? IMPORT_PART.exec(url.pathname) : null;
+    const download = request.method === "GET" ? DOWNLOAD.exec(url.pathname) : null;
+    if (!upload && !part && !download) return null;
+    const host = this.host;
+    const who = person?.id ? host.chat.member(person.id) : null;
+    if (!who) return json({ error: "Ya no perteneces a este espacio." }, 403);
+    const me = { ...who, name: person.name || who.name, email: person.email || who.email };
+    const size = Number(request.headers.get("Content-Length"));
+    try {
+      if (upload) {
+        const q = url.searchParams;
+        const file = await uploadFile({ chat: host.chat, blobs: host.blobs }, me, { channel: q.get("channel"), name: q.get("name"), type: request.headers.get("Content-Type"), size, width: q.get("w"), height: q.get("h"), body: request.body });
+        return json(file, 201);
+      }
+      if (part) {
+        const out = await host.importer.putPart(me, part[1], Number(part[2]), request.body, Number.isFinite(size) ? size : null);
+        return json(out);
+      }
+      const file = host.chat.fileFor(me, download[1]);
+      const found = await host.blobs.get(file.key);
+      if (!found) return json({ error: "No existe ese archivo." }, 404);
+      return new Response(found.body, { headers: { ...fileHeaders(file, { download: url.searchParams.get("download") === "1" }), "Content-Length": String(found.size) } });
+    } catch (error) {
+      const status = error?.status || 500;
+      if (status >= 500) console.error("workspace stream: " + (error?.stack || error));
+      return json({ error: status >= 500 ? "Algo ha fallado. Prueba otra vez." : error.message }, status);
+    }
   }
 
   // ---------------------------------------------------------------- RPC (the Worker only)
@@ -115,6 +189,12 @@ export class Workspace extends DurableObject {
   async syncMembers(workspaceId, list, name = null) {
     const host = await this.boot(workspaceId);
     return host.syncMembers(list, { name });
+  }
+  /** An admin action the Worker handled (the directory's): into this company's audit log. */
+  async audit(workspaceId, entry) {
+    const host = await this.boot(workspaceId);
+    host.audit(entry);
+    return { ok: true };
   }
   /** Someone left or was taken out: their open screens close now. */
   async revokePerson(workspaceId, userId) {
@@ -129,15 +209,44 @@ export class Workspace extends DurableObject {
   }
 
   // ---------------------------------------------------------------- sockets
-  async webSocketMessage(ws) {
-    // Nothing is said over the socket yet (writes go through /api/*); waking up re-attaches it.
-    const { workspaceId } = ws.deserializeAttachment() || {};
-    if (workspaceId) await this.boot(workspaceId);
+  /**
+   * What a screen says over its socket (keep-alives never get here: the auto-response answers
+   * them without waking the object): typing in a channel (relayed to the channel's other people,
+   * nothing stored), «away»/«active» (kept in the socket's attachment) and which channel it has open.
+   */
+  async webSocketMessage(ws, message) {
+    const a = ws.deserializeAttachment() || {};
+    if (a.workspaceId) await this.boot(a.workspaceId);
+    if (typeof message !== "string" || message.length > 500 || !a.person?.id) return;
+    let m = null;
+    try { m = JSON.parse(message); } catch { return; }
+    const chat = this.host.chat;
+    if (m?.type === "typing" && typeof m.channel === "string") {
+      const row = chat.row(m.channel);
+      if (!row || !chat.canRead(a.person, row)) return;
+      const members = new Set(chat.memberIds(row.id));
+      const frame = JSON.stringify({ type: "chat.typing", channel: row.id, thread: typeof m.thread === "string" ? m.thread.slice(0, 64) : null, person: a.person.id });
+      for (const other of this.ctx.getWebSockets()) {
+        if (other === ws) continue;
+        let o = null;
+        try { o = other.deserializeAttachment(); } catch {}
+        if (o?.person?.id && o.person.id !== a.person.id && (members.has(o.person.id) || o.watch === row.id)) { try { other.send(frame); } catch {} }
+      }
+    } else if (m?.type === "presence" && ["active", "away"].includes(m.state)) {
+      const before = this.presence().get(a.person.id);
+      ws.serializeAttachment({ ...a, state: m.state });
+      if (this.presence().get(a.person.id) !== before) this.presenceChanged(a.person.id);
+    } else if (m?.type === "watch") {
+      ws.serializeAttachment({ ...a, watch: typeof m.channel === "string" ? m.channel.slice(0, 64) : null });
+    }
   }
   async webSocketClose(ws, code) {
     this.feeds.get(ws)?.();
     this.feeds.delete(ws);
     try { ws.close(code === 1005 ? 1000 : code, "bye"); } catch {}
+    let person = null;
+    try { person = ws.deserializeAttachment()?.person?.id; } catch {}
+    if (person && this.host) this.presenceChanged(person);
   }
   async webSocketError(ws) {
     this.feeds.get(ws)?.();
@@ -150,5 +259,18 @@ export class Workspace extends DurableObject {
     if (!workspaceId) return;
     const host = await this.boot(workspaceId);
     host.background(() => host.runtime.sweepQuestions?.());
+    const env = this.env;
+    const directory = () => { const n = env.JURISDICTION ? env.DIRECTORY.jurisdiction(env.JURISDICTION) : env.DIRECTORY; return n.get(n.idFromName("directory")); };
+    const next = await host.tick({
+      // People of a Slack import who are not here yet: pending invitations (never mailed).
+      invite: async (startedBy, people) => {
+        const r = await directory().call("importInvitations", workspaceId, startedBy.id, people);
+        if (!r.ok) throw Error(r.error || "invitations");
+        return r.value;
+      },
+      // The digest of unread mentions, through the mail provider (or the dev outbox).
+      mail: (digest) => sendMail(env, { to: digest.email, kind: "digest", url: (env.PUBLIC_URL || "") + "/canales", items: digest.items, name: digest.name, workspace: host.store.get("cloud", "workspace")?.title || null }, { keep: async (m) => { await directory().call("keepDevMail", m); } }),
+    });
+    await this.ctx.storage.setAlarm(next);
   }
 }

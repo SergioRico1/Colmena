@@ -9,7 +9,17 @@
 const escape = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 /** Subject, text and HTML of each mail, in Spanish. */
-export function composeMail(kind, { url, workspace = null, inviter = null }) {
+export function composeMail(kind, { url, workspace = null, inviter = null, items = [], name = null }) {
+  if (kind === "digest") {
+    // Unread mentions and direct messages (TeamChat#digestDue), after the minutes the company chose.
+    const n = items.length;
+    const subject = n === 1 ? "Tienes 1 mensaje para ti sin leer en Colmena" : `Tienes ${n} mensajes para ti sin leer en Colmena`;
+    const lines = items.slice(0, 20).map((i) => `${i.author} en ${i.channel}: ${i.text}`);
+    const more = n > 20 ? n - 20 : 0;
+    const text = `Hola${name ? " " + name : ""}, esto te espera${workspace ? " en " + workspace : ""}:\n\n${lines.join("\n")}${more ? "\n…y " + more + " más" : ""}\n\nÁbrelo aquí: ${url}\n\nPuedes dejar de recibir este resumen en tu perfil de Colmena.`;
+    const list = items.slice(0, 20).map((i) => `<li style="margin:0 0 10px"><strong>${escape(i.author)}</strong> <span style="color:#5b5e69">en ${escape(i.channel)}</span><br>${escape(i.text)}</li>`).join("");
+    return { subject, text, html: page(`<p>Hola${name ? " " + escape(name) : ""}, esto te espera${workspace ? " en <strong>" + escape(workspace) + "</strong>" : ""}:</p><ul style="padding-left:18px">${list}</ul>${more ? "<p>…y " + more + " más.</p>" : ""}`, url, "Abrir Colmena", "Puedes dejar de recibir este resumen en tu perfil de Colmena.") };
+  }
   if (kind === "invite") {
     const subject = `${inviter || "Alguien"} te invita a ${workspace || "su empresa"} en Colmena`;
     const text = `${inviter || "Alguien"} te ha invitado a ${workspace || "su empresa"} en Colmena.\n\nAcepta aquí (caduca en 7 días):\n${url}\n\nSi no esperabas esta invitación, ignora este correo.`;
@@ -30,8 +40,8 @@ function page(intro, url, action, foot) {
  * Sends one mail. `keep(mail)`: where the dev fallback keeps it (the directory's outbox).
  * Returns {sent: true} or {sent: false, dev: true}; throws only when a configured provider fails.
  */
-export async function sendMail(env, { to, kind, url, workspace = null, inviter = null }, { keep = async () => {}, fetchImpl = fetch } = {}) {
-  const mail = composeMail(kind, { url, workspace, inviter });
+export async function sendMail(env, { to, kind, url, workspace = null, inviter = null, items = [], name = null }, { keep = async () => {}, fetchImpl = fetch } = {}) {
+  const mail = composeMail(kind, { url, workspace, inviter, items, name });
   // Cloudflare Email Sending (a `send_email` binding named SEND_EMAIL, a sending domain on one of
   // the account's zones): preferred when bound.
   if (env.SEND_EMAIL?.send && env.MAIL_FROM_ADDRESS) {

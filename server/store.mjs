@@ -97,6 +97,8 @@ export function withBotDefaults(bot) {
 
 const EVENT_RETENTION_DAYS = 30;
 // Tool bodies older than this keep a preview only (pruneReceipts).
+// Durable Object rows hold 2 MB at most: bigger bodies go into pieces (Store#spill).
+const SPILL_AT = 1800 * 1024, SPILL_PART = 1024 * 1024, SPILL_BYTE = 0xfe;
 const SLIM_AFTER_DAYS = 7, SLIM_MAX = 32 * 1024, PREVIEW_CHARS = 4000;
 
 /** The database is encrypted and its key is missing or wrong (db-key.mjs, db-crypto.mjs). */
@@ -151,6 +153,7 @@ export class Store {
     // Conversations with people are read by pages: (kind, shareId, at) walks one conversation in
     // order without touching the rest. Encrypted, the index reads the readable `meta` (db-crypto.mjs).
     // Made here for databases of any age; an older Colmena keeps it up to date without using it.
+    if (this.db.kind === "do") this.db.exec("CREATE TABLE IF NOT EXISTS colmena_spill (kind TEXT NOT NULL, id TEXT NOT NULL, part INTEGER NOT NULL, data BLOB NOT NULL, PRIMARY KEY(kind, id, part))");
     const src = this.cipher ? "meta" : "data";
     this.db.exec(`CREATE INDEX IF NOT EXISTS records_share ON records(kind, json_extract(${src},'$.shareId'), json_extract(${src},'$.at'));`);
     this.listeners = new Set();
@@ -251,6 +254,7 @@ export class Store {
   }
   /** A stored row back to its record (decrypted when the database is encrypted). */
   decode(kind, id, data) {
+    data = this.unspill(kind, id, data);
     const record = JSON.parse(this.cipher ? this.cipher.decrypt(data, recordAad(kind, id)) : data);
     return this.personal ? this.personal.read(kind, record) : record;
   }
@@ -320,14 +324,47 @@ export class Store {
       return this.sql("SELECT id, data FROM records WHERE kind=? ORDER BY rowid").all(kind)
         .map((r) => { const v = this.decode(kind, r.id, r.data); for (const f of fields) delete v[f]; return v; });
     const paths = fields.map((f) => `'$.${f}'`).join(",");
-    return this.sql(`SELECT json_remove(data,${paths}) AS data FROM records WHERE kind=? ORDER BY rowid`)
+    return this.sql(`SELECT id, json_remove(data,${paths}) AS data FROM records WHERE kind=? ORDER BY rowid`)
       .all(kind)
-      .map((r) => JSON.parse(r.data));
+      .map((r) => { const v = JSON.parse(r.data); if (v?.__spill === undefined) return v; const full = this.decode(kind, r.id, JSON.stringify(v)); for (const f of fields) delete full[f]; return full; });
   }
   /** A record as stored, without anyone's personal view (Store#personal). */
   raw(kind, id) {
     const row = this.sql("SELECT data FROM records WHERE kind=? AND id=?").get(kind, id);
-    return row ? JSON.parse(this.cipher ? this.cipher.decrypt(row.data, recordAad(kind, id)) : row.data) : null;
+    if (!row) return null;
+    const data = this.unspill(kind, id, row.data);
+    return JSON.parse(this.cipher ? this.cipher.decrypt(data, recordAad(kind, id)) : data);
+  }
+  /**
+   * Values too big for one row (docs/CLOUD.md › Phase 2 › Big values). A Durable Object row holds
+   * at most 2 MB, so on the DO driver a stored body over SPILL_AT is cut into rows of
+   * colmena_spill and the record keeps a marker; reading puts it back together. The store is
+   * synchronous (2,200 call sites), so the pieces stay in the object's own SQLite: an R2 read
+   * cannot be awaited here. The desktop (node:sqlite) has no such limit and never spills.
+   */
+  spill(kind, id, body) {
+    if (this.db.kind !== "do") return body;
+    this.sql("DELETE FROM colmena_spill WHERE kind=? AND id=?").run(kind, id);
+    const bytes = typeof body === "string" ? Buffer.from(body, "utf8") : Buffer.from(body);
+    if (bytes.length <= SPILL_AT) return body;
+    const parts = Math.ceil(bytes.length / SPILL_PART);
+    for (let i = 0; i < parts; i++) this.sql("INSERT INTO colmena_spill(kind,id,part,data) VALUES(?,?,?,?)").run(kind, id, i, bytes.subarray(i * SPILL_PART, (i + 1) * SPILL_PART));
+    const marker = JSON.stringify({ __spill: parts, bytes: bytes.length, text: typeof body === "string" });
+    return this.cipher ? Buffer.concat([Buffer.from([SPILL_BYTE]), Buffer.from(marker, "utf8")]) : marker;
+  }
+  unspill(kind, id, data) {
+    let marker = null;
+    if (data == null) return data;
+    if (typeof data === "string") { if (!data.startsWith('{"__spill":')) return data; marker = JSON.parse(data); }
+    else {
+      const b = Buffer.from(data instanceof ArrayBuffer ? new Uint8Array(data) : data);
+      if (b[0] !== SPILL_BYTE) return data;
+      marker = JSON.parse(b.subarray(1).toString("utf8"));
+    }
+    const rows = this.sql("SELECT data FROM colmena_spill WHERE kind=? AND id=? ORDER BY part").all(kind, id);
+    if (rows.length !== marker.__spill) throw Error("Un registro grande está incompleto (" + kind + "/" + id + ").");
+    const whole = Buffer.concat(rows.map((r) => Buffer.from(r.data instanceof ArrayBuffer ? new Uint8Array(r.data) : r.data)));
+    return marker.text ? whole.toString("utf8") : whole;
   }
   get(kind, id) {
     // An id that is not text (a model's missing or wrong-typed argument) names no record.
@@ -343,10 +380,10 @@ export class Store {
     if (this.personal) data = this.personal.write(kind, data, existed ? this.raw(kind, data.id) : null);
     if (this.cipher)
       this.sql("INSERT INTO records(kind,id,data,meta) VALUES(?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data, meta=excluded.meta")
-        .run(kind, data.id, this.cipher.encrypt(JSON.stringify(data), recordAad(kind, data.id)), metaOf(data));
+        .run(kind, data.id, this.spill(kind, data.id, this.cipher.encrypt(JSON.stringify(data), recordAad(kind, data.id))), metaOf(data));
     else
       this.sql("INSERT INTO records(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data")
-        .run(kind, data.id, JSON.stringify(data));
+        .run(kind, data.id, this.spill(kind, data.id, JSON.stringify(data)));
     if (!silent) this.notify({ type: "record", kind, id: data.id, op: existed ? "update" : "insert", data });
     return this.personal ? this.personal.read(kind, { ...data }) : data;
   }
@@ -361,6 +398,7 @@ export class Store {
   }
   remove(kind, id) {
     const result = this.sql("DELETE FROM records WHERE kind=? AND id=?").run(kind, id);
+    if (this.db.kind === "do") this.sql("DELETE FROM colmena_spill WHERE kind=? AND id=?").run(kind, id);
     if (result.changes) this.notify({ type: "record", kind, id, op: "remove", data: null });
     return result.changes > 0;
   }

@@ -106,7 +106,7 @@ export class R2Blobs {
     let value = body;
     if (body && typeof body.getReader === "function") {
       if (size == null) value = await toBytes(body);
-      else if (typeof FixedLengthStream === "function") { const f = new FixedLengthStream(size); body.pipeTo(f.writable).catch(() => {}); value = f.readable; }
+      else if (typeof globalThis.FixedLengthStream === "function") { const f = new globalThis.FixedLengthStream(size); body.pipeTo(f.writable).catch(() => {}); value = f.readable; }
     }
     const object = await this.bucket.put(this.base + key, value, { httpMetadata: { contentType: type } });
     return { size: object?.size ?? size ?? 0 };
