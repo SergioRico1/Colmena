@@ -11,6 +11,7 @@ const METHODS = new Set([
   "previewInvitation", "acceptInvitation", "keepDevMail", "devMail",
   "signInWith", "startOAuth", "finishOAuth", "deactivateMember", "reactivateMember", "setDomains",
   "importInvitations", "invitationsForEmail", "acceptInvitationById",
+  "startDesktop", "previewDesktop", "approveDesktop", "finishDesktop",
 ]);
 const HOUR = 3600 * 1000;
 
