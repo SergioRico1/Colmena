@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; script-src 'self'">
+<title>Colmena</title>
+<!-- The first-run choice of the desktop app (desktop/cloud.cjs chooseMode): Colmena in the cloud,
+     or only on this computer. It can be changed later in Ajustes. -->
+<link rel="stylesheet" href="pages.css">
+<style>
+main{padding:34px 40px 30px;display:flex;flex-direction:column;gap:22px;height:calc(100% - 40px)}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0}
+.option{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;padding:22px;border-radius:18px;border:1.5px solid var(--c-line);background:var(--c-card);cursor:pointer;transition:border-color .12s, box-shadow .12s}
+.option:hover{border-color:var(--c-line-strong)}
+.option:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px}
+.option[aria-checked="true"]{border-color:var(--c-accent);box-shadow:0 0 0 3px var(--c-accent-soft)}
+.option .icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--c-chip);color:var(--c-text)}
+.option[aria-checked="true"] .icon{background:var(--c-accent-soft);color:var(--c-accent-ink)}
+.option ul{margin:2px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;color:var(--c-text-2);font-size:13.5px}
+.option li{display:flex;gap:8px}
+.option li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;margin-top:8px;background:var(--c-line-strong)}
+.option[aria-checked="true"] li::before{background:var(--c-accent)}
+.foot{display:flex;align-items:center;justify-content:space-between;gap:16px}
+</style>
+</head>
+<body>
+<div class="bar"><span class="brand"><img src="../splash/colmena-icon-128.png" alt="">Colmena</span>
+  <span class="controls"><button type="button" id="close" aria-label="Cerrar"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button></span></div>
+<main>
+  <div>
+    <h1>¿Dónde quieres usar Colmena?</h1>
+    <p class="lead">Puedes cambiarlo cuando quieras en Ajustes. Tus datos de un sitio y del otro nunca se mezclan.</p>
+  </div>
+  <div class="options" role="radiogroup" aria-label="Dónde usar Colmena">
+    <button type="button" class="option" role="radio" aria-checked="true" data-mode="cloud" id="cloud">
+      <span class="icon"><svg width="24" height="24" viewBox="0 0 256 256" aria-hidden="true"><path fill="currentColor" d="M160 40a88.1 88.1 0 0 0-78.7 48.6A64 64 0 1 0 72 216h88a88 88 0 0 0 0-176Zm0 160H72a48 48 0 0 1 0-96c1.1 0 2.2 0 3.3.1A88 88 0 0 0 72 128a8 8 0 0 0 16 0 72 72 0 1 1 72 72Z"/></svg></span>
+      <h2>Usar Colmena en la nube</h2>
+      <ul>
+        <li>Tu empresa, tus compañeros y sus bots, en el mismo sitio.</li>
+        <li>Entras con tu correo; los bots siguen trabajando aunque apagues el ordenador.</li>
+        <li>Este ordenador presta a tus bots lo que tú elijas: carpetas, el navegador con tus sesiones, tus apps.</li>
+      </ul>
+    </button>
+    <button type="button" class="option" role="radio" aria-checked="false" data-mode="local" id="local">
+      <span class="icon"><svg width="24" height="24" viewBox="0 0 256 256" aria-hidden="true"><path fill="currentColor" d="M208 40H48a24 24 0 0 0-24 24v112a24 24 0 0 0 24 24h160a24 24 0 0 0 24-24V64a24 24 0 0 0-24-24Zm8 136a8 8 0 0 1-8 8H48a8 8 0 0 1-8-8V64a8 8 0 0 1 8-8h160a8 8 0 0 1 8 8Zm-48 48a8 8 0 0 1-8 8H96a8 8 0 0 1 0-16h64a8 8 0 0 1 8 8Z"/></svg></span>
+      <h2>Solo en este ordenador</h2>
+      <ul>
+        <li>Todo se queda aquí: tus bots, tus conversaciones y tus claves.</li>
+        <li>Funciona sin cuenta en la nube, como hasta ahora.</li>
+        <li>Si un día quieres, puedes llevar tus datos a la nube.</li>
+      </ul>
+    </button>
+  </div>
+  <div class="foot">
+    <span class="muted small" id="hint">Te pediremos tu correo de trabajo en tu navegador.</span>
+    <button type="button" class="btn" id="go">Continuar</button>
+  </div>
+</main>
+<script src="mode.js"></script>
+</body>
+</html>

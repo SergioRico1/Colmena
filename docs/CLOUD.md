@@ -1,7 +1,9 @@
 # Colmena in the cloud
 
-Status: **Phase 3** (bots work in the cloud: per-person AI accounts, durable runtime on alarms,
-routines, approvals, connectors and bots in channels, deployed). Phase 2: team messaging, the Slack
+Status: **Phase 5** (the desktop app is a client of the cloud plus a local agent that lends the
+person's cloud bots what only their computer has, deployed). Phase 3: bots work in the cloud
+(per-person AI accounts, durable runtime on alarms, routines, approvals, connectors and bots in
+channels). Phase 2: team messaging, the Slack
 import and OAuth sign-in. Phase 1: accounts, companies and the real server
 in each workspace; Phase 0 proved the store on Durable Objects. This document is the start of the
 cloud architecture; it grows with each phase. The desktop stays as it is: everything here is
@@ -942,3 +944,183 @@ No new Cloudflare resources or DO classes.
 - The Claude Code / Codex / OpenCode engines («Código») in Containers.
 - Event triggers that listen live (a room message, files) instead of the 60 s poll.
 - Real accounts: no real API key or subscription was used; adapters are tested against fakes.
+
+## Phase 5: the desktop app is a client of the cloud plus a local agent
+
+```
+Colmena.exe (cloud mode)
+ ├─ window (partition persist:colmena-cloud) ──https──► app.colmena.team (the company's workspace)
+ ├─ «Este ordenador» (desktop/cloud/agent.html, local page) ─IPC─┐
+ └─ agent process (server/agent-link/main.mjs) ◄──────────────────┘
+      └─ wss ► Worker /agent/connect?workspace&device ► Workspace DO (hibernating socket, tag agent:<device>)
+           DO → agent  {type:"call", id, cap, op, args, bot, mission, person, exp}
+           agent → DO  {type:"result", id, ok, result|error}
+```
+
+### Desktop modes (`desktop/mode.cjs`, `desktop/cloud.cjs`)
+
+- **Which mode.** `COLMENA_MODE` (tests) → the saved choice (`userData/colmena-mode.json`) → a new
+  installed copy with no local data shows the first-run choice (`desktop/cloud/mode.html`:
+  «Usar Colmena en la nube» / «Solo en este ordenador»). Anything else opens the local mode exactly
+  as before (the repository and every existing install keep it). Switching from Ajustes asks with a
+  native dialog and restarts.
+- **Cloud mode.** The window loads the workspace in its own partition with Colmena's own frameless
+  chrome (`desktop/preload-cloud.cjs`): title bar, theme, sounds, updates, captures, «Pregunta
+  rápida» (the quick window shares the partition) and, from the page (`src/lib/desktopCloud.jsx`),
+  the tray's face and taskbar counter (what waits for you, bots at work) and system notifications
+  for your new notices. The local server does not run; the local mode's data folder is never
+  opened except, read-only, for «Llevar mis datos a la nube». Data never mixes: the cloud session
+  lives only in its partition, the agent's files in `<data>/nube/`.
+- **Updates.** `desktop/updater.cjs` runs before the mode branch, so it works the same in both;
+  «Reiniciar para actualizar» waits while the cloud app reports bots at work.
+
+### Signing in from the desktop (`/auth/desktop/*`, `src/cloud/Desktop.jsx`)
+
+1. The window shows `/entrar/escritorio`: `POST /auth/desktop/start {name}` → `{id, poll, code}`
+   (`poll`: 32 random bytes only the app's window holds; the directory keeps its hash; 10 minutes).
+2. The app opens the system browser at `/entrar/escritorio/aprobar?c=<id>`. The person signs in
+   there as usual (magic link, Google…), sees «¿Abrir Colmena en "<name>"?» with the same code,
+   and confirms: `POST /auth/desktop/approve` (session + CSRF) → a **hand-back code**, stored hashed.
+3. The browser goes to `colmena://entrar?c=<id>&k=<hand-back>`; the running app gets it
+   (second-instance / open-url) and its window polls `POST /auth/desktop/poll {id, poll, handback}`.
+   If the link does not open, the browser shows the code and the person types it in the app.
+4. With both the poll token and the hand-back, the Worker makes **a new session** and sets it as the
+   window's own HttpOnly cookie. No cookie or token is copied between the browser and the app.
+
+Why the hand-back: without it, someone could send you their app's code, you would approve it, and
+their computer would get your session (device-code phishing). The hand-back travels to the
+computer where you approved, so it only works there. Five wrong codes close the request; it works once.
+
+### Devices and the agent socket (`server/agent-link/hub.mjs`, `protocol.mjs`)
+
+- **Device key.** Ed25519, made by the desktop once; the private half sealed with Electron
+  `safeStorage` (DPAPI / Keychain) in `<data>/nube/device.json` and handed to the agent process in
+  memory only. The cloud keeps the public half (`agentDevices` records, per person).
+- **Registration and approval.** In «Tus dispositivos» inside the app, «Añadir este ordenador»
+  registers it (`POST /api/agent/devices {name, publicKey, platform}`, pending; the same key again is
+  the same device, a key someone else registered is refused, guests cannot). The person approves it
+  (`POST /api/agent/devices/:id/approve`), comparing the fingerprint both screens show. Pending
+  requests expire after a day. «Quitar» revokes it: its socket closes, calls in flight fail and the
+  key never connects again (the agent is told `revoked` and stops trying).
+- **Handshake.** `GET /agent/connect?workspace&device` (WebSocket; the Worker checks the company
+  exists, passes no cookie, refuses a foreign Origin). The DO accepts only a known, non-revoked
+  device of that company, sends `{challenge, nonce}` (24 random bytes, for this socket only); the
+  agent answers `{hello, at, lends, sig}` with `sig = Ed25519("colmena-agent-v1\nhello\n<ws>\n<device>\n<nonce>\n<at>\n<sha256(lends)>")`.
+  The nonce is used up by the first hello (a replayed hello closes the socket), `at` must be within
+  2 minutes, the device must be approved and its person a member who is not a guest. Then
+  `{welcome, person, workspace, bots}`. One socket per device (a new one replaces the old).
+- **Online.** From the sockets themselves: authenticated within 90 s, or a keep-alive
+  (`{"type":"ping"}` every 25 s, answered by the platform without waking the object;
+  `getWebSocketAutoResponseTimestamp`).
+- **Calls.** Unique ids and an expiry (at most 15 minutes); the agent refuses an id it has seen or a
+  call past its expiry. Results stop at 900 KB (the platform's frames stop at 1 MiB): a big image
+  is dropped with a note, anything else is refused with «pide una parte más pequeña».
+
+### Routing rules (`server/agent-link/cloud-tools.mjs`)
+
+- A bot reaches a computer only in a turn **of the person whose computer it is**: the turn runs as
+  them (`Runtime#launch` as `mission.askedBy`), `mission.askedBy` is them, they are a member and not
+  a guest, and it is not a turn for someone else (`peerErrand`). Another member's request, a
+  guest, background work for nobody: nothing of anyone's computer is offered or routed.
+- Only what that person's computer lends **to that bot** (`lends` per capability and per folder).
+- **Red lines and approvals stay in the cloud**: browser, apps and commands are planned on the
+  computer (`planComputerCall` there: it knows the folders, the programs and the page) and the cloud
+  makes the approval card, applies rules and «Permitir siempre», and decides as on the desktop
+  (`approvals` with `agent: true`, for the person who asked); only then does it send `execute`
+  with `approved`. Claude Code of that computer always asks first.
+- **The agent's own allowlist** (`refusalFor` in `agent.mjs`) is the last word: the capability on,
+  that bot listed, that folder lent to that bot, that login lent to that bot, the tool matching
+  the capability. Whatever the cloud asks (or believes it may ask), anything else is refused there.
+- **Offline**: the tool answers «El ordenador de la persona («<name>») está apagado o sin conexión:
+  ahora no puedo usarlo…»; a call in flight when the socket drops fails at once; a silent computer
+  times out (30 s for folders, 2–5 minutes for the browser and commands, 10 for Claude Code).
+
+What a computer lends (`desktop/cloud/agent.html`, «Este ordenador»), each per bot:
+
+| Capability | On the computer | In the cloud |
+| --- | --- | --- |
+| Carpetas | `listFolder` / `readFolderFile` (server/tools.mjs) inside the lent folder | `list_folder` / `read_folder_file` with ids `pc.<device>.<folder>` (`Runtime#agentFolders`, a seam in `runtime/effects.mjs`) |
+| Navegador con tus sesiones | the Electron bot browser (`desktop/browser.cjs`) with this computer's partitions, through the computer bridge's IPC | `browser_*` tools |
+| Apps y programas | `open_file`, `open_app` (the apps the person ticks), `run_command` (approval as on the desktop) | the same tools |
+| Gestor de contraseñas | 1Password / Bitwarden (`server/managers`, an agent-local store of chosen logins and grants); the password goes straight to the browser here | `browser_sign_in` with the lent logins (id, title, domain, masked user only) |
+| Claude Code de este ordenador | `claude -p … --permission-mode acceptEdits --disallowedTools Bash` in a lent project folder, with the person's own login | `code_local {folderId, task}`, always approved first |
+
+Lends travel as labels, ids and bot ids only (`cleanLends`): never a path, a password or a key.
+A new binding (another company, another device id) starts lending nothing, so a page cannot move
+the device to another company and inherit what it lent. The cloud page cannot reach the allowlist:
+«Este ordenador» is a local window with its own preload, and the cloud window's preload exposes no
+call that changes it.
+
+### «Llevar mis datos a la nube» (`server/agent-link/migrate.mjs`)
+
+From «Este ordenador», over the approved device's socket (`{type:"import", batch}` → `import-result`):
+bots (with their SOUL), skills, memories, goals, routines, conversations, rooms, messages and notes
+pages, in batches of at most 350 KB.
+
+- **Secrets stay home**: only those kinds travel; fields that look like keys or only make sense on
+  the computer (`apiKey`, `password`, `vault`, `grants`, `folders`, `path`, `browserSession`…) are
+  dropped; memories that contain a secret, incognito conversations and errands stay. The person
+  enters their API keys again in the cloud (provider logins are not portable).
+- **Idempotent**: records keep their ids; a ledger row per (install, kind, id) keeps the hash of
+  what was imported. Again: unchanged. Changed: only what this import made is updated. A record the
+  workspace already had (a seeded bot, someone else's import) is never overwritten; a seeded bot keeps
+  the cloud's version and the memories that name it attach to it.
+- **Private by default**: imported conversations get `audience: [person]`, and messages and rooms only
+  join a conversation that same person brought; routines arrive paused and owned by the person; bots
+  are `createdBy` them; skills (they shape every bot of the company) arrive switched off. Memories are the workspace's (as every memory in
+  the cloud): the screen says so before uploading.
+- Tested only with seeded data under `.local/` (`COLMENA_DATA_DIR`); never with a real install.
+
+### Screens
+
+- Web: `/entrar/escritorio` (in the app) and `/entrar/escritorio/aprobar` (in the browser);
+  Ajustes › «Tus dispositivos» (`src/components/v2/settings/Devices.jsx`): this computer (add, its
+  status, «Elegir qué presta», «Usar solo en este ordenador…») and your computers (on or off, what
+  each lends, fingerprint, approve, rename, remove). In the local desktop mode the same section is
+  «Colmena en la nube» with «Usar Colmena en la nube…».
+- Desktop: the first-run choice and «Este ordenador» (`desktop/cloud/*.html`), light and dark.
+
+### Tests and measurements
+
+- **Node** (`tests/agent-link.test.mjs`, 11): protocol pieces (canonical JSON, fingerprints,
+  signatures, replay guard); lends without paths and the local allowlist; devices (pending, approve
+  once, idempotent, never someone else's, expiry, revoke); the handshake (pending, approved, a
+  replayed hello, a late one, a forged key, revoked); calls (lent folder read, a folder the cloud
+  forged refused by the agent, other people, replayed and expired calls, offline in plain words, a
+  call in flight failing on disconnect, a silent one timing out); routing rules; a real hosted
+  workspace where a fake-model bot reads a lent folder through the agent, a folder lent to another
+  bot is refused, another member's request is not routed and offline is said; migration
+  (secrets, idempotence, privacy, paused routines, someone else's import); the directory's desktop
+  sign-in (poll token, hand-back, five wrong codes, once, expiry); computer tools offered only to the
+  lending person's bots, planned on the computer, approved in the cloud, then run there.
+- **Deployed** (app.colmena.team, 2026-11-14):
+  - `node scripts/e2e-agent.mjs --url … --env …`: 36/36 (the desktop sign-in hand-off, devices,
+    signed hello and a forged key, a bot reading a lent folder, refusals by the cloud and by the
+    agent, another member, migration twice, offline, revocation).
+  - `node scripts/e2e-desktop.mjs --url … --env … --shots ../.local/shots/cloud-phase5`: 18/18 with a
+    real Electron in cloud mode (isolated `COLMENA_USER_DATA` and `COLMENA_DATA_DIR` under `.local/`,
+    a test person on example.com, the fake model, Chromium as the system browser, the `colmena://`
+    hand-back through a second instance): first-run choice, sign-in, device approved, «Este ordenador»,
+    a cloud bot reads a file in the enabled test folder through the agent, a folder not enabled is
+    refused, migration of seeded test data twice, the app closed and the bot saying the computer is off.
+  - Regressions, same deploy: `e2e.mjs` 44/44, `e2e-chat.mjs` 48/48, `e2e-bots.mjs` 34/34.
+
+| Measure (deployed, client in Spain) | Result |
+| --- | --- |
+| Device approved → agent online (signed hello) | 3.6 s, including the agent's reconnect |
+| A mention → a bot's answer with a file read on the person's computer | 1.1 s |
+
+### Left for later
+
+- **Dictation** lent from the computer to the cloud app's microphone button: the agent can run the
+  system recognizer, but the hosted page's dictation still uses `/api/voice/*` on the workspace
+  (desktop-only there). Needs a small bridge (the cloud window's preload → the agent) and the page
+  choosing it.
+- **Live view of the bot browser** (`BrowserLive` frames) is not forwarded to the cloud; approval
+  cards for browser actions carry no screenshot (the picture stays on the computer).
+- Codex / OpenCode engines of this computer (only Claude Code is lent), and Claude Code tasks
+  that need to run commands (refused by design for now).
+- The packaged installer should register the `colmena://` scheme (electron-builder `protocols`); at
+  runtime only packaged copies register it (development runs never take it from an installed copy).
+- One device belongs to one company at a time; moving it starts it lending nothing.
+- Imported files (attachments, deliverables) are not uploaded, only the records.

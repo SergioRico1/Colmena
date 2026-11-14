@@ -67,6 +67,11 @@ contextBridge.exposeInMainWorld("colmenaWindow", {
   revealPath: (task, rel) => ipcRenderer.invoke("colmena-reveal-path", { task: String(task || "").slice(0, 80), path: String(rel ?? "").slice(0, 1000) }),
   // «Abrir el registro» (start-up screen): what the local service printed since Colmena opened.
   openLog: () => ipcRenderer.send("colmena-startup", "log"),
+  // Phase 5: «Usar Colmena en la nube» (the main process asks before switching, then restarts).
+  mode: {
+    current: () => ipcRenderer.invoke("colmena-mode", "get"),
+    switchToCloud: () => ipcRenderer.invoke("colmena-mode", "cloud"),
+  },
   // Colmena 4 theme ("system" | "light" | "dark"): the window's own background and native theme follow it.
   setTheme: (mode) => ipcRenderer.send("colmena-theme", ["system", "light", "dark"].includes(mode) ? mode : "system"),
   edit: (action) => ["cut", "copy", "paste", "selectAll"].includes(action) && ipcRenderer.send("colmena-window", "edit:" + action),

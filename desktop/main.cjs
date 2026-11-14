@@ -9,6 +9,8 @@ const { setupBackground } = require("./background.cjs");
 const { setupUpdater } = require("./updater.cjs");
 const { setupDragOut } = require("./dragout.cjs");
 const { setupReveal } = require("./reveal.cjs");
+const { resolveMode } = require("./mode.cjs");
+const { startCloud, chooseMode, switchMode } = require("./cloud.cjs");
 let backend, computer, backendOrigin = null, mainWin = null, background = null, updater = null;
 // The team at work, from the server ("presence"): the tray face and the updater read it.
 let presence = {};
@@ -31,7 +33,8 @@ const ICON_SOURCE = process.platform === "win32" && /^colmena\.exe$/i.test(path.
  */
 function ensureShortcut() {
   // Installed copies get theirs from the installer (same id and icon).
-  if (process.platform !== "win32" || app.isPackaged) return;
+  // A separate test profile (COLMENA_USER_DATA) never touches the Start menu either.
+  if (process.platform !== "win32" || app.isPackaged || process.env.COLMENA_USER_DATA) return;
   try {
     const link = path.join(app.getPath("appData"), "Microsoft", "Windows", "Start Menu", "Programs", "Colmena.lnk");
     const wanted = { target: process.execPath, args: '"' + path.join(__dirname, "main.cjs") + '"', icon: ICON_SOURCE, iconIndex: 0, appUserModelId: APP_ID, description: "Colmena", cwd: path.join(__dirname, "..") };
@@ -123,6 +126,23 @@ else
     updater = setupUpdater({ isBusy: () => (presence.working || 0) > 0 });
     // Only when the start takes a moment (an instance already running opens at once).
     const hidden = process.argv.includes("--hidden");
+    // Cloud mode (docs/CLOUD.md › Phase 5): the company's workspace plus this computer's local
+    // agent (desktop/cloud.cjs). «Solo en este ordenador» is everything below, unchanged.
+    let mode = resolveMode({ userData: app.getPath("userData"), packaged: app.isPackaged });
+    if (mode === "ask" || process.env.COLMENA_MODE === "ask") mode = await chooseMode({ icon: ICON, background: windowBackground() });
+    if (mode === "cloud") {
+      startCloud({
+        icon: ICON, iconSource: ICON_SOURCE, appId: APP_ID, windowBackground, log, setupBackground, updater, hidden,
+        onBackground: (b) => { background = b; }, onPresence: (p) => { presence = p; },
+      });
+      return;
+    }
+    // «Usar Colmena en la nube» from Ajustes (src/components/v2/settings/Devices.jsx): asks, then restarts.
+    ipcMain.handle("colmena-mode", async (event, wanted) => {
+      if (!mainWin || event.sender !== mainWin.webContents) throw Error("No permitido.");
+      if (wanted === "get") return { mode: "local" };
+      return { switched: await switchMode(mainWin, wanted === "cloud" ? "cloud" : "local") };
+    });
     const splashTimer = hidden ? null : setTimeout(showSplash, 350);
     const openWindow = (origin) => {
       clearTimeout(splashTimer);

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; script-src 'self'">
+<title>Colmena · Este ordenador</title>
+<!-- «Este ordenador» (desktop/cloud.cjs): what this computer lends to the person's cloud bots —
+     its local allowlist, enforced by the agent whatever the cloud asks — and «Llevar mis datos a
+     la nube». A local page: the cloud's website cannot reach it. -->
+<link rel="stylesheet" href="pages.css">
+<style>
+main{height:calc(100% - 40px);overflow:auto}
+.wrap{max-width:780px;margin:0 auto;padding:28px 32px 48px;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.status{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}
+.notice{padding:14px 16px;border-radius:14px;background:var(--c-sunken);color:var(--c-text-2)}
+.notice.warn{background:var(--c-warn-soft);color:var(--c-warn-ink)}
+.cap{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.cap-top{display:flex;align-items:flex-start;gap:14px}
+.cap-top > div{flex:1;min-width:0}
+.cap-top p{margin:4px 0 0;color:var(--c-text-3);font-size:13.5px}
+.label{font-size:12px;font-weight:600;color:var(--c-text-3);text-transform:uppercase;letter-spacing:.04em;margin:2px 0 6px}
+.folder{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:12px;background:var(--c-sunken)}
+.folder-top{display:flex;align-items:center;gap:10px}
+.folder-top strong{font-weight:600}
+.folder-top .path{flex:1;min-width:0;color:var(--c-text-3);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.saved{font-size:12.5px;color:var(--c-ok-ink);min-height:18px}
+.progress{height:6px;border-radius:999px;background:var(--c-chip);overflow:hidden}
+.progress span{display:block;height:100%;background:var(--c-accent);width:0;transition:width .2s}
+.counts{display:flex;flex-wrap:wrap;gap:6px}
+.items{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
+.item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:10px;background:var(--c-sunken)}
+</style>
+</head>
+<body>
+<div class="bar"><span class="brand"><img src="../splash/colmena-icon-128.png" alt="">Este ordenador</span>
+  <span class="controls">
+    <button type="button" data-window="minimize" aria-label="Minimizar"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+    <button type="button" data-window="close" aria-label="Cerrar"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+  </span></div>
+<main><div class="wrap" id="app" aria-live="polite"></div></main>
+<script src="agent.js"></script>
+</body>
+</html>

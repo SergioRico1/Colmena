@@ -23,6 +23,10 @@ import { sendPush } from "./webpush.mjs";
 import { fetchPreview } from "./link-preview.mjs";
 import { cloudBots } from "./bots-host.mjs";
 import { ChannelBots } from "./channel-bots.mjs";
+import { AgentHub } from "../agent-link/hub.mjs";
+import { agentExtraTools, agentFolders } from "../agent-link/cloud-tools.mjs";
+import { importBatch } from "../agent-link/migrate.mjs";
+import { CAPABILITY_LABELS } from "../agent-link/protocol.mjs";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
 export const CLOUD_HIDDEN = Object.freeze(["codigo", "ordenador", "dictado", "voz", "gestores", "copias", "cifrado", "carpetas", "personas-buzon"]);
@@ -42,7 +46,9 @@ const noSession = () => ({ status: () => null, models: [], start: async () => { 
  * envelope vault (none: secrets unavailable); `files`: where mission files live (SqlFiles or
  * R2Files, server/file-store.mjs); `log`.
  */
-export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m), publicUrl = "", testing = false, fetchImpl = undefined }) {
+export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m), publicUrl = "", testing = false, fetchImpl = undefined, agentSockets = () => [] }) {
+  // Phase 5 (the local agent): `agentSockets(tag)` lists the open agent sockets of a device
+  // (server/agent-link/hub.mjs); none in tests that do not need them.
   // Phase 3 (bots): `publicUrl` (webhook addresses, MCP sign-in callbacks), `testing` (the Worker
   // allows the fake model; each workspace still needs its test flag), `fetchImpl` (tests).
   // Team messaging (Phase 2): `blobs` (server/cloud/blobs.mjs: uploads, import parts), `vapid`
@@ -103,6 +109,18 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     push: (personId, payload) => pushRef?.(personId, payload), rooms: () => appRef?.locals?.rooms,
   });
   const runtime = bots.runtime;
+
+  // Phase 5: each person's computers lend what only they have (server/agent-link): folders read
+  // through the agent, browser, apps and commands, saved logins and Claude Code of that computer.
+  const agents = new AgentHub({
+    store, workspace, memberOf, sockets: agentSockets, log,
+    bots: () => store.list("bots").filter((b) => b.enabled !== false).map((b) => ({ id: b.id, name: b.name })),
+    importer: (member, batch) => importBatch(store, member, batch),
+  });
+  runtime.agentFolders = agentFolders(runtime, agents, { memberOf });
+  const cloudExtra = runtime.extraTools;
+  const agentTools = agentExtraTools(runtime, agents, { memberOf });
+  runtime.extraTools = (bot, mission) => [...cloudExtra(bot, mission), ...agentTools(bot, mission)];
 
   const guard = (req, res, next) => {
     res.set({ "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "Cache-Control": "no-store" });
@@ -209,6 +227,15 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     res.status(201).json({ missionId: mission.id, href: "/sala/" + mission.id });
   });
   app.get("/api/cloud/me", (_req, res) => res.json({ person: currentPerson(), workspace: state({}).cloud.workspace }));
+  // «Tus dispositivos»: your computers, which are online and what each lends; approve, rename, revoke.
+  const agentRoute = (fn) => async (req, res) => {
+    try { res.status(req.method === "POST" && !req.params.id ? 201 : 200).json(await fn(req, currentPerson())); } catch (error) { res.status(error.status || 400).json({ error: error.message }); }
+  };
+  app.get("/api/agent/devices", agentRoute((_req, me) => ({ devices: agents.list(me), labels: CAPABILITY_LABELS, workspace: { id: workspace.id } })));
+  app.post("/api/agent/devices", agentRoute(async (req, me) => ({ device: await agents.register(me, req.body || {}), workspace: { id: workspace.id } })));
+  app.post("/api/agent/devices/:id/approve", agentRoute((req, me) => ({ device: agents.approve(me, req.params.id) })));
+  app.patch("/api/agent/devices/:id", agentRoute((req, me) => ({ device: agents.rename(me, req.params.id, req.body?.name) })));
+  app.delete("/api/agent/devices/:id", agentRoute((req, me) => ({ device: agents.revoke(me, req.params.id) })));
   bots.routes(app);
   };
   const app = createApp({ store, runtime, session: noSession(), scheduler: bots.scheduler, connections: bots.connections, getOrigin: () => "https://colmena.invalid", computer: null, hosted: { guard, afterBody, state, rooms, routes, approvers: bots.approvers } });
@@ -216,7 +243,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   app.locals.webhooks = bots.webhooks;
 
   return {
-    app, store, runtime, bots, channelBots,
+    app, store, runtime, bots, channelBots, agents,
     /** Replaces the workspace's list of people (the directory's, after any change). */
     syncMembers(list, { name = null } = {}) {
       const at = now();
