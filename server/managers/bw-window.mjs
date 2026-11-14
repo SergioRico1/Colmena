@@ -7,10 +7,10 @@ import { randomBytes } from "node:crypto";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { modulePath } from "../bundled.mjs";
 import { rmSync } from "node:fs";
 
-const HELPER = fileURLToPath(new URL("./bw-unlock-helper.mjs", import.meta.url));
+const HELPER = modulePath("./bw-unlock-helper.mjs", import.meta.url) || "bw-unlock-helper.mjs"; // desktop only
 const WAIT_MS = 3 * 60000;
 const SESSION_KEY = /^[A-Za-z0-9+/=_-]{16,400}$/;
 

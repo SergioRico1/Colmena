@@ -287,7 +287,7 @@ export function parseCsvStrict(input, { delimiter = null, maxRows = 100000 } = {
 }
 
 // ------------------------------------------------------------------ PDF
-const require = createRequire(import.meta.url);
+let nodeRequire = null; // made on first use (workerd: no file URL at load)
 let pdfjsModule = null;
 async function pdfjs() {
   pdfjsModule ??= import("pdfjs-dist/legacy/build/pdf.mjs");
@@ -295,7 +295,7 @@ async function pdfjs() {
 }
 function standardFonts() {
   // pdfjs wants a URL-like path ending in "/" (also on Windows).
-  try { return path.join(path.dirname(require.resolve("pdfjs-dist/package.json")), "standard_fonts").replace(/\\/g, "/") + "/"; } catch { return undefined; }
+  try { nodeRequire ??= createRequire(import.meta.url); return path.join(path.dirname(nodeRequire.resolve("pdfjs-dist/package.json")), "standard_fonts").replace(/\\/g, "/") + "/"; } catch { return undefined; }
 }
 
 const withTimeout = (promise, ms, message) => {

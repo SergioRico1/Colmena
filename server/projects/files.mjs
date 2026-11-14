@@ -3,7 +3,7 @@
 // paths, no links, no reserved Windows names. node_modules and .git are never written by a
 // bot; deleting moves to the mission's bin («.papelera/…»), never erases.
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { modulePath } from "../bundled.mjs";
 import { cp, lstat, mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
@@ -16,7 +16,8 @@ export const FILE_LIMIT = 400 * 1024;
 const LIST_LIMIT = 400;
 const SKIP_DIRS = new Set(["node_modules", ".git", "dist", ".vite", ".cache", "build", "coverage"]);
 const PROTECTED = new Set(["node_modules", ".git"]);
-const HERE = path.dirname(fileURLToPath(import.meta.url));
+// No module files in the cloud: a folder that does not exist (projects come back with Containers).
+const HERE = path.dirname(modulePath("./files.mjs", import.meta.url) || "/colmena-app/server/projects/files.mjs");
 export const COLMENA_ROOT = path.resolve(HERE, "..", "..");
 const TEMPLATE_ROOT = path.join(HERE, "templates");
 

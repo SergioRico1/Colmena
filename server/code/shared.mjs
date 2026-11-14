@@ -1,4 +1,4 @@
-import { fileURLToPath } from "node:url";
+import { modulePath } from "../bundled.mjs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { git } from "./git.mjs";
@@ -23,7 +23,7 @@ export const KEYBINDINGS = Object.freeze({
   newTerminal: "mod+shift+t", save: "mod+shift+s", shortcuts: "f1",
 });
 /** Bruno's look at the preview through his shell (preview-cli.mjs). */
-export const PREVIEW_CLI = fileURLToPath(new URL("./preview-cli.mjs", import.meta.url));
+export const PREVIEW_CLI = modulePath("./preview-cli.mjs", import.meta.url) || "preview-cli.mjs"; // no file in the cloud
 const IDLE_MS = 30 * 60 * 1000;
 /** A task cut by a restart goes on by itself at most this many times in RESUME_WINDOW_MS (crash-loop breaker). */
 export const CODE_RESUMES = 3;

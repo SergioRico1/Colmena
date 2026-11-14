@@ -3,18 +3,15 @@ import { standingOrdersText } from "./standing.mjs";
 import path from "node:path";
 import { memoryEntries, memoryMeters, profileDigest, MEMORY_LIMITS } from "./memory.mjs";
 import { recordVersion } from "./doc-history.mjs";
+import { appFile } from "./bundled.mjs";
 
 // OpenClaw-style workspace per bot: <dataDir>/bots/<id>/{SOUL,IDENTITY,USER,MEMORY}.md.
 // SOUL.md is the user's to edit. Bots can only propose changes (approval kind 'soul').
 // prompts/SOUL.md stays byte-for-byte as the MIT-licensed reference and is never sent.
-const template = (name) => readFileSync(new URL("../prompts/" + name, import.meta.url), "utf8");
-const TEMPLATES = {
-  soul: template("SOUL.colmena.md"),
-  agents: template("AGENTS.colmena.md"),
-  identity: template("IDENTITY.colmena.md"),
-  user: template("USER.colmena.md"),
-  memory: template("MEMORY.colmena.md"),
-};
+const TEMPLATE_FILES = { soul: "SOUL.colmena.md", agents: "AGENTS.colmena.md", identity: "IDENTITY.colmena.md", user: "USER.colmena.md", memory: "MEMORY.colmena.md" };
+// Read on first use (server/bundled.mjs: the app folder on the desktop, bundled text in the cloud).
+const loadedTemplates = {};
+const TEMPLATES = new Proxy(loadedTemplates, { get: (cache, key) => (cache[key] ??= appFile("prompts/" + TEMPLATE_FILES[key])) });
 
 export const AUTONOMY_LABELS = { sugiere: "Solo sugiere", avisa: "Actúa y te avisa", solo: "Actúa solo" };
 export const THINKING_LABELS = { rapido: "Rápida", equilibrado: "Equilibrada", profundo: "Profunda" };

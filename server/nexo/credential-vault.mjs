@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
-const helper = fileURLToPath(
-  new URL("../credential_vault.py", import.meta.url),
-);
+import { modulePath } from "../bundled.mjs";
+// Desktop only (DPAPI through Python); in the cloud there is no helper file and secrets go
+// through the envelope vault (cloud/src/envelope.js).
+const helper = modulePath("../credential_vault.py", import.meta.url) || "credential_vault.py";
 /** Uses installed Python and Windows DPAPI, never a shell or plaintext credential file. */
 export function windowsVault(
   directory,

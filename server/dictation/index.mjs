@@ -14,9 +14,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { modulePath } from "../bundled.mjs";
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
+// Desktop only; in the cloud a folder that does not exist (no dictation there).
+const HERE = path.dirname(modulePath("./index.mjs", import.meta.url) || "/colmena-app/server/dictation/index.mjs");
 export const WINDOWS_SOURCE = path.join(HERE, "windows", "ColmenaDictation.cs");
 export const MAC_BINARY = path.join(HERE, "bin", "colmena-dictation");
 export const LANG = "es-ES";

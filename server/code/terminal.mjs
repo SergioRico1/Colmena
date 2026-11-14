@@ -9,7 +9,8 @@ import { randomUUID } from "node:crypto";
 import { createRequire } from "node:module";
 import { killTree } from "../projects/run.mjs";
 
-const require = createRequire(import.meta.url);
+let nodeRequire = null; // made on first use: workerd has no file URL to make it from at load
+const require = (name) => (nodeRequire ??= createRequire(import.meta.url))(name);
 const MAX_BUFFER = 512 * 1024;
 const MAX_TERMINALS = 6;
 
