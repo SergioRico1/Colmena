@@ -27,6 +27,7 @@ const label = flag("label", "run");
 const W = Number(flag("w", 1280)), H = Number(flag("h", 860));
 const theme = flag("theme", "light");
 const shots = args.includes("--shots");
+const room = args.includes("--room"); // the same turn in a room with two bots
 const out = path.join(__dirname, "..", ".local", "shots", "chat-ux");
 mkdirSync(out, { recursive: true });
 
@@ -70,19 +71,20 @@ function recorder() {
   };
   const tick = () => {
     if (!w.__shift.on) return;
-    const form = document.querySelector("form.r-composer");
+    const form = document.querySelector("form.r-composer") || document.querySelector("form:has(.v4-cbox)");
     const fr = form?.getBoundingClientRect();
     const first = document.querySelector(`[data-message-id="${earlier[0]}"]`)?.getBoundingClientRect();
     const msgs = {};
     for (const id of earlier) {
-      const r = document.querySelector(`[data-message-id="${CSS.escape(id)}"]`)?.closest("[data-index]")?.getBoundingClientRect();
+      const r = document.querySelector(`[data-message-id="${CSS.escape(id)}"]`)?.closest("[data-index], .msg-row")?.getBoundingClientRect();
       const own = document.querySelector(`[data-message-id="${CSS.escape(id)}"]`)?.getBoundingClientRect();
       if (r && own && first) msgs[id] = { top: own.top, rel: own.top - first.top, h: r.height };
     }
-    const nowRow = document.querySelector('[data-kind="now"]');
-    const answers = [...document.querySelectorAll('[data-kind="answer"]')];
+    // A 1:1 chat marks its rows (data-kind); a room's live row is [data-live-turn].
+    const nowRow = document.querySelector('[data-kind="now"]') || document.querySelector(".v4-row[data-live-turn]");
+    const answers = [...document.querySelectorAll('[data-kind="answer"], .v4-row[data-message-id]:not([data-live-turn])')];
     const last = answers[answers.length - 1];
-    const fresh = last && !earlier.includes(last.querySelector("[data-message-id]")?.getAttribute("data-message-id")) ? last : null;
+    const fresh = last && !earlier.includes(last.getAttribute("data-message-id") || last.querySelector("[data-message-id]")?.getAttribute("data-message-id")) ? last : null;
     const slotRow = nowRow || fresh;
     const face = slotRow?.querySelector("svg, img, canvas, [data-face]")?.getBoundingClientRect();
     const text = textStart(slotRow);
@@ -151,12 +153,12 @@ async function main() {
     const page = await ctx.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e.message || e)));
-    await page.goto(srv.origin + srv.chat, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector('[data-message-id="a4"]', { timeout: 60000 });
+    await page.goto(srv.origin + (room ? srv.room : srv.chat), { waitUntil: "domcontentloaded" });
+    await page.waitForSelector(`[data-message-id="${room ? "ra4" : "a4"}"]`, { timeout: 60000 });
     await page.waitForTimeout(1200);
-    const box = page.locator("form.r-composer textarea");
+    const box = page.locator(room ? "form:has(.v4-cbox) textarea" : "form.r-composer textarea");
     let frame = 0;
-    const shot = async (name) => { if (shots) await page.screenshot({ path: path.join(out, `frames-${label}-${W}-${theme}-${String(frame++).padStart(2, "0")}-${name}.png`) }); };
+    const shot = async (name) => { if (shots) await page.screenshot({ path: path.join(out, `frames-${label}${room ? "-room" : ""}-${W}-${theme}-${String(frame++).padStart(2, "0")}-${name}.png`) }); };
     await shot("idle");
 
     // 1 · At the end: type, send, and watch the whole turn.
@@ -185,6 +187,14 @@ async function main() {
     await page.waitForTimeout(1500); // the end of the turn settles (actions, receipts, «Visto»)
     await shot("done");
     const pinned = await page.evaluate(() => { window.__shift.on = false; return window.__shift; });
+    if (room) {
+      result.room = summarize(pinned.samples, pinned.cls, pinned.earlier);
+      result.errors = errors;
+      const file = path.join(out, `shift-${label}-room-${W}-${theme}.json`);
+      writeFileSync(file, JSON.stringify(result, null, 2));
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
     if (shots) {
       // The actions of a message, on hover: the latest answer, then your latest message.
       const answer = page.locator('[data-kind="answer"]').last();
@@ -231,7 +241,7 @@ async function main() {
     srv.child.stdin.end();
     setTimeout(() => { try { rmSync(srv.directory, { recursive: true, force: true }); } catch {} }, 1500);
   }
-  const file = path.join(out, `shift-${label}-${W}-${theme}.json`);
+  const file = path.join(out, `shift-${label}${room ? "-room" : ""}-${W}-${theme}.json`);
   writeFileSync(file, JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
 }

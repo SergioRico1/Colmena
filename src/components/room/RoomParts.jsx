@@ -229,7 +229,7 @@ function MessageRow({ id, messageId = null, avatar, continued, at, padding, chil
  * Your own message (design/v4 › .mine): on the right, in the soft «mine» bubble, with its time
  * and how far it got under it: «Enviando…», a tick when it is out, two and «Visto» once read.
  */
-function MineRow({ messageId = null, continued, at, children, under = null, actions, menu = null, entering = false, sending = false, seen = null, failed = false }) {
+function MineRow({ messageId = null, continued, at, children, under = null, actions, menu = null, entering = false, sending = false, seen = null, status = null, failed = false }) {
   const ctx = useMessageContext(menu);
   return (
     <div data-message-id={messageId || undefined} onContextMenu={ctx.onContextMenu} className={"msg-row v4-mine" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ opacity: sending ? 0.75 : 1, transition: "opacity .2s ease", background: "transparent" }}>
@@ -237,7 +237,7 @@ function MineRow({ messageId = null, continued, at, children, under = null, acti
       {failed ? null : (
         <span className="v4-mine-meta">
           {at ? <time dateTime={at}>{time(at)}</time> : null}
-          {sending ? <span>{"Enviando…"}</span> : seen ? <><Checks size={15} aria-hidden="true" /><span>{seen}</span></> : at ? <Check size={14} aria-label="Enviado" /> : null}
+          {sending ? <span>{"Enviando…"}</span> : status ? status : seen ? <><Checks size={15} aria-hidden="true" /><span>{seen}</span></> : at ? <Check size={14} aria-label="Enviado" /> : null}
         </span>
       )}
       {under ? <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", marginTop: "6px", maxWidth: "min(62%, 560px)" }}>{under}</div> : null}
@@ -363,20 +363,26 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
   if (mine) {
     // Yours: on the right, in the bubble; how far it got under it (people: «Visto por …»).
     const peerSeen = message.peer?.seenBy?.length ? "Visto por " + listNames(message.peer.seenBy) : null;
+    // A bot's 👀 (it is on it: server/reactions.mjs ACK_LOOKING) comes and goes with its work: it is
+    // said in the line under the bubble, with the receipt, never as a row of reactions that would
+    // appear and disappear (and move the room).
+    const botLook = (r) => r.emoji === "👀" && bots.some((b) => b.id === r.by);
+    const looking = reactions.filter(botLook).map((r) => bots.find((b) => b.id === r.by).name);
+    const shown = looking.length ? reactions.filter((r) => !botLook(r)) : reactions;
+    const status = receipt ? <Receipt receipt={receipt} bots={bots} /> : looking.length ? <span title={`${listNames(looking)} ${looking.length === 1 ? "está" : "están"} en ello`}>{"👀 " + listNames(looking)}</span> : null;
     const under = (
       <>
         {message.peer && !peerSeen ? <TravelLine peer={message.peer} /> : null}
         <RefChips refs={message.refs} align="flex-end" />
         <RoutedLine message={message} bots={bots} />
-        {receipt ? <Receipt receipt={receipt} bots={bots} /> : null}
         {message.failed ? <FailedLine error={message.failed} onRetry={resend.retry} onDiscard={resend.discard} /> : null}
         {(message.attachments || []).map((f, i) => <FileChip key={i} file={f} dragUrl={message.missionId && f?.name ? workFileUrl(message.missionId, f.name) : null} />)}
-        <ReactionRow list={reactions} toggle={react} bots={bots} id={message.id} />
+        <ReactionRow list={shown} toggle={react} bots={bots} id={message.id} />
         <RepliesLink replies={replies} bots={bots} onOpen={onReply} pressed={repliesOpen} />
       </>
     );
     return (
-      <MineRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} failed={!!message.failed} entering={entering} continued={continued} at={message.at} seen={peerSeen || (seen ? "Visto" : null)} actions={actions} menu={menu} under={under}>
+      <MineRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} failed={!!message.failed} entering={entering} continued={continued} at={message.at} seen={peerSeen || (seen ? "Visto" : null)} status={status} actions={actions} menu={menu} under={under}>
         <UserText text={message.text} messageId={message.optimistic ? null : message.id} />
       </MineRow>
     );
@@ -649,10 +655,10 @@ function LiveTurnCard({ step, bot }) {
     // Only writing: its words as they come, where the answer will stay.
     return (
       <MessageRow live avatar={<BotFace bot={bot} size={32} state="work" decorative />} at={null}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: "8px", lineHeight: "1.25", marginBottom: "-4px" }}>
-          <span className="v4-head" style={{ margin: 0 }}><span className="n">{bot.name}</span>{bot.role ? <span className="v4-tag">{bot.role}</span> : null}<span className="of">{"escribiendo…"}</span></span>
-        </div>
-        <div><LiveMarkdown text={text} size={15} caret streamKey={step.id} /></div>
+        {/* The same head as the answer that takes this place (AuthorHead), so it does not jump. */}
+        <AuthorHead author={authorOf({ role: "assistant", botId: bot.id }, [bot])} note="escribiendo…" />
+        {/* No caret line under the words: the answer that takes this place has none, so it would jump. */}
+        <div><LiveMarkdown text={text} size={15} streamKey={step.id} /></div>
       </MessageRow>
     );
   }
@@ -1194,19 +1200,6 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       <InlineApprovals approvals={approvals} bots={bots} />
       <Suggestions list={suggestions} onPick={pickSuggestion} />
       {shared?.above || null}
-      {typing || WORKING.includes(mission?.status) ? (
-        <div style={{ margin: "0 0 8px", display: "flex", alignItems: "center", gap: "8px", fontSize: "var(--t-meta)", color: "var(--c-text-3)", minHeight: "26px" }}>
-          {typing ? (
-            <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-              {/* V2Sala: a bot at work is its own small shape, breathing (dots are for people typing). */}
-              {typing.bot ? <BotFace bot={typing.bot} size={16} state="work" decorative /> : <Dots />}
-              {typing.name ? <span>{typing.name}</span> : null}
-              <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{typingLine}</span>
-            </span>
-          ) : null}
-          <QueueModeHint mission={mission} />
-        </div>
-      ) : null}
       {plusOpen ? <div style={{ position: "relative" }}><PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /></div> : <div style={{ position: "relative" }}>{mentions.menu}</div>}
       {mentions.chips.length || chosen.length || files.length ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "0 0 8px" }}>
@@ -1249,18 +1242,30 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
             style={{ position: "relative", flex: "1", minWidth: 0, resize: "none", border: "0", fontSize: "var(--t-read)", lineHeight: "1.4", padding: "5px 6px", background: "transparent", color: "var(--c-text)", fieldSizing: "content", minHeight: "32px", maxHeight: "200px", ...(pills ? { color: "transparent", caretColor: "var(--c-text)" } : {}) }} />
         </label>
         <MicButton onText={appendDictation(setText)} target={inputRef} scope={mission?.id} size={32} style={{ borderRadius: "var(--r-sm)" }} />
-        <button type="submit" aria-label={working ? SEND_LABEL[roomMode] : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Intro)"} disabled={busy || !text.trim()} className="v4-send c-press" style={working ? { width: "auto", padding: "0 12px", gap: "6px", display: "flex", alignItems: "center", fontSize: "var(--t-meta)", fontWeight: 600 } : null}>
+        {/* Always the same square: what a message does while they work is said in the line below. */}
+        <button type="submit" aria-label={working ? `Enviar: ${SEND_LABEL[roomMode].toLowerCase()}` : "Enviar"} title={working ? SEND_LABEL[roomMode] + " (Intro)" : "Enviar (Intro)"} disabled={busy || !text.trim()} className="v4-send c-press">
           <span key={launched} className={launched ? "c-launch" : undefined} style={{ display: "grid" }}><PaperPlaneRight size={18} weight="fill" /></span>
-          {working ? SEND_LABEL[roomMode] : null}
         </button>
       </div>
-      {text.trim() || working ? (
-        <p style={{ margin: "6px 4px 0", fontSize: "var(--t-caption)", color: "var(--c-text-4)" }}>
+      {/* One line under the bar, always there (its height never changes): who is at work and
+          what they do on the left; what Intro does, or how to pause them, on the right. */}
+      <div className="room-status-line">
+        {typing ? (
+          <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+            {/* V2Sala: a bot at work is its own small shape, breathing (dots are for people typing). */}
+            {typing.bot ? <BotFace bot={typing.bot} size={16} state="work" decorative /> : <Dots />}
+            {typing.name ? <span>{typing.name}</span> : null}
+            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{typingLine}</span>
+          </span>
+        ) : null}
+        <span style={{ flex: "1" }} />
+        {working ? <QueueModeHint mission={mission} /> : null}
+        <span className="r-hide-touch" style={{ flex: "none", color: "var(--c-text-4)", whiteSpace: "nowrap" }}>
           {text.trim()
-            ? working ? `Intro: ${SEND_LABEL[roomMode].toLowerCase()} · Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Intro para enviar · Mayús+Intro, nueva línea"
-            : "Esc para pausarlos"}
-        </p>
-      ) : null}
+            ? working ? `Ctrl+Intro: ${SEND_LABEL[otherMode].toLowerCase()}` : "Mayús+Intro, nueva línea"
+            : working ? "Esc para pausarlos" : ""}
+        </span>
+      </div>
       {shared && requestHint(text, mentions.picks) ? <p role="status" style={{ margin: "8px 4px 0", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{requestHint(text, mentions.picks) + "."}</p> : null}
       <ErrorLine style={{ marginTop: "8px" }}>{error || fileError}</ErrorLine>
     </form>

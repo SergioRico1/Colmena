@@ -56,6 +56,10 @@
 .v4-overlay{position:absolute;left:0;right:0;bottom:100%;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding-bottom:8px;pointer-events:none}
 .v4-overlay > *{pointer-events:auto}
 .v4-while{align-self:flex-end;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 10px;max-width:100%;padding:4px 10px 4px 4px;border:1px solid var(--c-line);border-radius:var(--r-pill);background:var(--c-raised);box-shadow:var(--c-shadow-lift);font-size:var(--t-caption);color:var(--c-text-3);animation:c-rise .16s ease-out both}
+/* A room's line under its composer (RoomParts.jsx RoomComposer): always there, one height. */
+.room-status-line{display:flex;align-items:center;gap:8px;height:26px;margin:6px 4px 0;overflow:hidden;white-space:nowrap;font-size:var(--t-meta);color:var(--c-text-3)}
+.room-status-line > :last-child{font-size:var(--t-caption)}
+@media (max-width: 639.98px){.room-status-line > :last-child{display:none}}
 .v4-cbox textarea::placeholder{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .v4-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;line-height:1.2;margin-bottom:3px}

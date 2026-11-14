@@ -68,6 +68,15 @@ turns.forEach(([q, a], i) => {
   store.put("steps", { id: "s" + i, missionId: "shift", key: "followup-s" + i, botId: "nora", kind: "followup", status: "completed", history: [], request: q, startedAt: at(40 - i * 6), completedAt: at(39 - i * 6) });
 });
 store.patch("missions", "shift", { steps: turns.map((_, i) => "followup-s" + i) });
+// A room with two bots, with the same earlier turns (alternating who answered).
+store.put("missions", { id: "shift-room", title: "Pruebas", prompt: turns[0][0], status: "completed", mode: "solo", room: "pruebas", botIds: ["nora", "tomas"], createdAt: at(40), updatedAt: at(10) });
+turns.forEach(([q, a], i) => {
+  const bot = i % 2 ? "tomas" : "nora";
+  store.put("messages", { id: "ru" + i, missionId: "shift-room", role: "user", kind: "message", text: q, at: at(40 - i * 6) });
+  store.put("messages", { id: "ra" + i, missionId: "shift-room", role: "assistant", kind: "message", botId: bot, stepId: "rs" + i, text: a, at: at(39 - i * 6) });
+  store.put("steps", { id: "rs" + i, missionId: "shift-room", key: "followup-rs" + i, botId: bot, kind: "followup", status: "completed", history: [], request: q, startedAt: at(40 - i * 6), completedAt: at(39 - i * 6) });
+});
+store.patch("missions", "shift-room", { steps: turns.map((_, i) => "followup-rs" + i) });
 
 let origin = "";
 const app = createApp({ store, runtime, session, scheduler: null, connections: null, getOrigin: () => origin });
@@ -77,7 +86,7 @@ const vite = await createServer({ root, server: { middlewareMode: true, hmr: { s
 app.use(vite.middlewares);
 server.listen(port, "127.0.0.1", () => {
   origin = "http://127.0.0.1:" + server.address().port;
-  console.log("SHIFT_READY " + JSON.stringify({ origin, directory, pid: process.pid, chat: "/chat/nora", missionId: "shift" }));
+  console.log("SHIFT_READY " + JSON.stringify({ origin, directory, pid: process.pid, chat: "/chat/nora", missionId: "shift", room: "/sala/shift-room" }));
 });
 const stop = async () => {
   server.closeAllConnections?.();
