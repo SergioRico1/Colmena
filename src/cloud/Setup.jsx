@@ -120,7 +120,7 @@ function AiStep({ ai, onConnected, next, skip }) {
           {chosen && byPlan ? (
             <p className="cl-chosen">
               <ProviderMark engine={engine} size={20} tile={false} />
-              <span><b>{signIn.name}</b> · con tu suscripción</span>
+              <span><b>{signIn.name}</b> · <span style={{ whiteSpace: "nowrap" }}>con tu suscripción</span></span>
               <button type="button" className="cl-link" onClick={() => { setChosen(false); requestAnimationFrame(() => document.querySelector("input[name=engine]:checked")?.focus()); }}>Cambiar</button>
             </p>
           ) : (<>
