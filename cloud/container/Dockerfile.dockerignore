@@ -1,0 +1,9 @@
+# Only what the machine image copies (cloud/container/Dockerfile); everything else stays out.
+*
+!package.json
+!package-lock.json
+!server/
+!prompts/
+!cloud/container/fake-claude-code.mjs
+**/node_modules
+**/*.test.mjs

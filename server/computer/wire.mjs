@@ -90,6 +90,10 @@ async function runComputerTool(runtime, computer, name, rawArgs, { mission, step
     missionId: mission.id, botId: bot.id, bot, autonomy: runtime.autonomy(mission, bot), missionRoot: runtime.root(mission.id),
     folders: accessibleFolders(store, bot.id), settings: runtime.settings(), computer, signal, vault: runtime.vault || null,
     managers: runtime.managers || null, store, noPasswords: !passwordsAllowed(mission, step),
+    // The cloud: commands run in the workspace's container (server/machine/seam.mjs), and hosts
+    // are resolved by DNS over HTTPS for the public-page check.
+    ...(runtime.machine ? { machine: runtime.machine } : {}),
+    ...(runtime.resolveHost ? { resolve: runtime.resolveHost } : {}),
     // Commands run confined when the server has a sandbox (undefined: not configured, as before).
     ...(runtime.sandbox !== undefined ? { sandbox: runtime.sandbox } : {}),
     // The same command the sandbox just blocked, asked again: a wider run waits for the person (once).

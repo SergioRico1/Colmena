@@ -48,6 +48,7 @@ export class CodeService {
     this.ghCommand = ghCommand; // GitHub CLI ([exe, ...args] in tests; looked up on the PATH otherwise)
     this.computer = computer; // the desktop browser (server/computer/bridge.mjs): Bruno's look at the preview
     this.apiBase = null; // http://127.0.0.1:<port>/api, set once the server listens (preview-cli.mjs)
+    this.engineEnv = null; // async (task) → extra env for its engine (the cloud: the person's API key); null on the desktop
     this.store = store;
     this.directory = path.resolve(directory);
     this.command = command; // Claude Code ([exe, ...args] in tests)
@@ -465,7 +466,9 @@ export class CodeService {
     const live = this.engines.get(task.id);
     if (live?.engine.alive) return live;
     const session = task.session || { id: randomUUID(), started: false };
-    const env = this.apiBase ? { COLMENA_CODE_API: this.apiBase, COLMENA_CODE_TASK: task.id } : {};
+    // The cloud machine (server/machine/serve.mjs) adds the asking person's API key here; on the
+    // desktop there is no hook and the engines use this computer's own sign-in, as always.
+    const env = { ...(this.apiBase ? { COLMENA_CODE_API: this.apiBase, COLMENA_CODE_TASK: task.id } : {}), ...((await this.engineEnv?.(task)) || {}) };
     const common = { cwd: task.cwd, model: task.model, effort: task.effort, access: task.access, env, instructions: this.instructions(task), authorize: (req) => this.authorize(task.id, req) };
     const engine = task.engine === "codex"
       ? new CodexEngine({ ...common, command: this.codexCommand, threadId: session.started ? session.id : null, rollback: session.rollback || 0 })

@@ -224,7 +224,8 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
     mustGet("missions", req.params.id, "Misión");
     try {
       const v = await visualOf(req, res);
-      const pages = await pdfPages(v.pdf).catch(() => 0);
+      // The cloud counts and draws pages in its machine (server/machine/seam.mjs › office); the desktop here.
+      const pages = await (office?.pages || pdfPages)(v.pdf).catch(() => 0);
       if (!pages) return res.json({ available: false, reason: "FAILED", note: "No pude abrir sus páginas. Ves su texto." });
       res.json({ available: true, pages, version: v.version, missingFonts: v.missingFonts, engine: v.engine });
     } catch (error) {
@@ -248,7 +249,7 @@ export function registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, 
     const key = v.version + ":" + n + ":" + width;
     let png = pngs.get(key);
     if (!png) {
-      png = (await renderPdfPage(v.pdf, n, { width })).png;
+      png = (await (office?.renderPage || renderPdfPage)(v.pdf, n, { width })).png;
       pngs.set(key, png);
       while (pngs.size > 40) pngs.delete(pngs.keys().next().value);
     }

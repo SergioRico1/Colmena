@@ -247,6 +247,43 @@ export function missingFrom(wanted, installed) {
  * `fonts`: () → Set of installed families (lower case) or null; false turns the check off.
  * `source` names the file (missionId + path): a newer version of it cancels the older one's conversion.
  */
+/**
+ * The converter's surface without a disk (the cloud: server/machine/seam.mjs): conversions run
+ * elsewhere (`convert(bytes, ext, {source, signal})` → {pdf, missingFonts, engine, cached}) and the
+ * newest few PDFs are kept in memory, keyed by content like the disk cache.
+ */
+export function remoteOfficeConverter({ convert, label = "LibreOffice", limits = {}, keep = 12 } = {}) {
+  const L = { ...OFFICE_LIMITS, ...limits };
+  const cache = new Map(); // key → result, newest last
+  const inflight = new Map();
+  return {
+    limits: L,
+    isOffice: (name) => isOfficeFile(name),
+    async engine(ext) { return OFFICE_FORMATS[String(ext || "").toLowerCase()] ? { name: "remote", label } : null; },
+    async convert(bytes, ext, { source = null, signal = null } = {}) {
+      ext = String(ext || "").toLowerCase();
+      if (!OFFICE_FORMATS[ext]) throw converterError("UNSUPPORTED", "Ese formato no se convierte.");
+      if (bytes.length > L.inputBytes) throw converterError("TOO_BIG", "Es demasiado grande para verlo con su formato.");
+      const key = sha256(Buffer.concat([Buffer.from(CACHE_VERSION + ":remote:" + ext + ":"), bytes]));
+      const hit = cache.get(key);
+      if (hit) { cache.delete(key); cache.set(key, hit); return { ...hit, cached: true }; }
+      let job = inflight.get(key);
+      if (!job) {
+        job = Promise.resolve(convert(bytes, ext, { source, signal })).then((out) => {
+          if (!Buffer.isBuffer(out?.pdf) || out.pdf.subarray(0, 5).toString("latin1") !== "%PDF-") throw converterError("FAILED", "La conversión no dio un PDF válido.");
+          const result = { pdf: out.pdf, missingFonts: out.missingFonts || [], engine: out.engine || label };
+          cache.set(key, result);
+          while (cache.size > keep) cache.delete(cache.keys().next().value);
+          return result;
+        }).finally(() => inflight.delete(key));
+        inflight.set(key, job);
+      }
+      return { ...(await job), cached: false };
+    },
+    pending: () => inflight.size,
+  };
+}
+
 export function createOfficeConverter({ cacheDir, engines = defaultEngines(), fonts = installedFonts, limits = {} } = {}) {
   if (!cacheDir) throw Error("createOfficeConverter necesita una carpeta de caché.");
   const L = { ...OFFICE_LIMITS, ...limits };
