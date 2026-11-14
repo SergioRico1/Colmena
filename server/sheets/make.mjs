@@ -1,8 +1,6 @@
 // create_spreadsheet end to end: the .xlsx, its charts as pictures (next to it, in a folder
 // with the same name) and what the preview and the bot need to know about it.
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { createUniqueFile, safePath } from "../files.mjs";
+import { createUniqueFile, writeCompanionFile } from "../files.mjs";
 import { buildWorkbook } from "./index.mjs";
 import { workbookCharts, workbookMarkdown } from "./preview.mjs";
 import { workbookXlsx } from "./xlsx.mjs";
@@ -21,9 +19,7 @@ export async function makeSpreadsheet({ root, input } = {}) {
   const charts = [];
   for (const [i, p] of pictures.entries()) {
     const relative = `${folder}/grafico-${i + 1}.png`;
-    const target = await safePath(root, relative, { parent: true });
-    await mkdir(path.dirname(target), { recursive: true });
-    await writeFile(target, p.bytes);
+    await writeCompanionFile(root, relative, p.bytes);
     charts.push(relative);
   }
   const summary = built.grids.map((g) => `«${g.sheet.name}»: ${g.sheet.rows.length} filas × ${g.sheet.columns.length} columnas` +

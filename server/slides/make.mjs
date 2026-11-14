@@ -1,9 +1,8 @@
 // create_presentation end to end: the editable .pptx, the page the viewer and the PDF come
 // from, one picture per slide and what does not fit (measured in a hidden window when the
 // desktop app is there; estimated otherwise).
-import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { createUniqueFile, safePath } from "../files.mjs";
+import { createUniqueFile, writeCompanionFile } from "../files.mjs";
 import { buildDeck, deckOutline } from "./index.mjs";
 import { H, W } from "./layout.mjs";
 
@@ -21,12 +20,12 @@ export async function makePresentation({ root, input, computer = null, signal } 
   // Its pictures, page and PDF go next to it, in a folder with the same name.
   const folder = pptx.path.replace(/\.pptx$/, "");
   const html = folder + "/presentacion.html";
-  const htmlTarget = await safePath(root, html, { parent: true });
-  await mkdir(path.dirname(htmlTarget), { recursive: true });
-  await writeFile(htmlTarget, built.html());
+  // On the desktop a real file (the hidden window prints it); in the cloud it goes to R2 and there is
+  // no window to print it (office previews are phase 4): no target, so no render.
+  const htmlTarget = (await writeCompanionFile(root, html, built.html())).target;
   const warnings = [...built.warnings];
   let shots = [], pdf = null;
-  if (computer?.available) {
+  if (computer?.available && htmlTarget) {
     try {
       const outDir = path.dirname(htmlTarget);
       const r = await computer.call("render", {

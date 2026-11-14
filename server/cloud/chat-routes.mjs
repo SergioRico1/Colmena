@@ -57,6 +57,8 @@ export function chatRoutes(app, { chat, importer, blobs, workspace, presence, pu
       me: { id: self.id, name: self.name, email: self.email, role: self.role, profile: chat.myProfile(self.id) },
       people: chat.directory(), channels: chat.myChannels(person), settings: chat.isAdmin(person) ? chat.settings() : { defaultChannels: chat.settings().defaultChannels },
       push: { publicKey: push?.publicKey || null }, workspace,
+      // Bots that may be named with @ (Phase 3): <@bot:id> in a message.
+      bots: person.role === "guest" ? [] : chat.bots(),
     };
   }));
   app.get("/api/chat/people", run(() => { chat.must(me()); return { people: chat.directory() }; }));

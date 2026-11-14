@@ -9,10 +9,6 @@
 // (server/identity.mjs), what a guest may do, the private conversations only their people see,
 // and the desktop-only places answered «not in the cloud».
 import { createApp } from "../app.mjs";
-import { Runtime } from "../runtime.mjs";
-import { SiteVault } from "../vault.mjs";
-import { SecretStore } from "../secrets.mjs";
-import { McpHub } from "../mcp/hub.mjs";
 import { roomSlug } from "../runtime/helpers.mjs";
 import { now } from "../store.mjs";
 import { ROLES, SYSTEM_PERSON, asPerson, currentPerson, isPerson, personAddress, personalFields } from "../identity.mjs";
@@ -25,11 +21,13 @@ import { SlackImport } from "./slack-import.mjs";
 import { MemoryBlobs } from "./blobs.mjs";
 import { sendPush } from "./webpush.mjs";
 import { fetchPreview } from "./link-preview.mjs";
+import { cloudBots } from "./bots-host.mjs";
+import { ChannelBots } from "./channel-bots.mjs";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
 export const CLOUD_HIDDEN = Object.freeze(["codigo", "ordenador", "dictado", "voz", "gestores", "copias", "cifrado", "carpetas", "personas-buzon"]);
 /** API areas that need the person's computer or the desktop's mailbox: «not in the cloud». */
-const DESKTOP_ONLY = /^\/api\/(peers|teams|code|computer|projects|voice|voice-live|dictation|backup|backups|encryption|password-managers|browser-sessions|vault|logins|sign-in-grants|folders|webhooks|diagnostics|drag|auth)(\/|$)/;
+const DESKTOP_ONLY = /^\/api\/(peers|teams|code|computer|projects|voice|voice-live|dictation|backup|backups|encryption|password-managers|browser-sessions|vault|logins|sign-in-grants|folders|diagnostics|drag)(\/|$)/;
 /** What a guest may change: talking in the conversations they can see, and their own read marks. */
 const GUEST_WRITES = [/^\/api\/chat\//, /^\/api\/missions\/[^/]+\/messages$/, /^\/api\/rooms\/[^/]+\/(messages|seen)$/, /^\/api\/notifications(\/|$)/, /^\/api\/messages\/[^/]+\/reactions$/];
 const MISSION_PATH = /^\/api\/(missions|rooms)\/([^/]+)/;
@@ -37,11 +35,6 @@ const MEMBER_FIELDS = (m) => ({ id: m.id, name: m.name || m.email || "Alguien", 
 /** Uploads that are bytes, not JSON (the Durable Object streams them itself; Node gets them here). */
 const BINARY_WRITES = [/^\/api\/chat\/files$/, /^\/api\/chat\/import\/[^/]+\/parts\/\d+$/];
 
-/** The AI account of a hosted workspace before phase 3: none, and it says so. */
-function noProvider() {
-  const off = () => { throw Object.assign(Error("Los bots llegan a la nube en la fase 3: todavía no hay una cuenta de IA en este espacio."), { status: 501 }); };
-  return { kind: null, status: () => ({ kind: null, cloud: true }), models: async () => [], respond: off, infer: off, close() {} };
-}
 const noSession = () => ({ status: () => null, models: [], start: async () => { throw Error("No disponible en la nube."); }, closePending() {}, logout: async () => ({ ok: true }), listModels: async () => [] });
 
 /**
@@ -49,7 +42,9 @@ const noSession = () => ({ status: () => null, models: [], start: async () => { 
  * envelope vault (none: secrets unavailable); `files`: where mission files live (SqlFiles or
  * R2Files, server/file-store.mjs); `log`.
  */
-export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m) }) {
+export function hostWorkspace({ store, workspace, masters = [], files = null, blobs = null, vapid = null, previews = undefined, defer = (p) => p?.catch?.(() => {}), presence = () => new Map(), log = (m) => console.warn("[nube] " + m), publicUrl = "", testing = false, fetchImpl = undefined }) {
+  // Phase 3 (bots): `publicUrl` (webhook addresses, MCP sign-in callbacks), `testing` (the Worker
+  // allows the fake model; each workspace still needs its test flag), `fetchImpl` (tests).
   // Team messaging (Phase 2): `blobs` (server/cloud/blobs.mjs: uploads, import parts), `vapid`
   // {publicKey, privateKey, subject} for Web Push (none: no pushes), `previews` (url → a link
   // preview; default: fetched with SSRF protection; false: none), `defer(promise)`: work that
@@ -101,10 +96,13 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     mission: () => ({ people: true, createdBy: currentPerson().id || null }),
   };
 
-  const runtime = new Runtime(store, noProvider(), null, { seed: true, suggest: false, review: false, autoTitle: false, narrate: false, recaps: false, speech: false, checkpoints: false, routing: false });
-  runtime.vault = new SiteVault(store, { secrets: vault("vault") });
-  runtime.secrets = new SecretStore(store, { values: vault("secrets") });
-  runtime.mcp = new McpHub(store, { secrets: vault("mcp") });
+  // Bots (Phase 3): runtime, scheduler, connections and per-person AI accounts (bots-host.mjs).
+  let appRef = null, pushRef = null;
+  const bots = cloudBots({
+    store, workspace, vault: (ns) => (masters.length ? vault(ns) : null), memberOf, members, publicUrl, testing, fetchImpl, log,
+    push: (personId, payload) => pushRef?.(personId, payload), rooms: () => appRef?.locals?.rooms,
+  });
+  const runtime = bots.runtime;
 
   const guard = (req, res, next) => {
     res.set({ "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY", "Cache-Control": "no-store" });
@@ -125,13 +123,21 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     }
     asPerson({ id: person.id, name: person.name || known.name || null, email: person.email || known.email || null, role: person.role }, next);
   };
+  /** After the body is read: what this person may do with bots and approvals (bots-host.mjs). */
+  const afterBody = (req, res, next) => {
+    const person = currentPerson();
+    if (!isPerson(person)) return next();
+    const refused = bots.guard(req, person);
+    if (refused) return res.status(refused.status).json({ error: refused.error });
+    next();
+  };
 
   /** /api/state as each person sees it: their name, the conversations they may see. */
   const state = (s) => {
     const me = currentPerson();
     const hidden = new Set((s.missions || []).filter((m) => m.audience && !m.audience.includes(me.id)).map((m) => m.id));
     for (const m of store.list("missions")) if (!canSee(m, me)) hidden.add(m.id);
-    return {
+    return bots.filterState({
       ...s,
       // The desktop welcome (AI account, this computer) does not apply: hosted people start in the app.
       settings: { ...(s.settings || {}), userName: me.name || me.email || "", onboarded: true },
@@ -142,7 +148,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       teams: [{ id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "Empresa", people: members().length, bots: store.list("bots").filter((b) => b.enabled !== false).length, admin: ["owner", "admin"].includes(me.role), current: true }],
       teamsPending: [],
       cloud: { workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, me: { id: me.id, name: me.name, email: me.email, role: me.role }, members: members(), hidden: CLOUD_HIDDEN },
-    };
+    }, me);
   };
 
   // ---- team messaging (server/cloud/chat.mjs): its live frames go to the open feeds they are for
@@ -160,6 +166,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   const chat = new TeamChat({
     store, people: { list: everyone, get: (id) => { const m = store.get("members", id); return m && !m.removedAt ? MEMBER_FIELDS(m) : null; } },
     emit: chatEmit, presence, blobs: blobStore, defer, log,
+    bots: () => channelBots.list(), onPost: (person, view, row) => channelBots.onPost(person, view, row),
     previews: previews === false ? null : previews || ((url) => fetchPreview(url)),
   });
   const pushSend = vapid?.publicKey && vapid?.privateKey ? async (personId, payload) => {
@@ -173,6 +180,9 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     return { sent };
   } : null;
   chat.push = pushSend;
+  pushRef = pushSend;
+  // Bots named in channels answer in the thread (channel-bots.mjs), as the person who named them.
+  const channelBots = new ChannelBots({ store, runtime, chat, log });
   const importer = new SlackImport({ chat, blobs: blobStore, log });
 
   // ---- the workspace's own routes (people, direct messages); after the guard like the rest
@@ -199,11 +209,14 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     res.status(201).json({ missionId: mission.id, href: "/sala/" + mission.id });
   });
   app.get("/api/cloud/me", (_req, res) => res.json({ person: currentPerson(), workspace: state({}).cloud.workspace }));
+  bots.routes(app);
   };
-  const app = createApp({ store, runtime, session: noSession(), connections: null, getOrigin: () => "https://colmena.invalid", computer: null, hosted: { guard, state, rooms, routes } });
+  const app = createApp({ store, runtime, session: noSession(), scheduler: bots.scheduler, connections: bots.connections, getOrigin: () => "https://colmena.invalid", computer: null, hosted: { guard, afterBody, state, rooms, routes, approvers: bots.approvers } });
+  appRef = app;
+  app.locals.webhooks = bots.webhooks;
 
   return {
-    app, store, runtime,
+    app, store, runtime, bots, channelBots,
     /** Replaces the workspace's list of people (the directory's, after any change). */
     syncMembers(list, { name = null } = {}) {
       const at = now();
@@ -244,6 +257,8 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
      * mail provider. Returns when it wants to run next (ms).
      */
     async tick({ invite = null, mail = null, now: at = Date.now() } = {}) {
+      // Bots first (routines due, question waits, renewed limits): short, and nobody waits on an import.
+      await bots.tick(at);
       const running = importer.active();
       if (running) {
         await importer.step({ invite: invite ? (people) => invite(running.startedBy, people) : null });
@@ -266,8 +281,16 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       if (importer.active()) return at + 250;
       const digest = chat.nextDigestAt();
       const upkeep = (chat.kvGet("upkeep-at")?.at || 0) + 3600000;
-      return Math.max(at + 1000, Math.min(digest ?? Infinity, upkeep));
+      return Math.max(at + 500, Math.min(digest ?? Infinity, upkeep, bots.nextAlarm(at) ?? Infinity));
     },
+    /** After a wake-up (Workspace#boot): what an eviction cut goes on by itself. */
+    resume: () => bots.resume(),
+    /** A request to a routine's public address (/hooks/<workspace>/h/<id>). */
+    hook: (hookId, request) => bots.hook(hookId, request),
+    /** The test flags (only when the Worker allows tests): {fakeModel}. */
+    setTestFlags: (flags) => bots.setTestFlags(flags),
+    /** Bots at work right now (missions running in this object). */
+    working: () => runtime.active.size,
     /** Background work (an alarm) as nobody in particular. */
     background: (fn) => asPerson(SYSTEM_PERSON, fn),
     log,

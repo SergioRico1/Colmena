@@ -205,6 +205,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.use(peerFileParser); // a file shared with people (up to 25 MB)
   app.use(wikiImportParser); // «Notas»: a zip of Markdown files to bring in (up to 25 MB)
   app.use(express.json({ limit: "1400kb" }));
+  if (hosted?.afterBody) app.use(hosted.afterBody); // the hosted host's checks that read the body
   app.get("/api/health", (_req, res) => res.json({ application: "Colmena", version: VERSION, pid: process.pid, ...(app.locals.stalls ? { stalls: app.locals.stalls.state } : {}) }));
   app.get("/api/bootstrap", (_req, res) => res.json({ csrf }));
   const { connection, emailEdit } = registerConnectionRoutes(app, { connections, runtime, connectorCache, store });
@@ -456,7 +457,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerSkillRoutes(app, { store, mustGet, runtime, optional });
   registerArtifactRoutes(app, { mustGet, store });
   const { createAutomation } = registerAutomationRoutes(app, { enabledBot, store, scheduler, ask, parseJson, mustGet });
-  registerPreapprovalRoutes(app, { store, mustGet }); // a routine's red lines: approved ahead, and who else decides them
+  registerPreapprovalRoutes(app, { store, mustGet, members: hosted?.approvers || null }); // a routine's red lines: approved ahead, and who else decides them
   registerSuggestionRoutes(app, { mustGet, store, need, runtime, createAutomation });
   registerFolderRoutes(app, { mustGet, validateFolder, store });
   registerNotificationRoutes(app, { store, scheduler, rootOf, mustGet, runtime });

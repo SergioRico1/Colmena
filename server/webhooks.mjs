@@ -331,6 +331,14 @@ export class Webhooks {
     if (this.handled.has(copy)) return true;
     this.handled.add(copy);
     if (this.handled.size > WEBHOOK_LIMITS.seen) this.handled.delete(this.handled.values().next().value);
+    return this.handle(request);
+  }
+  /**
+   * One request to a trigger's address, opened: {hook, headers, body (base64url), at, key?,
+   * limited?}. The mailbox path (receive) and the cloud's public address (server/cloud/host.mjs)
+   * both end here. true = dealt with.
+   */
+  async handle(request) {
     const rec = this.store.list("webhooks").find((r) => r.hookId && r.hookId === request.hook);
     const rule = rec ? this.store.get("automations", rec.id) : null;
     if (!rec || rule?.trigger?.type !== "webhook") return true; // an address you rotated or revoked

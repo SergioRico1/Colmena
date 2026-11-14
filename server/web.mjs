@@ -240,7 +240,12 @@ function charsetOf(contentType, body) {
  * Reads a public page. Options are injectable for tests:
  * resolve(hostname) → [{address, family}], signal, maxBytes, timeoutMs.
  */
-export async function webFetch(rawUrl, { resolve = defaultResolve, signal, maxBytes = WEB_LIMITS.maxBytes, timeoutMs = WEB_LIMITS.timeoutMs } = {}) {
+/**
+ * `get(url, {resolve, signal, maxBytes})` → {status, headers, body, truncated, location}: one request
+ * without following redirects (default: node:http with the guarded lookup; the cloud passes a
+ * fetch-based one, server/cloud/web-cloud.mjs).
+ */
+export async function webFetch(rawUrl, { resolve = defaultResolve, signal, maxBytes = WEB_LIMITS.maxBytes, timeoutMs = WEB_LIMITS.timeoutMs, get = getOnce } = {}) {
   let url = validateWebUrl(rawUrl);
   const limit = AbortSignal.timeout(timeoutMs);
   const combined = signal ? AbortSignal.any([signal, limit]) : limit;
@@ -248,7 +253,7 @@ export async function webFetch(rawUrl, { resolve = defaultResolve, signal, maxBy
   try {
     for (let hop = 0; ; hop++) {
       await assertPublicHost(url, resolve);
-      response = await getOnce(url, { resolve, signal: combined, maxBytes });
+      response = await get(url, { resolve, signal: combined, maxBytes });
       if (!response.location) break;
       if (hop >= WEB_LIMITS.maxRedirects) throw webError("Demasiadas redirecciones.");
       url = validateWebUrl(new URL(response.location, url).href);

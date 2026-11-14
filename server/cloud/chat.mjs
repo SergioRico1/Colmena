@@ -160,8 +160,14 @@ export class TeamChat {
    * `blobs`: server/cloud/blobs.mjs; `push(personId, payload)`: a Web Push to their devices;
    * `previews(url)` → a link preview; `defer(promise)`: background work after a response.
    */
-  constructor({ store, people, emit = () => {}, presence = () => new Map(), blobs = null, push = null, previews = null, defer = (p) => p?.catch?.(() => {}), clock: now = clock, log = () => {} }) {
+  /**
+   * Phase 3: `bots()` → [{id, name}] that may be named in a message as <@bot:id>; `onPost(person,
+   * view, row)`: after a person's message is out (the bots it names answer: channel-bots.mjs).
+   */
+  constructor({ store, people, emit = () => {}, presence = () => new Map(), blobs = null, push = null, previews = null, defer = (p) => p?.catch?.(() => {}), clock: now = clock, log = () => {}, bots = () => [], onPost = null }) {
     this.store = store;
+    this.bots = bots;
+    this.onPost = onPost;
     this.db = store.db;
     this.cipher = store.cipher;
     this.people = people;
@@ -594,7 +600,7 @@ export class TeamChat {
   cleanText(text) {
     let s = String(text ?? "").replace(/\r\n?/g, "\n");
     if (s.length > CHAT_LIMITS.text) fail("El mensaje es demasiado largo.", 413, "long");
-    s = s.replace(MENTION, (m, id) => (this.member(id) || (id.startsWith("slack:") && this.ghost(id)) ? m : "@" + id));
+    s = s.replace(MENTION, (m, id) => (this.member(id) || (id.startsWith("slack:") && this.ghost(id)) || (id.startsWith("bot:") && this.bots().some((b) => "bot:" + b.id === id)) ? m : "@" + id));
     s = s.replace(/<#([^>|]+)(?:\|[^>]*)?>/g, (m, id) => (this.row(id) ? "<#" + id + ">" : "#" + id));
     s = s.replace(/<!(?!channel>|here>|everyone>)[^>]*>/g, "");
     return s;
@@ -644,7 +650,41 @@ export class TeamChat {
     if (root) this.emit({ type: "chat.update", channel: id, message: this.messageView(this.mrow(root.id)) }, { people: members, channel: id });
     const notInChannel = this.notify(me, row, view, root);
     this.preview(view);
+    if (this.onPost) try { this.onPost(person, view, row); } catch (error) { this.log("bots: " + (error?.message || error)); }
     return { message: view, notInChannel };
+  }
+  /**
+   * A bot's answer (server/cloud/channel-bots.mjs): in the channel, or in the thread it answers
+   * (`thread`: the first message's id). The author is «bot:<id>» and the bot's name travels with it.
+   */
+  postBot(channelId, { botId, botName, text, thread = null }) {
+    const row = this.row(channelId);
+    if (!row || row.archived) return null;
+    const clean = this.cleanText(String(text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")).trim().slice(0, CHAT_LIMITS.text);
+    if (!clean) return null;
+    const root = thread ? this.mrow(thread) : null;
+    if (thread && (!root || root.channel !== channelId || root.thread)) return null;
+    const at = this.now(), msgId = randomUUID(), author = "bot:" + botId;
+    const top = root ? 0 : 1;
+    const data = { text: clean, files: [], reactions: {}, threadId: root ? root.id : null, repliers: [], botName: cleanLine(botName, 80) || "Bot" };
+    const view = this.tx(() => {
+      const seq = this.q("INSERT INTO chat_messages(id, channel, thread, top, author, at, has_file, has_link, data) VALUES(?,?,?,?,?,?,?,?,?) RETURNING seq")
+        .get(msgId, channelId, root ? root.seq : null, top, author, at, 0, /https?:\/\//i.test(clean) ? 1 : 0, this.seal(data, "message\u0000" + msgId)).seq;
+      if (top) this.q("UPDATE chat_channels SET last_seq=?, last_at=? WHERE id=?").run(seq, at, channelId);
+      this.index(seq, clean);
+      if (root) {
+        const rd = this.mdata(root);
+        rd.repliers = [...(rd.repliers || []).filter((p) => p !== author), author].slice(-20);
+        this.q("UPDATE chat_messages SET replies=replies+1, last_reply_at=?, data=? WHERE seq=?").run(at, this.seal(rd, "message\u0000" + root.id), root.seq);
+      }
+      return this.messageView(this.mrow(msgId));
+    });
+    const members = this.memberIds(channelId);
+    this.emit({ type: "chat.message", channel: channelId, message: view, clientId: null }, { people: members, channel: channelId });
+    if (root) this.emit({ type: "chat.update", channel: channelId, message: this.messageView(this.mrow(root.id)) }, { people: members, channel: channelId });
+    // Whoever took part in the thread (the person who asked) hears of the answer like any reply.
+    try { this.notify({ id: author }, row, view, root); } catch (error) { this.log("bots: " + (error?.message || error)); }
+    return view;
   }
   edit(person, messageId, text) {
     const me = this.must(person);
@@ -805,7 +845,7 @@ export class TeamChat {
     const words = new Set(wordsOf(view.text));
     const at = this.now();
     const meta = this.meta(row);
-    const nameOf = (id) => this.member(id)?.name || this.ghost(id)?.name || null;
+    const nameOf = (id) => this.member(id)?.name || this.ghost(id)?.name || (id.startsWith("bot:") ? this.bots().find((b) => "bot:" + b.id === id)?.name : null) || null;
     const pushes = [];
     const mention = this.q("INSERT OR IGNORE INTO chat_mentions(person, seq, channel, at, kind) VALUES(?,?,?,?,?)");
     this.tx(() => {

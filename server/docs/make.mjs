@@ -1,9 +1,9 @@
 // create_document end to end: the editable .docx, the A4 page the viewer and the PDF come from,
 // and one picture per page (the PDF printed in a hidden window of the desktop app, its pages
 // drawn here with pdf.js).
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { createUniqueFile, safePath } from "../files.mjs";
+import { createUniqueFile, writeCompanionFile } from "../files.mjs";
 import { renderPdfPage } from "../pdfforms.mjs";
 import { buildDocument, documentMarkdown, documentOutline } from "./index.mjs";
 import { footerTemplate, PAGE } from "./html.mjs";
@@ -22,12 +22,12 @@ export async function makeDocument({ root, input, computer = null, signal } = {}
   // Its page, PDF and page pictures go next to it, in a folder with the same name.
   const folder = docx.path.replace(/\.docx$/, "");
   const html = folder + "/documento.html";
-  const htmlTarget = await safePath(root, html, { parent: true });
-  await mkdir(path.dirname(htmlTarget), { recursive: true });
-  await writeFile(htmlTarget, built.html());
+  // On the desktop a real file (the hidden window prints it); in the cloud it goes to R2 and there is
+  // no window to print it (office previews are phase 4): no target, so no render.
+  const htmlTarget = (await writeCompanionFile(root, html, built.html())).target;
   const warnings = [];
   let pdf = null, pages = null, shots = [];
-  if (computer?.available) {
+  if (computer?.available && htmlTarget) {
     try {
       const outDir = path.dirname(htmlTarget);
       const r = await computer.call("render", {

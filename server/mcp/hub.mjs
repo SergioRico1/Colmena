@@ -56,7 +56,11 @@ class Provider {
   async tokens() { return (await this.hub.secret(this.id))?.tokens; }
   async saveTokens(tokens) { await this.hub.saveSecret(this.id, { tokens }); }
   redirectToAuthorization(url) { this.authorizeUrl = url.href; }
-  saveCodeVerifier(v) { this.verifier = v; }
+  saveCodeVerifier(v) {
+    this.verifier = v;
+    // A public redirect (the cloud) may come back to another wake-up of the server: kept with the state.
+    if (this.hub.redirect && this.stateValue) return this.hub.saveSecret(this.id, { pending: { state: this.stateValue, verifier: v, at: Date.now() } });
+  }
   codeVerifier() { if (!this.verifier) throw Error("Falta el verificador de la autorización."); return this.verifier; }
   async invalidateCredentials(scope) {
     if (scope === "all") await this.hub.saveSecret(this.id, { client: null, tokens: null }, true);
@@ -67,7 +71,12 @@ class Provider {
 
 export class McpHub {
   /** `secrets` = {load(binding), save(binding, data), remove(profile)} (DPAPI; tests pass one in memory). */
-  constructor(store, { secrets, transports = null, onChange = null } = {}) {
+  /**
+   * `redirect`: a public callback URL (the cloud: https://<site>/api/mcp/oauth/callback) instead of
+   * a loopback listener per sign-in; the browser comes back there and the host calls publicCallback.
+   */
+  constructor(store, { secrets, transports = null, onChange = null, redirect = null } = {}) {
+    this.redirect = redirect;
     this.store = store;
     this.secrets = secrets === undefined ? windowsVault(path.join(store.directory, "mcp")) : secrets;
     this.transports = transports; // tests: (url, provider) => transport
@@ -80,7 +89,7 @@ export class McpHub {
       if (a.tool === "mcp_call" && a.status === "executing")
         store.patch("approvals", a.id, { status: "executed", result: { ok: false, uncertain: true, error: "Colmena se cerró durante la acción. Comprueba el resultado en la app; no se repetirá." } });
     // Sign-ins left half-way when Colmena closed have nothing to come back to.
-    for (const s of store.list("mcpServers")) if (["connecting", "needs_auth"].includes(s.status) && !(s.tools || []).length) store.patch("mcpServers", s.id, { status: "error", error: "La autorización no se completó. Vuelve a conectar." });
+    if (!redirect) for (const s of store.list("mcpServers")) if (["connecting", "needs_auth"].includes(s.status) && !(s.tools || []).length) store.patch("mcpServers", s.id, { status: "error", error: "La autorización no se completó. Vuelve a conectar." });
   }
   get available() { return !!this.secrets; }
   servers() { return this.store.list("mcpServers").map(serverView).sort((a, b) => a.name.localeCompare(b.name, "es")); }
@@ -157,7 +166,7 @@ export class McpHub {
     this.close(id);
     this.cancelPending(id);
     const state = randomBytes(16).toString("hex");
-    const loopback = await this.listen(id, state);
+    const loopback = this.redirect ? { redirect: this.redirect, close() {} } : await this.listen(id, state);
     // A fresh registration for this redirect (its port changes every time).
     await this.saveSecret(id, { client: null, redirect: loopback.redirect });
     const provider = new Provider(this, id, { redirect: loopback.redirect, state });
@@ -204,6 +213,31 @@ export class McpHub {
       server.on("error", reject);
       server.listen(0, "127.0.0.1", () => resolve({ redirect: `http://127.0.0.1:${server.address().port}/callback`, close: () => server.close() }));
     });
+  }
+  /**
+   * The browser back at the public redirect (the cloud): {state, code, error}. Finds the sign-in by
+   * its state, also after the server was restarted (the verifier was kept with it). true = connected.
+   */
+  async publicCallback({ state, code = null, error = null } = {}) {
+    if (!this.redirect || typeof state !== "string" || !/^[0-9a-f]{32}$/.test(state)) return false;
+    let id = [...this.pending].find(([, p]) => p.state === state)?.[0] || null;
+    if (!id) {
+      for (const s of this.store.list("mcpServers").filter((x) => x.status === "needs_auth")) {
+        const p = (await this.secret(s.id))?.pending;
+        if (p?.state === state && Date.now() - p.at < AUTH_WINDOW_MS) {
+          id = s.id;
+          const provider = new Provider(this, id, { redirect: this.redirect, state });
+          provider.verifier = p.verifier;
+          this.pending.set(id, { provider, state, loopback: { close() {} }, timer: null });
+          break;
+        }
+      }
+    }
+    if (!id) return false;
+    if (error || !code) { this.cancelPending(id, "No se autorizó la conexión."); return false; }
+    const ok = await this.finish(id, String(code).slice(0, 4096));
+    await this.saveSecret(id, { pending: null });
+    return ok;
   }
   async finish(id, code) {
     const p = this.pending.get(id);

@@ -180,6 +180,23 @@ export function workFileName(title, format) {
   return (words.slice(0, 4).join("-") || "archivo") + "." + ext;
 }
 
+/**
+ * A file that goes with a deliverable (its page, chart pictures): written as is, replacing what
+ * was there. On a mounted root (the cloud) it goes to the files backend (R2) instead of the disk.
+ */
+export async function writeCompanionFile(root, relative, content) {
+  const mount = mountedRoot(root);
+  if (mount) {
+    checkRelative(relative);
+    await mount.backend.put(fileKey(mount, relative), Buffer.isBuffer(content) ? content : Buffer.from(String(content)));
+    return { path: relative, target: null };
+  }
+  const target = await safePath(root, relative, { parent: true });
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, content);
+  return { path: relative, target };
+}
+
 /** Writes bytes under a free name: «carpeta/nombre.png», «carpeta/nombre-2.png»… Never overwrites. */
 export async function createUniqueFile(root, folder, base, ext, bytes) {
   const clean = String(base || "archivo").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
