@@ -10,7 +10,7 @@ import { compactImages, forReceipt } from "./computer/tools.mjs";
 import { GOAL_LIMIT_CODE } from "./goals.mjs";
 import path from "node:path";
 import { readdirSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { appFile, appFileNames } from "./bundled.mjs";
 import { id, now } from "./store.mjs";
 import { hasHistory, historySize, removeStepHistory, setStepHistory, stepHistory } from "./histories.mjs";
 import { readMissionFile } from "./files.mjs";
@@ -60,7 +60,6 @@ export { TOOLS, CONNECTION_TOOLS };
 // Context hygiene (context.mjs): budgets scale with the model's window; old tool outputs keep
 // their head and tail, outputs too big are spilled to a file, then the middle is summarized.
 export { CONTEXT, contextBudget, contextSize, estimateTokens, trimHistory, compactHistory, pruneOutput, isColmenaNote, isPersonMessage };
-const SKILLS_DIR = fileURLToPath(new URL("../prompts/skills/", import.meta.url));
 
 /**
  * Initial skills (prompts/skills/*.md, adapted from OpenClaw skills/ — MIT/Apache-2.0,
@@ -68,9 +67,11 @@ const SKILLS_DIR = fileURLToPath(new URL("../prompts/skills/", import.meta.url))
  * metadata.colmena.bot). settings.seededSkills remembers what was seeded, so a skill the
  * person deleted or disabled is never added again. Returns the skills created now.
  */
-export function seedSkills(store, { directory = SKILLS_DIR } = {}) {
+export function seedSkills(store, { directory = null } = {}) {
   let files = [];
-  try { files = readdirSync(directory).filter((f) => f.endsWith(".md")).sort(); } catch { return []; }
+  // `directory`: a folder of its own (tests); by default the app's prompts/skills (server/bundled.mjs).
+  const read = directory ? (file) => readFileSync(path.join(directory, file), "utf8") : (file) => appFile("prompts/skills/" + file);
+  try { files = (directory ? readdirSync(directory) : appFileNames("prompts/skills/")).filter((f) => f.endsWith(".md")).sort(); } catch { return []; }
   const settings = store.get("settings", "main");
   const seeded = new Set(Array.isArray(settings?.seededSkills) ? settings.seededSkills : []);
   const created = [];
@@ -78,7 +79,7 @@ export function seedSkills(store, { directory = SKILLS_DIR } = {}) {
     const key = file.replace(/\.md$/, "");
     if (seeded.has(key)) continue;
     try {
-      const content = readFileSync(path.join(directory, file), "utf8");
+      const content = read(file);
       const parsed = parseSkill(content);
       const botId = String(parsed.metadata?.colmena?.bot || "").trim() || null;
       if (botId && !store.get("bots", botId)) continue;
@@ -402,7 +403,11 @@ export class Runtime {
     if (!own && (m.status === "awaiting_plan" || stalled.length))
       throw Object.assign(Error("La conversación espera una decisión tuya (" + (m.status === "awaiting_plan" ? "un plan por revisar" : "un trabajo detenido") + "). Atiéndela antes de que la rutina escriba en ella."), { status: 409 });
     if (own) this.personSpoke(missionId);
-    if (writer && !(Array.isArray(to) && to.some((b) => this.bot(b)?.enabled))) throw Object.assign(Error("La petición de otra persona tiene que decir para qué bot es."), { status: 400 });
+    // A conversation among the people of a hosted workspace (`people`, server/cloud/host.mjs):
+    // what names no bot is only said; no bot takes a turn for it.
+    if (m.people && own && !(Array.isArray(to) ? to.some((b) => this.bot(b)?.enabled) : addressees(text, this.roomMembers(m)).length))
+      return this.store.put("messages", { id: id(), missionId, role: "user", text, kind: "message", attachments: this.attachmentList(attachments), at: now(), ...(thread ? { replyTo: thread } : {}), ...link });
+    if (writer &&!(Array.isArray(to) && to.some((b) => this.bot(b)?.enabled))) throw Object.assign(Error("La petición de otra persona tiene que decir para qué bot es."), { status: 400 });
     if (m.status === "awaiting_plan" && !thread) {
       this.planDecision(missionId, "changes", text);
       return this.store.where("messages", "missionId", missionId).filter((x) => x.role === "user").at(-1);

@@ -154,6 +154,8 @@ export class Store {
     const src = this.cipher ? "meta" : "data";
     this.db.exec(`CREATE INDEX IF NOT EXISTS records_share ON records(kind, json_extract(${src},'$.shareId'), json_extract(${src},'$.at'));`);
     this.listeners = new Set();
+    // Per-person fields of a hosted workspace (server/identity.mjs › personalFields); none on the desktop.
+    this.personal = null;
     this.depth = 0;
     this.queued = [];
     this.statements = new Map();
@@ -249,7 +251,8 @@ export class Store {
   }
   /** A stored row back to its record (decrypted when the database is encrypted). */
   decode(kind, id, data) {
-    return JSON.parse(this.cipher ? this.cipher.decrypt(data, recordAad(kind, id)) : data);
+    const record = JSON.parse(this.cipher ? this.cipher.decrypt(data, recordAad(kind, id)) : data);
+    return this.personal ? this.personal.read(kind, record) : record;
   }
   list(kind) {
     return this.sql("SELECT id, data FROM records WHERE kind=? ORDER BY rowid")
@@ -321,6 +324,11 @@ export class Store {
       .all(kind)
       .map((r) => JSON.parse(r.data));
   }
+  /** A record as stored, without anyone's personal view (Store#personal). */
+  raw(kind, id) {
+    const row = this.sql("SELECT data FROM records WHERE kind=? AND id=?").get(kind, id);
+    return row ? JSON.parse(this.cipher ? this.cipher.decrypt(row.data, recordAad(kind, id)) : row.data) : null;
+  }
   get(kind, id) {
     // An id that is not text (a model's missing or wrong-typed argument) names no record.
     if (typeof id !== "string" && !Number.isFinite(id)) return null;
@@ -331,6 +339,8 @@ export class Store {
   put(kind, data, { silent = false } = {}) {
     if (!data || typeof data.id !== "string" || !data.id) throw Error("Registro sin identificador.");
     const existed = !!this.sql("SELECT 1 AS x FROM records WHERE kind=? AND id=?").get(kind, data.id);
+    // Hosted: what belongs to each person goes into their slot of the record (server/identity.mjs).
+    if (this.personal) data = this.personal.write(kind, data, existed ? this.raw(kind, data.id) : null);
     if (this.cipher)
       this.sql("INSERT INTO records(kind,id,data,meta) VALUES(?,?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data, meta=excluded.meta")
         .run(kind, data.id, this.cipher.encrypt(JSON.stringify(data), recordAad(kind, data.id)), metaOf(data));
@@ -338,7 +348,7 @@ export class Store {
       this.sql("INSERT INTO records(kind,id,data) VALUES(?,?,?) ON CONFLICT(kind,id) DO UPDATE SET data=excluded.data")
         .run(kind, data.id, JSON.stringify(data));
     if (!silent) this.notify({ type: "record", kind, id: data.id, op: existed ? "update" : "insert", data });
-    return data;
+    return this.personal ? this.personal.read(kind, { ...data }) : data;
   }
   /** Atomic read-modify-write. `changes` may be an object or a function of the current record. */
   patch(kind, id, changes) {

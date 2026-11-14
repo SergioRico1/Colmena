@@ -23,6 +23,7 @@ import { EXTERNAL_NOTICE, cleanLabel, conversationReport, detectInjection } from
 import { isAddress, verifyCard } from "./peers/protocol.mjs";
 import { PEER_LIMITS, botsOf, cleanBot } from "./peers/service.mjs";
 import { RoomWork } from "./room-work.mjs";
+import { currentPerson, isPerson } from "./identity.mjs";
 import { isAppToolName } from "./apptools.mjs";
 
 // `intros`: people one person may make known to you in a day (room.intro: the owner of a room
@@ -88,8 +89,14 @@ export const joinParts = (parts) => parts.map((p, i) => (i ? p.glue ?? "\n\n" : 
 
 export class Rooms {
   /** `getPeers`: «Personas» (server/peers/service.mjs) once it exists; without it every room is private. */
-  constructor({ store, runtime = null, getPeers = () => null, log = (m) => console.warn("[salas] " + m) }) {
+  /**
+   * `hosted` (a hosted workspace, server/cloud/host.mjs): its rooms are conversations of its
+   * people, kept in this same store: `{me(), people(room), mission()}` say who is asking, who is
+   * in a room, and what a new sala carries. Without it (the desktop) nothing changes.
+   */
+  constructor({ store, runtime = null, getPeers = () => null, log = (m) => console.warn("[salas] " + m), hosted = null }) {
     this.store = store;
+    this.hosted = hosted;
     this.runtime = runtime;
     this.getPeers = getPeers;
     this.log = log;
@@ -137,6 +144,7 @@ export class Rooms {
     return this;
   }
   me() {
+    if (this.hosted) return this.hosted.me();
     const p = this.peers;
     const settings = this.store.get("settings", "main") || {};
     return { address: p?.address || null, name: p?.myName?.() || (settings.userName && settings.userName !== "Tu cuenta" ? settings.userName : "Tú") };
@@ -308,17 +316,20 @@ export class Rooms {
   /** What is new from your bots since you last looked, and when the room last moved. */
   statsOf(room) {
     if (!room.missionId) return { unread: 0, lastAt: null };
+    // Hosted, what is new depends on who asks (their own seenAt; other people's words count).
+    const who = isPerson() ? currentPerson().id : null;
     const cached = this.stats.get(room.missionId);
-    if (cached && cached.seenAt === room.seenAt) return cached;
+    if (cached && cached.seenAt === room.seenAt && cached.who === who) return cached;
     const rows = this.store.where("messages", "missionId", room.missionId);
     let unread = 0, lastAt = null;
     for (const m of rows) {
       if (m.role !== "user" && m.role !== "assistant") continue;
       lastAt = later(lastAt, m.at);
       // An answer said in parts counts once. Never seen with the room's own screen: nothing counts yet.
-      if (room.seenAt && m.role === "assistant" && UNREAD_KINDS.has(m.kind || "message") && !(m.part > 1) && String(m.at || "") > room.seenAt) unread++;
+      const theirs = m.role === "assistant" || (who && m.by?.id && m.by.id !== who);
+      if (room.seenAt && theirs && UNREAD_KINDS.has(m.kind || "message") && !(m.part > 1) && String(m.at || "") > room.seenAt) unread++;
     }
-    const stats = { seenAt: room.seenAt, unread, lastAt };
+    const stats = { seenAt: room.seenAt, who, unread, lastAt };
     this.stats.set(room.missionId, stats);
     return stats;
   }
@@ -327,7 +338,7 @@ export class Rooms {
     const stats = this.statsOf(room);
     return {
       id: room.id, title: s?.title || room.title, slug: room.slug || null, teamId: room.teamId || null, missionId: m ? room.missionId : null, shareId: s ? room.shareId : null,
-      general: !!room.general, private: !s, createdBy: room.createdBy || me.address, createdAt: room.createdAt || null,
+      general: !!room.general, private: this.hosted ? !!m?.audience : !s, createdBy: room.createdBy || me.address, createdAt: room.createdAt || null,
       archived: !!room.archived, snoozedUntil: room.snoozedUntil || null, seenAt: room.seenAt || null,
       // You may rename it, add people and close it (rosters are signed by whoever made the room).
       mine: !s || s.owner === me.address,
@@ -392,6 +403,7 @@ export class Rooms {
     const s = this.share(room), me = this.me(), p = s ? this.needPeers() : this.peers;
     const settings = this.store.get("settings", "main") || {};
     const people = s ? s.members.map((member) => this.personView(member))
+      : this.hosted ? this.hosted.people(room, this.mission(room))
       : [{ address: me.address, name: me.name, role: "owner", presence: "online", status: p ? p.myStatus() : statusNow(settings), you: true }];
     const bots = [{ owner: { address: me.address, name: me.name, you: true }, bots: this.myBots(room) }];
     // Other people's bots are the ones they announced: to their contacts, to their team, or to this room (room.bots).
@@ -446,6 +458,16 @@ export class Rooms {
     const first = String(text || "").trim();
     const id = randomUUID();
     const blank = { id, title: name, slug: roomSlug(name), teamId: null, missionId: null, shareId: null, general: false, createdBy: this.me().address, createdAt: now(), archived: false, snoozedUntil: null, seenAt: null };
+    if (this.hosted) {
+      // A room of the workspace's people: made idle, its first message said as any other.
+      const mission = { ...this.idleMission(name, botIds), ...this.hosted.mission() };
+      const room = this.store.tx(() => {
+        this.store.put("missions", mission);
+        return this.save({ ...blank, title: mission.room || name, slug: mission.room, missionId: mission.id });
+      });
+      if (first && this.runtime) this.runtime.addMessage(mission.id, first);
+      return this.detail(room.id);
+    }
     if (!teamId && !people.length) {
       let started = null;
       const room = this.store.tx(() => {

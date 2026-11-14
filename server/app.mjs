@@ -16,11 +16,11 @@ import { registerDragRoutes } from "./dragout.mjs";
 import { SecretStore, registerSecretRoutes } from "./secrets.mjs";
 import express from "express";
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { appRoot } from "./bundled.mjs";
+import packageJson from "../package.json" with { type: "json" };
 import { z } from "zod";
 import { createMissionFile } from "./files.mjs";
 import { registerCoreRoutes, attachmentBodyParser } from "./core-routes.mjs";
@@ -69,14 +69,16 @@ import { registerBlockRoutes } from "./routes/blocks.mjs";
 import { attachBlockTools, pinnedBlocksState } from "./blocks.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
-const APP_ROOT = fileURLToPath(new URL("..", import.meta.url));
-const VERSION = JSON.parse(readFileSync(path.join(APP_ROOT, "package.json"), "utf8")).version;
+const APP_ROOT = appRoot(); // null in the cloud (server/bundled.mjs)
+const VERSION = packageJson.version;
 const optionalModules = new Map();
+// Static imports a bundler can follow (the cloud build has no files to import by name).
+const OPTIONAL = { "./usage.mjs": () => import("./usage.mjs"), "./soul.mjs": () => import("./soul.mjs") };
 function optional(name) {
   if (!optionalModules.has(name))
     optionalModules.set(
       name,
-      import(new URL(name, import.meta.url).href).catch((error) => {
+      (OPTIONAL[name] ? OPTIONAL[name]() : Promise.reject(Object.assign(Error("Unknown module " + name), { code: "ERR_MODULE_NOT_FOUND" }))).catch((error) => {
         if (error.code !== "ERR_MODULE_NOT_FOUND") console.warn("Colmena: no se pudo cargar " + name + ": " + error.message);
         optionalModules.delete(name); // retried on the next request
         return null;
@@ -105,7 +107,7 @@ export async function validateFolder(input, dataDir) {
     "/etc", "/usr", "/bin", "/sbin", "/lib", "/var", "/boot", "/dev", "/proc", "/sys", "/root", "/opt", "/System", "/Library", "/private", "/Applications",
   ].filter(Boolean).map(fold);
   const tmp = await canonical(os.tmpdir());
-  const protectedDirs = [await canonical(dataDir), await canonical(APP_ROOT)];
+  const protectedDirs = [await canonical(dataDir), ...(APP_ROOT ? [await canonical(APP_ROOT)] : [])];
   const refuse = "Por seguridad, Colmena no puede abrir esa carpeta. Elige una carpeta de trabajo concreta (por ejemplo, dentro de Documentos).";
   if (fold(path.parse(real).root) === target) throw Error(refuse);
   if (protectedDirs.some((d) => inside(target, d) || inside(d, target)))
@@ -116,7 +118,13 @@ export async function validateFolder(input, dataDir) {
   return real;
 }
 
-export function createApp({ store, runtime, session, scheduler, connections, getOrigin, computer = null, backups = null, dbKeys = null, office = null }) {
+/**
+ * `hosted` (the cloud build only, server/cloud/host.mjs): `{guard(req, res, next)}` replaces the
+ * loopback and local-token checks (the Worker signs people in and checks CSRF before a request
+ * gets here), `state(state)` adds to /api/state what the hosted screens need. The desktop
+ * passes nothing and nothing changes.
+ */
+export function createApp({ store, runtime, session, scheduler, connections, getOrigin, computer = null, backups = null, dbKeys = null, office = null, hosted = null }) {
   const app = express(),
     csrf = randomBytes(32).toString("hex");
   app.disable("x-powered-by");
@@ -148,7 +156,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.locals.watcher = watcher;
   // One room object over salas and conversations with people (server/room.mjs): made here so
   // every sala and every group has its room before the first request.
-  const rooms = new Rooms({ store, runtime, getPeers: () => app.locals.peers }).start();
+  const rooms = new Rooms({ store, runtime, getPeers: () => app.locals.peers, hosted: hosted?.rooms || null }).start();
   app.locals.rooms = rooms;
   // Encrypted backups (backup-service.mjs): index.mjs starts their schedule; tests pass their own.
   app.locals.backups = backups || new Backups({ store, vault: (dir) => windowsVault(dir), keys: dbKeys, appVersion: VERSION });
@@ -173,7 +181,8 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     return record;
   };
 
-  app.use((req, res, next) => {
+  if (hosted?.guard) app.use(hosted.guard);
+  else app.use((req, res, next) => {
     // Loopback only: 127.0.0.1 and localhost on the same port are the same server.
     const origin = getOrigin(),
       port = new URL(origin).port,
@@ -260,7 +269,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     state.blocks = safe(() => pinnedBlocksState(store), []); // the panel of Inicio: pinned blocks, light (server/blocks.mjs)
     const t2 = performance.now();
     res.set("Server-Timing", `models;dur=${tModels.toFixed(1)}, usage;dur=${tUsage.toFixed(1)}, build;dur=${(t2 - t1).toFixed(1)}, total;dur=${(t2 - t0).toFixed(1)}`);
-    res.json(state);
+    res.json(hosted?.state ? hosted.state(state) : state);
   });
 
   // SSE: coalesced {type:'changed', kinds} + runtime live events passed through.
@@ -271,13 +280,12 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   store.listeners.add((event) => {
     if (LIVE.has(event?.type) || (event?.type === "completed" && event.seq !== undefined)) liveText.apply(event);
   });
-  app.get("/api/events", (req, res) => {
-    res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive" });
-    res.flushHeaders();
-    res.write("event: ready\ndata: {}\n\n");
+  // One screen's live feed: every frame goes to `write`; returns close(). The desktop sends it as
+  // SSE (/api/events); the cloud over a hibernating WebSocket (server/cloud/host.mjs), with `as`
+  // running each flush as that socket's person (a message reads «Tú» only to who wrote it).
+  const openFeed = (write, { as = (fn) => fn() } = {}) => {
     const kinds = new Set();
     let timer = null;
-    const write = (event) => res.write("data: " + JSON.stringify(event) + "\n\n");
     // First frame: the text of every step still writing, which replaces the browser's copy;
     // the pieces after it (this same tick on, through `send`) append to it.
     write({ type: "live_snapshot", steps: liveText.snapshot() });
@@ -286,7 +294,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     // Messages and steps travel whole (OpenClaw-style push): the open room applies them at
     // once instead of fetching itself again. The latest version of each wins within a flush.
     const pushes = new Map();
-    const flush = () => {
+    const flush = () => as(() => {
       timer = null;
       if (pushes.size) {
         const bots = new Map(store.list("bots").map((b) => [b.id, b]));
@@ -298,7 +306,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       }
       if (kinds.size) write({ type: "changed", kinds: [...kinds] });
       kinds.clear();
-    };
+    });
     const send = (event) => {
       if (!event || typeof event !== "object") return;
       if (LIVE.has(event.type)) return live.push(event);
@@ -327,12 +335,22 @@ export function createApp({ store, runtime, session, scheduler, connections, get
       timer ??= setTimeout(flush, 100);
     };
     store.listeners.add(send);
-    const ping = setInterval(() => res.write(": ping\n\n"), 20000);
-    req.on("close", () => {
-      clearInterval(ping);
+    return () => {
       clearTimeout(timer);
       live.close();
       store.listeners.delete(send);
+    };
+  };
+  app.locals.openFeed = openFeed;
+  app.get("/api/events", (req, res) => {
+    res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive" });
+    res.flushHeaders();
+    res.write("event: ready\ndata: {}\n\n");
+    const close = openFeed((event) => res.write("data: " + JSON.stringify(event) + "\n\n"));
+    const ping = setInterval(() => res.write(": ping\n\n"), 20000);
+    req.on("close", () => {
+      clearInterval(ping);
+      close();
     });
   });
 
@@ -485,6 +503,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerWorkFileRoutes(app, { store, rootOf, check, z, mustGet, HttpError, office: officePdf });
   registerTurnChangeRoutes(app, { store, runtime, check, z, mustGet, HttpError, office: officePdf }); // «Archivos cambiados» and before/after
   registerDragRoutes(app, { store, rootOf, check, z }); // dragging files out (desktop shell)
+  hosted?.routes?.(app); // the hosted workspace's own routes (server/cloud/host.mjs)
   app.use("/api", (_req, res) => res.status(404).json({ error: "Operación no disponible." }));
   app.use((err, _req, res, _next) => {
     if (err instanceof z.ZodError) return res.status(400).json({ error: zodMessage(err), fields: err.issues.map((i) => i.path.join(".")) });
