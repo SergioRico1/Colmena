@@ -12,9 +12,10 @@ import { isProjectTool, projectToolCard } from "./projects/tools.mjs";
 import { isFlagged, unwrapExternal } from "./external-content.mjs";
 import { FIND_TOOLS, USE_TOOL, wrappedCall } from "./tool-search.mjs";
 import { approvalGroup } from "./approval-groups.mjs";
-import { waitingItems } from "./waiting.mjs";
+import { delegatedAsks, waitingItems } from "./waiting.mjs";
 import { memoryProvenance, memoryTier } from "./memory.mjs";
 import { missionKind } from "./mission-kind.mjs";
+import { eligibility, stepOf } from "./preapprovals.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -189,7 +190,7 @@ export function approvalExpiresAt(a, kind = a.kind) {
 }
 
 /** Approval in contract shape; tolerant to records written by older runtimes. */
-export function approvalView(a, { bots, missions, automations, reference = Date.now(), stepsByMission, ownDomains = [], flagged = null }) {
+export function approvalView(a, { bots, missions, automations, reference = Date.now(), stepsByMission, ownDomains = [], flagged = null, contactName = null }) {
   const bot = bots.get(a.botId);
   const m = missions.get(a.missionId);
   const legacyKind = a.tool === "write_file" ? "write" : a.tool === "remember" ? "memory" : a.tool === "apps_execute" ? (a.kind === "send" ? "send" : "permission") : null;
@@ -248,6 +249,11 @@ export function approvalView(a, { bots, missions, automations, reference = Date.
     lateAnswer: kind === "question" && !!a.lateAnswer,
     // Left for later by a routine without supervision: the bot went on; approving it does it now.
     deferred: pending && !!a.deferred,
+    // A routine's run (preapprovals.mjs): «Aprobar y dejarlo aprobado en esta rutina» when it may
+    // be kept for next time, and the person of your team you also asked to decide it.
+    routine: m?.automationId && automations.get(m.automationId) ? { id: m.automationId, name: automations.get(m.automationId).name } : null,
+    preapprove: pending && !expired && !!m?.automationId && automations.has(m.automationId) && eligibility(a, { mission: m, flagged: flagged ? flagged(stepOf(a)) : true }).ok,
+    delegatedTo: pending && a.delegation?.contactId ? { name: contactName ? contactName(a.delegation.contactId) : "otra persona", sentAt: a.delegation.sentAt ?? null } : null,
     // A key request: its name, why, for which sites and whether it replaces one (never a value).
     secret: kind === "secret" && a.secret ? { name: a.secret.name, reason: a.secret.reason, allowedHosts: a.secret.allowedHosts || [], existing: a.secret.existing || null } : null,
     email: kind === "send" ? email : null,
@@ -393,7 +399,7 @@ export function context(store, runtime, reference = Date.now()) {
   let accountEmail = null;
   try { accountEmail = runtime?.accountEmail?.() || null; } catch {}
   const ownDomains = ownDomainsOf([accountEmail, ...store.list("people").map((p) => p.email)].filter(Boolean));
-  const ctx = { bots, missions, automations, stepsByMission, reference, activity: activityOf(runtime), paused: !!store.get("settings", "main")?.paused, ownDomains, flagged: (stepId) => isFlagged(store, stepId) };
+  const ctx = { bots, missions, automations, stepsByMission, reference, activity: activityOf(runtime), paused: !!store.get("settings", "main")?.paused, ownDomains, flagged: (stepId) => isFlagged(store, stepId), contactName: (id) => store.get("peerContacts", id)?.name || "otra persona" };
   const stored = store.list("approvals");
   const approvals = stored.map((a) => approvalView(a, ctx));
   ctx.approvals = approvals;
@@ -539,6 +545,8 @@ export function buildState(store, runtime, extras = {}) {
     // [{kind, id, missionId, roomId, botId, what, at}], the oldest first: `waiting.length` is the
     // number Inicio, the sidebar, Trabajo, Equipo, Actividad and the taskbar all show.
     waiting: ctx.waiting,
+    // What people of your team asked you to decide for their routines (peers/delegation.mjs).
+    approvalAsks: delegatedAsks(store, reference),
     automations: [...ctx.automations.values()].map((r) => automationView(r, reference)),
     suggestions: store
       .list("suggestions")

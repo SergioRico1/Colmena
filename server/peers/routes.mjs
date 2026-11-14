@@ -180,6 +180,12 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
   app.post("/api/peers/errands/:id/decline", run((req, p) => errands(p).decline(id.parse(req.params.id))));
   app.get("/api/peers/errand-tools", run((_req, p) => errands(p).settings()));
   app.put("/api/peers/errand-tools", run((req, p) => errands(p).setTools(check(z.object({ web: z.boolean().optional(), carpetas: z.boolean().optional(), apps: z.boolean().optional(), ordenador: z.boolean().optional() }).strict(), req.body))));
+  // A routine's red line another person asked you to decide (delegation.mjs): your answer goes back to them.
+  app.post("/api/peers/approval-asks/:id/decide", run((req, p) => {
+    if (!p.delegation) throw new PeerError("Las aprobaciones delegadas no están disponibles.", 503);
+    const { decision, reason } = check(z.object({ decision: z.enum(["approved", "denied"]), reason: z.string().trim().max(500).default("") }).strict(), req.body);
+    return p.delegation.answer(check(z.string().trim().min(1).max(200), req.params.id), { decision, reason });
+  }));
   app.get("/api/peers/search", run((req, p) => p.search(check(z.string().max(200), String(req.query.q ?? "")), { shareId: typeof req.query.share === "string" && req.query.share ? req.query.share : null })));
   app.post("/api/peers/shares/:id/seen", run((req, p) => p.seen(req.params.id)));
   app.post("/api/peers/shares/:id/typing", run((req, p) => p.typingNow(req.params.id)));

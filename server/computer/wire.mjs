@@ -116,7 +116,9 @@ async function runComputerTool(runtime, computer, name, rawArgs, { mission, step
     const p = plan.approval;
     const grant = plan.policy === "approval" && !runtime.flagged?.(step) && findComputerGrant(store, { botId: bot.id, tool: plan.name, scope: p.grantScope });
     // Unattended missions (routines with nobody around) or a person's explicit OK in this turn.
-    const decided = !grant && p.redLine ? runtime.redLineShortcut?.(mission, step, bot, { tool: plan.name, args: plan.args, approvalId, title: p.title, summary: p.summary }) : null;
+    // «Aprobado por adelantado» in this routine first, then the red line's own shortcuts.
+    const ahead = !grant && plan.name === "run_command" ? runtime.preapproved?.(mission, step, bot, { id: approvalId, tool: plan.name, args: plan.args, kind: "permission" }) || null : null;
+    const decided = ahead || (!grant && p.redLine ? runtime.redLineShortcut?.(mission, step, bot, { tool: plan.name, args: plan.args, approvalId, title: p.title, summary: p.summary }) : null);
     a = store.put("approvals", {
       ...(decided?.deferred ? { deferred: true, deferredAt: now() } : {}),
       id: approvalId, missionId: mission.id, botId: bot.id, stepId: step.id, callId: call.call_id,

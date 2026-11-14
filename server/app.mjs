@@ -55,6 +55,7 @@ import { registerBotRoutes } from "./routes/bots.mjs";
 import { registerSkillRoutes } from "./routes/skills.mjs";
 import { registerArtifactRoutes } from "./routes/artifacts.mjs";
 import { registerAutomationRoutes } from "./routes/automations.mjs";
+import { registerPreapprovalRoutes } from "./routes/preapprovals.mjs";
 import { registerSuggestionRoutes } from "./routes/suggestions.mjs";
 import { registerFolderRoutes } from "./routes/folders.mjs";
 import { registerNotificationRoutes } from "./routes/notifications.mjs";
@@ -437,6 +438,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerSkillRoutes(app, { store, mustGet, runtime, optional });
   registerArtifactRoutes(app, { mustGet, store });
   const { createAutomation } = registerAutomationRoutes(app, { enabledBot, store, scheduler, ask, parseJson, mustGet });
+  registerPreapprovalRoutes(app, { store, mustGet }); // a routine's red lines: approved ahead, and who else decides them
   registerSuggestionRoutes(app, { mustGet, store, need, runtime, createAutomation });
   registerFolderRoutes(app, { mustGet, validateFolder, store });
   registerNotificationRoutes(app, { store, scheduler, rootOf, mustGet, runtime });

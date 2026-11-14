@@ -1094,6 +1094,8 @@ export class Peers extends EventEmitter {
         else if (/^code\.[a-z]+(\.[a-z]+)?$/.test(body.type)) this.emit("code", { from: c, body });
         // An errand for one of your bots, or the answer to one of theirs (errands.mjs checks who).
         else if (/^errand\.[a-z]+$/.test(body.type)) this.emit("errand", { from: c, body });
+        // A routine's red line you were asked to decide, or the decision on one of yours (delegation.mjs checks who).
+        else if (/^approval\.[a-z]+$/.test(body.type)) this.emit("approval", { from: c, body });
         // A team's roster, a request to its creator, a teammate's profile or presence (teams.mjs checks who).
         else if (/^team\.[a-z]+$/.test(body.type)) this.emit("team", { from: c, body });
         // A room: «please add this person» to its owner, the bots of someone you only share a room with,

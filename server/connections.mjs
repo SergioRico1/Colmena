@@ -7,6 +7,7 @@ import { answeredAt, answersThread, asksForSelf, explicitlyAsked, nameOwners, na
 import { draftFields, threadParty } from './gmaildrafts.mjs';
 import { isFlagged } from './external-content.mjs';
 import { actionOfTool, appTargets, deferredResult, isUnattended, ownAppTarget, personAsked, personTurnText } from './redlines.mjs';
+import { takePreapproval } from './preapprovals.mjs';
 
 // A send you asked for in so many words leaves on its own after this long (cancel in the chat).
 export const AUTO_SEND_MS = 10000;
@@ -247,6 +248,17 @@ export class Connections {
       const forOther = !!mission.peerErrand;
       if ((granted || runsWithoutAsking({kind, redLine}, access)) && !((flagged || forOther) && kind !== 'read'))
         return this.decide(id, {decision: 'approved', revision: ticket.revision, remember: false, auto: true});
+      // «Aprobado por adelantado» in this routine (preapprovals.mjs): it goes out at its time,
+      // with you there or not. Before the deferred or ask path; never in a flagged step, a turn
+      // for another person or incognito (eligibility says so).
+      if (kind !== 'read') {
+        const ahead = takePreapproval(this.store, this.store.get('approvals', id), {mission: this.store.get('missions', mission.id) || mission, flagged, botId: step.botId});
+        if (ahead) {
+          const result = await this.decide(id, {decision: 'approved', revision: ticket.revision, remember: false, auto: true, by: 'rutina'});
+          this.store.patch('approvals', id, {resolution: ahead.resolution});
+          return result;
+        }
+      }
       // Effect, not name (redlines.mjs): undoing what this mission created in your account, or
       // the one action your own message in this turn named with its exact target.
       if (redLine && kind !== 'send' && !flagged && !forOther) {
@@ -396,7 +408,7 @@ export class Connections {
     return {id, status: fresh.status, kind: fresh.kind, review: fresh.review,
       revision: ticket.revision, expiresAt: ticket.expiresAt};
   }
-  async decide(id, {decision, revision, remember = false, auto = false}) {
+  async decide(id, {decision, revision, remember = false, auto = false, by = null}) {
     if (this.busy.has(id)) throw Error('Esta acción ya se esta resolviendo.');
     const a = this.current(id);
     if (a.status !== 'pending') throw Error('Esta solicitud ya está resuelta.');
@@ -404,7 +416,7 @@ export class Connections {
     clearTimeout(this.timers?.get(id));
     if (a.autoSendAt) this.store.patch('approvals', id, {autoSendAt: null});
     if (decision === 'denied') {
-      this.store.patch('approvals', id, {status: 'denied', decidedAt: now()});
+      this.store.patch('approvals', id, {status: 'denied', decidedAt: now(), ...(by ? {decidedBy: by} : {})});
       this.proposals.delete(id);
       if (ticket) await this.call('discard', {proposal: ticket.proposal});
       return {denied: true};
@@ -415,7 +427,7 @@ export class Connections {
     this.busy.add(id);
     this.proposals.delete(id);
     // Durable intent precedes the network effect. A crash must never replay it.
-    this.store.patch('approvals', id, {status: 'executing', decidedAt: now(), decidedBy: auto ? 'automático' : 'tú'});
+    this.store.patch('approvals', id, {status: 'executing', decidedAt: now(), decidedBy: by || (auto ? 'automático' : 'tú')});
     let result;
     try {
       result = await this.call('commit', {proposal: ticket.proposal});

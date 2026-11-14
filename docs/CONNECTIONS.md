@@ -26,6 +26,40 @@ El motor conserva propuestas privadas, caducidad, revalidacion de esquema/cuenta
 - Navegacion de ajustes NEXO (General, Espacios, Privacidad, etc.) no tiene pantallas Colmena suministradas; enlaces desactivados. Los controles decorativos de ventana del original no gobiernan una ventana del navegador web.
 - Servidores MCP propios: disponibles por HTTP/SSE con OAuth (registro dinamico, PKCE, tokens en DPAPI) en `server/mcp/hub.mjs`; los servidores locales por stdio no se admiten.
 
+## Líneas rojas de las rutinas: «Aprobado por adelantado» (`server/preapprovals.mjs`)
+
+Una línea roja (enviar, publicar, borrar, invitar, una orden de riesgo…) siempre espera tu OK. En una rutina que trabaja sin nadie delante tiene tres salidas:
+
+- **Sin más** (por defecto): espera a que la apruebes.
+- **Ajustes › Autonomía › «Rutinas sin supervisión»** (`settings.unattended`, `isUnattended` en `server/redlines.mjs`): no espera; queda «pendiente para después» en la Bandeja y el bot termina lo demás (`deferredResult`, `pendingSummary`).
+- **«Aprobado por adelantado»**: la rutina guarda lo que puede hacer a su hora aunque no estés. Va antes de las otras dos.
+
+Qué se guarda (`automation.preapprovals: [{id, label, tool, toolkit, account, slug, recipients?, command?, uses, createdAt, boundMission, usedCount, lastUsedAt}]`):
+
+- `apps_execute`: la acción de Composio (slug en mayúsculas), su app y su cuenta. En un envío (o algo que llega a personas: invitados, CC/CCO), también **a quién va**, en minúsculas. Más tarde solo vale si todos a los que va estaban en la lista guardada (un subconjunto: a menos gente sí; a alguien nuevo, no).
+- `run_command`: el programa, los argumentos y la carpeta, exactamente iguales.
+- `uses: "next"` («Solo la próxima vez»): se ata a la primera misión que la usa (`boundMission`); dentro de esa misión sigue valiendo, en las siguientes no. Después se ve como «Usada». `uses: "always"` («Siempre»): en cada misión de esa rutina.
+
+Nunca se puede:
+
+- pagar, comprar o mover dinero (PAY, PAYOUT, CHARGE, REFUND, TRANSFER, PURCHASE, ORDER, y también BUY, CHECKOUT, SUBSCRIBE, RESERVE…; y cualquier cambio en una app de pagos o tienda);
+- preguntas, planes, habilidades, SOUL, vueltas atrás de lo aprendido ni claves;
+- gestores de contraseñas, contraseñas, inicios de sesión del navegador (`browser_sign_in`) o del terminal (`op`, `bw`, `lpass`…);
+- nada en un paso que leyó frases de inyección (`isFlagged`), en un turno para otra persona (`peerErrand`) ni en incógnito.
+
+Cuándo se usa: solo dentro de una misión de **esa misma** rutina, con o sin supervisión, antes del camino de «pendiente para después» o de preguntarte. En apps, en `Connections#request` (`takePreapproval` → `decide` con `by: "rutina"`); en `run_command`, en `server/computer/wire.mjs` (`Runtime#preapproved`). La aprobación queda con `decidedBy: "rutina"` y «Aprobado por adelantado en la rutina «<nombre>»», el chat lleva una línea de actividad y la entrada suma `usedCount` y `lastUsedAt`.
+
+De dónde sale (nunca de algo que la rutina no te haya pedido):
+
+1. La tarjeta de aprobación (pendiente o dejada para después, en una misión de rutina, si se puede guardar: `approvalView().preapprove`) tiene «Aprobar y dejarlo aprobado en esta rutina» con «Solo la próxima vez» / «Siempre» (menú compartido `src/components/Menu.js`). `POST /api/approvals/:id {decision: "approved", revision, preapprove: "next"|"always"}`; con «denied», con `always` o con algo que no se puede guardar responde 400 sin decidir nada.
+2. La página de la rutina (Trabajo › Rutinas › «Cambiar la rutina» o «Aprobado por adelantado» en su menú, `src/components/rutinas/RoutineApprovals.jsx`): la lista con a quién va o qué orden, «Solo la próxima vez» / «Siempre» / «Usada», las veces y la última, y «Quitar». «Añadir» ofrece solo lo que esta rutina pidió en ejecuciones anteriores y se puede guardar, una vez por clave.
+   - `GET /api/automations/:id/preapprovals` → `{entries, candidates, approver, people}`
+   - `POST /api/automations/:id/preapprovals {approvalId, uses}` (la aprobación tiene que ser de una misión de esta rutina)
+   - `DELETE /api/automations/:id/preapprovals/:entryId`
+   - `PUT /api/automations/:id/approver {contactId | null}` («Quién decide sus líneas rojas», docs/PEOPLE.md «Delegar aprobaciones»).
+
+Pruebas: `tests/preapprovals.test.mjs` (claves, exclusiones, «próxima vez» y «siempre», otra rutina, el camino de apps y el de `run_command`, la ruta con `preapprove` y las de la página de la rutina).
+
 ## Verificacion 2026-10-15
 
 - Pruebas Node aisladas para el motor heredado, permisos de Colmena, API sin configuracion de secretos, bloqueo de duplicados y restauracion segura.

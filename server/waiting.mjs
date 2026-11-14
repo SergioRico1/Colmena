@@ -12,7 +12,9 @@
 //   - open notes of the bot that watches your apps (watch.mjs);
 //   - people-side asks: an errand another person sent to one of your bots that waits for your
 //     OK (state `asked`, server/peers/errands.mjs). It is read from the stored records only;
-//   - «please add» requests of a room you made (`roomRequests` you received, still `asked`).
+//   - «please add» requests of a room you made (`roomRequests` you received, still `asked`);
+//   - asks to decide a red line of another person's routine (`peerApprovalAsks`, still `asked`,
+//     within its 24 h: server/peers/delegation.mjs).
 import { approvalExpiresAt } from "./state.mjs";
 import { isSnoozed } from "./snooze.mjs";
 
@@ -68,6 +70,8 @@ export function waitingItems(store, now = Date.now(), { approvals = null } = {})
   // room (the owner's rule «Pregúntame») belong here too once server/peers stores them.
   for (const item of peerAsks(store)) items.push(item);
   for (const item of addAsks(store)) items.push(item);
+  // Another person asks you to decide a red line of their routine (peers/delegation.mjs).
+  for (const ask of delegatedAsks(store, now)) if (ask.state === "asked") items.push({ kind: "delegated", id: ask.id, missionId: null, roomId: null, botId: null, what: "delegated", at: ask.at ?? null, title: `${firstOf(ask.from)} te pide que decidas`, ask });
   return items.sort((x, y) => (stamp(x.at) ?? 0) - (stamp(y.at) ?? 0));
 }
 
@@ -97,6 +101,24 @@ function peerAsks(store) {
     kind: "errand", id: e.id, missionId: null, roomId: e.shareId ?? null, botId: e.bot?.id ?? null, what: "errand", at: e.at ?? null,
     title: `${String(e.fromName || "Alguien").split(" ")[0]} pide a ${e.bot?.name || "tu bot"}: ${line(e.text, 120)}`,
   }));
+}
+
+/**
+ * What other people of your team asked you to decide for their routines (peers/delegation.mjs),
+ * as the Bandeja shows them: those still waiting and the ones closed in the last day. An ask
+ * past its 24 h reads «expired» even before the sweep marks it. Plain text from someone else:
+ * it is only shown, never given to a model.
+ */
+export function delegatedAsks(store, now = Date.now()) {
+  let rows = [];
+  try { rows = store.list("peerApprovalAsks"); } catch { return []; }
+  return rows.filter((x) => Date.parse(x.expiresAt) > now - 3600e3)
+    .map((x) => ({
+      id: x.id, from: x.fromName, title: x.title, routine: x.routine ?? null, details: x.details || {},
+      state: x.state === "asked" && Date.parse(x.expiresAt) <= now ? "expired" : x.state,
+      decision: x.decision ?? null, reason: x.reason ?? null, resolution: x.resolution ?? null, at: x.at ?? null, expiresAt: x.expiresAt, closedAt: x.closedAt ?? x.decidedAt ?? null,
+    }))
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
 }
 
 /** How many things wait for the person: the number every surface shows. */

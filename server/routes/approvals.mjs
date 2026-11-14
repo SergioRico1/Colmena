@@ -6,6 +6,8 @@ import { HttpError, short, check } from "./shared.mjs";
 import { BATCH_MAX, approvalGroup } from "../approval-groups.mjs";
 import { isFlagged } from "../external-content.mjs";
 import { createSnoozeWaker, snoozeProblem } from "../snooze.mjs";
+import { decideApproval } from "../approval-decide.mjs";
+import { PREAPPROVE_USES, eligibility, entryFrom, entryView, stepOf, withEntry } from "../preapprovals.mjs";
 
 /** Approvals: what the person reviews and decides. */
 export function registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit }) {
@@ -23,15 +25,29 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
   /** One decision, bound to what the person saw. The single route and each item of a batch run this. */
   const decide = async (a, { decision, always = false, revision, reason = "" }) => {
     reviewed(a, revision, { allowExpired: decision === "denied" });
-    // The reason travels with the denial: the bot reads it on its next turn.
-    if (decision === "denied" && reason) store.patch("approvals", a.id, { denyReason: reason });
-    if (a.tool === "apps_execute") {
-      // Outbound app actions are decided through the reviewed connections flow.
-      const { revision } = await connection().review(a.id);
-      await connection().decide(a.id, { decision, revision, remember: always });
-      const prior = runtime.missionJobs?.get(a.missionId);
-      void Promise.resolve(prior).then(() => runtime.launch(a.missionId));
-    } else await need("approve")(a.id, decision, { always });
+    // Outbound app actions go through the reviewed connections flow (approval-decide.mjs).
+    await decideApproval({ store, runtime, connection, approve: (...args) => need("approve")(...args) }, a, { decision, always, reason });
+  };
+  /**
+   * «Aprobar y dejarlo aprobado en esta rutina»: only with «approved», never with «Siempre», on
+   * an approval its routine may keep (preapprovals.mjs). Refused before anything is decided.
+   */
+  const preapproveCheck = (a, { decision, always, preapprove }) => {
+    if (!preapprove) return null;
+    if (decision !== "approved") throw new HttpError(400, "Solo se puede dejar aprobado algo que apruebas.");
+    if (always) throw new HttpError(400, "Elige «Siempre» o dejarlo aprobado en la rutina, no las dos cosas.");
+    if (a.status !== "pending") throw new HttpError(409, "Esta solicitud ya está resuelta.");
+    const mission = a.missionId ? store.get("missions", a.missionId) : null;
+    const e = eligibility(a, { mission, flagged: isFlagged(store, stepOf(a)) });
+    if (!e.ok) throw new HttpError(400, e.reason);
+    const automation = store.get("automations", mission.automationId);
+    if (!automation) throw new HttpError(404, "Esa rutina ya no existe.");
+    const entry = entryFrom(a, { uses: preapprove });
+    withEntry(automation.preapprovals, entry); // too many already: refused before anything is decided
+    return { automation, entry };
+  };
+  const keepPreapproval = ({ automation, entry }) => {
+    store.patch("automations", automation.id, (old) => ({ preapprovals: withEntry(old.preapprovals, entry) }));
   };
   // «Aprobar todas» / «No permitir»: several requests of one group (approval-groups.mjs) in
   // one call. Each goes through the same decision as alone, once, in order; one that fails
@@ -83,9 +99,12 @@ export function registerApprovalRoutes(app, { store, runtime, mustGet, connectio
     res.json(wikiAskDiff(a.wiki));
   });
   app.post("/api/approvals/:id", async (req, res) => {
-    const { decision, always, revision, reason } = check(z.object({ decision: z.enum(["approved", "denied"]), always: z.boolean().default(false), revision: revisionField, reason: z.string().trim().max(DENY_REASON_MAX).default("") }).strict(), req.body);
-    await decide(mustGet("approvals", req.params.id, "Aviso"), { decision, always, revision, reason });
-    res.json({ ok: true });
+    const { decision, always, revision, reason, preapprove } = check(z.object({ decision: z.enum(["approved", "denied"]), always: z.boolean().default(false), revision: revisionField, reason: z.string().trim().max(DENY_REASON_MAX).default(""), preapprove: z.enum(PREAPPROVE_USES).optional() }).strict(), req.body);
+    const a = mustGet("approvals", req.params.id, "Aviso");
+    const ahead = preapproveCheck(a, { decision, always, preapprove });
+    await decide(a, { decision, always, revision, reason });
+    if (ahead) keepPreapproval(ahead);
+    res.json({ ok: true, ...(ahead ? { preapproval: entryView(ahead.entry) } : {}) });
   });
   app.post("/api/approvals/:id/answer", async (req, res) => {
     const data = check(

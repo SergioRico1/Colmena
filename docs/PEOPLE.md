@@ -132,6 +132,35 @@ Solo esto sale de tu ordenador:
 - Al aprobarse, el bot lo hace en un chat de incógnito propio (no aprende, caduca) con la misma lista cerrada que una petición en una sala (`server/request-turn.mjs`): lo de siempre más lo elegido en Ajustes › Personas › Encargos (web, carpetas, apps, ordenador; nunca más de lo que el bot ya tiene: `Runtime#toolsForStep`). No tiene memoria, historial de otras conversaciones, habilidades ni otros bots, así que no llega a nada de fuera de ese chat. El encargo va envuelto como contenido externo y las líneas rojas siguen preguntando. La última respuesta vuelve con `errand.reply`.
 - Quien pidió solo acepta `errand.state`/`errand.reply` de la persona a la que lo pidió; la respuesta pasa por `detectInjection` y, si intenta dar órdenes, llega con un aviso.
 
+## Delegar aprobaciones (`server/peers/delegation.mjs`)
+Otra persona de tu equipo decide también las líneas rojas de una rutina tuya. En la página de la rutina, «Quién decide sus líneas rojas»: «Solo tú» o «<persona> y tú», entre tus contactos activos (`automation.approver: null | {contactId}`, `PUT /api/automations/:id/approver`). Tú siempre puedes decidir; vale lo que llegue antes.
+
+- Protocolo dentro del sobre, como los encargos:
+  - dueño → persona: `approval.ask {ref, title, routine, details}`
+  - persona → dueño: `approval.decide {ref, decision, reason}` (`approved` | `denied`; el motivo, opcional, solo al denegar)
+  - dueño → persona: `approval.closed {ref, resolution}`: lo decidió antes el dueño, caducó o se canceló.
+  - `dispatch` lo pasa al módulo por `/^approval\.[a-z]+$/`, como `errand`, `team` y `room`.
+- **Lado del dueño.** Cuando una misión de esa rutina deja una línea roja pendiente (esperando o «pendiente para después» sin supervisión), sale `approval.ask` y la aprobación guarda `delegation: {contactId, ref, sentAt}`. Su tarjeta dice «También se lo has pedido a <nombre>».
+  - No se pide si el paso leyó frases de inyección, en incógnito, en un encargo de otra persona, si va a enviarse solo porque lo pediste tú, ni para claves, inicios de sesión o contraseñas.
+  - `details` lleva solo lo necesario para decidir: la acción, a quién va (para y copia), el asunto, el principio del texto (4000 caracteres como mucho), la orden y el nombre del bot. Nunca claves, tokens, datos del gestor de contraseñas ni sesiones del navegador (ni la cuenta, ni el resto de argumentos).
+- **Lado de quien decide.** Solo se aceptan peticiones de contactos activos, como mucho 20 por persona y hora; se guardan en `peerApprovalAsks` y caducan a las 24 h.
+  - En su Bandeja salen como «<Nombre> te pide que decidas» (`waiting.mjs`, `kind: "delegated"`), con «Aprobar» y «Denegar» (con un motivo opcional).
+  - Se muestran como texto plano y marcadas como contenido de otra persona; nunca se le dan a un modelo.
+  - `POST /api/peers/approval-asks/:id/decide {decision, reason?}` contesta. Al cerrarse queda un rato como «Ya lo decidió <nombre>» (o «Has aprobado esto»).
+- **La decisión de vuelta.** El dueño solo la aplica si:
+  - viene del `contactId` de esa aprobación con su `ref`;
+  - la aprobación sigue pendiente y no ha caducado;
+  - el paso no está marcado (`isFlagged`).
+  - Se aplica por el mismo camino que tu tarjeta (`server/approval-decide.mjs`): en `apps_execute`, `connection().review` y luego `decide`; en lo demás, `runtime.approve`, que lleva lo dejado para después a `approveDeferred`. Queda con `decidedBy` = su nombre y «Lo aprobó <nombre>» / «Lo denegó <nombre>».
+  - Nunca trae «Siempre» ni «Aprobado por adelantado».
+- **El cierre.** Si decides tú antes, si caduca (barrido cada minuto) o si la misión se cancela, sale `approval.closed {ref, resolution}` y su tarjeta se cierra como «Ya lo decidió <nombre>».
+- Pruebas: `tests/peers-delegation.test.mjs`, dos Colmenas sobre un buzón local:
+  - petición → decisión aplicada con su nombre;
+  - el dueño primero → cerrada;
+  - persona equivocada, `ref` equivocado, paso marcado o ya decidida → ignorada;
+  - caducada en los dos lados;
+  - `details` sin nada que no haga falta.
+
 ## Archivos y entregables (`server/peers/files.mjs`)
 - Un sobre lleva 48 KB, así que un archivo viaja aparte: se sella aquí con AES-256-GCM y una llave nueva al azar, se corta en partes de 1 MiB y se deja en el buzón (`PUT /v1/blobs/:id/:n`, firmado). El mensaje (cifrado como todos) lleva la llave, un token de lectura y el SHA-256: solo quien está en la conversación puede abrirlo. El buzón ve tamaños y quién lo subió, nunca el contenido.
 - Cada Colmena lo descarga una vez (`GET` con `X-Blob-Token`; el buzón guarda solo el hash del token), comprueba el hash, lo guarda en `<datos>/peer-files/<id>/` y olvida la llave. Si ya caducó, lo dice: «pídeselo otra vez».

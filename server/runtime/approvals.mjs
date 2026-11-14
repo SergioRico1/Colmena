@@ -11,6 +11,7 @@ import { decideRevert } from "../verdicts.mjs";
 import { answersForBot, answersText, buildQuestions, checkAnswers, lateAnswerText, QUESTION_PENDING, QUESTION_WAIT_MINUTES } from "../questions.mjs";
 import { flat, sameUrl, sha } from "./helpers.mjs";
 import { placeName } from "../mission-kind.mjs";
+import { takePreapproval } from "../preapprovals.mjs";
 
 /** Runtime methods: questions to the person, plans and approvals (asking, answering, deciding). */
 export class ApprovalMethods {
@@ -335,12 +336,22 @@ export class ApprovalMethods {
     if (isUnattended(fresh, this.settings(), step)) return { deferred: true };
     return null;
   }
+  /**
+   * «Aprobado por adelantado» (server/preapprovals.mjs): an action this routine was told it may
+   * do, inside one of its own missions. `a` is the approval as it would be stored ({tool, args,
+   * kind}). {approved, by: "rutina", resolution} or null (then it asks, or is left for later).
+   */
+  preapproved(mission, step, bot, a) {
+    const fresh = this.store.get("missions", mission.id) || mission;
+    const hit = takePreapproval(this.store, a, { mission: fresh, flagged: this.flagged(step), botId: bot?.id || null });
+    return hit ? { approved: true, by: "rutina", resolution: hit.resolution } : null;
+  }
   /** Your decision on a red line an unattended routine left for later (its step already ended). */
-  approveDeferred(a, decision) {
+  approveDeferred(a, decision, { decidedBy = "tú" } = {}) {
     if (!["approved", "denied"].includes(decision)) throw Error("Decision no valida.");
     const mission = this.store.get("missions", a.missionId);
     if (!mission || mission.status === "cancelled") throw Error("La misión está cancelada.");
-    this.store.patch("approvals", a.id, { status: decision, decidedAt: now(), decidedBy: "tú", resolution: decision === "approved" ? "Aprobado · se hace ahora" : "Denegado" });
+    this.store.patch("approvals", a.id, { status: decision, decidedAt: now(), decidedBy: decidedBy || "tú", resolution: decision === "approved" ? "Aprobado · se hace ahora" : "Denegado" });
     this.store.event(a.missionId, "approval_decided", { text: decision === "approved" ? "Accion aprobada" : "Accion denegada" });
     if (decision !== "approved") return;
     const request = "La persona ha aprobado ahora lo que dejaste pendiente mientras no estaba: «" + String(a.title || a.summary || "").slice(0, 300) +
@@ -349,12 +360,12 @@ export class ApprovalMethods {
     this.store.patch("missions", a.missionId, { steps: [...(mission.steps || []), ...keys], ...(mission.status === "completed" ? { status: "queued", error: null } : {}) });
     this.relaunch(a.missionId);
   }
-  approve(approvalId, decision, { always = false } = {}) {
+  approve(approvalId, decision, { always = false, decidedBy = "tú" } = {}) {
     const a = this.store.get("approvals", approvalId);
     if (!a || a.status !== "pending") throw Error("Esta solicitud ya está resuelta.");
     // Left pending by an unattended routine that already went on: approving it asks that bot
     // to do it now (its call is approved by this decision, redLineShortcut).
-    if (a.deferred && !["apps_execute"].includes(a.tool) && this.store.get("steps", a.stepId)?.status === "completed") return this.approveDeferred(a, decision);
+    if (a.deferred && !["apps_execute"].includes(a.tool) && this.store.get("steps", a.stepId)?.status === "completed") return this.approveDeferred(a, decision, { decidedBy });
     if (!["approved", "denied"].includes(decision)) throw Error("Decision no valida.");
     if (a.tool === "apps_execute") throw Error("Revisa esta acción en el diálogo de conexiones antes de decidir.");
     const mission = this.store.get("missions", a.missionId);
@@ -392,7 +403,7 @@ export class ApprovalMethods {
     }
     if (always && decision === "approved" && !a.canAlways) throw Error("Esta acción no admite aprobación permanente.");
     this.store.patch("approvals", a.id, {
-      status: decision, decidedAt: now(), decidedBy: "tú", resolution: decision === "approved" ? "Aprobado" : "Denegado",
+      status: decision, decidedAt: now(), decidedBy: decidedBy || "tú", resolution: decision === "approved" ? "Aprobado" : "Denegado",
     });
     this.store.event(a.missionId, "approval_decided", { text: decision === "approved" ? "Accion aprobada" : "Accion denegada" });
     if (always && decision === "approved") {

@@ -39,6 +39,8 @@ import { connectedCalendar } from "./peers/calendar.mjs";
 import { CodeShare } from "./peers/codeshare.mjs";
 import { PeerFiles, artifactSource } from "./peers/files.mjs";
 import { Errands } from "./peers/errands.mjs";
+import { Delegation } from "./peers/delegation.mjs";
+import { decideApproval } from "./approval-decide.mjs";
 import { Teams } from "./peers/teams.mjs";
 import { ensureBotLooks } from "./bot-looks.mjs";
 import { Webhooks } from "./webhooks.mjs";
@@ -168,7 +170,7 @@ if (typeof process.send === "function") {
   };
   store.listeners.add((event) => {
     if (event?.type === "notify") process.send({ type: "notify", kind: event.kind || null, title: event.title, text: event.text, url: event.url || "/", tag: event.tag || null, toast: event.toast !== false, sound: event.sound || null, ...(event.quick ? { quick: event.quick } : {}) });
-    if (event?.type === "record" && ["missions", "approvals", "settings", "watchNotes", "peerErrands", "steps", "bots"].includes(event.kind) && !presenceTimer) presenceTimer = setTimeout(sendPresence, 400);
+    if (event?.type === "record" && ["missions", "approvals", "settings", "watchNotes", "peerErrands", "peerApprovalAsks", "steps", "bots"].includes(event.kind) && !presenceTimer) presenceTimer = setTimeout(sendPresence, 400);
   });
   setTimeout(sendPresence, 1500).unref();
 }
@@ -213,6 +215,9 @@ peers.files = new PeerFiles({ peers, store, artifactFile: artifactSource({ store
 // Errands: your bots can ask the bots of people you talk to (their owner approves), and theirs
 // yours. An errand never asks for another errand.
 peers.errands = new Errands({ peers, store, runtime }).start();
+// «Delegar aprobaciones»: a person of your team decides a routine's red lines too, through the
+// same decision path as your own card (approval-decide.mjs); and you decide theirs.
+peers.delegation = new Delegation({ peers, store, decide: (a, options) => decideApproval({ store, runtime, connection: () => connections }, a, options) }).start();
 const extraBeforeErrands = runtime.extraTools;
 runtime.extraTools = (bot, mission) => [...extraBeforeErrands(bot, mission), ...(mission?.peerErrand || !peers.contacts?.().some((c) => c.status === "active" && c.bots?.length) ? [] : [peers.errands.tool()])];
 store.listeners.add((event) => {
