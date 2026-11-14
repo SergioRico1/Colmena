@@ -15,7 +15,6 @@ import { RefChips } from "../../room/Mentions.jsx";
 import { copyText } from "../../room/common.jsx";
 import { DOWN, DownReasons, downSummary, myDown, useReactions } from "../../room/Reactions.jsx";
 import { BotPresence } from "../Presence.jsx";
-import { BranchPicker } from "./Versions.jsx";
 import WorkLog, { CommandOutput, durationText } from "./WorkLog.jsx";
 import { turnSummary, workSummary } from "../../../lib/worklog.js";
 import { useExpert } from "../../../lib/expert.js";
@@ -24,10 +23,12 @@ import { dragOutProps, workFileUrl } from "../../../lib/dragOut.js";
 import { useActivity } from "../../../lib/liveStore.js";
 
 // Colmena 3 conversation pieces (design/V3Chat.dc.html, V3ChatExperto.dc.html): your message
-// as a soft bubble on the right; the bot's answer under its shape, name and time, in 15.5 px;
-// the work as a white card «Hecho en N pasos»; the actions always under the answer (copy, do
-// it again, edit your request, useful / not useful, versions). Expert mode adds the model,
-// tokens, cache and time under each answer — it never moves anything.
+// as a soft bubble on the right; the bot's answer under its shape, name and time, in 15 px;
+// the work as a white card «Hecho en N pasos». Nothing in a message changes its size because
+// the bot started or stopped working: the actions are a toolbar on hover (copy, another answer,
+// useful / not useful; edit on your own message), the time and «Visto» sit in the gap under
+// your message, and the thinking line is one line of the answer that replaces it. Expert mode
+// adds the model, tokens, cache and time under each answer.
 // The tile of a file kind, from the theme's tokens (light and dark): red for PDF and slides,
 // green for sheets, blue for documents, neutral for the rest.
 const EXT = { PDF: ["var(--c-error-soft)", "var(--c-error)"], XLS: ["var(--c-ok-soft)", "var(--c-ok-ink)"], CSV: ["var(--c-ok-soft)", "var(--c-ok-ink)"], DOC: ["var(--c-accent-soft)", "var(--c-accent-ink)"], PPT: ["var(--c-error-soft)", "var(--c-error)"], WEB: ["var(--c-sunken)", "var(--c-text-2)"] };
@@ -57,22 +58,44 @@ export function TimeMark({ at }) {
 }
 
 /**
- * Your message (Colmena 4: design/v4 › .mine): on the right in the soft «mine» bubble, its time
- * and a tick under it (two and «Visto» once the bot has answered after it: `seen`).
+ * Your message (Colmena 4: design/v4 › .mine): on the right in the soft «mine» bubble. Its time
+ * and how far it got sit in the gap under it (`.v4-you-meta`, out of the layout), so nothing
+ * moves when they change: «Enviando…», a tick, two and «Visto» — on your latest message only
+ * (`last`); the others show their time on hover. `receipt` (Receipt.jsx: sent while the bot
+ * worked) takes the same place. Copy and «Editar» are a toolbar beside the bubble on hover or
+ * focus (a tap on a touch screen), never a line of their own. `continued`: another message of
+ * yours right after the one before, closer to it.
  */
-export function UserBubble({ message, seen = false, children }) {
+export function UserBubble({ message, seen = false, last = false, receipt = null, continued = false, onEdit = null, editDisabled = false, children }) {
+  const [copied, setCopied] = useState(false);
+  const status = message.optimistic ? <span>{"Enviando…"}</span>
+    : receipt ? receipt
+      : !last || message.failed ? null
+        : seen ? <><Checks size={15} aria-hidden="true" /><span>{"Visto"}</span></>
+          : message.at ? <><Check size={14} aria-hidden="true" /><span>{"Enviado"}</span></> : null;
   return (
     <div data-message-id={message.optimistic ? undefined : message.id} aria-busy={message.optimistic ? "true" : undefined}
-      style={{ alignSelf: "flex-end", maxWidth: "min(62%, 560px)", display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end", opacity: message.optimistic ? 0.75 : 1, transition: "opacity .2s ease" }}>
-      <div className="v4-bubble" style={{ maxWidth: "100%" }}>
-        <UserText text={message.text} size={15} messageId={message.optimistic ? null : message.id} />
+      className={"msg-row v4-you" + (last || receipt ? " is-last" : "") + (continued ? " is-continued" : "")}
+      style={{ opacity: message.optimistic ? 0.75 : 1 }}>
+      <div className="v4-you-line">
+        {message.optimistic || message.failed ? null : (
+          <span className="msg-actions v4-you-actions" role="toolbar" aria-label="Acciones de tu mensaje">
+            <button type="button" className="rm-focus" aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"} onClick={async () => { await copyText(plain(message.text || "")); setCopied(true); setTimeout(() => setCopied(false), 1500); }} style={{ ...ICON, ...(copied ? { color: "var(--c-ok-ink)" } : {}) }}><Glyph icon={copied ? Check : Copy} /></button>
+            {onEdit ? <button type="button" className="rm-focus" aria-label="Editar el mensaje" title={editDisabled ? "Espera a que termine de responder" : "Editar y enviar de nuevo"} aria-disabled={editDisabled ? "true" : undefined} onClick={editDisabled ? undefined : onEdit} style={{ ...ICON, ...(editDisabled ? { opacity: 0.4, cursor: "default" } : {}) }}><Glyph icon={Pencil} /></button> : null}
+          </span>
+        )}
+        <div className="v4-bubble" style={{ maxWidth: "100%" }}>
+          <UserText text={message.text} size={15} messageId={message.optimistic ? null : message.id} />
+        </div>
       </div>
-      <span className="v4-mine-meta" style={{ marginTop: 0 }}>
-        {message.at ? <time dateTime={message.at}>{clock(message.at)}</time> : null}
-        {message.optimistic ? <span>{"Enviando…"}</span> : seen ? <><Checks size={15} aria-hidden="true" /><span>{"Visto"}</span></> : message.at && !message.failed ? <Check size={14} aria-label="Enviado" /> : null}
-      </span>
       <RefChips refs={message.refs} />
       {children}
+      {message.failed ? null : (
+        <span className="v4-mine-meta v4-you-meta" role={message.optimistic || receipt ? "status" : undefined}>
+          {message.at ? <time dateTime={message.at}>{clock(message.at)}</time> : null}
+          {status}
+        </span>
+      )}
     </div>
   );
 }
@@ -186,32 +209,51 @@ export function WorkTrail({ step, bots = [], running = false, ticks = true, seco
 }
 
 /**
- * The bot's answer: its head (shape, name, time), the work it did and the text. What you can
- * do with it goes under it, in AnswerActions (after the deliverables and the sources).
+ * One bot message in the conversation (design/v4 › .msg), the same frame whatever state it is
+ * in — thinking, writing, done: the face and the name line (`head`), then the text column beside
+ * the face. The answer that arrives takes exactly the place its thinking line had, so nothing
+ * jumps when it does. `actions` is the hover toolbar (out of the layout); `continued`: another
+ * message of the same bot right after its last one, without a head (its time in the gutter on
+ * hover).
  */
-export function BotAnswer({ message, bot, step, bots, trail = true, head = true, children }) {
+export function AnswerFrame({ bot, at = null, state = "rest", head = true, continued = false, messageId = null, actions = null, live = false, children }) {
+  const showHead = head && !continued;
   return (
-    <div data-message-id={message.id} style={{ position: "relative", display: "flex", flexDirection: "column", gap: "8px" }}>
-      {head ? <AnswerHead bot={bot} at={message.at} /> : null}
-      {/* The answer sits in the text column, beside the face (design/v4 › .msg). */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", paddingLeft: "44px", marginTop: head ? "-14px" : 0 }}>
-        {message.text ? <Markdown text={message.text} size={15} style={ANSWER} /> : null}
-        {!trail ? null : step?.progress?.length ? <WorkTrail step={step} bots={bots} seconds={secondsOf(message, step)} /> : <DoneSteps tools={step?.tools || []} bots={bots} stepId={step?.id} seconds={secondsOf(message, step)} fold={step?.status !== "running"} />}
-        {children}
-      </div>
+    <div data-message-id={messageId || undefined} data-live-turn={live ? "" : undefined} className={"msg-row v4-msg" + (showHead ? "" : " is-continued")}>
+      {showHead ? <AnswerHead bot={bot} at={at} state={state} /> : continued && at ? <time className="msg-gutter-time v4-msg-time" dateTime={at} aria-hidden="true">{clock(at)}</time> : null}
+      <div className="v4-msg-body">{children}</div>
+      {actions}
     </div>
   );
 }
 
-const ICON = { width: "34px", height: "34px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" };
+/**
+ * The bot's answer: its head (shape, name, time), the work it did and then the text (the same
+ * order as while it was written), then `children` (deliverables, sources, versions…) in the
+ * same column. What you can do with it is `actions` (AnswerActions), a toolbar on hover.
+ */
+export function BotAnswer({ message, bot, step, bots, trail = true, head = true, continued = false, actions = null, children }) {
+  return (
+    <AnswerFrame bot={bot} at={message.at} head={head} continued={continued} messageId={message.id} actions={actions}>
+      {!trail ? null : step?.progress?.length ? <WorkTrail step={step} bots={bots} seconds={secondsOf(message, step)} /> : <DoneSteps tools={step?.tools || []} bots={bots} stepId={step?.id} seconds={secondsOf(message, step)} fold={step?.status !== "running"} />}
+      {message.text ? <Markdown text={message.text} size={15} style={ANSWER} /> : null}
+      {children}
+    </AnswerFrame>
+  );
+}
+
+const ICON = { width: "32px", height: "32px", display: "grid", placeItems: "center", padding: 0, border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-2)", cursor: "pointer" };
 const Glyph = ({ icon: Glyph16, active = false }) => <Glyph16 size={16} active={active} />;
-const ACTION_ICONS = { copy: Copy, again: RotateCw, edit: Pencil, up: ThumbsUp, down: ThumbsDown };
+const ACTION_ICONS = { copy: Copy, again: RotateCw, up: ThumbsUp, down: ThumbsDown };
 
 /**
- * Under an answer (V3Chat «Acciones del mensaje»): listen, copy, do it again, edit your
- * request, useful / not useful (a 👍 / 👎 the bots read on their next turn) and the versions.
+ * What you can do with an answer (V3Chat «Acciones del mensaje»), as a toolbar over its top
+ * right corner on hover or focus (a tap on a touch screen): listen, copy, «Otra respuesta»,
+ * useful / not useful (a 👍 / 👎 the bots read on their next turn). Always the same five, in
+ * the same order: what cannot be done right now (another answer while the bot works) is shown
+ * disabled, never taken away. Editing your request lives on your own message.
  */
-export function AnswerActions({ message, bot, onRetry = null, onEditAsk = null, branch = null, onVersion = null, versionDisabled = false }) {
+export function AnswerActions({ message, bot, onRetry = null, retryDisabled = false }) {
   const [copied, setCopied] = useState(false);
   const [reactions, toggle, explain] = useReactions(message);
   const mine = (emoji) => reactions.some((r) => r.emoji === emoji && r.by === "user");
@@ -222,22 +264,19 @@ export function AnswerActions({ message, bot, onRetry = null, onEditAsk = null, 
     if (!down) void toggle(DOWN);
     setWhy((v) => !v || !down);
   };
-  if (!message?.text) return branch ? <BranchPicker branch={branch} disabled={versionDisabled} onShow={onVersion} /> : null;
+  if (!message?.text) return null;
   const pressed = (on) => (on ? { background: "var(--c-chip)", color: "var(--c-text)" } : {});
   return (
-    <div role="toolbar" aria-label="Acciones del mensaje" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "2px", color: "var(--c-text-2)", marginTop: "-4px" }}>
-      <ListenButton text={message.text} bot={bot} compact style={{ ...ICON, width: "34px", height: "34px" }} />
-      <button type="button" className="rm-focus" aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"} onClick={async () => { await copyText(plain(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); }} style={{ ...ICON, ...(copied ? { color: "var(--c-ok-ink)" } : {}) }}><Glyph icon={copied ? "m5 12 5 5 9-10" : ACTION_ICONS.copy} /></button>
-      {onRetry ? <button type="button" className="rm-focus" aria-label="Volver a hacer" title="Volver a hacer" onClick={onRetry} style={ICON}><Glyph icon={ACTION_ICONS.again} /></button> : null}
-      {onEditAsk ? <button type="button" className="rm-focus" aria-label="Editar mi petición" title="Editar mi petición" onClick={onEditAsk} style={ICON}><Glyph icon={ACTION_ICONS.edit} /></button> : null}
+    <span role="toolbar" aria-label="Acciones del mensaje" className={"msg-actions v4-msg-actions" + (why ? " is-open" : "")}>
+      <ListenButton text={message.text} bot={bot} compact style={ICON} />
+      <button type="button" className="rm-focus" aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"} onClick={async () => { await copyText(plain(message.text)); setCopied(true); setTimeout(() => setCopied(false), 1500); }} style={{ ...ICON, ...(copied ? { color: "var(--c-ok-ink)" } : {}) }}><Glyph icon={copied ? Check : ACTION_ICONS.copy} /></button>
+      {onRetry ? <button type="button" className="rm-focus" aria-label="Otra respuesta" title={retryDisabled ? "Espera a que termine de responder" : "Otra respuesta"} aria-disabled={retryDisabled ? "true" : undefined} onClick={retryDisabled ? undefined : onRetry} style={{ ...ICON, ...(retryDisabled ? { opacity: 0.4, cursor: "default" } : {}) }}><Glyph icon={ACTION_ICONS.again} /></button> : null}
       <button type="button" className="rm-focus" aria-label="Útil" title="Útil" aria-pressed={mine("👍") ? "true" : "false"} onClick={() => toggle("👍")} style={{ ...ICON, ...pressed(mine("👍")) }}><Glyph icon={ACTION_ICONS.up} /></button>
       <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
         <button type="button" className="rm-focus" aria-label="No me sirve" title={down && downSummary(down) ? "No me sirve: " + downSummary(down) : "No me sirve"} aria-pressed={down ? "true" : "false"} aria-expanded={why ? "true" : "false"} aria-haspopup="dialog" onClick={onDown} style={{ ...ICON, ...pressed(!!down) }}><Glyph icon={ACTION_ICONS.down} /></button>
-        {down && downSummary(down) && !why ? <button type="button" className="rm-focus" onClick={() => setWhy(true)} title={down.note || undefined} style={{ height: "28px", padding: "0 8px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-meta)", cursor: "pointer" }}>{downSummary(down)}</button> : null}
         {why ? <DownReasons current={down} onSave={explain} onRemove={down ? () => toggle(DOWN) : null} onClose={() => setWhy(false)} /> : null}
       </span>
-      {branch && branch.count > 1 ? <span style={{ marginLeft: "8px" }}><BranchPicker branch={branch} disabled={versionDisabled} onShow={onVersion} /></span> : null}
-    </div>
+    </span>
   );
 }
 
@@ -312,20 +351,33 @@ function ImageMaking({ tool, botId }) {
  * spinner, then its pages), what it runs (a dark terminal), what it writes (the answer itself, with a
  * caret), what it draws (the picture developing); otherwise its own words about what it does.
  */
-export function WorkNow({ step, live, bot, bots, narration, onStop = null, head = true }) {
+export function WorkNow({ step, live, bot, bots, narration, head = true }) {
+  // Always the frame of the answer it becomes (AnswerFrame): same face, same name line, same
+  // text column. What changes is only what fills the column.
+  return (
+    <AnswerFrame bot={bot} head={head} state="work" live>
+      <WorkNowBody step={step} live={live} bot={bot} bots={bots} narration={narration} />
+    </AnswerFrame>
+  );
+}
+
+function WorkNowBody({ step, live, bot, bots, narration }) {
   const tools = step?.tools || [];
   const running = tools.filter((t) => t.status === "running");
   const reads = groupTools(tools).filter((t) => ["file", "web", "pdf_fields", "folder"].includes(t.card?.type));
   const command = [...tools].reverse().find((t) => t.card?.type === "command" && (t.status === "running" || t === tools[tools.length - 1]));
   const image = running.find((t) => t.card?.type === "image");
   const color = bot?.color || "var(--c-accent)";
-  // The answer as it is written looks like the answer it becomes: same text, same place.
+  // The answer as it is written looks like the answer it becomes: same size, same place, and
+  // the folded «Usó N herramientas» line above it already, as the finished answer shows it.
   if (live?.text) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {head ? <AnswerHead bot={bot} state="work" /> : null}
-        <LiveMarkdown text={live.text} size={16} style={ANSWER} caret streamKey={step?.id || live.stepId} />
-      </div>
+      <>
+        {step?.progress?.length ? null : <DoneSteps tools={tools.filter((t) => t.status !== "running")} bots={bots} stepId={step?.id} fold />}
+        <div data-live-text="" className="v4-live">
+          <LiveMarkdown text={live.text} size={15} style={ANSWER} streamKey={step?.id || live.stepId} />
+        </div>
+      </>
     );
   }
   if (image) return <ImageMaking tool={image} botId={bot?.id || step?.botId || null} />;
@@ -351,19 +403,15 @@ export function WorkNow({ step, live, bot, bots, narration, onStop = null, head 
       </div>
     );
   }
-  // Thinking or using a tool: the shape breathing and one quiet shimmer line — «Pensando…», or
-  // the tool at work — with the narration (if any) under it; «Parar» stays small at the side.
+  // Thinking or using a tool: the shape breathing and one quiet shimmer line, exactly one line
+  // of the answer tall — «Pensando…», or the tool at work — with the bot's own words about it
+  // after it on the same line. Stopping it is the composer's (its send button, or Esc).
+  const doing = running.length ? headline(running[running.length - 1], bots) + "…" : "Pensando…";
   return (
-    <article role="status" style={{ display: "flex", flexDirection: "column", gap: "6px", animation: "fade .4s ease-out" }}>
-      {head ? <AnswerHead bot={bot} state="work" /> : null}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", minHeight: "30px" }}>
-        <span style={{ flex: "1", minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
-          <span style={shimmerText}>{running.length ? <>{headline(running[running.length - 1], bots)}{"…"}</> : "Pensando…"}</span>
-          {narration ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{narration}</span> : null}
-        </span>
-        {onStop ? <button type="button" className="chat-stop" onClick={onStop} title="Parar (Esc)" style={{ flex: "none", height: "30px", padding: "0 12px", border: "0", borderRadius: "var(--r-pill)", background: "transparent", color: "var(--c-text-3)", fontSize: "var(--t-meta)", fontWeight: 500, cursor: "pointer" }}>{"Parar"}</button> : null}
-      </div>
-    </article>
+    <p role="status" className="v4-thinking" title={narration || undefined}>
+      <span style={shimmerText}>{doing}</span>
+      {narration ? <span className="v4-thinking-note">{narration}</span> : null}
+    </p>
   );
 }
 

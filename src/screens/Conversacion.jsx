@@ -12,7 +12,7 @@ import NewRoomSheet from "../components/v3/team/NewRoomSheet.jsx";
 import ChatsHome from "../components/v2/chat/ChatsHome.jsx";
 import Composer from "../components/v2/chat/Composer.jsx";
 import PlusMenu, { chosenChips, turnBody } from "../components/v2/chat/PlusMenu.jsx";
-import { AnswerActions, AnswerHead, AttachmentChip, AttachmentImage, isImageAttachment, BotAnswer, DeliverableV2, TimeMark, UsageLine, UserBubble, WorkNow, WorkTrail, kTokens } from "../components/v2/chat/Parts.jsx";
+import { AnswerActions, AnswerFrame, AttachmentChip, AttachmentImage, isImageAttachment, BotAnswer, DeliverableV2, TimeMark, UsageLine, UserBubble, WorkNow, WorkTrail, kTokens } from "../components/v2/chat/Parts.jsx";
 import BotFace from "../components/BotFace.jsx";
 import { OpenBot } from "../components/room/Author.jsx";
 import { BotProfile } from "../components/room/MemberPanel.jsx";
@@ -34,7 +34,7 @@ import Receipt from "../components/v2/chat/Receipt.jsx";
 import { receiptKey, receiptOf } from "../lib/receipts.js";
 import { landingRow, underWay } from "../lib/landingRow.js";
 import FollowUps from "../components/v2/chat/FollowUps.jsx";
-import { BranchPicker, EditButton, EditMessage } from "../components/v2/chat/Versions.jsx";
+import { BranchPicker, EditMessage } from "../components/v2/chat/Versions.jsx";
 import { forgetOlder } from "../lib/history.js";
 import { rememberPrompt, saveDraft, stashPrompt, unstash, useDraftOffer, useInputHistory, useStash } from "../lib/composer.js";
 import DraftOffer from "../components/v2/chat/DraftOffer.jsx";
@@ -109,7 +109,12 @@ function stepFor(message, steps) {
   return own[own.length - 1] || null;
 }
 // A first guess of each row's height (Timeline measures the real one as it shows it).
-const estimateRow = (row) => ({ head: row?.newChat ? 420 : 40, user: 96, answer: 360, question: 220, note: 30, now: 140, trail: 120, need: 220, needs: 260, error: 90, browser: 320 }[row?.kind] ?? 120);
+// Your message and the thinking line are guessed closely: they arrive at the end while the list
+// follows it, and a wrong guess would show for a frame. (A row that `takes` another's place
+// starts at that one's measured height: Timeline.jsx.)
+const userLines = (row) => String(row?.m?.text || "").split("\n").reduce((n, l) => n + (Math.ceil(l.length / 58) || 1), 0);
+const estimateRow = (row) => (row?.kind === "user" && !row.m?.attachments?.length ? 36 + 23 * userLines(row)
+  : { head: row?.newChat ? 420 : 40, answer: 360, question: 220, note: 30, now: 75, trail: 120, need: 220, needs: 260, error: 90, browser: 320, queue: 110 }[row?.kind] ?? 120);
 // «Nuevos» (Timeline.jsx, src/lib/unseen.js): what counts as a new message when it arrives
 // while you are not looking at the end — answers, questions and what needs you; never yours.
 const unseenOf = (row) => (row.kind === "user" ? "own" : ["answer", "question", "secret", "need", "needs"].includes(row.kind) ? "new" : null);
@@ -123,18 +128,22 @@ const SLASH = [
   { cmd: "/privado", desc: "Seguir sin que {bot} aprenda nada" },
 ];
 
-/** While the bot works: what Intro does with what you write («Cuando acabe» or «Pasárselo ya»). */
-function WhileWorking({ value, onChange, botName = "el bot", typing }) {
+/**
+ * While the bot works and you have typed something: what Intro does with it («Cuando acabe» or
+ * «Pasárselo ya»). It floats above the composer (Composer `overlay`), so it never moves the list
+ * nor changes the composer's height; with an empty box there is nothing to choose.
+ */
+function WhileWorking({ value, onChange, botName = "el bot" }) {
   const options = [["after", "Cuando acabe", `Espera en la cola y sale cuando ${botName} acabe`], ["steer", "Pasárselo ya", `${botName} lo lee en su siguiente paso, sin parar`]];
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", fontSize: "var(--t-caption)", color: "var(--c-text-3)", animation: "fade .2s ease-out" }}>
-      <span role="radiogroup" aria-label="Lo que escribas mientras trabaja" style={{ display: "inline-flex", padding: "3px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)" }}>
+    <div className="v4-while">
+      <span role="radiogroup" aria-label={`Tu mensaje, mientras ${botName} trabaja`} style={{ display: "inline-flex", padding: "2px", borderRadius: "var(--r-pill)", background: "rgb(var(--c-ink-rgb) / .06)" }}>
         {options.map(([id, label, hint]) => (
           <button key={id} type="button" role="radio" aria-checked={value === id ? "true" : "false"} title={hint} onClick={() => onChange(id)}
-            style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: value === id ? "var(--c-raised)" : "transparent", boxShadow: value === id ? "var(--c-shadow-lift)" : "none", color: value === id ? "var(--c-text)" : "var(--c-text-3)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>{label}</button>
+            style={{ height: "28px", padding: "0 12px", border: 0, borderRadius: "var(--r-pill)", background: value === id ? "var(--c-raised)" : "transparent", boxShadow: value === id ? "var(--c-shadow-lift)" : "none", color: value === id ? "var(--c-text)" : "var(--c-text-2)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, transition: "background .15s ease, color .15s ease" }}>{label}</button>
         ))}
       </span>
-      <span>{typing ? `Intro: ${value === "steer" ? "se lo pasas ya" : "a la cola"} · Ctrl+Intro: ${value === "steer" ? "a la cola" : "se lo pasas ya"} · Esc lo para` : "Esc lo para"}</span>
+      <span className="r-hide-touch">{`Ctrl+Intro: ${value === "steer" ? "a la cola" : "se lo pasas ya"}`}</span>
     </div>
   );
 }
@@ -391,22 +400,36 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   // Restore points of the turns that changed files (server/checkpoints.mjs), oldest first.
   const checkpointsKey = (mission?.checkpoints || []).map((cp) => cp.id + ":" + (cp.restoredAt || "") + ":" + cp.total).join(",");
   const checkpoints = useMemo(() => (Array.isArray(mission?.checkpoints) ? mission.checkpoints : []), [checkpointsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const sentKey = useRef(null); // the key of the last message of yours shown while it was being sent
   const messageRows = useMemo(() => {
     const rows = [];
     const firstAnswer = new Map(); // stepId → index of its first answer
     messages.forEach((x, i) => { if (x.role === "assistant" && x.stepId && !firstAnswer.has(x.stepId)) firstAnswer.set(x.stepId, i); });
     let prevUser = null;
+    // «Visto» goes on your latest message only (once the bot has answered after it).
+    let lastUser = -1, answeredAfter = false;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") { lastUser = i; break; }
+      if (messages[i].role === "assistant" && !messages[i].optimistic) answeredAfter = true;
+    }
+    // Consecutive messages of the same author, minutes apart, go together (no second head).
+    const near = (a, b) => !!a?.at && !!b?.at && Date.parse(b.at) - Date.parse(a.at) < 5 * 60e3;
     for (let i = 0; i < messages.length; i++) {
       const m = messages[i];
       const prev = messages[i - 1];
       const key = m.id || "i" + i;
       const mark = !prev || (m.at && prev.at && Date.parse(m.at) - Date.parse(prev.at) > 30 * 60e3) ? m.at || null : null;
       if (m.role === "user") {
-        // Your message: «Editar» opens another version from here (branches), «‹ 1/3 ›» moves between them.
-        const editable = !!c && !turn && !isOlder && !m.optimistic && !m.failed;
+        // Your message: «Editar» opens another version from here (branches), «‹ 1/3 ›» moves between
+        // them. While the bot works «Editar» is there but off, so nothing comes and goes.
+        const editable = !!c && !isOlder && !m.optimistic && !m.failed;
         // Sent while the bot worked: whether it waits for a pause, was read, or waits for your OK (receipts.js).
         const receipt = receiptKey(receiptOf(m, { steps, working: turn, held }));
-        rows.push({ key, kind: "user", m, mark, branch: branches[m.id] || null, editable, editing: editing === m.id, canRestore: editing === m.id && checkpoints.some((cp) => String(cp.at || "") >= String(m.at || "")), receipt });
+        const continued = !mark && prev?.role === "user" && !prev.failed && near(prev, m);
+        // Your latest message, once the server has it, takes the place of the copy shown while it was sent.
+        const takes = i === lastUser && !m.optimistic && sentKey.current ? [sentKey.current] : undefined;
+        if (m.optimistic) sentKey.current = key;
+        rows.push({ key, kind: "user", m, mark, continued, takes, branch: branches[m.id] || null, editable, working: editable && turn, editing: editing === m.id, canRestore: editing === m.id && checkpoints.some((cp) => String(cp.at || "") >= String(m.at || "")), receipt, last: i === lastUser, seen: i === lastUser && answeredAfter });
         prevUser = m;
         continue;
       }
@@ -426,15 +449,21 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       // The trail of what it said while working goes once, above the step's first answer
       // (while the step still runs it is shown above its live work instead).
       const firstOfStep = !!step && firstAnswer.get(step.id) === i && step.status !== "running";
+      const regenerate = !!prevUser && !!c && !isOlder && m.kind !== "deliverable";
       rows.push({
         key, ids: more.length ? [key, ...more.map((d) => d.id)] : undefined, kind: "answer", m, mark, step,
         author: findBot(bots, m.botId || botId),
         artifact: m.artifactId ? artifacts.find((a) => a.id === m.artifactId) || { id: m.artifactId, title: "Entregable" } : null,
         more: more.length ? more.map((d) => artifacts.find((x) => x.id === d.artifactId) || { id: d.artifactId, title: d.text || "Entregable" }) : undefined,
         trail: !step?.progress?.length || firstOfStep,
-        // «Otra respuesta» is a sibling version of this answer (branches), «‹ 1/3 ›» under it.
-        regenerate: !!prevUser && !!c && !turn && !isOlder && m.kind !== "deliverable",
-        askId: prevUser && !prevUser.optimistic && !prevUser.failed ? prevUser.id : null,
+        // It takes the place of its step's live row (its thinking, then its words being written).
+        takes: step ? ["live-" + step.id] : undefined,
+        // The same bot again, minutes later, right after its last answer: no second head.
+        continued: !mark && prev?.role === "assistant" && (!prev.kind || prev.kind === "message") && (prev.botId || botId) === (m.botId || botId) && near(prev, m),
+        // «Otra respuesta» is a sibling version of this answer (branches), «‹ 1/3 ›» under it;
+        // while the bot works it is there but off.
+        regenerate,
+        working: (regenerate || !!branches[m.id]) && turn,
         ...sourcesFor(m, step),
         branch: branches[m.id] || null,
       });
@@ -451,6 +480,12 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     }
     return rows;
   }, [messages, steps, artifacts, approvals, bots, botId, lastAssistant, turn, missionCard, checkpoints, branches, editing, isOlder, held]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The queue's row (MessageQueue.jsx): while something waits, failed, or the chat is paused.
+  const queuePaused = !!c && mission?.status === "paused" && !mission?.limited && !mission?.stopped;
+  const queueShown = !!c && !isOlder && (queue.pending.length > 0 || !!queue.error || queuePaused);
+  const queueState = JSON.stringify([queue.pending.map((q) => [q.id, q.text, !!q.sending]), queue.error || null, queue.paused]);
+  const queueRef = useRef(queue);
+  queueRef.current = queue;
   const showBrowser = !!mission && !!now && !dock.isVisible("navegador") && ["navegando", "rellenando un formulario", "usando el ordenador", "ejecutando una tarea"].includes(now.verb);
   const tailRows = useMemo(() => {
     const rows = [];
@@ -458,8 +493,8 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       const s = steps.find((x) => x.id === l.stepId);
       // The bot's name heads its turn: over what it said while working, else over «ahora».
       const bot = findBot(bots, l.botId || botId);
-      if (s?.progress?.length) rows.push({ key: "trail-" + l.stepId, kind: "trail", step: s, bot });
-      rows.push({ key: "live-" + l.stepId, kind: "now", step: s, live: l, bot, head: !s?.progress?.length });
+      if (s?.progress?.length) rows.push({ key: "trail-" + l.stepId, kind: "trail", step: s, bot, takes: ["await"] });
+      rows.push({ key: "live-" + l.stepId, kind: "now", step: s, live: l, bot, head: !s?.progress?.length, takes: s?.progress?.length ? undefined : ["await"] });
     }
     if (awaitingReply && !live.length) {
       const bot = findBot(bots, now?.botId || botId);
@@ -467,6 +502,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       rows.push({ key: "await", kind: "now", step: runningStep, bot, head: !runningStep?.progress?.length, narration: runningStep?.progress?.length ? null : runningStep?.narration?.text || null });
     }
     for (const e of groupApprovals(needs.filter((a) => a.kind !== "question"))) rows.push(e.type === "group" ? { key: "needs-" + e.id, kind: "needs", group: e, bot: findBot(bots, e.botId), mission: missionCard } : { key: "need-" + e.a.id, kind: "need", a: e.a, bot: findBot(bots, e.a.botId), mission: missionCard });
+    // What you wrote while it worked waits here, where it will be sent, not under the composer
+    // (so the composer never changes height when the turn ends and the queue goes out).
+    if (queueShown) rows.push({ key: "queue", kind: "queue", state: queueState, working: turn, paused: queuePaused });
     // Paused by a usage limit: its banner; a turn that stopped before its answer: «Se paró».
     if (mission?.limited) rows.push({ key: "error", kind: "error", limited: true, error: null, mission, name: bot?.name });
     else if (mission?.stopped && !turn) rows.push({ key: "stopped", kind: "stopped", stopped: mission.stopped, status: mission.status, name: bot?.name });
@@ -476,7 +514,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
     if (followUps.length) rows.push({ key: "follow", kind: "follow", list: followUps });
     if (showBrowser) rows.push({ key: "browser", kind: "browser", missionId: mission.id, bot: findBot(bots, now.botId), verb: now.verb, active: mission.status === "running" });
     return rows;
-  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, mission?.stopped?.why, turn, showBrowser, mission?.status, bot?.name, followUps.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [live, steps, bots, botId, awaitingReply, runningStep, now?.botId, now?.verb, needs.map((a) => a.id).join(","), missionCard, mission?.limited, mission?.error, mission?.limited ? mission : null, mission?.stopped?.at, mission?.stopped?.why, turn, showBrowser, mission?.status, bot?.name, followUps.join("|"), queueShown, queueState, queuePaused]); // eslint-disable-line react-hooks/exhaustive-deps
   // What comes before the chat (older chats, «Conversación anterior») shows once you reach its
   // start: while pages remain, the oldest message is the first row (the anchor when one loads).
   // Versions of the conversation (server/branches.mjs): another version brings other messages,
@@ -545,18 +583,13 @@ function Chat({ botId, query, bots, missions, ready, run }) {
         const attachments = m.attachments || [];
         return (
           row.editing ? <EditMessage text={m.text} canRestore={row.canRestore} onCancel={() => acts.current.edit(null)} onSend={(text, restore) => acts.current.sendEdit(m.id, text, restore)} /> : (
-          <UserBubble message={m} seen={seenIds.has(m.id)}>
+          <UserBubble message={m} seen={row.seen} last={row.last} continued={row.continued} receipt={row.receipt ? <Receipt receipt={row.receipt} bots={bots} /> : null}
+            onEdit={row.editable ? () => acts.current.edit(m.id) : null} editDisabled={row.working}>
             {/* Pictures as thumbnails (open in the viewer); every other file as its chip. */}
             {attachments.some(isImageAttachment) ? <span className="v4-thumbs">{attachments.filter(isImageAttachment).map((f, i) => <AttachmentImage key={i} file={f} missionId={c} />)}</span> : null}
             {attachments.some((f) => !isImageAttachment(f)) ? <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px" }}>{attachments.filter((f) => !isImageAttachment(f)).map((f, i) => <AttachmentChip key={i} name={f.path || f.name || String(f)} missionId={c} />)}</span> : null}
             {m.failed ? <FailedLine error={m.failed} onRetry={() => acts.current.resend(m)} onDiscard={() => unshowSent(`/missions/${c}`, m.id)} /> : null}
-            {row.receipt ? <Receipt receipt={row.receipt} bots={bots} /> : null}
-            {row.editable || row.branch ? (
-              <span style={{ display: "flex", alignItems: "center", gap: "2px", color: "var(--c-text-3)" }}>
-                <BranchPicker branch={row.branch} disabled={!row.editable} onShow={(id) => acts.current.version(id)} align="flex-end" />
-                {row.editable ? <EditButton onClick={() => acts.current.edit(m.id)} /> : null}
-              </span>
-            ) : null}
+            {row.branch && row.branch.count > 1 ? <BranchPicker branch={row.branch} disabled={row.working || !row.editable} onShow={(id) => acts.current.version(id)} align="flex-end" /> : null}
           </UserBubble>)
         );
       }
@@ -568,27 +601,25 @@ function Chat({ botId, query, bots, missions, ready, run }) {
       case "answer": return (
         // V3Chat: head, work, text; then the deliverable, the sources, the actions (and the
         // versions); expert mode adds the usage line. «Archivos cambiados» and «Deshacer cambios» last.
+        // What comes with the answer stays in its text column, beside the face (design/v4 › .msg).
         <TurnFileLinks missionId={row.undo ? c : null} cp={row.undo || null}>
-        <article style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <CitationContext.Provider value={row.citations}>
-            <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} />
-          </CitationContext.Provider>
-          {/* What comes with the answer stays in its text column, beside the face (design/v4 › .msg). */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", paddingLeft: "44px" }}>
+        <CitationContext.Provider value={row.citations}>
+          <BotAnswer message={m} bot={row.author} step={row.step} bots={bots} trail={row.trail} continued={row.continued}
+            actions={<AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} retryDisabled={row.working} />}>
             {row.artifact ? <FileCard artifact={row.artifact} onOpen={() => acts.current.toggleDoc(row.artifact.id)} /> : null}
             {(row.more || []).map((a) => <FileCard key={a.id} artifact={a} onOpen={() => acts.current.toggleDoc(a.id)} />)}
             <SourceChips sources={row.sources} />
-            <AnswerActions message={m} bot={row.author} onRetry={row.regenerate ? () => acts.current.regenerate(m.id) : null} onEditAsk={row.regenerate && row.askId ? () => acts.current.edit(row.askId) : null}
-              branch={row.branch} versionDisabled={turn} onVersion={(id) => acts.current.version(id)} />
+            {row.branch && row.branch.count > 1 ? <BranchPicker branch={row.branch} disabled={row.working} onShow={(id) => acts.current.version(id)} /> : null}
             <UsageLine message={m} step={row.step} />
             {row.undo ? <ChangedFiles cp={row.undo} missionId={c} /> : null}
             {row.undo ? <UndoChanges cp={row.undo} missionId={c} bot={row.author} working={row.working} later={row.undoLater} /> : null}
-          </div>
-        </article>
+          </BotAnswer>
+        </CitationContext.Provider>
         </TurnFileLinks>
       );
-      case "trail": return <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}><AnswerHead bot={row.bot} state="work" /><WorkTrail step={row.step} bots={bots} running /></div>;
-      case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} head={row.head} narration={row.narration} onStop={() => acts.current.stop()} />;
+      case "trail": return <AnswerFrame bot={row.bot} state="work" live><WorkTrail step={row.step} bots={bots} running /></AnswerFrame>;
+      case "now": return <WorkNow step={row.step} live={row.live} bot={row.bot} bots={bots} head={row.head} narration={row.narration} />;
+      case "queue": return <div style={{ alignSelf: "flex-end", width: "min(560px, 100%)" }}><MessageQueue queue={queueRef.current} botName={bot?.name} missionPaused={row.paused} onResumeMission={resumeMission} resumeBusy={control.busy} working={row.working} /></div>;
       case "need": return <NeedCard a={row.a} bot={row.bot} mission={row.mission} inline />;
       case "needs": return <NeedGroupCard group={row.group} bot={row.bot} mission={row.mission} inline />;
       case "done": return <CompletionNote missionId={row.missionId} />;
@@ -642,13 +673,6 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   }
 
   const state = pending.length ? "wait" : turn ? "work" : "rest";
-  // Your messages the bot has answered after: two ticks and «Visto» under the bubble.
-  const seenIds = new Set();
-  for (let i = messages.length - 1, answered = false; i >= 0; i--) {
-    const m = messages[i];
-    if (m.role === "assistant" && !m.optimistic) answered = true;
-    else if (m.role === "user" && answered) seenIds.add(m.id);
-  }
   // «Tus novedades» (server/watch.mjs) is never «terminado»: it keeps watching.
   const asks = pending.length || (!turn && mission?.watchAsks > 0);
   // A bot's single chat never «ends»: at rest it shows the bot's role.
@@ -667,6 +691,11 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   const ghostKey = (on) => ({ width: "36px", height: "36px", padding: 0, border: 0, borderRadius: "var(--r-md)", background: on ? "var(--c-chip)" : "transparent", color: "var(--c-text-2)", fontSize: "var(--t-read)", fontWeight: 600, cursor: "pointer" });
   const caret = <ChevronDown size={11} weight="bold" />;
   const toggleDeep = () => toggleChosen("deep");
+  const deep = chosen.includes("deep");
+  const thinkItems = () => [
+    { label: `Como siempre · ${bot?.thinking || "equilibrado"}`, hint: `Lo normal de ${bot?.name || "este bot"}`, checked: !deep, onSelect: () => { if (deep) toggleDeep(); } },
+    { label: "A fondo", hint: "Piensa más y tarda más; solo en el próximo mensaje", checked: deep, onSelect: () => { if (!deep) toggleDeep(); } },
+  ];
   const insertMention = () => { setText((t) => t + (t && !/\s$/.test(t) ? " @" : "@")); requestAnimationFrame(() => focusBox(inputRef.current)); };
   // «/»: what you can ask for in a word (only what this chat really does).
   const slashShown = (slashOpen || /^\/[a-záéíóú]*$/i.test(text)) && !plusOpen;
@@ -690,7 +719,9 @@ function Chat({ botId, query, bots, missions, ready, run }) {
   </> : <>
     <button type="button" aria-label="Mencionar" title="Mencionar a otro bot (@)" onClick={insertMention} style={ghostKey(false)}>{"@"}</button>
     <button type="button" aria-label="Comandos" aria-pressed={slashOpen ? "true" : "false"} title="Comandos (/)" onClick={() => setSlashOpen((v) => !v)} style={ghostKey(slashOpen)}>{"/"}</button>
-    <button type="button" onClick={toggleDeep} aria-pressed={chosen.includes("deep") ? "true" : "false"} title={chosen.includes("deep") ? "Pensará a fondo en el próximo mensaje" : "Pensar a fondo en el próximo mensaje"} style={{ ...tool, marginLeft: "4px" }}>{`Piensa: ${thinking}`}{caret}</button>
+    {/* «Piensa»: a real choice (it opens one), for the next message only. */}
+    <MenuButton label={`Piensa: ${thinking}`} title={`Cómo piensa ${bot?.name || "el bot"} el próximo mensaje`} menuLabel="Cómo piensa el próximo mensaje" placement="top-end" items={thinkItems} className="rm-focus"
+      style={{ ...tool, marginLeft: "4px", ...(deep ? { background: "var(--c-btn)", borderColor: "var(--c-btn)", color: "var(--c-btn-text)" } : {}) }}>{`Piensa: ${thinking}`}{caret}</MenuButton>
   </>;
   // The chat's «…» (components/Menu.js), by intent: talk, what the side panel shows, take it
   // out (one «Exportar» submenu instead of three rows), a new private chat, and the bot itself.
@@ -759,25 +790,25 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             <Composer v3 value={text} onChange={(v) => { setText(v); if (slashOpen) setSlashOpen(false); }} onKeyDown={onKeyDown} onSubmit={submit} inputRef={inputRef} inputProps={mentions.inputProps} dictationScope={c || "nuevo:" + botId}
               menu={plusOpen ? <PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={attach} onCapture={(file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={botId} /> : mentions.menu || slashMenu}
               attachOpen={plusOpen} mentionBots={bots} chips={[...mentions.chips, ...chosenChips(chosen).filter((ch) => ch.key !== "deep")]} onRemoveChip={(k) => (mentions.isRef(k) ? mentions.removeRef(k) : setChosen((list) => list.filter((x) => x !== k)))}
-              label={`Responder a ${bot?.name || ""}`} placeholder={turn ? (whileWorking === "steer" ? `Sigue escribiendo: ${bot?.name || "el bot"} lo lee en su siguiente paso` : `Sigue escribiendo: se lo pasas cuando ${bot?.name || "termine"} acabe`) : `${c ? "Responder a" : "Escribe a"} ${bot?.name || ""} · ${expert ? "@ menciona · / comandos" : "@ para mencionar"}`}
-              working={turn} onStop={stopTurn} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
+              label={`Responder a ${bot?.name || ""}`} placeholder={`${c ? "Responder a" : "Escribe a"} ${bot?.name || ""} · ${turn ? (whileWorking === "steer" ? "lo lee en su siguiente paso" : "sale cuando acabe") : expert ? "@ menciona · / comandos" : "@ para mencionar"}`}
+              working={turn} onStop={stopTurn} sendTitle={whileWorking === "steer" ? "Pasárselo ya (Intro)" : "A la cola: sale cuando acabe (Intro)"} files={files} onRemoveFile={(i) => setFiles(files.filter((_, j) => j !== i))} onInlinePasted={(i) => { const f = files[i]; setFiles(files.filter((_, j) => j !== i)); setText((t) => (t.trim() ? t.replace(/\s*$/, "\n\n") : "") + f.content); }}
               onAttach={() => { setSlashOpen(false); setPlusOpen((v) => !v); }} drop={drop} busy={send.busy} tools={composerTools}
+              overlay={(c && turn) ? <>
+                {c ? <NowBar missionId={c} active={turn} steps={steps} bots={bots} scroller={scroller} fallbackBotId={botId} onShow={follow.toEnd} onStop={stopTurn} style={{ margin: 0, boxShadow: "var(--c-shadow-lift)", background: "var(--c-raised)" }} /> : null}
+                {!expert && text.trim() && !plusOpen && !slashShown && !mentions.menu ? <WhileWorking value={whileWorking} onChange={chooseWhileWorking} botName={bot?.name} /> : null}
+              </> : null}
               above={<>
-                {c ? <NowBar missionId={c} active={turn} steps={steps} bots={bots} scroller={scroller} fallbackBotId={botId} onShow={follow.toEnd} onStop={stopTurn} /> : null}
                 <DraftOffer offer={draft.offer} onRecover={() => { draft.recover(); requestAnimationFrame(() => focusBox(inputRef.current)); }} onLater={draft.later} onDiscard={draft.discard} />
                 {pending.filter((a) => a.kind === "secret").map((a) => <SecretPrompt key={a.id} approval={a} bots={bots} />)}
                 <BtwNotes btw={btw} botName={bot?.name} nameOf={(id) => findBot(bots, id)?.name} />
               </>}
               below={<>
                 {send.error || fileError || control.error ? <p role="alert" style={{ margin: "8px 18px 0", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{send.error || fileError || control.error}</p> : null}
-                {(turn && !expert) || stash.length || stashed ? (
-                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 12px", margin: "10px 6px 0" }}>
-                    {turn && !expert ? <WhileWorking value={whileWorking} onChange={chooseWhileWorking} botName={bot?.name} typing={!!text.trim()} /> : null}
-                    <span style={{ flex: "1" }} />
+                {stash.length || stashed ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: "8px 12px", margin: "10px 6px 0" }}>
                     <Stash entries={stash} saved={stashed} onRestore={restoreStash} onDelete={(entry) => unstash(entry.id)} />
                   </div>
                 ) : null}
-                {c ? <MessageQueue queue={queue} botName={bot?.name} missionPaused={mission?.status === "paused" && !mission?.limited && !mission?.stopped} onResumeMission={resumeMission} resumeBusy={control.busy} working={turn} /> : null}
               </>} />
             )}
           </section>

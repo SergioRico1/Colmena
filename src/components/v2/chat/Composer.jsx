@@ -9,14 +9,15 @@ import { MentionMirror, findMentions } from "../MentionPill.jsx";
 import "../../../styles/conversation.css";
 
 // The composer of a chat with a bot (Colmena 4: design/v4 › .cbox): one bar with attach and
-// emoji, the text, the screen's own chips (`tools`: «Piensa», the model…), «Detener» while the bot
-// works, the microphone and send. While you speak the bar turns ink (up to 2 minutes: the words
+// emoji, the text, the screen's own chips (`tools`: «Piensa», the model…), the microphone and
+// send — which is «Parar» while the bot works and the box is empty, so the bar never changes
+// shape. `overlay` floats above the bar without taking room (what comes and goes with the work). While you speak the bar turns ink (up to 2 minutes: the words
 // as they arrive with this computer's recognizer, a wave that follows your voice with an OpenAI
 // key and «Pasando tu voz a texto…» after). Files: the clip, drop or paste. `v3` is accepted
 // from older callers and changes nothing.
 const MAX_S = 120;
 
-export default function Composer({ value, onChange, onKeyDown, onSubmit, placeholder, label, working, onStop, inputRef, inputProps = {}, files = [], onRemoveFile, onInlinePasted, onAttach, attachOpen = null, chips = [], onRemoveChip, mentionBots = [], drop = null, menu = null, above = null, below = null, busy = false, tools = null, dictationScope = null }) {
+export default function Composer({ value, onChange, onKeyDown, onSubmit, placeholder, label, working, onStop, sendTitle = null, inputRef, inputProps = {}, files = [], onRemoveFile, onInlinePasted, onAttach, attachOpen = null, chips = [], onRemoveChip, mentionBots = [], drop = null, menu = null, above = null, overlay = null, below = null, busy = false, tools = null, dictationScope = null }) {
   // «@Vera» shows as a pill while you write (MentionMirror behind the textarea).
   const mirror = useRef(null);
   const pills = mentionBots.length > 0 && findMentions(value, mentionBots).length > 0;
@@ -39,6 +40,7 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
   const secs = rec ? Math.min(MAX_S, Math.floor((Date.now() - since) / 1000)) : 0;
   const bars = Array.from({ length: 40 }, (_, i) => { const v = Math.abs(Math.sin((k + i * 3) * 0.55) * Math.cos((k * 0.7 + i) * 0.31)); return { h: Math.round(4 + v * 26) + "px", o: (0.45 + v * 0.55).toFixed(2) }; });
   const ready = !!String(value || "").trim() || files.length > 0;
+  const stopping = !!working && !!onStop && !ready;
   const insertAtCaret = (s) => {
     const el = box.current;
     const text = String(value || "");
@@ -63,6 +65,8 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
   return (
     <form onSubmit={onSubmit} {...(drop?.props || {})} className="r-composer" style={{ position: "relative", flex: "none", width: "100%", padding: "0 24px 18px", boxSizing: "border-box" }}>
       <div style={{ position: "relative", maxWidth: "820px", margin: "0 auto" }}>
+        {/* What comes and goes with the bot's work floats over the end of the list (never moves it). */}
+        {overlay ? <div className="v4-overlay">{overlay}</div> : null}
         {above}
         {d.error ? <DictationHelp problem={d.error} onClose={d.clearError} style={{ margin: "0 0 10px auto", maxWidth: "min(440px, 100%)" }} /> : null}
         {(rec || trans) && d.where?.fallback ? <p role="note" style={{ margin: "0 0 8px", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-2)", textAlign: "right" }}>{d.where.note}</p> : null}
@@ -105,15 +109,21 @@ export default function Composer({ value, onChange, onKeyDown, onSubmit, placeho
                 style={{ position: "relative", flex: "1", minWidth: "0", minHeight: "32px", maxHeight: "200px", padding: "5px 6px", border: "0", background: "transparent", color: "var(--c-text)", fontSize: "var(--t-read)", lineHeight: "1.4", resize: "none", fieldSizing: "content", fontFamily: "inherit", ...(pills ? { color: "transparent", caretColor: "var(--c-text)" } : {}) }} />
             </label>
             {tools ? <div style={{ display: "flex", alignItems: "center", gap: "4px", alignSelf: "flex-end", minHeight: "36px" }}>{tools}</div> : null}
-            {working ? <button type="button" className="v4-ib" onClick={onStop} aria-label="Detener" title="Detener (Esc)" style={{ alignSelf: "flex-end" }}><span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "var(--r-xs)", background: "var(--c-text)" }} /></button> : null}
             {d.available || d.fixable ? (
               <button type="button" className="v4-ib" onClick={d.fixable && d.error ? d.clearError : d.start} aria-label={d.fixable ? "El dictado no está disponible: ver cómo activarlo" : "Dictar"} title={d.fixable ? "Dictado no disponible" : "Dictar (hasta 2 minutos)" + (d.where ? " · " + d.where.where : "")} style={{ alignSelf: "flex-end", color: d.fixable ? "var(--c-text-4)" : undefined }}>
                 {d.fixable ? <MicOff size={18} aria-hidden="true" /> : <Mic size={18} aria-hidden="true" />}
               </button>
             ) : null}
-            <button type="submit" className="v4-send" aria-label="Enviar" disabled={busy || !ready} style={{ alignSelf: "flex-end" }}>
-              <PaperPlaneRight size={18} weight="fill" />
-            </button>
+            {/* While the bot works and the box is empty, send is «Parar» (the same place, the same size). */}
+            {stopping ? (
+              <button type="button" className="v4-send" onClick={onStop} aria-label="Parar" title="Parar (Esc)" style={{ alignSelf: "flex-end" }}>
+                <span aria-hidden="true" style={{ width: "12px", height: "12px", borderRadius: "var(--r-xs)", background: "currentColor" }} />
+              </button>
+            ) : (
+              <button type="submit" className="v4-send" aria-label="Enviar" title={working ? sendTitle || "Enviar" : "Enviar"} disabled={busy || !ready} style={{ alignSelf: "flex-end" }}>
+                <PaperPlaneRight size={18} weight="fill" />
+              </button>
+            )}
           </>}
         </div>
         {below}

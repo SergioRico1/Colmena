@@ -56,8 +56,9 @@ export function useStableRows(rows) {
 }
 
 /**
- * `rows`: [{ key, ids?: [message ids in the row], … }] oldest first; `renderRow(row)` draws
- * one; `estimate(row)` guesses its height before it is measured. `handle` receives
+ * `rows`: [{ key, ids?: [message ids in the row], takes?: [keys of rows it replaces], … }]
+ * oldest first; `renderRow(row)` draws one; `estimate(row)` guesses its height before it is
+ * measured (a row that `takes` another's place starts at that one's measured height). `handle` receives
  * { toEnd(), locate(id), rail: { at(id), jump(id) } }. `landKey`: the key of the latest
  * answer that arrived while you were here (the one being written, then the finished one),
  * whose start stays in view, and `landTurn` what names that answer across both rows. `unseenOf(row)`: "new" for a row that counts as a new message,
@@ -68,7 +69,17 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
   const content = useRef(null);
   const known = useMemo(() => { if (!heights.has(listKey)) heights.set(listKey, new Map()); return heights.get(listKey); }, [listKey]);
   const getItemKey = useCallback((i) => rows[i]?.key ?? i, [rows]);
-  const estimateSize = useCallback((i) => known.get(rows[i]?.key) ?? estimate(rows[i]), [rows, known, estimate]);
+  // A row that takes another's place (`takes`: the keys of the rows it replaces — the answer
+  // that replaces its thinking line) starts at that row's real height, so its first frame is
+  // already the right size and the list does not jump while it measures itself.
+  const sized = useRef(null);
+  const estimateSize = useCallback((i) => {
+    const row = rows[i];
+    const own = known.get(row?.key);
+    if (own != null) return own;
+    for (const k of row?.takes || []) { const s = sized.current?.get(k); if (s != null) return s; }
+    return estimate(row);
+  }, [rows, known, estimate]);
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scroller.current,
@@ -84,6 +95,7 @@ export default function Timeline({ listKey, rows, renderRow, estimate, hasOlder 
   });
   const v = useRef(virtualizer);
   v.current = virtualizer;
+  sized.current = virtualizer.itemSizeCache;
   const rowsRef = useRef(rows);
   rowsRef.current = rows;
 
