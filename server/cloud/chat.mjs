@@ -119,7 +119,16 @@ export function plainText(text, nameOf = () => null, channelName = () => null) {
     .replace(/<((?:https?|mailto):[^|>]+)\|([^>]*)>/g, "$2").replace(/<((?:https?|mailto):[^>]+)>/g, "$1")
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 }
-const cleanLine = (s, max) => String(s ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+/** A poll as the screens get it: options with their voters, and whether it is closed. */
+export function pollView(poll) {
+  const votes = poll.votes || {};
+  return {
+    question: poll.question, multi: !!poll.multi, closed: !!poll.closed, by: poll.by || null,
+    options: (poll.options || []).map((o) => ({ id: o.id, text: o.text, count: (votes[o.id] || []).length, people: (votes[o.id] || []).slice(0, 200) })),
+    voters: new Set(Object.values(votes).flat()).size,
+  };
+}
+const cleanLine = (s, max) =>String(s ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 /** A channel name as people type it → as it is kept: lower case, dashes, letters (accents too), digits, _ and -. */
 export function channelName(raw) {
   const name = String(raw || "").trim().replace(/^#/, "").toLowerCase().replace(/\s+/g, "-").replace(/[^\p{L}\p{N}_-]+/gu, "").replace(/-{2,}/g, "-").replace(/^-|-$/g, "").slice(0, CHAT_LIMITS.channelName);
@@ -569,6 +578,10 @@ export class TeamChat {
       threadId: row.thread ? data.threadId || null : null, broadcast: !!(row.thread && row.top),
       replies: row.replies, lastReplyAt: row.last_reply_at || null, replyPeople: (data.repliers || []).slice(-4),
       botName: data.botName || null, imported: !!data.imported,
+      // A bot writes Markdown (drawn as such); a person's text is Slack's format (format.jsx).
+      format: data.format === "md" ? "md" : null,
+      poll: !row.deleted && data.poll ? pollView(data.poll) : null,
+      tasks: !row.deleted && data.tasks?.length && this.taskViews ? this.taskViews(data.tasks) : [],
     };
   }
   /** Ghost authors and mentions a page refers to (people of an import who have not joined). */
@@ -657,12 +670,12 @@ export class TeamChat {
    * message's id) that may also go to the channel (`alsoChannel`). Files must be ones they
    * uploaded to this channel and not yet sent.
    */
-  post(person, id, { text = "", thread = null, alsoChannel = false, files = [], clientId = null } = {}) {
+  post(person, id, { text = "", thread = null, alsoChannel = false, files = [], clientId = null } = {}, { extra = null, quiet = false } = {}) {
     const me = this.must(person);
     const row = this.mustPost(person, id);
     const clean = this.cleanText(text).trim();
     const fileIds = [...new Set(Array.isArray(files) ? files : [])].slice(0, CHAT_LIMITS.filesPerMessage);
-    if (!clean && !fileIds.length) fail("Escribe algo.");
+    if (!clean && !fileIds.length && !extra) fail("Escribe algo.");
     let root = null;
     if (thread) {
       root = this.mrow(thread);
@@ -676,7 +689,8 @@ export class TeamChat {
     const at = this.now();
     const msgId = randomUUID();
     const top = !root || alsoChannel ? 1 : 0;
-    const data = { text: clean, files: attached, reactions: {}, threadId: root ? root.id : null, repliers: [], clientId: clientId ? String(clientId).slice(0, 64) : null };
+    // `extra`: what only the server adds (a poll, an encargo: chat-plus.mjs), never the request body.
+    const data = { ...(extra || {}), text: clean, files: attached, reactions: {}, threadId: root ? root.id : null, repliers: [], clientId: clientId ? String(clientId).slice(0, 64) : null };
     const view = this.tx(() => {
       const seq = this.q("INSERT INTO chat_messages(id, channel, thread, top, author, at, has_file, has_link, data) VALUES(?,?,?,?,?,?,?,?,?) RETURNING seq")
         .get(msgId, id, root ? root.seq : null, top, me.id, at, attached.length ? 1 : 0, /(?:<|\b)https?:\/\//i.test(clean) ? 1 : 0, this.seal(data, "message\u0000" + msgId)).seq;
@@ -697,28 +711,40 @@ export class TeamChat {
     if (root) this.emit({ type: "chat.update", channel: id, message: this.messageView(this.mrow(root.id)) }, { people: members, channel: id });
     const notInChannel = this.notify(me, row, view, root);
     this.preview(view);
-    if (this.onPost) try { this.onPost(person, view, row); } catch (error) { this.log("bots: " + (error?.message || error)); }
+    if (this.onPost && !quiet) try { this.onPost(person, view, row); } catch (error) { this.log("bots: " + (error?.message || error)); }
     return { message: view, notInChannel };
   }
   /**
    * A bot's answer (server/cloud/channel-bots.mjs): in the channel, or in the thread it answers
    * (`thread`: the first message's id). The author is «bot:<id>» and the bot's name travels with it.
    */
-  postBot(channelId, { botId, botName, text, thread = null }) {
+  /**
+   * `format: "md"`: the bot's Markdown, kept as written (the screens draw it as Markdown, never as
+   * HTML); otherwise plain text, escaped into Slack's format. `files`: ones registered with
+   * botFile (a deliverable), sent with this message. `extra`: server-only fields (an encargo).
+   */
+  postBot(channelId, { botId, botName, text, thread = null, format = null, files = [], extra = null }) {
     const row = this.row(channelId);
     if (!row || row.archived) return null;
-    const clean = this.cleanText(String(text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")).trim().slice(0, CHAT_LIMITS.text);
-    if (!clean) return null;
+    const md = format === "md";
+    const raw = String(text || "");
+    const clean = (md ? raw.replace(/\r\n?/g, "\n").slice(0, CHAT_LIMITS.text) : this.cleanText(raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))).trim().slice(0, CHAT_LIMITS.text);
+    const attached = (Array.isArray(files) ? files : []).slice(0, CHAT_LIMITS.filesPerMessage).map((fid) => {
+      const f = this.q("SELECT * FROM chat_files WHERE id=?").get(fid);
+      return f && f.channel === channelId && f.seq == null ? { id: f.id, size: f.size, ...this.open(f.data, "file\u0000" + f.id) } : null;
+    }).filter(Boolean);
+    if (!clean && !attached.length && !extra) return null;
     const root = thread ? this.mrow(thread) : null;
     if (thread && (!root || root.channel !== channelId || root.thread)) return null;
     const at = this.now(), msgId = randomUUID(), author = "bot:" + botId;
     const top = root ? 0 : 1;
-    const data = { text: clean, files: [], reactions: {}, threadId: root ? root.id : null, repliers: [], botName: cleanLine(botName, 80) || "Bot" };
+    const data = { ...(extra || {}), text: clean, files: attached, reactions: {}, threadId: root ? root.id : null, repliers: [], botName: cleanLine(botName, 80) || "Bot", ...(md ? { format: "md" } : {}) };
     const view = this.tx(() => {
       const seq = this.q("INSERT INTO chat_messages(id, channel, thread, top, author, at, has_file, has_link, data) VALUES(?,?,?,?,?,?,?,?,?) RETURNING seq")
-        .get(msgId, channelId, root ? root.seq : null, top, author, at, 0, /https?:\/\//i.test(clean) ? 1 : 0, this.seal(data, "message\u0000" + msgId)).seq;
+        .get(msgId, channelId, root ? root.seq : null, top, author, at, attached.length ? 1 : 0, /https?:\/\//i.test(clean) ? 1 : 0, this.seal(data, "message\u0000" + msgId)).seq;
       if (top) this.q("UPDATE chat_channels SET last_seq=?, last_at=? WHERE id=?").run(seq, at, channelId);
-      this.index(seq, clean);
+      for (const f of attached) this.q("UPDATE chat_files SET seq=? WHERE id=?").run(seq, f.id);
+      this.index(seq, clean + " " + attached.map((f) => f.name).join(" "));
       if (root) {
         const rd = this.mdata(root);
         rd.repliers = [...(rd.repliers || []).filter((p) => p !== author), author].slice(-20);
@@ -732,6 +758,59 @@ export class TeamChat {
     // Whoever took part in the thread (the person who asked) hears of the answer like any reply.
     try { this.notify({ id: author }, row, view, root); } catch (error) { this.log("bots: " + (error?.message || error)); }
     return view;
+  }
+  /** A file a bot sends (its bytes already in `blobs` at `key`): registered, waiting for postBot. */
+  botFile(channelId, botId, { key, name, type, size, id = randomUUID() }) {
+    const clean = cleanLine(name, 200).replace(/[\\/]/g, "_") || "archivo";
+    const meta = { name: clean, type: String(type || "application/octet-stream").slice(0, 100), w: null, h: null };
+    this.q("INSERT INTO chat_files(id, channel, seq, uploader, at, size, key, data) VALUES(?,?,NULL,?,?,?,?,?)").run(id, channelId, "bot:" + botId, this.now(), size, key, this.seal(meta, "file\u0000" + id));
+    return { id, size, ...meta };
+  }
+  /** A sent file's blob key (bots read what people attach): null when it is not there. */
+  fileKeyOf(id) { return (typeof id === "string" && this.q("SELECT key FROM chat_files WHERE id=? AND seq IS NOT NULL").get(id)?.key) || null; }
+  /** Who wrote a message, by name: a person, someone of an import, a bot. */
+  authorName(view) {
+    if (view.botName) return view.botName;
+    return this.member(view.author)?.name || this.ghost(view.author)?.name || (String(view.author || "").startsWith("bot:") ? this.bots().find((b) => "bot:" + b.id === view.author)?.name : null) || "Alguien";
+  }
+  /**
+   * What was said before a message, for a bot that is named in it (channel-bots.mjs): its thread
+   * (the first message and the replies before it), or the channel's last messages. Oldest first.
+   */
+  contextMessages(channelId, { thread = null, before = null, limit = 20 } = {}) {
+    const n = Math.max(1, Math.min(60, limit));
+    let rows;
+    if (thread) {
+      const root = this.mrow(thread);
+      if (!root || root.channel !== channelId) return [];
+      const replies = this.q("SELECT * FROM chat_messages WHERE thread=? AND deleted=0" + (before ? " AND seq<?" : "") + " ORDER BY seq DESC LIMIT ?").all(...(before ? [root.seq, before, n] : [root.seq, n])).reverse();
+      rows = root.deleted ? replies : [root, ...replies];
+    } else {
+      rows = this.q("SELECT * FROM chat_messages WHERE channel=? AND top=1 AND deleted=0" + (before ? " AND seq<?" : "") + " ORDER BY seq DESC LIMIT ?").all(...(before ? [channelId, before, n] : [channelId, n])).reverse();
+    }
+    return rows.map((r) => this.messageView(r));
+  }
+  /** Changes a message's sealed data (`fn(data)` edits it in place) and sends it to the screens. */
+  patchMessage(messageId, fn) {
+    const row = this.mrow(messageId);
+    if (!row || row.deleted) return null;
+    const data = this.mdata(row);
+    if (fn(data) === false) return null;
+    this.q("UPDATE chat_messages SET data=? WHERE seq=?").run(this.seal(data, "message\u0000" + row.id), row.seq);
+    const view = this.messageView(this.mrow(messageId));
+    this.emit({ type: "chat.update", channel: row.channel, message: view }, { people: this.memberIds(row.channel), channel: row.channel });
+    return view;
+  }
+  /** Your own conversation (Slack's «notas para ti»): where Colmena leaves your reminders. */
+  selfDm(personId) {
+    const me = this.member(personId);
+    if (!me) return null;
+    let row = this.q("SELECT * FROM chat_channels WHERE dm_key=?").get(me.id);
+    if (!row) {
+      row = this.tx(() => this.insertChannel({ kind: "dm", dmKey: me.id, createdBy: me.id, members: [me.id] }));
+      this.emit({ type: "chat.joined", channel: this.channelView(row, { id: me.id }) }, { people: [me.id] });
+    }
+    return row;
   }
   edit(person, messageId, text) {
     const me = this.must(person);
@@ -928,7 +1007,7 @@ export class TeamChat {
     });
     if ((this.push && pushes.length) || live.length) {
       const where = direct ? (row.kind === "dm" ? nameOf(author.id) || "Mensaje directo" : "Grupo") : "#" + (meta.name || "canal");
-      const body = plainText(view.text, nameOf, (cid) => (this.row(cid) ? this.meta(this.row(cid)).name : null)).replace(/\s+/g, " ").trim().slice(0, 140) || (view.files.length ? "Ha enviado un archivo" : "");
+      const body = plainText(view.text, nameOf, (cid) => (this.row(cid) ? this.meta(this.row(cid)).name : null)).replace(/\s+/g, " ").trim().slice(0, 140) || (view.poll ? "Encuesta: " + view.poll.question : view.files.length ? "Ha enviado un archivo" : "");
       const payload = { title: direct && row.kind === "dm" ? where : (author.name || "Alguien") + " en " + where, body: direct && row.kind === "dm" ? body : body, url: "/canal/" + row.id + (view.threadId ? "?hilo=" + view.threadId : "?m=" + view.id), tag: "chat-" + row.id };
       if (this.push) for (const pid of pushes) this.defer(this.push(pid, payload));
       if (live.length) this.emit({ type: "chat.notify", channel: row.id, thread: view.threadId || null, author: author.id, ...payload }, { people: live });
@@ -1087,7 +1166,7 @@ export class TeamChat {
     for (const row of candidates) {
       last = row.seq;
       const data = this.mdata(row);
-      const have = words((data.text || "") + " " + (data.files || []).map((f) => f.name).join(" "));
+      const have = words((data.text || "") + " " + (data.files || []).map((f) => f.name).join(" ") + (data.poll ? " " + data.poll.question + " " + data.poll.options.map((o) => o.text).join(" ") : ""));
       if (!wanted.every((w) => have.some((h) => h.startsWith(w)))) continue;
       const view = this.messageView(row, data);
       const ch = readable.get(row.channel);
@@ -1189,9 +1268,11 @@ export class TeamChat {
           for (const g of this.q("SELECT id, data FROM chat_ghosts WHERE email=? AND person IS NULL").all(String(m.email).toLowerCase())) {
             this.q("UPDATE chat_ghosts SET person=? WHERE id=?").run(m.id, g.id);
             const d = this.open(g.data, "ghost\u0000" + g.id);
+            // The channels they were in on Slack, public ones too: a guest then reads those (as
+            // Slack's guests do) and nothing else public (canRead).
             for (const cid of d.channels || []) {
               const row = this.row(cid);
-              if (row && (m.role !== "guest" || row.kind !== "public" || true)) this.addMember(row, m.id, { at: t, quiet: true });
+              if (row) this.addMember(row, m.id, { at: t, quiet: true });
             }
           }
         }

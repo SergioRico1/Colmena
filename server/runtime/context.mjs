@@ -61,8 +61,11 @@ export class ContextMethods {
     // The pictures and PDFs of the last few messages that had them still travel; older ones
     // become a line (media.mjs), so a long chat does not carry every image it ever saw.
     const shown = new Set(visible.filter((m) => m.role === "user" && this.messageMedia(m).length).slice(-MEDIA.keepTurns).map((m) => m.id));
+    // A channel's thread is several people talking to the bot: each message says who wrote it.
+    const mission = this.store.get("missions", missionId);
+    const speaker = (m) => (mission?.channelThread && m.role === "user" && m.by?.name && !m.author ? m.by.name + ": " : "");
     const turns = visible.map((m) => {
-      const text = String(m.text).slice(0, 12000) + watchSourcesNote(m);
+      const text = speaker(m) + String(m.text).slice(0, 12000) + watchSourcesNote(m);
       if (m.role !== "user") return { role: m.role, content: text };
       if (shown.has(m.id)) return { role: m.role, content: turnContent(text, this.messageMedia(m)) };
       const gone = this.messageMedia(m).length ? attachmentPlaceholder(m.attachments) : "";

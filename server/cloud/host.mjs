@@ -23,6 +23,7 @@ import { sendPush } from "./webpush.mjs";
 import { fetchPreview } from "./link-preview.mjs";
 import { cloudBots } from "./bots-host.mjs";
 import { ChannelBots } from "./channel-bots.mjs";
+import { ChatPlus } from "./chat-plus.mjs";
 import { cloudBrowser } from "./browser-cloud.mjs";
 import { dohLookup } from "./web-cloud.mjs";
 import { assertPublicUrl } from "../computer/tools.mjs";
@@ -111,7 +112,13 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
    * with a bot); a chat with a bot without one (before 2026-11-16) only the person who started
    * it; anything else everyone in the workspace.
    */
+  // A bot's work behind a channel's thread (channel-bots.mjs) is seen by whoever may read that
+  // channel now: people added later see it, people who left stop seeing it. Its `audience` only
+  // marks it as not the whole company's (COMPANY.md and learning keep out of it).
+  let chatRef = null;
   const canSee = (mission, person = currentPerson()) => {
+    const link = mission?.channelThread;
+    if (link && chatRef) return isPerson(person) && chatRef.canRead(person, chatRef.row(link.channel));
     if (mission?.audience) return isPerson(person) && mission.audience.includes(person.id);
     if (personalChat(mission) && chatOwner(mission)) return isPerson(person) && chatOwner(mission) === person.id;
     return true;
@@ -205,7 +212,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   /** /api/state as each person sees it: their name, the conversations they may see. */
   const state = (s) => {
     const me = currentPerson();
-    const hidden = new Set((s.missions || []).filter((m) => m.audience && !m.audience.includes(me.id)).map((m) => m.id));
+    const hidden = new Set((s.missions || []).filter((m) => !canSee(m, me)).map((m) => m.id));
     for (const m of store.list("missions")) if (!canSee(m, me)) hidden.add(m.id);
     // Every list whose items belong to a conversation (deliverables, memories, what waits,
     // approvals, skills learned there…) keeps only the ones of conversations this person sees;
@@ -262,12 +269,16 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   chat.push = pushSend;
   pushRef = pushSend;
   // Bots named in channels answer in the thread (channel-bots.mjs), as the person who named them.
-  const channelBots = new ChannelBots({ store, runtime, chat, canThink: (person) => bots.provider.connectedFor(person.id), log });
+  chatRef = chat;
+  // Encargos, polls, saved messages, scheduled messages and reminders (chat-plus.mjs).
+  const plus = new ChatPlus({ chat, runAs: (person, fn) => asPerson(person, fn), log });
+  const channelBots = new ChannelBots({ store, runtime, chat, plus, blobs: blobStore, canThink: (person) => bots.provider.connectedFor(person.id), log });
+  plus.bots = channelBots;
   const importer = new SlackImport({ chat, blobs: blobStore, log });
 
   // ---- the workspace's own routes (people, direct messages); after the guard like the rest
   const routes = (app) => {
-  chatRoutes(app, { chat, importer, blobs: blobStore, workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, presence, push: pushSend ? { publicKey: vapid.publicKey, send: pushSend } : null });
+  chatRoutes(app, { chat, plus, channelBots, importer, blobs: blobStore, workspace: { id: workspace.id, name: store.get("cloud", "workspace")?.title || workspace.name || "" }, presence, push: pushSend ? { publicKey: vapid.publicKey, send: pushSend } : null });
   app.get("/api/cloud/members", (_req, res) => res.json(members()));
   app.post("/api/cloud/dm", (req, res) => {
     const me = currentPerson();
@@ -424,7 +435,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       const close = asPerson(person, () => app.locals.openFeed(pass, { as: (fn) => asPerson(person, fn) }));
       return () => { chatFeeds.delete(feed); close(); };
     },
-    chat, importer, blobs: blobStore, chatEmit,
+    chat, plus, importer, blobs: blobStore, chatEmit,
     push: pushSend,
     /** An admin action the Worker handled (the directory's), in the audit log. */
     audit(entry) { chat.audit(entry?.actor || null, String(entry?.action || "admin"), entry?.target || null, entry?.details || null); },
@@ -442,6 +453,8 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
         await importer.step({ invite: invite ? (people) => invite(running.startedBy, people) : null });
         if (importer.active()) return at + 250;
       }
+      // Scheduled messages and reminders that are due, each as its person.
+      await plus.due(at);
       if (mail) for (const d of chat.digestDue(at)) { try { await mail(d); } catch (error) { log("digest: " + (error?.message || error)); } }
       const last = chat.kvGet("upkeep-at")?.at || 0;
       if (at - last > 3600000) {
@@ -458,9 +471,10 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     nextAlarm(at = Date.now()) {
       if (importer.active()) return at + 250;
       const digest = chat.nextDigestAt();
+      const timed = plus.nextAt() ?? Infinity;
       const upkeep = (chat.kvGet("upkeep-at")?.at || 0) + 3600000;
       const incognito = appRef?.locals?.incognito?.nextAt(at) ?? Infinity;
-      return Math.max(at + 500, Math.min(digest ?? Infinity, upkeep, incognito, bots.nextAlarm(at) ?? Infinity));
+      return Math.max(at + 500, Math.min(digest ?? Infinity, timed, upkeep, incognito, bots.nextAlarm(at) ?? Infinity));
     },
     /** After a wake-up (Workspace#boot): what an eviction cut goes on by itself. */
     resume: () => bots.resume(),
