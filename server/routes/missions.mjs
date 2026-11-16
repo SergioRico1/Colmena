@@ -24,7 +24,7 @@ import { botThread } from "../threads.mjs";
 import { HttpError, critiqueAbout, notFound, short, missionCreate, check, safe } from "./shared.mjs";
 
 /** Rooms and chats: creating them, messages, the queue, branches, restore points, plans and what the page reads of them. */
-export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued }) {
+export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued, timers = true }) {
   // --------------------------------------------------------- missions
   // Text or base64 files (PDF, Word, Excel, images…) of up to 10 MB each.
   const writeAttachments = (missionId, files) => writeMissionAttachments(rootOf(missionId), files);
@@ -496,9 +496,18 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
       if (m.incognito && m.expiresAt && Date.parse(m.expiresAt) <= Date.now()) await purgeMission(m.id, { everything: true }).catch(() => {});
   };
   const sweepSafely = () => sweepIncognito().catch(() => {});
-  const incognitoTimer = setInterval(sweepSafely, 5 * 60 * 1000);
-  incognitoTimer.unref?.();
-  setTimeout(sweepSafely, 3000).unref?.();
+  // A hosted workspace (`timers: false`) has no timers of its own: they would keep its Durable
+  // Object in memory, billed, for ever. Its alarm sweeps instead (app.locals.incognito).
+  app.locals.incognito = {
+    sweep: sweepSafely,
+    // The next expiry still ahead: one whose purge failed is retried at the next tick, never in a loop.
+    nextAt: (at = Date.now()) => Math.min(Infinity, ...store.list("missions").filter((m) => m.incognito && m.expiresAt).map((m) => Date.parse(m.expiresAt)).filter((t) => t > at)),
+  };
+  if (timers) {
+    const incognitoTimer = setInterval(sweepSafely, 5 * 60 * 1000);
+    incognitoTimer.unref?.();
+    setTimeout(sweepSafely, 3000).unref?.();
+  }
   async function purgeMission(missionId, { everything = false } = {}) {
     // Development servers first: a running one keeps the project's files open on Windows.
     await Promise.resolve(runtime.projects?.servers?.stopMission?.(missionId)).catch(() => {});

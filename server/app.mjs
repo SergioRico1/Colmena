@@ -453,7 +453,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   });
   registerAiAccountRoutes(app, { hub: () => runtime?.provider, emit, changed: () => { modelCache = { key: null, at: 0, list: [] }; } });
   registerSettingsRoutes(app, { listModels, store, runtime });
-  const { messageView, stepView, enabledBot, sendMessage, messageFields } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued });
+  const { messageView, stepView, enabledBot, sendMessage, messageFields } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued, timers: !hosted });
   registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit });
   const { ask, parseJson } = registerBotRoutes(app, { store, runtime, optional, mustGet });
   registerSkillRoutes(app, { store, mustGet, runtime, optional });

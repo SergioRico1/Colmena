@@ -399,6 +399,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     async tick({ invite = null, mail = null, now: at = Date.now() } = {}) {
       // Bots first (routines due, question waits, renewed limits): short, and nobody waits on an import.
       await bots.tick(at);
+      await appRef?.locals?.incognito?.sweep();
       const running = importer.active();
       if (running) {
         await importer.step({ invite: invite ? (people) => invite(running.startedBy, people) : null });
@@ -421,7 +422,8 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       if (importer.active()) return at + 250;
       const digest = chat.nextDigestAt();
       const upkeep = (chat.kvGet("upkeep-at")?.at || 0) + 3600000;
-      return Math.max(at + 500, Math.min(digest ?? Infinity, upkeep, bots.nextAlarm(at) ?? Infinity));
+      const incognito = appRef?.locals?.incognito?.nextAt(at) ?? Infinity;
+      return Math.max(at + 500, Math.min(digest ?? Infinity, upkeep, incognito, bots.nextAlarm(at) ?? Infinity));
     },
     /** After a wake-up (Workspace#boot): what an eviction cut goes on by itself. */
     resume: () => bots.resume(),

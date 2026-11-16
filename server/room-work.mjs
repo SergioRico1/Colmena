@@ -141,9 +141,14 @@ export class RoomWork {
   get peers() { return this.rooms.peers; }
   clock() { return this.rooms.getPeers?.()?.clock?.() ?? Date.now(); }
   log(message) { this.rooms.log(message); }
-  start() {
+  /**
+   * `timer: false` (a hosted workspace): no interval of its own. A pending timer keeps a Durable
+   * Object in memory (billed) for ever; the object's alarm calls tick() instead.
+   */
+  start({ timer = true } = {}) {
     this.startedAt = Date.now();
     if (this.runtime && typeof this.runtime.toolsForStep === "function") this.runtime.stepTools = (mission, step, bot) => this.tools(mission, step, bot);
+    if (!timer) return this;
     this.timer = setInterval(() => { try { this.tick(); } catch (error) { this.log(error.message); } }, 10000);
     this.timer.unref?.();
     return this;

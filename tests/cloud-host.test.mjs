@@ -204,3 +204,22 @@ test("secrets go through the envelope vault, sealed per secret", async (t) => {
   assert.ok(!JSON.stringify(sealed).includes("valor-de-prueba"));
   assert.ok(store.get("cloud", "vault-key").wrapped.startsWith("v1."));
 });
+
+test("a hosted workspace sets no interval of its own: the object's alarm does the timed work", async (t) => {
+  // A pending setInterval keeps a Durable Object in memory, billed, for ever (68 idle test
+  // workspaces cost ~$5 a day). Room work and the incognito sweep run from Workspace#alarm.
+  const made = [];
+  const original = globalThis.setInterval;
+  globalThis.setInterval = (fn, ms, ...rest) => { made.push(new Error().stack.split("\n")[2]?.trim()); return original(fn, ms, ...rest); };
+  let host;
+  try { ({ host } = await company(t, "Sin relojes", [ANA])); } finally { globalThis.setInterval = original; }
+  assert.deepEqual(made, []);
+  assert.equal(typeof host.app.locals.incognito.sweep, "function");
+  const at = Date.now();
+  host.chat.kvSet("upkeep-at", { at }); // the hourly upkeep just ran
+  host.store.put("missions", { id: "incognito-1", title: "x", incognito: true, expiresAt: new Date(at + 60_000).toISOString(), status: "completed" }, { silent: true });
+  assert.equal(host.nextAlarm(at), at + 60_000);
+  // Already past (a purge that failed): never an alarm loop, the next upkeep retries it.
+  host.store.put("missions", { id: "incognito-1", title: "x", incognito: true, expiresAt: new Date(at - 1000).toISOString(), status: "completed" }, { silent: true });
+  assert.ok(host.nextAlarm(at) > at + 60_000);
+});

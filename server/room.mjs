@@ -116,7 +116,7 @@ export class Rooms {
     // Your own turns in a room with people answer to all of them (Runtime#sharedTurn: no memory in the prompt).
     if (this.runtime) this.runtime.sharedRoom = (missionId) => this.shared.has(missionId);
     this.store.listeners.add(this.onChange);
-    this.work.start();
+    this.work.start({ timer: !this.hosted });
     return this;
   }
   stop() { this.store.listeners.delete(this.onChange); this.work.stop(); }
