@@ -605,7 +605,9 @@ export class ProviderHub {
       if (!this.kind || this.kind === "local") return [];
       if (this.kind === "chatgpt" && Array.isArray(this.session?.models) && this.session.models.length) return this.session.models;
       // An API key's list (or a ChatGPT one read through openaiModels): the last one read.
-      return Array.isArray(this.openaiList) ? this.openaiList : Array.isArray(this.session?.models) ? this.session.models : [];
+      const list = Array.isArray(this.openaiList) ? this.openaiList : Array.isArray(this.session?.models) ? this.session.models : [];
+      if (!list.length) this.warmOpenAI();
+      return list;
     }
     const list = catalogOf(engine);
     if (!list.length) return [];
@@ -790,6 +792,20 @@ export class ProviderHub {
     if (this.kind) out.push(...(await this.openaiModels()));
     for (const engine of ENGINES.filter((e) => e !== "openai")) if (this.connected(engine)) out.push(...this.modelsFor(engine));
     return out;
+  }
+  /**
+   * ChatGPT's list is read from OpenAI on demand: in a hosted workspace (a fresh object after
+   * every deploy) nobody may have asked yet, and the bot model picker would have nothing to offer.
+   * Read it in the background (at most once a minute) and tell the screens when it arrives.
+   */
+  warmOpenAI() {
+    if (!["chatgpt", "apikey"].includes(this.kind) || this.warming || Date.now() - (this.warmedAt || 0) < 60000) return;
+    this.warmedAt = Date.now();
+    this.warming = Promise.resolve()
+      .then(() => this.openaiModels())
+      .then((list) => { if (list?.length) for (const fn of this.store?.listeners || []) { try { fn({ type: "changed-local", kinds: ["account"] }); } catch {} } })
+      .catch((e) => console.error("chatgpt models: " + (e?.message || e)))
+      .finally(() => { this.warming = null; });
   }
   async openaiModels() {
     const kind = this.kind;
