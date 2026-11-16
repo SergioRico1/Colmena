@@ -18,6 +18,15 @@ OpenClaw, noted in the source comments. They were written again for Colmena, not
 Brand logos shown through simple-icons belong to their owners and are used only to name the
 service they stand for.
 
+## Emoji images
+
+Emojis in team messaging are drawn with [Blobmoji](https://github.com/c1710/blobmoji) v15.0
+(Apache-2.0, derived from Noto Emoji), resized and combined into sprite sheets in
+`public/emoji/` by `scripts/build-emoji.mjs`. Full text:
+[licenses/Blobmoji-Apache-2.0.txt](licenses/Blobmoji-Apache-2.0.txt). Their Spanish names and
+search words come from [emojibase-data](https://github.com/milesj/emojibase) (MIT, built from
+Unicode CLDR).
+
 ## Fonts
 
 Geist, Geist Mono, Bricolage Grotesque and Poppins (via Fontsource) are licensed under the

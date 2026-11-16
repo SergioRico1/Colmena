@@ -3,7 +3,8 @@
 // message; the draft is kept per channel; while you type the channel's people see «escribiendo».
 // Also the box for editing a message in place (`editing`).
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, Paperclip, X } from "../components/Icon.js";
+import { ArrowUp, Paperclip, Smiley, X } from "../components/Icon.js";
+import EmojiPicker from "./emoji/EmojiPicker.jsx";
 import { chat, uploadFile } from "./api.js";
 import { decodeForEdit, encode } from "./format.jsx";
 import { chatState, typing, useChat, upsertChannel } from "./store.js";
@@ -72,6 +73,23 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
     if (!editing && value.trim()) typing(channel, thread);
     const q = mentionQuery(value, e.target.selectionStart);
     setPick(q ? { ...q, index: 0 } : null);
+  };
+  // The emoji panel writes where the cursor was (or in place of the selection).
+  const [emojiAt, setEmojiAt] = useState(null); // the button it opens from
+  const caret = useRef([0, 0]);
+  const openEmoji = (button) => {
+    caret.current = [box.current?.selectionStart ?? text.length, box.current?.selectionEnd ?? text.length];
+    setEmojiAt(emojiAt ? null : button);
+  };
+  const insertEmoji = (emoji) => {
+    const [a, b] = caret.current;
+    const next = text.slice(0, a) + emoji + text.slice(b);
+    setText(next);
+    saveDraft(next);
+    setEmojiAt(null);
+    const at = a + emoji.length;
+    caret.current = [at, at];
+    requestAnimationFrame(() => { box.current?.focus(); box.current?.setSelectionRange(at, at); });
   };
   const choose = (c) => {
     const before = text.slice(0, pick.start), after = text.slice(box.current.selectionStart);
@@ -172,6 +190,8 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
           onPaste={(e) => { if (!editing && e.clipboardData?.files?.length) { e.preventDefault(); addFiles(e.clipboardData.files); } }}
           placeholder={placeholder} aria-label={placeholder} role="combobox" aria-expanded={!!(pick && candidates.length)} aria-controls={listId} aria-autocomplete="list"
           aria-activedescendant={undefined} />
+        <button type="button" className="cp-emoji ch-iconbtn" title="Emoji" aria-label="Añadir un emoji" aria-expanded={!!emojiAt} disabled={disabled} onClick={(e) => openEmoji(e.currentTarget)}><Smiley size={18} aria-hidden="true" /></button>
+        {emojiAt ? <EmojiPicker anchor={emojiAt} title="Añadir un emoji" onPick={insertEmoji} onClose={() => setEmojiAt(null)} /> : null}
         {editing ? (
           <span className="cp-edit-actions">
             <button type="button" className="ch-btn" onClick={() => onDone?.()}>Cancelar</button>

@@ -1,0 +1,38 @@
+/* Emojis drawn with Blobmoji (src/chat/emoji/index.jsx) and the emoji panel (EmojiPicker.jsx). */
+.emo{display:inline-block;flex:none;vertical-align:-0.28em;background-repeat:no-repeat;color:transparent;overflow:hidden;line-height:1;text-align:center;white-space:nowrap;margin:0 1px}
+.emo::selection{color:transparent}
+.emo-text{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;line-height:1}
+
+.emp{position:fixed;z-index:1200;display:flex;flex-direction:column;border:1px solid var(--c-line);border-radius:var(--r-lg,12px);background:var(--c-raised);box-shadow:var(--c-shadow-pop);overflow:hidden;animation:emp-in 120ms var(--c-ease,ease-out) both}
+@keyframes emp-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.emp{animation:none}}
+.emp-top{flex:none;display:flex;align-items:center;gap:8px;padding:10px 10px 6px}
+.emp-search{flex:1;min-width:0;display:flex;align-items:center;gap:6px;height:34px;padding:0 8px;border:1px solid var(--c-line-strong);border-radius:var(--r-md,8px);background:var(--c-card);color:var(--c-text-3)}
+.emp-search:focus-within{border-color:var(--c-focus,var(--c-accent));box-shadow:0 0 0 3px var(--c-accent-soft)}
+.emp-search input{flex:1;min-width:0;border:0;outline:0;background:none;font:400 var(--t-ui)/1.3 'Geist',sans-serif;color:var(--c-text)}
+.emp-search input::placeholder{color:var(--c-placeholder,var(--c-text-3))}
+.emp-clear{display:grid;place-items:center;width:22px;height:22px;border:0;border-radius:50%;background:none;color:var(--c-text-3);cursor:pointer}
+.emp-clear:hover{background:var(--c-hover);color:var(--c-text)}
+.emp-tone{position:relative;flex:none}
+.emp-tone-btn{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:var(--r-md,8px);background:none;cursor:pointer}
+.emp-tone-btn:hover,.emp-tone-btn[aria-expanded="true"],.emp-tone-btn[aria-pressed="true"]{background:var(--c-hover)}
+.emp-tones{position:absolute;top:38px;right:0;z-index:2;display:flex;gap:2px;padding:4px;border:1px solid var(--c-line);border-radius:var(--r-md,8px);background:var(--c-raised);box-shadow:var(--c-shadow-pop)}
+.emp-tabs{flex:none;display:flex;justify-content:space-between;gap:2px;padding:0 8px;border-bottom:1px solid var(--c-line)}
+.emp-tab{display:grid;place-items:center;width:32px;height:32px;border:0;border-bottom:2px solid transparent;background:none;cursor:pointer;opacity:.65;transition:opacity 120ms}
+.emp-tab:hover{opacity:1}
+.emp-tab[aria-selected="true"]{opacity:1;border-bottom-color:var(--c-accent)}
+.emp-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 8px 8px;scrollbar-width:thin;scrollbar-color:var(--c-scroll) transparent}
+.emp-group{content-visibility:auto}
+.emp-group-title{position:sticky;top:-4px;z-index:1;margin:0;padding:8px 4px 4px;background:var(--c-raised);font:600 var(--t-caption)/1.3 'Geist',sans-serif;color:var(--c-text-3)}
+.emp-grid{display:grid;grid-template-columns:repeat(9,1fr)}
+.emp-cell{display:grid;place-items:center;aspect-ratio:1;min-width:0;border:0;border-radius:var(--r-md,8px);background:none;cursor:pointer}
+.emp-cell:hover,.emp-cell:focus-visible{background:var(--c-hover);outline:none}
+.emp-cell:focus-visible{box-shadow:inset 0 0 0 2px var(--c-focus,var(--c-accent))}
+.emp-cell:active .emo{transform:scale(.9)}
+.emp-empty{margin:24px 8px;text-align:center;font:400 var(--t-ui)/1.4 'Geist',sans-serif;color:var(--c-text-3)}
+.emp-foot{flex:none;display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 12px;border-top:1px solid var(--c-line);background:var(--c-sunken)}
+.emp-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 var(--t-ui)/1.3 'Geist',sans-serif;color:var(--c-text-2)}
+.emp-name::first-letter{text-transform:uppercase}
+
+/* Only emojis in a message: larger, with room around them. */
+.ms-text .emo[style*="width: 32px"]{vertical-align:-0.35em;margin:2px 1px}

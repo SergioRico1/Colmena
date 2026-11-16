@@ -8,6 +8,8 @@ import { MenuButton } from "../components/Menu.js";
 import { navigate } from "../lib/router.jsx";
 import { chat, fileUrl } from "./api.js";
 import { withMine } from "./reactions.js";
+import { Emoji } from "./emoji/index.jsx";
+import EmojiPicker, { rememberEmoji } from "./emoji/EmojiPicker.jsx";
 import { MessageText } from "./format.jsx";
 import { nameOf, personOf, useChat } from "./store.js";
 import { Avatar, sizeOf, timeOf, whenOf } from "./ui.jsx";
@@ -15,7 +17,7 @@ import { Composer } from "./Composer.jsx";
 
 export const QUICK = ["👍", "❤️", "😂", "🎉", "🙏", "👀", "✅", "🔥"];
 
-function Reactions({ m, me, onReact }) {
+function Reactions({ m, me, onReact, onMore = null }) {
   const s = useChat();
   if (!m.reactions.length) return null;
   return (
@@ -25,10 +27,11 @@ function Reactions({ m, me, onReact }) {
         const names = r.people.map((p) => (p === me ? "Tú" : nameOf(p, s))).join(", ");
         return (
           <button key={r.emoji} type="button" className={"ms-reaction" + (mine ? " is-mine" : "")} aria-pressed={mine} title={names} aria-label={`${r.emoji} ${r.count}: ${names}. ${mine ? "Quitar tu reacción" : "Reaccionar igual"}`} onClick={() => onReact(r.emoji, !mine)}>
-            <span aria-hidden="true">{r.emoji}</span><span className="ms-reaction-n">{r.count}</span>
+            <Emoji char={r.emoji} size={16} /><span className="ms-reaction-n">{r.count}</span>
           </button>
         );
       })}
+      {onMore ? <button type="button" className="ms-reaction ms-reaction-add" aria-label="Añadir una reacción" title="Añadir una reacción" onClick={(e) => onMore(e.currentTarget)}><SmilePlus size={16} /></button> : null}
     </div>
   );
 }
@@ -84,7 +87,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   const me = s.me?.id;
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState(null);
-  const [picker, setPicker] = useState(false);
+  const [picker, setPicker] = useState(null); // the button the emoji panel opens from
   const author = personOf(m.author, s);
   // A bot of the company answers as "bot:<id>" (Phase 3); an imported integration only has botName.
   const isBot = String(m.author || "").startsWith("bot:");
@@ -100,6 +103,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   }, [m.reactions, me]);
   const reactions = withMine(m.reactions, mine, me);
   const react = (emoji, on = !reactions.find((r) => r.emoji === emoji)?.people.includes(me)) => {
+    if (on) rememberEmoji(emoji);
     setMine((cur) => ({ ...cur, [emoji]: on }));
     chat.post(`/messages/${m.id}/reactions`, { emoji, on }).catch((e) => {
       setMine((cur) => { const { [emoji]: _, ...rest } = cur; return rest; });
@@ -166,27 +170,19 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
         )}
         <Files files={m.files} />
         <Preview p={m.preview} />
-        <Reactions m={{ ...m, reactions }} me={me} onReact={react} />
+        <Reactions m={{ ...m, reactions }} me={me} onReact={react} onMore={canPost ? setPicker : null} />
         {!inThread && m.replies ? <ThreadSummary m={m} onThread={onThread} /> : null}
         {error ? <p className="ch-error" role="alert">{error}</p> : null}
       </div>
       {editing || m.pending ? null : (
         <div className="ms-tools" role="toolbar" aria-label="Acciones del mensaje">
-          {canPost ? QUICK.slice(0, 3).map((e) => <button key={e} type="button" className="ms-tool ms-tool-emoji r-hide-phone" onClick={() => react(e)} aria-label={"Reaccionar con " + e}>{e}</button>) : null}
-          {canPost ? (
-            <span className="ms-picker-wrap">
-              <button type="button" className="ms-tool" aria-label="Añadir una reacción" aria-expanded={picker} onClick={() => setPicker(!picker)}><SmilePlus size={17} /></button>
-              {picker ? (
-                <span className="ms-picker" role="group" aria-label="Reacciones">
-                  {QUICK.map((e) => <button key={e} type="button" className="ms-tool ms-tool-emoji" onClick={() => { react(e); setPicker(false); }} aria-label={"Reaccionar con " + e}>{e}</button>)}
-                </span>
-              ) : null}
-            </span>
-          ) : null}
+          {canPost ? QUICK.slice(0, 3).map((e) => <button key={e} type="button" className="ms-tool ms-tool-emoji r-hide-phone" onClick={() => react(e)} aria-label={"Reaccionar con " + e}><Emoji char={e} size={18} /></button>) : null}
+          {canPost ? <button type="button" className="ms-tool" aria-label="Añadir una reacción" aria-expanded={!!picker} onClick={(e) => setPicker(picker ? null : e.currentTarget)}><SmilePlus size={17} /></button> : null}
           {onThread && !inThread ? <button type="button" className="ms-tool" aria-label="Responder en un hilo" onClick={() => onThread(m)}><ChatCircleText size={17} /></button> : null}
           <MenuButton label="Más acciones" menuLabel="Mensaje" items={items} placement="bottom-end" className="ms-tool"><Ellipsis size={17} /></MenuButton>
         </div>
       )}
+      {picker ? <EmojiPicker anchor={picker} title="Añadir una reacción" onPick={(e) => { react(e, true); setPicker(null); }} onClose={() => setPicker(null)} /> : null}
     </div>
   );
 }

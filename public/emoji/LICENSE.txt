@@ -1,0 +1,3 @@
+Emoji images: Blobmoji v15.0 (https://github.com/c1710/blobmoji), derived from Noto Emoji.
+Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+Resized and combined into sprite sheets for Colmena (scripts/build-emoji.mjs).

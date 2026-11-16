@@ -1,31 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import BotFace from "../BotFace.jsx";
 import { ChevronDown, LockSimple, Smiley, UsersThree } from "../Icon.js";
 import { MenuButton } from "../Menu.js";
-import { useDismiss } from "./common.jsx";
+import EmojiPicker from "../../chat/emoji/EmojiPicker.jsx";
 import "../../styles/conversation.css";
 
 // The two small pieces of the composer bar (design/v4 › .cbox): the chip that says who a
 // message is for, and the emoji button.
-
-const pop = { position: "absolute", bottom: "calc(100% + 8px)", left: "0", zIndex: 30, display: "flex", flexDirection: "column", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-raised)", border: "1px solid var(--c-line)", boxShadow: "var(--c-shadow-pop)", animation: "rise .15s ease-out" };
-
-/** Arrows move between the items of a small menu; Escape closes it (useDismiss). */
-function useMenu() {
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const ref = useDismiss(open, close);
-  useEffect(() => { if (open) ref.current?.querySelector("[role=menuitemradio], [role=menuitem], [role=gridcell]")?.focus(); }, [open, ref]);
-  const keys = (e) => {
-    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setOpen(false); ref.current?.querySelector("button[aria-haspopup]")?.focus(); return; }
-    if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
-    e.preventDefault();
-    const list = [...e.currentTarget.querySelectorAll("[role=menuitemradio], [role=menuitem], [role=gridcell]")];
-    const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
-    list[(list.indexOf(document.activeElement) + step + list.length) % list.length]?.focus();
-  };
-  return { open, setOpen, ref, keys };
-}
 
 /**
  * «Toda la sala» · a bot · «Solo para mí»: who the message is for. Picking a bot writes «@Vera»
@@ -53,19 +34,15 @@ export function AddressChip({ bots = [], current = null, aside = null, shared = 
   );
 }
 
-const EMOJI = ["👍", "🙏", "👏", "🙌", "✅", "👀", "🎉", "🔥", "❤️", "😊", "😂", "😅", "🤔", "😮", "😢", "💡", "📌", "📎", "⏰", "🚀", "☕", "🐝", "⚠️", "❓"];
 
 /** A small grid of emoji; the one you pick goes in at the caret. */
+/** The emoji panel (src/chat/emoji/EmojiPicker.jsx, Blobmoji) from the composer's smiley. */
 export function EmojiButton({ onPick }) {
-  const m = useMenu();
+  const [at, setAt] = useState(null); // the button it opens from
   return (
-    <span ref={m.ref} style={{ position: "relative", display: "inline-flex", alignSelf: "flex-end" }}>
-      <button type="button" className="v4-ib" aria-haspopup="menu" aria-expanded={m.open ? "true" : "false"} aria-label="Emoji" title="Emoji" onClick={() => m.setOpen((v) => !v)}><Smiley size={18} /></button>
-      {m.open ? (
-        <div role="menu" aria-label="Emoji" onKeyDown={m.keys} style={{ ...pop, display: "grid", gridTemplateColumns: "repeat(6, 36px)", gap: "2px" }}>
-          {EMOJI.map((e) => <button key={e} type="button" role="menuitem" aria-label={"Emoji " + e} className="v4-menu-item" onClick={() => { m.setOpen(false); onPick(e); }} style={{ width: "36px", height: "36px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", fontSize: "var(--t-title)", lineHeight: 1 }}>{e}</button>)}
-        </div>
-      ) : null}
+    <span style={{ position: "relative", display: "inline-flex", alignSelf: "flex-end" }}>
+      <button type="button" className="v4-ib" aria-haspopup="dialog" aria-expanded={at ? "true" : "false"} aria-label="Añadir un emoji" title="Emoji" onClick={(e) => setAt(at ? null : e.currentTarget)}><Smiley size={18} /></button>
+      {at ? <EmojiPicker anchor={at} title="Añadir un emoji" onPick={(e) => { setAt(null); onPick(e); }} onClose={() => setAt(null)} /> : null}
     </span>
   );
 }
