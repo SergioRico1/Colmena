@@ -66,6 +66,15 @@ const prefOf = (bot) => {
  * to the nearest family, then to `fallback` (account default) so work never stalls.
  */
 export function chooseModel(bot, models, fallback = "") {
+  // A model chosen in the bot's profile (or Ajustes › IA) wins while its engine still offers it;
+  // otherwise (another engine, a model gone from the plan) Colmena chooses as usual.
+  const pinned = bot?.modelPin ? (Array.isArray(models) ? models : []).find((m) => m?.slug === bot.modelPin) : null;
+  if (pinned) {
+    const family = familiesOf(pinned)[0]?.family || null;
+    const version = parseModel(pinned.slug)?.version?.join(".") || "";
+    const label = Array.isArray(pinned.families) || !family ? pinned.label || pinned.slug : FAMILY_LABEL[family] + (version ? " " + version : "");
+    return { slug: pinned.slug, family, label, wanted: family, reason: "lo elegiste tú", pinned: true };
+  }
   const families = familyModels(models);
   const { order, reason } = prefOf(bot);
   const family = order.find((f) => families[f]);

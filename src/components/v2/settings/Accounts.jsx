@@ -13,6 +13,7 @@ import { ConnectOther, KeyPanel } from "./OtherAis.jsx";
 import { ENGINE_NAMES, KEY_ENGINES } from "../../../lib/engineNames.js";
 import { isCloud } from "../../../lib/cloud.js";
 import CloudAccount from "./CloudAccount.jsx";
+import { botModelChoice } from "../../../lib/botModels.js";
 
 // Ajustes › Cuentas de IA (design/V3AjustesIA.dc.html): the three accounts Colmena thinks with
 // (ChatGPT; Claude through Claude Code, a setup-token or an API key; OpenCode Go), which one
@@ -97,9 +98,17 @@ function Provider({ id, info, primary, fallback, planLimits, login, engines, bot
   );
 }
 
+/** One bot's model: «Automático» or an exact model of its engine (src/lib/botModels.js). */
+function ModelCell({ store, bot, busy, setBot }) {
+  const choice = botModelChoice(store, bot);
+  if (choice.options.length < 2) return <span style={{ font: `400 var(--t-meta)/1.2 ${mono}`, color: "var(--c-text-2)" }}>{bot.model?.label || "Sin modelo todavía"}</span>;
+  return <Select aria-label={"Modelo de " + bot.name} disabled={busy} value={choice.value} onChange={(e) => setBot(bot, { modelPin: e.target.value || null }, "modelo", choice.label(e.target.value))} style={small} options={choice.options} />;
+}
+
 /** The bot table: account, model and how hard each one thinks. */
 function PerBot({ bots, engines, team, busy, setBot }) {
   const live = engines.filter((e) => e.connected);
+  const store = useStore();
   return (
     <Panel anchor="por-bot" style={{ gap: "4px", padding: "18px 22px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "10px", marginBottom: "6px" }}>
@@ -117,10 +126,10 @@ function PerBot({ bots, engines, team, busy, setBot }) {
               <span role="rowheader" style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}><BotMark bot={b} /><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.name}</span></span>
               <span role="cell" data-label="Cuenta">
                 {live.length > 1 ? (
-                  <Select aria-label={"Cuenta de " + b.name} disabled={busy} value={own?.id || ""} onChange={(e) => setBot(b, { engine: e.target.value || null }, "cuenta")} style={small} options={[["", team ? `Como el equipo (${team.label})` : "Como el equipo"], ...live.map((e) => [e.id, e.label])]} />
+                  <Select aria-label={"Cuenta de " + b.name} disabled={busy} value={own?.id || ""} onChange={(e) => setBot(b, { engine: e.target.value || null, modelPin: null }, "cuenta")} style={small} options={[["", team ? `Como el equipo (${team.label})` : "Como el equipo"], ...live.map((e) => [e.id, e.label])]} />
                 ) : own?.label || team?.label || "—"}
               </span>
-              <span role="cell" data-label="Modelo" title={b.model?.reason ? "Elegido porque " + b.model.reason : undefined} style={{ font: `400 var(--t-meta)/1.2 ${mono}`, color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.model?.slug ? String(b.model.slug).replace(/^[a-z-]+\//, "") : "Sin modelo todavía"}</span>
+              <span role="cell" data-label="Modelo" title={b.model?.reason ? "Elegido porque " + b.model.reason : undefined}><ModelCell store={store} bot={b} busy={busy} setBot={setBot} /></span>
               <span role="cell" data-label="Piensa">
                 <Select aria-label={"Cuánto piensa " + b.name} disabled={busy} value={b.thinking || "equilibrado"} onChange={(e) => setBot(b, { thinking: e.target.value }, "piensa")} style={{ ...small, color: "var(--c-text-2)" }} options={THINK} />
               </span>
@@ -178,9 +187,10 @@ function DesktopAccounts() {
   // «Cuánto piensan»: the team's way, set on every bot at once («Deshacer» puts each one back).
   const ways = new Set(list.map((b) => b.thinking || "equilibrado"));
   const think = ways.size === 1 ? [...ways][0] : null;
-  const setBot = (b, change, what) => {
-    const before = what === "cuenta" ? { engine: b.engine ?? null } : { thinking: b.thinking || "equilibrado" };
-    act.act(() => patch(`/bots/${encodeURIComponent(b.id)}`, change)).then(() => reversible({ id: `bot:${b.id}:${what}`, text: `${b.name}: ${what === "cuenta" ? (engine(change.engine)?.label || "como el equipo") : "piensa " + THINK_LABEL[change.thinking].toLowerCase()}`, ms: UNDO_MS, undo: () => run(() => patch(`/bots/${encodeURIComponent(b.id)}`, before)) }));
+  const setBot = (b, change, what, shown = "") => {
+    const before = what === "cuenta" ? { engine: b.engine ?? null, modelPin: b.modelPin ?? null } : what === "modelo" ? { modelPin: b.modelPin ?? null } : { thinking: b.thinking || "equilibrado" };
+    const text = what === "cuenta" ? (engine(change.engine)?.label || "como el equipo") : what === "modelo" ? "modelo " + shown : "piensa " + THINK_LABEL[change.thinking].toLowerCase();
+    act.act(() => patch(`/bots/${encodeURIComponent(b.id)}`, change)).then(() => reversible({ id: `bot:${b.id}:${what}`, text: `${b.name}: ${text}`, ms: UNDO_MS, undo: () => run(() => patch(`/bots/${encodeURIComponent(b.id)}`, before)) }));
   };
   const setThink = (v) => {
     const before = list.map((b) => [b.id, b.thinking || "equilibrado"]);

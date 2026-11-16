@@ -23,6 +23,7 @@ import { useAction, useResource, useStore } from "../lib/store.jsx";
 import { useActivity } from "../lib/liveStore.js";
 import { del, get, patch, pickTextFiles, post } from "../lib/api.js";
 import { isCloud } from "../lib/cloud.js";
+import { botModelChoice } from "../lib/botModels.js";
 import { navigate } from "../lib/router.jsx";
 import { missionUrl, placeName, roomUrl, shortDate } from "../lib/format.js";
 import { isSala } from "../lib/rooms.js";
@@ -288,6 +289,10 @@ function Fact({ label, value, open, onClick, href }) {
 
 function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
   const [open, setOpen] = useState(null);
+  const store = useStore();
+  // The model as /api/state sees it (pinned, what «Automático» would choose): the profile's own copy may lag a change.
+  const seen = { ...bot, ...(store.bots || []).find((b) => b.id === bot.id) };
+  const modelChoice = botModelChoice(store, seen);
   const engines = ai?.engines || [];
   const team = engines.find((e) => e.id === ai?.primary) || null;
   const own = engines.find((e) => e.id === bot.engine) || null;
@@ -321,7 +326,7 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
         <a href="/ajustes/permisos" style={{ marginLeft: "auto", fontSize: "var(--t-meta)", color: "var(--c-accent-ink)" }}>{"Por qué"}</a>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", fontSize: "var(--t-ui)" }}>
-        <Fact label="Piensa con" value={`${account} · ${thinking[1].toLowerCase()}`} open={open === "think"} onClick={() => setOpen(open === "think" ? null : "think")} />
+        <Fact label="Piensa con" value={`${account}${seen.model?.pinned ? " · " + seen.model.label : ""} · ${thinking[1].toLowerCase()}`} open={open === "think"} onClick={() => setOpen(open === "think" ? null : "think")} />
         <Fact label="Puede pedir ayuda a" value={helpers.length ? helpers.join(", ") : "nadie"} open={open === "help"} onClick={() => setOpen(open === "help" ? null : "help")} />
         <Fact label="Gasto al mes" value={limit ? `hasta ${formatTokens(limit)} tokens del espacio` : "sin límite"} href="/ajustes/uso#limite-mensual" />
       </div>
@@ -338,7 +343,7 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
             {options.map((o) => {
               const on = (bot.engine || null) === o.id;
               return (
-                <button key={String(o.id)} type="button" role="radio" aria-checked={on ? "true" : "false"} disabled={busy} onClick={() => !on && change({ engine: o.id }, { engine: bot.engine || null }, `${bot.name} piensa con ${o.id ? o.label : "la cuenta del equipo"}`)}
+                <button key={String(o.id)} type="button" role="radio" aria-checked={on ? "true" : "false"} disabled={busy} onClick={() => !on && change({ engine: o.id, modelPin: null }, { engine: bot.engine || null, modelPin: seen.modelPin ?? null }, `${bot.name} piensa con ${o.id ? o.label : "la cuenta del equipo"}`)}
                   style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", border: `2px solid ${on ? "var(--c-text)" : "rgb(var(--c-ink-rgb) / .1)"}`, borderRadius: "var(--r-lg)", background: "var(--c-card)", textAlign: "left", cursor: "pointer" }}>
                   {o.id ? <WithMark engine={o.id} size={14}><span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{o.label}</span></WithMark> : <span style={{ fontSize: "var(--t-ui)", fontWeight: "600" }}>{o.label}</span>}
                   {o.sub ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{o.sub}</span> : null}
@@ -347,9 +352,15 @@ function HowItWorks({ bot, ai, bots, settings, expert, busy, change }) {
             })}
           </div>
           {options.length < 2 ? <span style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{"Conecta otra cuenta en "}<a href="/ajustes/ia" style={{ color: "var(--c-accent-ink)" }}>{"Ajustes › Inteligencia"}</a>{" para que este bot piense con ella."}</span> : null}
+          {modelChoice.options.length > 1 ? (
+            <>
+              <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", paddingTop: "4px" }}>{"Modelo"}</span>
+              <Select aria-label={"Modelo de " + bot.name} disabled={busy} value={modelChoice.value} onChange={(e) => change({ modelPin: e.target.value || null }, { modelPin: seen.modelPin ?? null }, `${bot.name}: modelo ${modelChoice.label(e.target.value)}`)} style={{ alignSelf: "flex-start", width: "min(320px, 100%)", height: "36px", padding: "0 10px", border: "1px solid rgb(var(--c-ink-rgb) / .12)", borderRadius: "var(--r-md)", background: "var(--c-card)", font: "inherit", fontSize: "var(--t-ui)", color: "var(--c-text)" }} options={modelChoice.options} />
+            </>
+          ) : null}
           <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", paddingTop: "4px" }}>{"Forma de pensar"}</span>
           <span style={{ alignSelf: "flex-start" }}><Seg label="Forma de pensar" items={THINKING.map(([v, l]) => [v, l])} value={thinking[0]} disabled={busy} onPick={(v) => change({ thinking: v }, { thinking: thinking[0] }, `${bot.name}: ${THINKING.find((t) => t[0] === v)[1].toLowerCase()}`)} /></span>
-          <span role="status" style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{thinking[2]}{" Colmena elige el modelo por su función, en la versión más alta de tu plan."}</span>
+          <span role="status" style={{ fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>{thinking[2]}{seen.model?.pinned ? " Piensa siempre con el modelo que elegiste." : " Automático: Colmena elige el modelo por su función, en la versión más alta de tu plan."}</span>
         </div>
       ) : null}
       {open === "help" ? (

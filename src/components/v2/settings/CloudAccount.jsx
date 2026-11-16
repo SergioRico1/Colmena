@@ -9,6 +9,7 @@ import { ClaudePanel, OpenCodePanel } from "./Engines.jsx";
 import SubscriptionSignIn from "../../SubscriptionSignIn.jsx";
 import DesktopRoute from "../../DesktopRoute.jsx";
 import { ConnectOther, KeyPanel } from "./OtherAis.jsx";
+import BotModels from "./BotModels.jsx";
 
 // Ajustes › «Tu cuenta de IA» in hosted Colmena (docs/CLOUD.md › Phase 3; src/lib/cloud.js): the
 // AI accounts of the person signed in. A bot's turn uses the account of whoever asked it, so its
@@ -141,6 +142,7 @@ export default function CloudAccount() {
         ))}
         <ConnectOther engines={engines} catalog={{}} />
       </div>
+      <BotModels />
       <CodeAndApps />
     </>
   );

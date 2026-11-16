@@ -44,6 +44,8 @@ const botFields = z.object({
   voice: z.string().trim().max(200).nullable(), // speechSynthesis voice (voiceURI) for «Escuchar»
   // The bot's own monthly budget in tokens (admission.mjs); null = only the space's limit.
   monthlyTokens: z.number().int().min(1000).max(1e12).nullable(),
+  // The exact model this bot thinks with (a slug of its engine); null = Colmena chooses (models.mjs).
+  modelPin: z.string().trim().min(1).max(120).regex(/^[A-Za-z0-9._:/@-]+$/, "Modelo no válido.").nullable(),
 });
 const botCreate = botFields
   .partial()

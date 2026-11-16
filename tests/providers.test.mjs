@@ -212,6 +212,8 @@ test("ProviderHub: Claude and OpenCode keys live in the vault; each bot thinks w
   assert.equal(chooseModel({ id: "atlas", role: "Coordina el equipo" }, claude).slug, "anthropic/claude-opus-5-5");
   assert.equal(chooseModel({ id: "vera", role: "Redacta" }, claude).slug, "anthropic/claude-sonnet-5-5");
   assert.equal(chooseModel({ id: "bruno", role: "Programa" }, claude).label, "Claude Opus 5.5");
+  // A model chosen for the bot (its profile or Ajustes) wins over its role.
+  assert.equal(chooseModel({ id: "atlas", role: "Coordina el equipo", modelPin: "anthropic/claude-sonnet-5-5" }, claude).slug, "anthropic/claude-sonnet-5-5");
   assert.equal(cheapestModel(claude), "anthropic/claude-haiku-5-5");
 
   assert.equal((await hub.respond({ model: "anthropic/claude-opus-5-5", input: "hola" })).text, "claude");

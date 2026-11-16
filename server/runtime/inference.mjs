@@ -323,7 +323,7 @@ export class InferenceMethods {
    * A family chosen in the bot's profile is always kept.
    */
   modelForStep(bot, step, mission, fallback) {
-    if (!bot?.modelFamily && (isChatStep(step, mission) || ["plan", "delegate"].includes(step.kind)) && /astra/i.test(this.modelFor(bot, fallback))) {
+    if (!bot?.modelFamily && !bot?.modelPin && (isChatStep(step, mission) || ["plan", "delegate"].includes(step.kind)) && /astra/i.test(this.modelFor(bot, fallback))) {
       const lighter = chooseModel({ ...bot, modelFamily: "sol" }, this.availableModels(bot), this.fallbackModel(bot, fallback)).slug;
       if (lighter) return lighter;
     }

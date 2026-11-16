@@ -359,7 +359,7 @@ export function missionSummary(m, ctx) {
   });
 }
 
-const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "portrait", "monthlyTokens", "previousNames", "look", "browserSession", "createdAt", "updatedAt"];
+const BOT_FIELDS = ["id", "name", "role", "instructions", "color", "shape", "enabled", "builtin", "audience", "personality", "autonomy", "thinking", "location", "tools", "helpers", "delegateFreely", "channels", "usesChatGPT", "engine", "modelPin", "portrait", "monthlyTokens", "previousNames", "look", "browserSession", "createdAt", "updatedAt"];
 export function botView(b, ctx) {
   const mine = ctx.missionsByBot.get(b.id) || [];
   const open = mine.filter((m) => OPEN.has(m.status));
@@ -529,16 +529,20 @@ export function buildState(store, runtime, extras = {}) {
       const hub = runtime?.provider;
       if (typeof hub?.engines !== "function") return null;
       const c = hub.config();
-      return { engines: hub.engines(), primary: hub.primary, local: !!(c.local?.baseUrl && c.local?.model), fallback: c.fallback ?? settings.fallback ?? "none", pins: c.pins || {}, catalog: Object.fromEntries(Object.keys(CATALOG).map((e) => [e, hub.modelsFor(e).map((m) => ({ slug: m.slug, label: m.label, families: m.families, utility: m.utility, input: m.input }))])) };
+      return { engines: hub.engines(), primary: hub.primary, local: !!(c.local?.baseUrl && c.local?.model), fallback: c.fallback ?? settings.fallback ?? "none", pins: c.pins || {}, catalog: Object.fromEntries(["openai", ...Object.keys(CATALOG)].map((e) => [e, hub.modelsFor(e).map((m) => ({ slug: m.slug, label: m.label, families: m.families, utility: m.utility, input: m.input }))])) };
     }) || null,
     bots: bots.map((b) => {
       // Each bot thinks with its engine's models (its own choice, else the team's).
       const own = typeof runtime?.availableModels === "function" && typeof runtime?.provider?.engineFor === "function";
-      const pick = chooseModel(b, own ? runtime.availableModels(b) : extras.models || [], own && typeof runtime.fallbackModel === "function" ? runtime.fallbackModel(b, settings.model) : settings.model);
+      const list = own ? runtime.availableModels(b) : extras.models || [];
+      const fallback = own && typeof runtime.fallbackModel === "function" ? runtime.fallbackModel(b, settings.model) : settings.model;
+      const pick = chooseModel(b, list, fallback);
+      // What «Automático» would choose, for the model picker of a bot with a model of its own.
+      const auto = pick.pinned ? chooseModel({ ...b, modelPin: null }, list, fallback) : pick;
       const engine = own ? runtime.provider.engineFor(b) : null;
       // The bot's engine is out of its plan right now (even if the bot is idle).
       const engineLimit = engine && typeof runtime.provider.limitOf === "function" ? safe(() => runtime.provider.limitOf(engine)) : null;
-      return { ...botView(b, ctx), model: pick.slug ? { slug: pick.slug, label: pick.label, family: pick.family, reason: pick.reason, engine } : null, engineLimit: engineLimit ? { engine, label: engineLimit.label, resetsAt: engineLimit.resetsAt ?? null, until: engineLimit.until } : null };
+      return { ...botView(b, ctx), model: pick.slug ? { slug: pick.slug, label: pick.label, family: pick.family, reason: pick.reason, engine, pinned: !!pick.pinned, auto: auto.slug ? auto.label : null } : null, engineLimit: engineLimit ? { engine, label: engineLimit.label, resetsAt: engineLimit.resetsAt ?? null, until: engineLimit.until } : null };
     }),
     missions: [...ctx.missions.values()].map((m) => missionSummary(m, ctx)),
     approvals: ctx.approvals
