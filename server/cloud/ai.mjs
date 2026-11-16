@@ -66,6 +66,8 @@ export function cloudBaseUrl(raw) {
 // codex-rs/login/src/device_code_auth.rs). The person opens VERIFY_URL on any device and types
 // the code; nothing comes back to a loopback address. Each person must turn «device code
 // login» on in their ChatGPT security settings (a workspace admin, for ChatGPT Business).
+// The Codex CLI release this client says it is (its /models answers by client version).
+const CODEX_CLIENT_VERSION = "0.80.0";
 export const CODEX = Object.freeze({
   issuer: "https://auth.openai.com",
   clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
@@ -168,8 +170,13 @@ export class CodexDeviceSession {
     return { Authorization: "Bearer " + token, ...(this.credentials?.accountId ? { "chatgpt-account-id": this.credentials.accountId } : {}) };
   }
   async listModels() {
-    const response = await this.fetch(CODEX.api + "/models?client_version=1.0.0", { redirect: "error", signal: AbortSignal.timeout(20000), headers: await this.headers() });
-    if (!response.ok) throw refuse("ChatGPT no ha dado la lista de modelos (" + response.status + ").", 502);
+    // The Codex backend lists models for a Codex client: it names itself as Codex does (the
+    // device sign-in is Codex's too), or the list is refused with a 403.
+    const response = await this.fetch(CODEX.api + "/models?client_version=" + CODEX_CLIENT_VERSION, { redirect: "error", signal: AbortSignal.timeout(20000), headers: { ...(await this.headers()), originator: "codex_cli_rs", version: CODEX_CLIENT_VERSION, "User-Agent": "codex_cli_rs/" + CODEX_CLIENT_VERSION, Accept: "application/json" } });
+    if (!response.ok) {
+      const said = (await response.text().catch(() => "")).replace(/s+/g, " ").slice(0, 200);
+      throw refuse("ChatGPT no ha dado la lista de modelos (" + response.status + (said ? ": " + said : "") + ").", 502);
+    }
     this.models = normalizeModels(await response.json());
     return this.models;
   }
