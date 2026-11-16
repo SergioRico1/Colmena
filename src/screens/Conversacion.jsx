@@ -164,7 +164,9 @@ export default function Conversacion({ params = {}, query = {} }) {
   const { bots, missions, ready, run } = useStore();
   // «Chats» (design/V3Chats.dc.html): every conversation, by kind and by time.
   if (!params.bot) return <Shell active="chats"><ChatsHome /></Shell>;
-  return <Chat botId={params.bot} query={query} bots={bots} missions={missions} ready={ready} run={run} />;
+  // One chat screen per bot: switching bots starts it afresh, so nothing of the last bot (its
+  // messages, the list kept stable while it streams) can show under the next one.
+  return <Chat key={params.bot} botId={params.bot} query={query} bots={bots} missions={missions} ready={ready} run={run} />;
 }
 
 function Chat({ botId, query, bots, missions, ready, run }) {
