@@ -2,10 +2,11 @@
 // time, text, files, link preview, reactions, the thread's summary, and its actions (react, reply
 // in a thread, edit, pin, copy link, mark unread from here, delete). The actions show on hover, on
 // keyboard focus and, on a touch screen, after a tap.
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { ChatCircleText, Copy, Download, Ellipsis, FileText, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
 import { chat, fileUrl } from "./api.js";
+import { withMine } from "./reactions.js";
 import { MessageText } from "./format.jsx";
 import { nameOf, personOf, useChat } from "./store.js";
 import { Avatar, sizeOf, timeOf, whenOf } from "./ui.jsx";
@@ -87,7 +88,23 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   // A bot of the company answers as "bot:<id>" (Phase 3); an imported integration only has botName.
   const isBot = String(m.author || "").startsWith("bot:");
   const name = isBot ? m.botName || author?.name || "Bot" : m.botName ? m.botName : m.author === me ? s.me?.name : author?.name || "Alguien";
-  const react = (emoji, on = true) => chat.post(`/messages/${m.id}/reactions`, { emoji, on }).catch((e) => setError(e.message));
+  // Your clicks show at once (withMine); each one is dropped when the server's view agrees, or
+  // when the server refused it.
+  const [mine, setMine] = useState({});
+  useEffect(() => {
+    setMine((cur) => {
+      const keep = Object.entries(cur).filter(([emoji, on]) => on !== !!m.reactions?.find((r) => r.emoji === emoji)?.people.includes(me));
+      return keep.length === Object.keys(cur).length ? cur : Object.fromEntries(keep);
+    });
+  }, [m.reactions, me]);
+  const reactions = withMine(m.reactions, mine, me);
+  const react = (emoji, on = !reactions.find((r) => r.emoji === emoji)?.people.includes(me)) => {
+    setMine((cur) => ({ ...cur, [emoji]: on }));
+    chat.post(`/messages/${m.id}/reactions`, { emoji, on }).catch((e) => {
+      setMine((cur) => { const { [emoji]: _, ...rest } = cur; return rest; });
+      setError(e.message);
+    });
+  };
   if (m.deleted) {
     return (
       <div className="ms-row is-deleted" data-message-id={m.id}>
@@ -133,7 +150,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
         )}
         <Files files={m.files} />
         <Preview p={m.preview} />
-        <Reactions m={m} me={me} onReact={react} />
+        <Reactions m={{ ...m, reactions }} me={me} onReact={react} />
         {!inThread && m.replies ? <ThreadSummary m={m} onThread={onThread} /> : null}
         {error ? <p className="ch-error" role="alert">{error}</p> : null}
       </div>
