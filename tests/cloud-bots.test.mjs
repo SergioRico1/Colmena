@@ -81,7 +81,24 @@ async function company(t, { testing = true, fake = true, fetchImpl = undefined }
   return { ...first, again: async () => { const old = servers.at(-1); old.host.bots.close(); old.server.closeAllConnections(); await new Promise((r) => old.server.close(r)); return open(); } };
 }
 const generalOf = async (as) => (await as("GET", "/chat/channels")).data.channels.find((c) => c.name === "general");
-const settled = (host) => until(() => host.runtime.jobs.size === 0 && host.runtime.active.size === 0);
+/**
+ * Waits until no bot works. The budget counts from the last sign of progress (a step or a mission
+ * changed), not from the start: a slow machine (the Windows CI runner is several times slower)
+ * finishes a four-turn plan later, while work that really stalls still fails after `quietMs`.
+ */
+async function settled(host, { quietMs = 8000, maxMs = 120_000 } = {}) {
+  const start = Date.now();
+  const mark = () => JSON.stringify([host.runtime.jobs.size, host.runtime.active.size, host.store.list("steps").map((s) => s.id + ":" + s.status), host.store.list("missions").map((m) => m.id + ":" + m.status)]);
+  let last = mark(), movedAt = Date.now();
+  for (;;) {
+    if (host.runtime.jobs.size === 0 && host.runtime.active.size === 0) return true;
+    const now = mark();
+    if (now !== last) { last = now; movedAt = Date.now(); }
+    if (Date.now() - movedAt > quietMs) throw Error("timed out: no progress for " + quietMs + " ms");
+    if (Date.now() - start > maxMs) throw Error("timed out after " + maxMs + " ms");
+    await wait(20);
+  }
+}
 
 test("fake model: plans, app actions, slow answers, plain answers", async () => {
   const plan = await fakeRespond({ input: [{ role: "user", content: "Haced el informe [[plan:nora,vera]]" }], tools: [{ name: "propose_plan" }] });
