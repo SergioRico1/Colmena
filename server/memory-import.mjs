@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { id, now } from "./store.mjs";
 import { containsSecret, factProblem, MEMORY_LIMITS, memoryUsage, scanMemoryThreat, settleCore } from "./memory.mjs";
+import { personalTag, usableMemory } from "./visibility.mjs";
 
 // «Traer lo que ChatGPT sabe de ti» (OpenClaw memory import): the browser reads the export
 // or the pasted list (src/lib/chatgptImport.js) and sends only candidate lines. Here each one
@@ -52,13 +53,14 @@ export function registerMemoryImportRoutes(app, { store, runtime, z, check }) {
     const folder = path.join(store.directory, "backups");
     await mkdir(folder, { recursive: true });
     const backup = `memoria-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-    await writeFile(path.join(folder, backup), JSON.stringify({ at: now(), memories: store.list("memories") }, null, 2), { flag: "wx" });
+    await writeFile(path.join(folder, backup), JSON.stringify({ at: now(), memories: store.list("memories").filter(usableMemory(store)) }, null, 2), { flag: "wx" });
     const label = IMPORT_SOURCES[data.source];
     const batch = id();
     store.tx(() => {
       keep.forEach((r, i) => store.put("memories", {
         id: `${batch}:${i}`, text: r.text, botId: null, scope: "equipo", target: r.target, kind: r.target === "user" ? "preferencia" : "hecho",
         source: "importado", sourceLabel: label, origin: "persona", importBatch: batch, review: false, active: true, missionId: null, tier: "core", createdAt: now(),
+        ...(r.target === "user" ? personalTag() : {}),
       }));
       // The team's store has no condenser: what does not fit goes to its archive.
       settleCore(store, "memory");

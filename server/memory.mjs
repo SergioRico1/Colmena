@@ -3,7 +3,7 @@ import path from "node:path";
 import { id, now } from "./store.mjs";
 import { buildIndex, contradicts, rank } from "./memory-rank.mjs";
 import { isForgotten } from "./forgotten.mjs";
-import { visibleRecord } from "./visibility.mjs";
+import { personalTag, usableMemory } from "./visibility.mjs";
 
 // Curated memory in the style of Hermes (MEMORY.md / USER.md with char limits). Three
 // stores, each a list of short facts, in two tiers:
@@ -84,8 +84,9 @@ export function memoryEntries(store, target, botId = null, { tier = "core" } = {
     .filter((m) => (target === "bot" ? m.botId === botId : true))
     .filter((m) => !(target === "user" && m.condensed))
     .filter((m) => tier === "all" || memoryTier(m) === tier)
-    // Hosted: not what was learned in someone else's private conversation (server/visibility.mjs).
-    .filter(visibleRecord(store));
+    // Hosted: what is about another person, or learned in their private conversation, is not
+    // this person's (server/visibility.mjs).
+    .filter(usableMemory(store));
 }
 
 const sizeOf = (entries) => entries.reduce((n, m) => n + String(m.text).trim().length, 0);
@@ -233,6 +234,8 @@ export function applyMemoryOps(store, { ops, bot, mission = null, source = "dedu
           scope: op.target === "bot" ? "bot" : "equipo", target: op.target, kind: op.target === "user" ? "preferencia" : "hecho",
           source, sourceLabel: sourceLabel || (source === "acuerdo" ? "Aprobado por ti" : "Lo dedujo " + bot.name) + (mission ? " en «" + mission.title + "»" : ""),
           review, origin: from, active: true, missionId: mission?.id || null, createdAt: now(), tier: "core", _new: true, _order: op.index,
+          // Hosted, what is learned about the person is theirs alone.
+          ...(op.target === "user" ? personalTag(undefined, mission) : {}),
         };
         if (said) Object.assign(record, { tier: "archive", doubt: true, contradicts: said.id, review: true, sourceLabel: record.sourceLabel + " · en duda" });
         list.push(record);
@@ -426,7 +429,7 @@ export function searchArchive(store, bot, query, { budget = Infinity, max = 12 }
  * nothing relevant. `record` false (incognito) leaves no trace of what was asked.
  */
 export function relatedMemories(store, bot, query, { budget = RELATED.chars, max = RELATED.max, record = true, missionId = null } = {}) {
-  const entries = searchArchive(store, bot, query, { budget, max }).map((x) => x.memory).filter(visibleRecord(store));
+  const entries = searchArchive(store, bot, query, { budget, max }).map((x) => x.memory).filter(usableMemory(store));
   if (!entries.length) return { entries, text: "" };
   if (record) noteMemoryUse(store, entries.map((m) => m.id));
   const line = (m) => {

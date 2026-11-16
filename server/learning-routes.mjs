@@ -6,7 +6,7 @@ import { userProfile, saveUserProfile, learningCounters, REVIEW_EVERY, restoreSo
 import { versionsView } from "./doc-history.mjs";
 import { learningTimeline, teachPrompt, TEACH_SOURCES } from "./journey.mjs";
 import { listVerdicts } from "./verdicts.mjs";
-import { canSeeMission } from "./visibility.mjs";
+import { canSeeMission, profileKey } from "./visibility.mjs";
 
 // HTTP routes of the learning loop and bot capabilities. The coordinator mounts them
 // in createApp() BEFORE the final `/api` 404 handler:  registerLearningRoutes(app, { store, runtime, computerAvailable })
@@ -153,7 +153,7 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
     const bot = mustGet("bots", req.params.id, "Bot");
     res.json(restoreSoulVersion(store, bot.id, req.params.vid));
   });
-  app.get("/api/user-profile/versions", (_req, res) => res.json(versionsView(store, "user", null)));
+  app.get("/api/user-profile/versions", (_req, res) => res.json(versionsView(store, "user", profileKey())));
   app.post("/api/user-profile/versions/:vid/restore", (req, res) => res.json(restoreUserProfileVersion(store, req.params.vid)));
   app.post("/api/user-profile/condense", async (_req, res) => {
     if (typeof runtime?.condenseUserProfile !== "function") throw httpError(501, "Disponible más adelante.");

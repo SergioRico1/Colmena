@@ -581,3 +581,58 @@ test("someone else's chat with a bot leaks nowhere: search, deliverables, notifi
   });
   asPerson(ANA, () => assert.equal(canSeeMission(store, chat), true));
 });
+
+test("what is learned about a person is theirs: memories, USER.md, its versions and the daily profile", async (t) => {
+  const { as, store } = await company(t);
+  const ana = as(ANA), beto = as(BETO);
+  const saved = await ana("POST", "/memories", { text: "Me gusta el té verde sin azúcar" });
+  assert.equal(saved.status, 200, JSON.stringify(saved.data));
+  assert.equal(store.get("memories", saved.data.id).personId, ANA.id);
+  assert.ok((await ana("GET", "/state")).data.memories.some((m) => m.id === saved.data.id));
+  assert.ok(!(await beto("GET", "/state")).data.memories.some((m) => m.id === saved.data.id));
+  // USER.md: one per person, and its versions too.
+  assert.equal((await ana("PUT", "/user-profile", { content: "- Ana prefiere respuestas cortas" })).status, 200);
+  assert.match((await ana("GET", "/user-profile")).data.content, /Ana prefiere/);
+  assert.equal((await beto("GET", "/user-profile")).data.content, "");
+  assert.equal((await ana("GET", "/user-profile/versions")).data.length, 1);
+  assert.equal((await beto("GET", "/user-profile/versions")).data.length, 0);
+  // The daily profile: each person condensed as them, only from their own memories.
+  const { learningTick } = await import("../server/learning.mjs");
+  const { asPerson } = await import("../server/identity.mjs");
+  const { readUserProfile } = await import("../server/memory.mjs");
+  const { profileDirectory } = await import("../server/visibility.mjs");
+  await beto("POST", "/memories", { text: "Beto trabaja de noche los jueves" });
+  const seen = [];
+  const infer = async (params) => {
+    const input = JSON.parse(params.input[0].content);
+    seen.push(input.recuerdosNuevos.map((m) => m.text));
+    return { text: JSON.stringify({ directives: input.recuerdosNuevos.map((m) => ({ text: m.text, date: "2026-11-16", status: "active" })) }) };
+  };
+  const out = await learningTick(store, infer, { model: "colmena-prueba", at: new Date("2026-11-17T09:00:00Z") });
+  assert.ok(out.profiles.includes("completed"));
+  assert.ok(seen.every((texts) => !(texts.some((x) => /té verde/.test(x)) && texts.some((x) => /jueves/.test(x)))), "nobody's profile mixes two people");
+  const profileOf = (p) => asPerson(p, () => readUserProfile(profileDirectory(store)) || "");
+  assert.match(profileOf(ANA), /té verde/);
+  assert.doesNotMatch(profileOf(ANA), /jueves/);
+  assert.match(profileOf(BETO), /jueves/);
+  assert.doesNotMatch(profileOf(BETO), /té verde/);
+});
+
+test("older memories about a person get the person of their conversation; the shared USER.md retires", async (t) => {
+  const { store } = await company(t, { fake: false });
+  const { makeLearningPersonal } = await import("../server/cloud/personal-learning.mjs");
+  store.remove("cloud", "migration:personal-learning-v1");
+  store.put("missions", { id: "chat-ana", conversation: true, mode: "solo", botIds: ["atlas"], createdBy: ANA.id, askedBy: BETO.id, status: "completed" });
+  store.put("memories", { id: "m1", text: "Ana es vegetariana", source: "dijiste", missionId: "chat-ana", active: true, tier: "core", condensed: true, createdAt: new Date().toISOString() });
+  store.put("memories", { id: "m2", text: "Algo sin conversación", source: "dijiste", missionId: null, active: true, tier: "core", createdAt: new Date().toISOString() });
+  store.put("memories", { id: "m3", text: "Cómo se factura", target: "memory", source: "dedujo", active: true, tier: "core", createdAt: new Date().toISOString() });
+  store.put("docVersions", { id: "v1", doc: "user", botId: null, content: "mezcla", createdAt: new Date().toISOString(), seq: 1 });
+  const out = makeLearningPersonal(store);
+  assert.deepEqual(out, { owned: 1, unknown: 1, uncondensed: 1, versions: 1 });
+  assert.equal(store.get("memories", "m1").personId, ANA.id);
+  assert.equal(store.get("memories", "m1").condensed, false);
+  assert.equal(store.get("memories", "m2").personId, null);
+  assert.equal(store.get("memories", "m3").personId, undefined, "what a bot knows about work stays shared");
+  assert.equal(store.get("docVersions", "v1"), null);
+  assert.equal(makeLearningPersonal(store), null);
+});

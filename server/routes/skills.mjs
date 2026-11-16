@@ -6,6 +6,7 @@ import { skillSummary, memorySummary, memoryArchivePage, MEMORY_PAGE_MAX } from 
 import { registerMemoryImportRoutes } from "../memory-import.mjs";
 import { confirmMemory, memoryTarget, placeMemory, settleCore } from "../memory.mjs";
 import { notFound, short, check } from "./shared.mjs";
+import { personalTag } from "../visibility.mjs";
 
 /** Skills and memories. */
 export function registerSkillRoutes(app, { store, mustGet, runtime, optional }) {
@@ -58,7 +59,7 @@ export function registerSkillRoutes(app, { store, mustGet, runtime, optional }) 
     const scope = data.scope || (data.botId ? "bot" : "equipo");
     if (scope === "bot" && !data.botId) throw Error("Elige de qué bot es este recuerdo.");
     const memory = store.tx(() => {
-      const saved = store.put("memories", { id: id(), text: data.text, botId: data.botId ?? null, scope, source: "dijiste", origin: "persona", review: false, missionId: null, active: true, tier: "core", createdAt: now() });
+      const saved = store.put("memories", { id: id(), text: data.text, botId: data.botId ?? null, scope, source: "dijiste", origin: "persona", review: false, missionId: null, active: true, tier: "core", createdAt: now(), ...(scope === "bot" ? {} : personalTag()) });
       // A full store makes room: what was least recently useful goes to the archive.
       settleCore(store, memoryTarget(saved), saved.botId, { keep: [saved.id] });
       return store.get("memories", saved.id);

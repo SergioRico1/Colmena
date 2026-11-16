@@ -17,6 +17,11 @@ import { observeMission, refreshObservations, missionEnding, isCorrection } from
 import { feedbackCorrections } from "./feedback.mjs";
 import { isOtherPerson } from "./origin.mjs";
 import { coordinatorName } from "./bot-looks.mjs";
+import { asPerson, currentPerson } from "./identity.mjs";
+import { profileDirectory, profileKey } from "./visibility.mjs";
+
+/** Where the person's profile state lives (learningState): "main" on the desktop, one per person hosted. */
+const profileState = () => (profileKey() ? "profile:" + profileKey() : "main");
 
 export { containsSecret, forgetHash, isForgotten };
 
@@ -861,9 +866,11 @@ const profileSchema = z.object({
  * to <datos>/USER.md (≤ 1400). Condensed memories leave the prompt (the profile carries
  * them) but stay in Biblioteca. Skips when nothing new happened unless `force`.
  */
-export async function condenseUserProfile(store, infer, { model = null, force = false, directory = store.directory, at = new Date(), signal } = {}) {
+export async function condenseUserProfile(store, infer, { model = null, force = false, directory = profileDirectory(store), at = new Date(), signal } = {}) {
   const settings = store.get("settings", "main") || {};
   if (settings.learning === false) return { status: "disabled" };
+  // Hosted, a profile is one person's (server/visibility.mjs): background work has none.
+  if (!directory) return { status: "skipped", reason: "sin persona" };
   // What the person said goes in; what a bot deduced only once it proved to help (verdicts.mjs).
   const fresh = memoryEntries(store, "user").filter((m) => ["dijiste", "importado", "acuerdo", undefined, null].includes(m.source) || (m.source === "dedujo" && m.consolidated));
   const current = readUserProfile(directory) || "";
@@ -890,30 +897,31 @@ export async function condenseUserProfile(store, infer, { model = null, force = 
   if (start < 0 || end < start) throw Error("El perfil no devolvio JSON.");
   const parsed = profileSchema.parse(JSON.parse(raw.slice(start, end + 1)));
   const directives = parsed.directives.filter((d) => !containsSecret(d.text));
-  const content = renderUserProfile(directives, { date: at.toISOString().slice(0, 10), userName: settings.userName });
+  const content = renderUserProfile(directives, { date: at.toISOString().slice(0, 10), userName: currentPerson().desktop ? settings.userName : currentPerson().name || null });
   writeUserProfile(directory, content);
-  recordVersion(store, { doc: "user", content, previous: current, source: "condensación", reason: `Resumió ${fresh.length} ${fresh.length === 1 ? "recuerdo" : "recuerdos"}` });
+  recordVersion(store, { doc: "user", botId: profileKey(), content, previous: current, source: "condensación", reason: `Resumió ${fresh.length} ${fresh.length === 1 ? "recuerdo" : "recuerdos"}` });
   const stamp = at.toISOString();
   store.tx(() => {
     for (const m of fresh) store.patch("memories", m.id, { condensed: true, condensedAt: stamp });
-    const state = store.get("learningState", "main") || { id: "main" };
+    const state = store.get("learningState", profileState()) || { id: profileState() };
     store.put("learningState", { ...state, lastProfileAt: stamp, profileChars: content.length });
   });
   return { status: "completed", content, condensed: fresh.length };
 }
 
 /** Profile for the UI: {content, chars, limit, updatedAt, directives}. */
-export function userProfile(store, directory = store.directory) {
-  const content = readUserProfile(directory) || "";
-  const state = store.get("learningState", "main") || {};
+export function userProfile(store, directory = profileDirectory(store)) {
+  const content = (directory && readUserProfile(directory)) || "";
+  const state = store.get("learningState", profileState()) || {};
   return { content, chars: content.length, limit: PROFILE_LIMIT, updatedAt: state.profileEditedAt || state.lastProfileAt || null, directives: parseDirectives(content) };
 }
 /** The person edits USER.md by hand (Biblioteca › Memoria). */
-export function saveUserProfile(store, content, directory = store.directory, { source = "tú", reason = null } = {}) {
+export function saveUserProfile(store, content, directory = profileDirectory(store), { source = "tú", reason = null } = {}) {
+  if (!directory) throw Object.assign(Error("Inicia sesión para cambiar tu perfil."), { status: 401 });
   const previous = readUserProfile(directory);
   const text = writeUserProfile(directory, content);
-  recordVersion(store, { doc: "user", content: text, previous, source, reason });
-  const state = store.get("learningState", "main") || { id: "main" };
+  recordVersion(store, { doc: "user", botId: profileKey(), content: text, previous, source, reason });
+  const state = store.get("learningState", profileState()) || { id: profileState() };
   store.put("learningState", { ...state, profileEditedAt: now(), profileChars: text.length });
   return userProfile(store, directory);
 }
@@ -932,10 +940,10 @@ export function restoreSoulVersion(store, botId, versionId) {
   return versionsView(store, "soul", botId);
 }
 /** «Restaurar» a USER.md version (Archivo › Lo que saben de ti, or Ajustes). */
-export function restoreUserProfileVersion(store, versionId, directory = store.directory) {
-  const v = versionOf(store, versionId, "user", null);
+export function restoreUserProfileVersion(store, versionId, directory = profileDirectory(store)) {
+  const v = versionOf(store, versionId, "user", profileKey());
   saveUserProfile(store, v.content, directory, { source: "restaurado", reason: "Vuelve a la versión del " + versionDay(v) });
-  return versionsView(store, "user", null);
+  return versionsView(store, "user", profileKey());
 }
 
 /**
@@ -952,7 +960,21 @@ export async function learningTick(store, infer, { at = new Date(), model = null
     out.curated = curateSkills(store, time);
     store.put("learningState", { ...(store.get("learningState", "main") || { id: "main" }), lastCurateAt: at.toISOString(), lastCurate: { stale: out.curated.stale.length, archived: out.curated.archived.length, reactivated: out.curated.reactivated.length } });
   }
-  if (!state.lastProfileAt || time - Date.parse(state.lastProfileAt) >= 86400000) {
+  // Hosted (store.learningPeople, server/cloud/host.mjs): each person's own profile, as them.
+  const people = typeof store.learningPeople === "function" ? store.learningPeople() : null;
+  if (people) {
+    out.profiles = [];
+    for (const person of people) {
+      const key = "profile:persona:" + person.id;
+      const mine = store.get("learningState", key) || {};
+      if (mine.lastProfileAt && time - Date.parse(mine.lastProfileAt) < 86400000) continue;
+      let result;
+      try { result = await asPerson(person, () => condenseUserProfile(store, infer, { model, at, signal })); }
+      catch (error) { result = { status: "failed", error: error.message }; }
+      out.profiles.push(result.status);
+      if (result.status !== "completed") store.put("learningState", { ...(store.get("learningState", key) || { id: key }), lastProfileAt: at.toISOString() });
+    }
+  } else if (!state.lastProfileAt || time - Date.parse(state.lastProfileAt) >= 86400000) {
     try {
       out.profile = await condenseUserProfile(store, infer, { model, at, signal });
     } catch (error) {

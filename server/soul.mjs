@@ -4,6 +4,8 @@ import path from "node:path";
 import { memoryEntries, memoryMeters, profileDigest, MEMORY_LIMITS } from "./memory.mjs";
 import { recordVersion } from "./doc-history.mjs";
 import { appFile } from "./bundled.mjs";
+import { currentPerson } from "./identity.mjs";
+import { profileDirectory } from "./visibility.mjs";
 
 // OpenClaw-style workspace per bot: <dataDir>/bots/<id>/{SOUL,IDENTITY,USER,MEMORY}.md.
 // SOUL.md is the user's to edit. Bots can only propose changes (approval kind 'soul').
@@ -116,7 +118,7 @@ export function memoryDigest(store, bot, budget = MEMORY_BUDGET, { directory = d
     return out;
   };
   void budget;
-  return { personal: lines("user"), team: lines("memory"), own: lines("bot"), meters: memoryMeters(store, bot.id), profile: profileDigest(directory) };
+  return { personal: lines("user"), team: lines("memory"), own: lines("bot"), meters: memoryMeters(store, bot.id), profile: profileDigest(currentPerson().desktop ? directory : profileDirectory(store)) };
 }
 
 /** Index of active skills: «- id: nombre (vN) — Úsala cuando…». Stale/archived skills stay out. */

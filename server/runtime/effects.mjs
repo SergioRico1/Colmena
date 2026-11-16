@@ -23,7 +23,7 @@ import { z } from "zod";
 import { now } from "../store.mjs";
 import { createMissionFile, listMissionFiles, readMissionDocument, readMissionBytes, createUniqueFile, saveWorkFile, workFileName } from "../files.mjs";
 import { touchSkill } from "../skills.mjs";
-import { canSeeMission, visibleRecord } from "../visibility.mjs";
+import { canSeeMission, usableMemory } from "../visibility.mjs";
 import {
   schemas, isRedLine, kindFromPath, accessibleFolders, listFolder, readFolderFile, readFolderBytes, searchHistory, missionContext, capabilitiesOf,
   TOOL_ALIASES, markExternal,
@@ -253,8 +253,8 @@ export class EffectMethods {
           // Both tiers: what is always present (as before) and the archive by relevance
           // (memory.mjs searchArchive). What is «en duda» is never handed back as a fact.
           const q = normalizeText(args.query);
-          // Hosted: nothing learned in someone else's private conversation (server/visibility.mjs).
-          const seen = visibleRecord(this.store);
+          // Hosted: nothing about another person, nor learned in their private conversation (server/visibility.mjs).
+          const seen = usableMemory(this.store);
           const mine = this.store.list("memories").filter((m) => m.active !== false && !m.doubt && (m.scope !== "bot" || m.botId === bot.id) && seen(m));
           const literal = mine.filter((m) => !q || normalizeText(m.text).includes(q) || jaccard(tokens(q), tokens(m.text)) > 0.2);
           const core = literal.filter((m) => memoryTier(m) === "core").slice(-12);

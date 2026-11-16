@@ -16,7 +16,7 @@ import { delegatedAsks, waitingItems } from "./waiting.mjs";
 import { memoryProvenance, memoryTier } from "./memory.mjs";
 import { missionKind } from "./mission-kind.mjs";
 import { eligibility, stepOf } from "./preapprovals.mjs";
-import { visibleRecord } from "./visibility.mjs";
+import { usableMemory } from "./visibility.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -127,7 +127,8 @@ export function wikiAskDiff(wiki) {
  * it travels as a count and is read by pages: GET /api/memories?tier=archive (routes/skills.mjs).
  */
 export function memoriesState(store) {
-  const active = store.list("memories").filter((m) => m.active !== false);
+  // Hosted: only this person's (server/visibility.mjs).
+  const active = store.list("memories").filter((m) => m.active !== false).filter(usableMemory(store));
   const said = new Set(active.filter((m) => m.review && m.contradicts).map((m) => m.contradicts));
   const shown = active.filter((m) => memoryTier(m) !== "archive" || m.review || said.has(m.id));
   return { memories: shown.map(memorySummary), memoryArchive: { count: active.length - shown.length } };
@@ -142,7 +143,7 @@ export const MEMORY_PAGE_MAX = 200;
 export function memoryArchivePage(store, { q = "", cursor = null, limit = 50 } = {}) {
   const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   // Hosted: not what was learned in someone else's private conversation (server/visibility.mjs).
-  const active = store.list("memories").filter((m) => m.active !== false).filter(visibleRecord(store));
+  const active = store.list("memories").filter((m) => m.active !== false).filter(usableMemory(store));
   const said = new Set(active.filter((m) => m.review && m.contradicts).map((m) => m.contradicts));
   const words = fold(q).split(/\s+/).filter(Boolean);
   const all = active.filter((m) => memoryTier(m) === "archive" && !m.review && !said.has(m.id))

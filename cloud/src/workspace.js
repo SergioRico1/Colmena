@@ -335,6 +335,18 @@ export class Workspace extends DurableObject {
       return { keys: Object.keys(m).sort(), kinds, title: m.title === "Chat" || m.title === "Tus novedades" ? m.title : "(otro)", id: short(m.id), bot: m.botIds[0], createdBy: short(m.createdBy), askedBy: short(m.askedBy), audience: (m.audience || []).map(short), thread: !!m.thread, incognito: !!m.incognito, archived: !!m.archived, status: m.status, createdAt: m.createdAt, total, authors };
     });
   }
+  /** Test-only: what is learned about people, as counts (no text). */
+  async learnedProbe(workspaceId) {
+    const host = await this.boot(workspaceId);
+    const { memoryTarget, readUserProfile } = await import("../../server/memory.mjs");
+    const mems = host.store.list("memories").filter((m) => m.active !== false);
+    const user = mems.filter((m) => memoryTarget(m) === "user");
+    const owner = (m) => { const mi = m.missionId ? host.store.get("missions", m.missionId) : null; return mi ? String(mi.audience?.length === 1 ? mi.audience[0] : mi.createdBy || mi.askedBy || "?").slice(0, 8) : "sin-chat"; };
+    const by = {};
+    for (const m of user) { const k = owner(m) + (m.condensed ? "/condensado" : "") + "/" + (m.source || "?"); by[k] = (by[k] || 0) + 1; }
+    let profile = null; try { profile = readUserProfile(host.store.directory); } catch (e) { profile = "error " + e.message; }
+    return { memories: mems.length, user: user.length, byOwner: by, userMd: profile ? profile.length : 0, versions: host.store.list("docVersions").filter((v) => v.doc === "user").length };
+  }
   async aiProbe(workspaceId) {
     const host = await this.boot(workspaceId);
     const out = [];
