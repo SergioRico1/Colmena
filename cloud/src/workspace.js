@@ -313,6 +313,17 @@ export class Workspace extends DurableObject {
     return host.store.list("bots").filter((b) => b.enabled !== false && !b.archived).slice(0, 12)
       .map((b) => ({ id: String(b.id), name: String(b.name || "").slice(0, 60), role: String(b.role || "").slice(0, 60), shape: b.shape || "square", color: /^#[0-9a-f]{6}$/i.test(b.color || "") ? b.color : "#5B6680", builtin: !!b.builtin }));
   }
+  /** Test only: each member's ChatGPT model list as the picker sees it (no secret in it), read now. */
+  async aiProbe(workspaceId) {
+    const host = await this.boot(workspaceId);
+    const out = [];
+    for (const m of host.members()) {
+      const hub = host.bots.provider.hub(m.id);
+      const read = await host.bots.chatgptModelsFor(m.id).catch((e) => ({ error: String(e?.message || e) }));
+      out.push({ person: m.id.slice(0, 8), role: m.role, kind: hub.kind || null, primary: hub.primary || null, session: hub.session?.models?.length || 0, offered: hub.modelsFor("openai").length, sample: hub.modelsFor("openai").slice(0, 4).map((x) => x.slug), devices: host.agents.devicesOf(m.id).map((d) => ({ name: d.name, online: host.agents.isOnline(d.id) })), read });
+    }
+    return out;
+  }
   /** What the object holds in memory right now: for the e2e (eviction and concurrency checks). */
   async probe(workspaceId) {
     const host = await this.boot(workspaceId);

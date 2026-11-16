@@ -454,7 +454,7 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   }
 
   return {
-    runtime, provider, connections, scheduler, webhooks, testApps, fakeOn, guard, filterState, routes, tick, nextAlarm, resume, mayDecide, approversOf, timeZone, setTimeZone, adoptTimeZone, engineKeys, githubToken, appProfile, linkPersonalApps,
+    chatgptModelsFor, runtime, provider, connections, scheduler, webhooks, testApps, fakeOn, guard, filterState, routes, tick, nextAlarm, resume, mayDecide, approversOf, timeZone, setTimeZone, adoptTimeZone, engineKeys, githubToken, appProfile, linkPersonalApps,
     approvers: () => members().filter((m) => m.role !== "guest" && m.id !== currentPerson().id).map((m) => ({ id: m.id, name: m.name })),
     setTestFlags(flags = {}) {
       if (!testing) throw Error("Las pruebas no están permitidas en este despliegue.");
