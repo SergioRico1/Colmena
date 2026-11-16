@@ -2,6 +2,7 @@ import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { missionRoom, MISSION_LABELS } from "./state.mjs";
 import { searchPages } from "./wiki.mjs";
+import { canSeeMission, visibleRecord } from "./visibility.mjs";
 
 // Palette search: accent- and case-insensitive, at most 8 results per group.
 const LIMIT = 8;
@@ -39,7 +40,9 @@ export async function search(store, q, { rootOf = null } = {}) {
   const empty = { bots: [], missions: [], artifacts: [], files: [], messages: [], notes: [] };
   if (!query) return empty;
   const has = (...values) => values.some((v) => fold(v).includes(query));
-  const missions = store.list("missions").sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
+  // Only the conversations this person may see (server/visibility.mjs).
+  const mine = visibleRecord(store);
+  const missions = store.list("missions").filter((m) => canSeeMission(store, m)).sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)));
   const byId = new Map(missions.map((m) => [m.id, m]));
   const result = { ...empty };
   result.bots = store
@@ -53,13 +56,13 @@ export async function search(store, q, { rootOf = null } = {}) {
     .map((m) => ({ id: m.id, title: m.title, room: missionRoom(m), status: m.status, statusLabel: MISSION_LABELS[m.status] || m.status, conversation: !!m.conversation, updatedAt: m.updatedAt || m.createdAt }));
   result.artifacts = store
     .columns("artifacts", ["id", "title", "missionId", "kind", "format", "content", "createdAt"])
-    .filter((a) => has(a.title, a.content))
+    .filter((a) => mine(a) && has(a.title, a.content))
     .reverse()
     .slice(0, LIMIT)
     .map((a) => ({ id: a.id, title: a.title, missionId: a.missionId, kind: a.kind, format: a.format, snippet: snippet(a.content, query), createdAt: a.createdAt }));
   result.messages = store
     .columns("messages", ["id", "missionId", "botId", "role", "text", "at"])
-    .filter((m) => m.role !== "system" && has(m.text))
+    .filter((m) => m.role !== "system" && mine(m) && has(m.text))
     .reverse()
     .slice(0, LIMIT)
     .map((m) => ({ id: m.id, missionId: m.missionId, missionTitle: byId.get(m.missionId)?.title ?? null, botId: m.botId ?? null, role: m.role, snippet: snippet(m.text, query), at: m.at }));

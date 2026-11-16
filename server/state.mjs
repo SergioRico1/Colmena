@@ -16,6 +16,7 @@ import { delegatedAsks, waitingItems } from "./waiting.mjs";
 import { memoryProvenance, memoryTier } from "./memory.mjs";
 import { missionKind } from "./mission-kind.mjs";
 import { eligibility, stepOf } from "./preapprovals.mjs";
+import { visibleRecord } from "./visibility.mjs";
 
 // Computed, lightweight view for GET /api/state (docs/CONTRACT.md §1).
 // Never includes large contents (artifact text, SKILL.md, SOUL, provider history).
@@ -140,7 +141,8 @@ export const MEMORY_PAGE_MAX = 200;
  */
 export function memoryArchivePage(store, { q = "", cursor = null, limit = 50 } = {}) {
   const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-  const active = store.list("memories").filter((m) => m.active !== false);
+  // Hosted: not what was learned in someone else's private conversation (server/visibility.mjs).
+  const active = store.list("memories").filter((m) => m.active !== false).filter(visibleRecord(store));
   const said = new Set(active.filter((m) => m.review && m.contradicts).map((m) => m.contradicts));
   const words = fold(q).split(/\s+/).filter(Boolean);
   const all = active.filter((m) => memoryTier(m) === "archive" && !m.review && !said.has(m.id))

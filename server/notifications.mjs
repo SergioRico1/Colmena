@@ -278,7 +278,7 @@ export class Notifier {
     if (shouldPop(settings, kind, new Date(this.clock()))) {
       const how = delivery(settings, kind);
       if (how.toast || how.sound)
-        this.emit({ type: "notify", id: record.id, kind, title, text, url, tag: noticeTag(missionId || codeTask || record.id), toast: how.toast, sound: how.sound, ...(extra?.quick ? { quick: extra.quick } : {}) });
+        this.emit({ type: "notify", id: record.id, kind, title, text, url, ...(missionId ? { mission: missionId } : {}), tag: noticeTag(missionId || codeTask || record.id), toast: how.toast, sound: how.sound, ...(extra?.quick ? { quick: extra.quick } : {}) });
     }
     return record;
   }

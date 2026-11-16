@@ -549,3 +549,35 @@ test("a chat shared before chats were personal is split: each person's turns go 
   // Once only.
   assert.deepEqual(splitSharedChats(store), []);
 });
+
+test("someone else's chat with a bot leaks nowhere: search, deliverables, notifications, memories, @-references, history", async (t) => {
+  const { as, store, host } = await company(t);
+  const ana = as(ANA), beto = as(BETO);
+  const chat = (await ana("POST", "/missions", { prompt: "Mi nómina secreta zafiro", mode: "solo", botIds: ["atlas"], conversation: true })).data.id;
+  await settled(host);
+  store.put("artifacts", { id: "art-ana", missionId: chat, title: "Nómina zafiro", content: "zafiro 3.000 €", kind: "doc", format: "md", createdAt: new Date().toISOString() });
+  store.put("memories", { id: "mem-ana", missionId: chat, text: "Ana cobra zafiro", target: "user", active: true, createdAt: new Date().toISOString() });
+  store.put("notifications", { id: "not-ana", missionId: chat, kind: "done", title: "Atlas terminó «nómina zafiro»", createdAt: new Date().toISOString() });
+  // Ana still finds and reads all of it.
+  assert.ok((await ana("GET", "/search?q=zafiro")).data.messages.length > 0);
+  assert.equal((await ana("GET", "/artifacts/art-ana")).status, 200);
+  // Beto finds nothing and reads nothing.
+  const found = (await beto("GET", "/search?q=zafiro")).data;
+  assert.deepEqual([found.messages.length, found.missions.length, found.artifacts.length], [0, 0, 0]);
+  assert.equal((await beto("GET", "/artifacts/art-ana")).status, 404);
+  assert.equal((await beto("GET", "/artifacts/art-ana/download")).status, 404);
+  assert.ok(!(await beto("GET", "/notifications")).data.some((n) => n.missionId === chat));
+  const state = (await beto("GET", "/state")).data;
+  assert.ok(!state.artifacts.some((a) => a.id === "art-ana"));
+  assert.ok(!JSON.stringify(state).includes("zafiro"), "nothing of Ana's chat in Beto's state");
+  assert.equal((await beto("POST", "/missions", { prompt: "resume esto", mode: "solo", botIds: ["atlas"], conversation: true, refs: [{ kind: "chat", id: chat }] })).status, 404);
+  // The bot working for Beto cannot search or read Ana's chat, nor recall what it learned there.
+  const { asPerson } = await import("../server/identity.mjs");
+  const { canSeeMission } = await import("../server/visibility.mjs");
+  const { memoryEntries } = await import("../server/memory.mjs");
+  asPerson(BETO, () => {
+    assert.equal(canSeeMission(store, chat), false);
+    assert.ok(!memoryEntries(store, "user").some((m) => m.id === "mem-ana"));
+  });
+  asPerson(ANA, () => assert.equal(canSeeMission(store, chat), true));
+});

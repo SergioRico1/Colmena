@@ -9,6 +9,7 @@ import { lstat } from "node:fs/promises";
 import { z } from "zod";
 import { safePath } from "./files.mjs";
 import { wrapExternal } from "./external-content.mjs";
+import { canSeeMission } from "./visibility.mjs";
 
 export const REF_LIMITS = Object.freeze({ refs: 6, chatBudget: 12000, messageChars: 1500, minPerChat: 1500 });
 
@@ -82,7 +83,7 @@ export async function referenceContext(store, { missionId = null, refs = [], roo
     if (r.kind === "chat") {
       if (r.id === missionId) throw fail(400, "No puedes señalar esta misma conversación.");
       const source = store.get("missions", r.id);
-      if (!source) throw fail(404, "Esa conversación ya no está.");
+      if (!source || !canSeeMission(store, source)) throw fail(404, "Esa conversación ya no está.");
       if (source.incognito) throw fail(400, "Un chat privado no se comparte con otras conversaciones.");
       const snap = chatSnapshot(store, r.id, { budget: perChat });
       lines.push(`- la conversación «${snap.title}»: ${snap.shown ? `abajo, sus ${plural(snap.shown, "último mensaje", "últimos mensajes")}${snap.omitted ? ` (${plural(snap.omitted, "anterior omitido", "anteriores omitidos")})` : ""}` : "no tiene mensajes todavía"}.`);

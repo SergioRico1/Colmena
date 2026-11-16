@@ -27,6 +27,7 @@ import { registerCoreRoutes, attachmentBodyParser } from "./core-routes.mjs";
 import { buildState, automationView, ConnectorCache, approvalRevision } from "./state.mjs";
 import { registerUsageRoutes } from "./usage-routes.mjs";
 import { registerDiagnosticsRoutes } from "./diagnostics.mjs";
+import { canSeeMission } from "./visibility.mjs";
 
 import { Scheduler } from "./scheduler.mjs";
 import { registerLearningRoutes } from "./learning-routes.mjs";
@@ -175,9 +176,11 @@ export function createApp({ store, runtime, session, scheduler, connections, get
     return (...args) => p[name](...args);
   };
   const rootOf = (missionId) => safe(() => runtime.root(missionId)) || path.join(store.directory, "workspaces", missionId);
+  // Hosted, a record of someone else's conversation (a deliverable, a step, an approval…) does
+  // not exist for this person (server/visibility.mjs).
   const mustGet = (kind, key, what) => {
     const record = store.get(kind, key);
-    if (!record) throw notFound(what);
+    if (!record || !canSeeMission(store, kind === "missions" ? record : record.missionId)) throw notFound(what);
     return record;
   };
 
@@ -362,7 +365,7 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.get("/api/commands/output", (req, res) => {
     const { step, call } = check(z.object({ step: z.string().trim().min(1).max(300), call: z.string().trim().min(1).max(200) }), { ...req.query });
     const owner = store.get("steps", step);
-    if (!owner) throw notFound("Paso");
+    if (!owner || !canSeeMission(store, owner.missionId)) throw notFound("Paso");
     res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive", "Cache-Control": "no-store" });
     res.flushHeaders();
     let stop = () => {};

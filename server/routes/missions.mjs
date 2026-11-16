@@ -411,6 +411,7 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
   });
   // «Deshacer» on an «Aprendido: …» line in the room.
   app.post("/api/messages/:id/undo", (req, res) => {
+    mustGet("messages", req.params.id, "Mensaje");
     const m = undoLearned(store, req.params.id);
     res.json({ id: m.id, text: m.text, undone: !!m.learned?.undone });
   });

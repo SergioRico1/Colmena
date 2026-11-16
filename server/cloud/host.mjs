@@ -113,6 +113,8 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     return true;
   };
   const missionOf = (id) => store.get("missions", id) || (store.get("rooms", id)?.missionId ? store.get("missions", store.get("rooms", id).missionId) : null);
+  // Everything that reads across conversations asks this (server/visibility.mjs).
+  store.missionVisible = (mission, person = currentPerson()) => { const m = typeof mission === "string" ? missionOf(mission) : mission; return !m || canSee(m, person); };
 
   const rooms = {
     me: () => {
@@ -197,8 +199,16 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     const me = currentPerson();
     const hidden = new Set((s.missions || []).filter((m) => m.audience && !m.audience.includes(me.id)).map((m) => m.id));
     for (const m of store.list("missions")) if (!canSee(m, me)) hidden.add(m.id);
+    // Every list whose items belong to a conversation (deliverables, memories, what waits,
+    // approvals, skills learned there…) keeps only the ones of conversations this person sees;
+    // a bot busy in someone else's chat shows as busy, without where or what.
+    const lists = {};
+    for (const [key, value] of Object.entries(s)) if (Array.isArray(value) && value.some((x) => x && typeof x === "object" && x.missionId)) lists[key] = value.filter((x) => !x?.missionId || !hidden.has(x.missionId));
+    const botsSeen = (s.bots || []).map((b) => (b?.activity?.missionId && hidden.has(b.activity.missionId) ? { ...b, activity: { ...b.activity, missionId: null, detail: null, title: null, room: null } } : b));
     return bots.filterState({
       ...s,
+      ...lists,
+      bots: botsSeen,
       // The desktop welcome (AI account, this computer) does not apply: hosted people start in the app.
       settings: { ...(s.settings || {}), userName: me.name || me.email || "", onboarded: true },
       missions: (s.missions || []).filter((m) => !hidden.has(m.id)),
@@ -398,7 +408,12 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
       };
       const feed = { person, write, watching };
       chatFeeds.add(feed);
-      const close = asPerson(person, () => app.locals.openFeed((event) => { if (allowed(event)) write(event); }, { as: (fn) => asPerson(person, fn) }));
+      // The first frame holds every step still writing: only the ones of conversations they may see.
+      const pass = (event) => {
+        if (event?.type === "live_snapshot") return write({ ...event, steps: (event.steps || []).filter((s) => allowed({ mission: s.mission })) });
+        if (allowed(event)) write(event);
+      };
+      const close = asPerson(person, () => app.locals.openFeed(pass, { as: (fn) => asPerson(person, fn) }));
       return () => { chatFeeds.delete(feed); close(); };
     },
     chat, importer, blobs: blobStore, chatEmit,

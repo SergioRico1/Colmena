@@ -6,6 +6,7 @@ import { userProfile, saveUserProfile, learningCounters, REVIEW_EVERY, restoreSo
 import { versionsView } from "./doc-history.mjs";
 import { learningTimeline, teachPrompt, TEACH_SOURCES } from "./journey.mjs";
 import { listVerdicts } from "./verdicts.mjs";
+import { canSeeMission } from "./visibility.mjs";
 
 // HTTP routes of the learning loop and bot capabilities. The coordinator mounts them
 // in createApp() BEFORE the final `/api` 404 handler:  registerLearningRoutes(app, { store, runtime, computerAvailable })
@@ -49,7 +50,7 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
   if (!store) throw Error("registerLearningRoutes necesita el almacén.");
   const mustGet = (kind, key, what) => {
     const record = store.get(kind, key);
-    if (!record) throw httpError(404, what + " no encontrado.");
+    if (!record || !canSeeMission(store, kind === "missions" ? record : record.missionId)) throw httpError(404, what + " no encontrado.");
     return record;
   };
   const computer = () => {
@@ -74,7 +75,7 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
   // «Qué ha aprendido»: the bot's learning timeline, newest first.
   app.get("/api/bots/:id/timeline", (req, res) => {
     const bot = mustGet("bots", req.params.id, "Bot");
-    res.json({ items: learningTimeline(store, bot.id) });
+    res.json({ items: learningTimeline(store, bot.id).filter((x) => !x.missionId || canSeeMission(store, x.missionId)) });
   });
   // «Enséñale»: a short room where the bot studies the material and says what it understood.
   app.post("/api/bots/:id/teach", (req, res) => {

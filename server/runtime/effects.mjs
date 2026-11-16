@@ -23,6 +23,7 @@ import { z } from "zod";
 import { now } from "../store.mjs";
 import { createMissionFile, listMissionFiles, readMissionDocument, readMissionBytes, createUniqueFile, saveWorkFile, workFileName } from "../files.mjs";
 import { touchSkill } from "../skills.mjs";
+import { canSeeMission, visibleRecord } from "../visibility.mjs";
 import {
   schemas, isRedLine, kindFromPath, accessibleFolders, listFolder, readFolderFile, readFolderBytes, searchHistory, missionContext, capabilitiesOf,
   TOOL_ALIASES, markExternal,
@@ -252,10 +253,12 @@ export class EffectMethods {
           // Both tiers: what is always present (as before) and the archive by relevance
           // (memory.mjs searchArchive). What is «en duda» is never handed back as a fact.
           const q = normalizeText(args.query);
-          const mine = this.store.list("memories").filter((m) => m.active !== false && !m.doubt && (m.scope !== "bot" || m.botId === bot.id));
+          // Hosted: nothing learned in someone else's private conversation (server/visibility.mjs).
+          const seen = visibleRecord(this.store);
+          const mine = this.store.list("memories").filter((m) => m.active !== false && !m.doubt && (m.scope !== "bot" || m.botId === bot.id) && seen(m));
           const literal = mine.filter((m) => !q || normalizeText(m.text).includes(q) || jaccard(tokens(q), tokens(m.text)) > 0.2);
           const core = literal.filter((m) => memoryTier(m) === "core").slice(-12);
-          const ranked = q ? searchArchive(this.store, bot, args.query, { max: 12 }).map((x) => x.memory) : [];
+          const ranked = q ? searchArchive(this.store, bot, args.query, { max: 12 }).map((x) => x.memory).filter(seen) : [];
           const archive = [...ranked, ...literal.filter((m) => memoryTier(m) === "archive" && !ranked.some((r) => r.id === m.id)).reverse()].slice(0, q ? 12 : 0);
           // Half for each tier when both have plenty; either may use what the other leaves.
           const room = 12, fromCore = core.slice(-Math.max(room - archive.length, room / 2));
@@ -267,8 +270,12 @@ export class EffectMethods {
         case "read_thread":
           return readThread(this.store, mission.id, args, { who: (m) => (m.role === "user" ? "persona" : this.bot(m.botId)?.name || m.botId || "bot") });
         case "search_history":
-          if (args.missionId) return missionContext(this.store, args.missionId, args.around);
-          return { results: searchHistory(this.store, args.query, { excludeMissionId: mission.id }), notice: "Para leer más de un resultado: search_history con missionId y around = messageId." };
+          // Hosted: only conversations the person this bot works for may see (server/visibility.mjs).
+          if (args.missionId) {
+            if (!canSeeMission(this.store, args.missionId)) throw Error("No existe esa conversación.");
+            return missionContext(this.store, args.missionId, args.around);
+          }
+          return { results: searchHistory(this.store, args.query, { excludeMissionId: mission.id }).filter((r) => !r?.missionId || canSeeMission(this.store, r.missionId)), notice: "Para leer más de un resultado: search_history con missionId y around = messageId." };
         case "web_fetch":
           return await this.cachedWeb(args.url, signal);
         case "list_folder": {

@@ -5,12 +5,13 @@ import { linkPreview } from "../web.mjs";
 import { usageCsv, usageHistory } from "../usage.mjs";
 import { search } from "../search.mjs";
 import { HttpError, short, check } from "./shared.mjs";
+import { canSeeMission, visibleRecord } from "../visibility.mjs";
 
 /** Notifications, search, the usage history, a room's recap and link previews. */
 export function registerNotificationRoutes(app, { store, scheduler, rootOf, mustGet, runtime }) {
   // ------------------------------------------------------ notifications
   app.get("/api/notifications", (_req, res) => {
-    res.json(store.list("notifications").reverse().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100).map(notificationView));
+    res.json(store.list("notifications").filter(visibleRecord(store)).reverse().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100).map(notificationView));
   });
   app.post("/api/notifications/read", (req, res) => {
     const data = check(
@@ -29,7 +30,8 @@ export function registerNotificationRoutes(app, { store, scheduler, rootOf, must
   // «Uso de los últimos 30 días»: per day, bot and room, and the same as CSV.
   const usageNames = () => ({
     botName: (id) => store.get("bots", id)?.name || id,
-    roomName: (id) => { const m = store.get("missions", id); return !m ? "(borrada)" : m.incognito ? "(de incógnito)" : placeName(m); },
+    // Someone else's private conversation counts, without its name (server/visibility.mjs).
+    roomName: (id) => { const m = store.get("missions", id); return !m ? "(borrada)" : !canSeeMission(store, m) ? "(de otra persona)" : m.incognito ? "(de incógnito)" : placeName(m); },
   });
   app.get("/api/usage/history", (req, res) => {
     const days = check(z.coerce.number().int().min(7).max(90), req.query.days ?? 30);

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { safePath } from "../files.mjs";
 import { computer as defaultComputer, UNAVAILABLE_MESSAGE } from "./bridge.mjs";
 import { allowedApps, appPathOk, DEFAULT_APPS } from "./system.mjs";
+import { canSeeMission } from "../visibility.mjs";
 
 const RUNNING = ["running", "queued", "planning"];
 const SHOT = /^capturas\/[\w.-]+\.jpg$/;
@@ -100,11 +101,13 @@ export function registerComputerRoutes(app, { store, runtime, computer = default
   });
 
   app.get("/api/computer/frame/:missionId", (req, res) => {
+    if (!canSeeMission(store, req.params.missionId)) throw httpError(404, "Misión no encontrada.");
     res.json({ available: computer.available, frame: computer.lastFrame(req.params.missionId) });
   });
 
   app.get("/api/computer/events", (req, res) => {
     const mission = typeof req.query.mission === "string" ? req.query.mission.slice(0, 200) : "";
+    if (mission && !canSeeMission(store, mission)) throw httpError(404, "Misión no encontrada.");
     res.set({ "Content-Type": "text/event-stream", Connection: "keep-alive" });
     res.flushHeaders();
     res.write("event: ready\ndata: {}\n\n");
@@ -126,7 +129,7 @@ export function registerComputerRoutes(app, { store, runtime, computer = default
       note: z.string().max(4000).optional(),
     }).strict().parse(req.body);
     const mission = store.get("missions", missionId);
-    if (!mission) throw httpError(404, "Misión no encontrada.");
+    if (!mission || !canSeeMission(store, mission)) throw httpError(404, "Misión no encontrada.");
     if (!computer.available) throw httpError(409, UNAVAILABLE_MESSAGE);
     const said = action === "return" ? cleanReturnNote(note) : "";
     if (said) returnNotes.set(missionId, said);
@@ -157,6 +160,7 @@ export function registerComputerRoutes(app, { store, runtime, computer = default
 
   app.get("/api/computer/approval/:id", (req, res) => {
     const a = store.get("approvals", req.params.id);
+    if (a && !canSeeMission(store, a.missionId)) throw httpError(404, "Aprobación no encontrada.");
     if (!a || !a.computer) throw httpError(404, "Esta aprobación no tiene datos del ordenador.");
     const c = a.computer;
     res.json({
@@ -170,6 +174,7 @@ export function registerComputerRoutes(app, { store, runtime, computer = default
 
   app.get("/api/computer/shot/:id", async (req, res) => {
     const a = store.get("approvals", req.params.id);
+    if (a && !canSeeMission(store, a.missionId)) throw httpError(404, "Aprobación no encontrada.");
     const shot = a?.computer?.shot;
     if (!a || typeof shot !== "string" || !SHOT.test(shot)) throw httpError(404, "No hay captura.");
     let file;

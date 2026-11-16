@@ -3,6 +3,7 @@ import path from "node:path";
 import { id, now } from "./store.mjs";
 import { buildIndex, contradicts, rank } from "./memory-rank.mjs";
 import { isForgotten } from "./forgotten.mjs";
+import { visibleRecord } from "./visibility.mjs";
 
 // Curated memory in the style of Hermes (MEMORY.md / USER.md with char limits). Three
 // stores, each a list of short facts, in two tiers:
@@ -82,7 +83,9 @@ export function memoryEntries(store, target, botId = null, { tier = "core" } = {
     .filter((m) => m.active !== false && typeof m.text === "string" && memoryTarget(m) === target)
     .filter((m) => (target === "bot" ? m.botId === botId : true))
     .filter((m) => !(target === "user" && m.condensed))
-    .filter((m) => tier === "all" || memoryTier(m) === tier);
+    .filter((m) => tier === "all" || memoryTier(m) === tier)
+    // Hosted: not what was learned in someone else's private conversation (server/visibility.mjs).
+    .filter(visibleRecord(store));
 }
 
 const sizeOf = (entries) => entries.reduce((n, m) => n + String(m.text).trim().length, 0);
@@ -423,7 +426,7 @@ export function searchArchive(store, bot, query, { budget = Infinity, max = 12 }
  * nothing relevant. `record` false (incognito) leaves no trace of what was asked.
  */
 export function relatedMemories(store, bot, query, { budget = RELATED.chars, max = RELATED.max, record = true, missionId = null } = {}) {
-  const entries = searchArchive(store, bot, query, { budget, max }).map((x) => x.memory);
+  const entries = searchArchive(store, bot, query, { budget, max }).map((x) => x.memory).filter(visibleRecord(store));
   if (!entries.length) return { entries, text: "" };
   if (record) noteMemoryUse(store, entries.map((m) => m.id));
   const line = (m) => {
