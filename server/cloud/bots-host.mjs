@@ -253,15 +253,34 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
     return { ...s, approvals, notifications: (s.notifications || []).filter((n) => mine(store.get("notifications", n.id) || n)), ai: { ...(s.ai || {}), policy: aiPolicy(store), mine: provider.connectedFor(me.id), fake: fakeOn() } };
   }
 
+  /** {count, error}: ChatGPT's model list of one person, read now if it is still empty (20 s at most). */
+  async function chatgptModelsFor(personId) {
+    const hub = provider.hub(personId);
+    if (hub.kind !== "chatgpt") return null;
+    if (hub.session?.models?.length) return { count: hub.session.models.length, error: null };
+    try {
+      const list = await Promise.race([hub.openaiModels(), new Promise((_, no) => setTimeout(() => no(Error("ChatGPT tardó demasiado en dar su lista de modelos.")), 20_000))]);
+      if (list?.length) for (const fn of store.listeners) { try { fn({ type: "changed-local", kinds: ["account"] }); } catch {} }
+      return { count: list?.length || 0, error: null };
+    } catch (error) {
+      log("chatgpt models: " + (error?.message || error));
+      console.error("chatgpt models: " + (error?.message || error));
+      return { count: 0, error: String(error?.message || error).slice(0, 200) };
+    }
+  }
+
   // ---------------------------------------------------------------- routes
   function routes(app) {
     const admin = (req) => { const me = currentPerson(); if (!MANAGERS.has(me.role)) throw Object.assign(Error("Solo quien administra la empresa puede cambiar esto."), { status: 403 }); return me; };
     const wrap = (fn) => async (req, res) => {
       try { res.json(await fn(req, res)); } catch (error) { res.status(error.status || 400).json({ error: error.message, ...(error.code ? { code: error.code } : {}), ...(error.consent ? { consent: error.consent } : {}) }); }
     };
-    app.get("/api/cloud/ai", wrap(() => {
+    app.get("/api/cloud/ai", wrap(async () => {
       const me = currentPerson();
-      return { policy: aiPolicy(store), warnings: SUBSCRIPTION_WARNING, engines: provider.engines?.() || [], connected: provider.connectedFor(me.id), fake: fakeOn(), chatgpt: provider.hub(me.id).config().chatgpt || null, consent: provider.hub(me.id).config().consent || {}, consentLines: SUBSCRIPTION_CONSENT };
+      // ChatGPT's model list (for each bot's model picker) is read here, while the person looks at
+      // their accounts, when this workspace has none yet: inside the request, so its outcome is seen.
+      const models = await chatgptModelsFor(me.id);
+      return { chatgptModels: models, policy: aiPolicy(store), warnings: SUBSCRIPTION_WARNING, engines: provider.engines?.() || [], connected: provider.connectedFor(me.id), fake: fakeOn(), chatgpt: provider.hub(me.id).config().chatgpt || null, consent: provider.hub(me.id).config().consent || {}, consentLines: SUBSCRIPTION_CONSENT };
     }));
     app.put("/api/cloud/ai/policy", wrap((req) => {
       const me = admin(req);
