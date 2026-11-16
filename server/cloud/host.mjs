@@ -32,6 +32,7 @@ import { agentExtraTools, agentFolders } from "../agent-link/cloud-tools.mjs";
 import { importBatch } from "../agent-link/migrate.mjs";
 import { CAPABILITY_LABELS } from "../agent-link/protocol.mjs";
 import { chatOwner, personalChat } from "../threads.mjs";
+import { splitSharedChats } from "./split-chats.mjs";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
 export const CLOUD_HIDDEN = Object.freeze(["codigo", "ordenador", "dictado", "voz", "gestores", "copias", "cifrado", "carpetas", "personas-buzon"]);
@@ -146,6 +147,8 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     viaComputer: (personId, args) => agentsRef ? agentsRef.service({ personId, op: "chatgpt-models", args }) : Promise.reject(Error("no agents")),
   });
   const runtime = bots.runtime;
+  // Chats shared before they were personal (2026-11-16): each person's turns to their own chat. Once.
+  try { splitSharedChats(store, { log }); } catch (error) { log("split-chats: " + (error?.message || error)); }
 
   // Phase 5: each person's computers lend what only they have (server/agent-link): folders read
   // through the agent, browser, apps and commands, saved logins and Claude Code of that computer.

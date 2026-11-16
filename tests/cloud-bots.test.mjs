@@ -512,3 +512,40 @@ test("a chat with a bot is its person's: nobody else sees it or writes into it, 
   assert.equal((await beto("GET", `/missions/${anaChat}`)).status, 404);
   assert.ok((await ana("GET", "/state")).data.missions.some((m) => m.id === anaChat));
 });
+
+test("a chat shared before chats were personal is split: each person's turns go to their own chat", async (t) => {
+  const { store } = await company(t, { fake: false });
+  const { splitSharedChats } = await import("../server/cloud/split-chats.mjs");
+  store.remove("cloud", "migration:split-chats-v1");
+  const at = (n) => new Date(Date.UTC(2026, 10, 16, 12, n)).toISOString();
+  store.put("missions", { id: "chat-1", title: "Nóminas de Ana", conversation: true, mode: "solo", botIds: ["atlas"], thread: true, createdBy: ANA.id, askedBy: BETO.id, steps: ["s1", "s2", "s3"], result: "respuesta a Beto", status: "completed", createdAt: at(0) });
+  const turn = (n, who, text) => {
+    store.put("messages", { id: "u" + n, missionId: "chat-1", role: "user", text, by: { id: who.id, name: who.name }, at: at(n * 10) });
+    store.put("steps", { id: "st" + n, key: "s" + n, missionId: "chat-1", botId: "atlas", status: "completed", createdAt: at(n * 10 + 1) });
+    store.put("messages", { id: "b" + n, missionId: "chat-1", role: "bot", botId: "atlas", stepId: "st" + n, text: "respuesta " + n, at: at(n * 10 + 2) });
+    store.put("artifacts", { id: "a" + n, missionId: "chat-1", stepId: "st" + n, title: "doc " + n, createdAt: at(n * 10 + 3) });
+    store.put("usage", { id: "use" + n, missionId: "chat-1", at: at(n * 10 + 4) });
+  };
+  turn(1, ANA, "mi nómina");
+  turn(2, BETO, "mis vacaciones");
+  turn(3, ANA, "y la de noviembre");
+  const made = splitSharedChats(store, { newId: () => "chat-beto" });
+  assert.deepEqual(made.map(({ from, to, person }) => ({ from, to, person })), [{ from: "chat-1", to: "chat-beto", person: BETO.id }]);
+  const ids = (kind, mission) => store.where(kind, "missionId", mission).map((r) => r.id).sort();
+  assert.deepEqual(ids("messages", "chat-1"), ["b1", "b3", "u1", "u3"]);
+  assert.deepEqual(ids("messages", "chat-beto"), ["b2", "u2"]);
+  assert.deepEqual(ids("steps", "chat-beto"), ["st2"]);
+  assert.deepEqual(ids("artifacts", "chat-beto"), ["a2"]);
+  assert.deepEqual(ids("usage", "chat-beto"), ["use2"]);
+  const ana = store.get("missions", "chat-1"), beto = store.get("missions", "chat-beto");
+  assert.deepEqual(ana.audience, [ANA.id]);
+  assert.deepEqual(ana.steps, ["s1", "s3"]);
+  assert.equal(ana.result, null);
+  assert.equal(ana.askedBy, ANA.id);
+  assert.deepEqual(beto.audience, [BETO.id]);
+  assert.deepEqual(beto.steps, ["s2"]);
+  assert.equal(beto.title, "Chat", "nothing of Ana's words (her title) goes to Beto's chat");
+  assert.equal(beto.thread, true);
+  // Once only.
+  assert.deepEqual(splitSharedChats(store), []);
+});

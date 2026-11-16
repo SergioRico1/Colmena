@@ -314,6 +314,27 @@ export class Workspace extends DurableObject {
       .map((b) => ({ id: String(b.id), name: String(b.name || "").slice(0, 60), role: String(b.role || "").slice(0, 60), shape: b.shape || "square", color: /^#[0-9a-f]{6}$/i.test(b.color || "") ? b.color : "#5B6680", builtin: !!b.builtin }));
   }
   /** Test only: each member's ChatGPT model list as the picker sees it (no secret in it), read now. */
+  /**
+   * Test-only (FAKE_MODEL_TOKEN): who each chat with a bot belongs to and who wrote in it, as
+   * counts per person. No message text, names or titles.
+   */
+  async chatsProbe(workspaceId) {
+    const host = await this.boot(workspaceId);
+    const short = (id) => (id ? String(id).slice(0, 8) : null);
+    const chats = host.store.list("missions").filter((m) => m.conversation && Array.isArray(m.botIds) && m.botIds.length === 1 && !m.people && !m.dm && !m.channelThread);
+    return chats.map((m) => {
+      const authors = {};
+      let total = 0;
+      for (const msg of host.store.list("messages")) {
+        if (msg.missionId !== m.id) continue;
+        total++;
+        if (msg.role === "user") { const who = short(msg.by?.id) || "?"; authors[who] = (authors[who] || 0) + 1; }
+      }
+      const kinds = {};
+      for (const row of host.store.sql("SELECT DISTINCT kind FROM records").all()) { if (row.kind === "missions") continue; const n = host.store.where(row.kind, "missionId", m.id).length; if (n) kinds[row.kind] = n; }
+      return { keys: Object.keys(m).sort(), kinds, title: m.title === "Chat" || m.title === "Tus novedades" ? m.title : "(otro)", id: short(m.id), bot: m.botIds[0], createdBy: short(m.createdBy), askedBy: short(m.askedBy), audience: (m.audience || []).map(short), thread: !!m.thread, incognito: !!m.incognito, archived: !!m.archived, status: m.status, createdAt: m.createdAt, total, authors };
+    });
+  }
   async aiProbe(workspaceId) {
     const host = await this.boot(workspaceId);
     const out = [];
