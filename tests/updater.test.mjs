@@ -23,6 +23,7 @@ function load({ packaged = true } = {}) {
   const userData = mkdtempSync(path.join(os.tmpdir(), "colmena-updater-"));
   const handlers = new Map();
   const sent = [];
+  const notices = [];
   const autoUpdater = Object.assign(new EventEmitter(), {
     checks: 0,
     installs: [],
@@ -35,18 +36,21 @@ function load({ packaged = true } = {}) {
     BrowserWindow: { getAllWindows: () => [{ isDestroyed: () => false, webContents: { send: (channel, state) => sent.push([channel, state]) } }] },
     ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
     powerMonitor: { on() {} },
+    Notification: Object.assign(function Notification(o) { notices.push(o); this.show = () => {}; }, { isSupported: () => true }),
     shell: { openExternal() {} },
   };
   stubs = { electron, autoUpdater };
   const file = require.resolve("../desktop/updater.cjs");
   delete require.cache[file];
   const mod = require(file);
-  return { mod, autoUpdater, handlers, sent, userData, call: (op, arg) => handlers.get("colmena-update")({}, op, arg) };
+  return { mod, autoUpdater, handlers, sent, userData, notices, call: (op, arg) => handlers.get("colmena-update")({}, op, arg) };
 }
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+// The install waits a moment so its notice («Actualizando Colmena») shows before Colmena quits.
+const installed = () => new Promise((resolve) => setTimeout(resolve, 700));
 
 test("a restart waits for the team to finish, then installs", async () => {
-  const { mod, autoUpdater, call } = load();
+  const { mod, autoUpdater, call, notices } = load();
   let busy = true;
   const updater = mod.setupUpdater({ isBusy: () => busy });
   autoUpdater.emit("update-available", { version: "2.0.1", releaseNotes: "<p>Arreglos</p>" });
@@ -61,8 +65,9 @@ test("a restart waits for the team to finish, then installs", async () => {
   assert.equal(autoUpdater.installs.length, 0, "still working");
   busy = false;
   updater.workChanged();
-  await flush();
+  await installed();
   assert.deepEqual(autoUpdater.installs, [[true, true]], "silent install, then Colmena opens again");
+  assert.match(notices.at(-1)?.title || "", /Actualizando Colmena/, "a notice says it is updating first");
   state = await call("state");
   assert.equal(state.notes, "• Uno\n• Dos");
 });
@@ -78,7 +83,7 @@ test("an idle team restarts right away; closing installs it too", async () => {
   assert.equal(autoUpdater.installs.length, 0, "nothing downloaded yet");
   autoUpdater.emit("update-downloaded", { version: "2.0.1" });
   await call("restart");
-  await flush();
+  await installed();
   assert.equal(autoUpdater.installs.length, 1);
 });
 

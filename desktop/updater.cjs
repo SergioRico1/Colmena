@@ -5,7 +5,7 @@
 // Ajustes › Actualizaciones picks the channel (stable or beta) and can check right away.
 const fs = require("node:fs");
 const path = require("node:path");
-const { app, BrowserWindow, ipcMain, powerMonitor, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, Notification, powerMonitor, shell } = require("electron");
 
 const FIRST_CHECK_MS = 10 * 1000;
 const EVERY_MS = 4 * 60 * 60 * 1000;
@@ -88,8 +88,13 @@ function setupUpdater({ isBusy }) {
     return checking;
   };
   const installNow = () => {
-    // Silent install, then Colmena opens again on the new version.
-    setImmediate(() => updater.quitAndInstall(true, true));
+    // Silent install, then Colmena opens again on the new version. The install copies thousands
+    // of files and shows nothing for a minute or two: a system notice says so first, or Colmena
+    // seems gone and its shortcut, opened half-way, says the program was moved.
+    try {
+      if (Notification.isSupported()) new Notification({ title: "Actualizando Colmena", body: "Se volverá a abrir sola en uno o dos minutos. No la abras mientras tanto.", icon: path.join(__dirname, "icons", "faces", "cargando-256.png") }).show();
+    } catch {}
+    setTimeout(() => updater.quitAndInstall(true, true), 600);
   };
   const restart = () => {
     if (!updater || state.status !== "ready") return;
