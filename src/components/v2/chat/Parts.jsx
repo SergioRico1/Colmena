@@ -382,8 +382,21 @@ function WorkNowBody({ step, live, bot, bots, narration }) {
   }
   if (image) return <ImageMaking tool={image} botId={bot?.id || step?.botId || null} />;
   if (command && command.status === "running") return <RunningCommand command={command} stepId={step?.id} narration={narration} bots={bots} />;
-  if (reads.length && running.some((t) => ["file", "web", "pdf_fields", "folder"].includes(t.card?.type))) {
+  // Thinking or using a tool: the shape breathing and one quiet shimmer line, exactly one line
+  // of the answer tall — «Pensando…», or the tool at work — with the bot's own words about it
+  // after it on the same line. Stopping it is the composer's (its send button, or Esc).
+  const doing = running.length ? headline(running[running.length - 1], bots) + "…" : "Pensando…";
+  const status = (
+    <p role="status" className="v4-thinking" title={narration || undefined}>
+      <span style={shimmerText}>{doing}</span>
+      {narration ? <span className="v4-thinking-note">{narration}</span> : null}
+    </p>
+  );
+  // What it has read in this turn stays on screen until the answer comes, with the status line
+  // always under it: it never folds between one page and the next (it opened and closed on each).
+  if (reads.length) {
     return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
       <div style={{ display: "flex", flexDirection: "column", padding: "8px 20px", background: "var(--c-card)", borderRadius: "var(--r-2xl)", animation: "fade .4s ease-out" }}>
         {reads.slice(-6).map((t, i, list) => {
           const name = t.card.name || t.card.title || t.card.domain || t.card.path || "Documento";
@@ -401,18 +414,11 @@ function WorkNowBody({ step, live, bot, bots, narration }) {
           );
         })}
       </div>
+      {status}
+      </div>
     );
   }
-  // Thinking or using a tool: the shape breathing and one quiet shimmer line, exactly one line
-  // of the answer tall — «Pensando…», or the tool at work — with the bot's own words about it
-  // after it on the same line. Stopping it is the composer's (its send button, or Esc).
-  const doing = running.length ? headline(running[running.length - 1], bots) + "…" : "Pensando…";
-  return (
-    <p role="status" className="v4-thinking" title={narration || undefined}>
-      <span style={shimmerText}>{doing}</span>
-      {narration ? <span className="v4-thinking-note">{narration}</span> : null}
-    </p>
-  );
+  return status;
 }
 
 /** A command at work: what it runs; its output only when you ask for it (it streams then). */
