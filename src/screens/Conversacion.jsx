@@ -74,6 +74,7 @@ import UndoChanges from "../components/v2/chat/UndoChanges.jsx";
 import ChangedFiles, { TurnFileLinks, useOpenFileRequests } from "../components/v2/chat/ChangedFiles.jsx";
 import OverlayBack from "../components/OverlayBack.jsx";
 import { currentBreakpoint } from "../lib/breakpoint.js";
+import MessagesSkeleton from "../components/v2/chat/MessagesSkeleton.jsx";
 
 // Colmena 2.0 · 23 «Conversación con un bot» (design/V2Conversacion.dc.html). On the left all
 // conversations; on the right the bot as a presence that breathes while it works, its work
@@ -555,7 +556,7 @@ function Chat({ botId, query, bots, missions, ready, run }) {
             </button>
           </div>
         ) : null}
-        {row.opening ? <span style={{ color: "var(--c-text-3)" }}>{"Abriendo la conversación…"}</span> : null}
+        {row.opening ? <MessagesSkeleton style={{ alignSelf: "stretch" }} /> : null}
         {row.older.length ? (
           <div style={{ alignSelf: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
             <button type="button" aria-expanded={row.showOlder ? "true" : "false"} onClick={() => setShowOlder((v) => !v)} style={{ ...pill, height: "34px", fontSize: "var(--t-meta)" }}>

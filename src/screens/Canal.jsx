@@ -11,8 +11,10 @@ import Message from "../chat/Message.jsx";
 import Thread from "../chat/Thread.jsx";
 import { Composer } from "../chat/Composer.jsx";
 import { ChannelInfo, PinsDialog, TopicDialog } from "../chat/ChannelDialogs.jsx";
-import { channelTitle, dropChannel, loadChat, mergeGhosts, nameOf, onChatEvent, setOpenChannel, upsertChannel, useChat } from "../chat/store.js";
+import { channelTitle, chatState, dropChannel, loadChat, mergeGhosts, nameOf, onChatEvent, setOpenChannel, upsertChannel, useChat } from "../chat/store.js";
 import { ChatPage, Empty, dayLabel } from "../chat/ui.jsx";
+import { cachedPage, forgetPage, keepPage } from "../chat/pages.js";
+import MessagesSkeleton from "../components/v2/chat/MessagesSkeleton.jsx";
 import "../chat/channel.css";
 
 const byseq = (a, b) => a.seq - b.seq;
@@ -51,17 +53,32 @@ export default function Canal({ params, query }) {
     mergeGhosts(page.ghosts);
     return page;
   }, [id]);
+  // What is on screen, kept when you leave (src/chat/pages.js): coming back paints it at once.
+  const shown = useRef({ messages: [], edges: { before: false, after: false } });
+  shown.current = { messages, edges };
   useEffect(() => {
     let live = true;
-    setLoading(true); setMessages([]); setError(null); setInfo(null); setNewLine(null); stick.current = true;
+    // The page kept from the last visit (or a hover) paints now; the fresh one replaces it.
+    const kept = focusId ? null : cachedPage(id);
+    setMessages(kept ? kept.messages : []); setEdges({ before: !!kept?.before, after: false });
+    setLoading(!kept); setError(null); setInfo(null); setNewLine(null); stick.current = true;
     setOpenChannel(id);
+    // Where to open is known from the sidebar's row (your last read, the newest message), so the
+    // channel and its page are asked for together instead of one after the other.
+    const known = s.channels.get(id);
+    const unreadOf = (v) => (v?.member !== false && Number.isFinite(v?.readSeq) && Number.isFinite(v?.lastSeq) && v.readSeq < v.lastSeq ? v.readSeq : null);
+    const guess = known ? unreadOf({ ...known, member: true }) : undefined;
+    const modeFor = (unreadFrom) => (focusId ? { message: focusId } : unreadFrom != null && unreadFrom > 0 ? { around: String(unreadFrom) } : {});
     (async () => {
       try {
-        const view = await chat.get(`/channels/${id}`);
+        const viewing = chat.get(`/channels/${id}`);
+        const early = guess !== undefined ? load(modeFor(guess)) : null;
+        early?.catch(() => {});
+        const view = await viewing;
         if (!live) return;
         setInfo(view);
-        const unreadFrom = view.member && view.readSeq < view.lastSeq ? view.readSeq : null;
-        const page = await load(focusId ? { message: focusId } : unreadFrom != null && unreadFrom > 0 ? { around: String(unreadFrom) } : {});
+        const unreadFrom = unreadOf(view);
+        const page = early && unreadFrom === guess ? await early : await load(modeFor(unreadFrom));
         if (!live) return;
         setMessages(page.messages);
         setEdges({ before: page.hasBefore, after: page.hasAfter });
@@ -70,8 +87,12 @@ export default function Canal({ params, query }) {
       } catch (e) { if (live) setError(e.status === 404 ? "missing" : e.message); }
       finally { if (live) setLoading(false); }
     })();
-    return () => { live = false; setOpenChannel(null); };
-  }, [id, focusId, load]);
+    return () => {
+      live = false; setOpenChannel(null);
+      const { messages: m, edges: e } = shown.current;
+      if (chatState().channels?.has?.(id)) keepPage(id, m.filter((x) => x.seq != null), e);
+    };
+  }, [id, focusId, load]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- where the view sits
   useLayoutEffect(() => {
@@ -180,7 +201,7 @@ export default function Canal({ params, query }) {
   };
   const leave = async () => {
     if (!confirm(`¿Salir de ${isChannel ? "#" + title : "esta conversación"}?`)) return;
-    try { await chat.post(`/channels/${id}/leave`, {}); dropChannel(id); navigate("/canales"); }
+    try { await chat.post(`/channels/${id}/leave`, {}); dropChannel(id); forgetPage(id); navigate("/canales"); }
     catch (e) { setNotice(e.message); }
   };
   const setPrefs = (prefs) => chat.put(`/channels/${id}/prefs`, prefs).then(upsertChannel).catch((e) => setNotice(e.message));
@@ -241,7 +262,7 @@ export default function Canal({ params, query }) {
       <div className="cv">
         <div className="cv-main">
           <div ref={list} className="cv-list" onScroll={onScroll} data-message-list="" aria-label={"Mensajes de " + (isChannel ? "#" : "") + title} role="log" aria-live="polite" aria-relevant="additions">
-            {loading ? <p className="cv-loading">Cargando mensajes…</p> : null}
+            {loading && !messages.length ? <MessagesSkeleton /> : null}
             {!loading && !edges.before ? <ChannelIntro ch={ch} title={title} s={s} /> : null}
             {edges.before && messages.length ? <div className="cv-more"><button type="button" className="ch-btn" onClick={older}>Ver mensajes anteriores</button></div> : null}
             {rows}

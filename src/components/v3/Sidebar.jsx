@@ -32,6 +32,7 @@ import SidebarComb from "./SidebarComb.jsx";
 import { DOWNLOADS, detectOs } from "../DesktopRoute.jsx";
 import { Download } from "../Icon.js";
 import { useChatTitle } from "../../chat/title.js";
+import { prefetchHref } from "../../lib/prefetchHref.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
 // design/v4/colmena-v4.html › .side). Top to bottom: the window's three dots and the wordmark,
@@ -377,7 +378,7 @@ export default function Sidebar({ active = "inicio" }) {
     const lock = roomPrivate.get(r.id) !== false && !r.withPeople;
     const RoomIcon = lock ? LockSimple : Hash;
     return (
-      <a key={r.id} href={r.href} aria-label={rowLabel("room", r)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 32)}>
+      <a key={r.id} href={r.href} onPointerEnter={() => prefetchHref(r.href)} aria-label={rowLabel("room", r)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={rowStyle(on, 32)}>
         <RoomIcon size={16} style={{ flex: "none", width: "20px", color: r.unread || on ? C.text : C.text3 }} />
         <span style={{ ...ellipsis, fontWeight: r.unread ? "700" : on ? "600" : "400", color: r.unread || on ? C.text : C.text2 }}>{r.title}</span>
         {r.working ? <span title={r.working === 1 ? "Un bot está trabajando aquí" : `${r.working} bots están trabajando aquí`} style={{ flex: "none", display: "inline-flex" }}>{calm ? <span aria-hidden="true" style={{ fontSize: "var(--t-caption)", color: C.text3 }}>{"trabajando"}</span> : <WorkingDots />}</span> : null}
@@ -397,7 +398,7 @@ export default function Sidebar({ active = "inicio" }) {
     const on = b.href === here;
     const bot = { ...(botOf(b.id) || b), shape: b.shape };
     return (
-      <a key={b.id} href={b.href} aria-label={rowLabel("bot", b)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...rowStyle(on, 44), padding: "4px 8px", fontWeight: "400" }}>
+      <a key={b.id} href={b.href} onPointerEnter={() => prefetchHref(b.href)} aria-label={rowLabel("bot", b)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...rowStyle(on, 44), padding: "4px 8px", fontWeight: "400" }}>
         <BotFace bot={bot} size={32} state={faceState(b)} decorative />
         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px" }}>
           <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: "1.1", fontWeight: b.unread ? "700" : "500", color: C.text }}>{b.name}</span>

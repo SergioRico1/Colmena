@@ -52,6 +52,7 @@ import { useRoomTimeline } from "../lib/useRoomTimeline.js";
 import { CompletionNote } from "../components/v3/dia/Completion.jsx";
 import NotFound from "./NotFound.jsx";
 import { currentBreakpoint } from "../lib/breakpoint.js";
+import MessagesSkeleton from "../components/v2/chat/MessagesSkeleton.jsx";
 
 // The one room screen (docs/PLAN-equipo-y-salas.md, scope 3; docs/CONTRACT.md §18): every room,
 // private or with people, at /sala/:id. A room is the parent of a sala of your bots (a mission,
@@ -524,6 +525,7 @@ function Room({ id, query }) {
                       {mission ? <SelectionPopup scope={scope} askLabel={ONLY_ME} onQuote={(t) => quoteInto(missionId, t)} onAsk={(t) => { askAsideAbout(missionId, t); dock.open(TABS.aparte); }} /> : null}
                       {mission ? <CatchUp count={since} mission={mission} pending={pending} id={missionId} /> : null}
                       {shared ? (tl.more ? <div style={{ display: "flex", justifyContent: "center", padding: "4px 0 12px" }}><button type="button" onClick={olderPage} style={{ ...outline, height: "34px", fontSize: "var(--t-meta)", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button></div> : null) : <OlderMessages count={room.olderCount} onShow={room.showOlder} />}
+                      {(shared ? tl.loading : viewRes.loading || room.loading) ? <MessagesSkeleton /> : null}
                       {loaded && !rows.length ? (() => {
                         const empty = roomEmpty(shown, { teamName: shown?.teamId ? place.text : null });
                         return (

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ChevronDown, Hash, LockSimple, Plus, Search, ShieldCheck, UsersThree } from "../components/Icon.js";
 import { channelTitle, useChat } from "./store.js";
 import { Avatar, Count } from "./ui.jsx";
+import { prefetchChannel } from "./pages.js";
 import "./nav.css";
 
 function Group({ id, label, add, addLabel, children, unread }) {
@@ -32,7 +33,7 @@ function Row({ ch, s, on }) {
   const Icon = ch.kind === "private" ? LockSimple : Hash;
   return (
     <li>
-      <a href={"/canal/" + ch.id} aria-current={on ? "page" : undefined} className={"cn-row" + (unread || ch.mentions ? " is-unread" : "") + (ch.muted ? " is-muted" : "")}>
+      <a href={"/canal/" + ch.id} onPointerEnter={() => prefetchChannel(ch.id)} aria-current={on ? "page" : undefined} className={"cn-row" + (unread || ch.mentions ? " is-unread" : "") + (ch.muted ? " is-muted" : "")}>
         <span className="cn-icon" aria-hidden="true">
           {dm ? (ch.kind === "dm" ? <Avatar id={other} size={20} /> : <UsersThree size={16} />) : <Icon size={16} />}
         </span>
