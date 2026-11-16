@@ -53,13 +53,13 @@ const refuse = (status, error) => ({ status, error });
  * `vault(namespace)` (envelope vault or null), `memberOf(id)` → a member or null, `members()`,
  * `push(personId, payload)` or null, `publicUrl`, `testing` (the Worker allows the fake model).
  */
-export function cloudBots({ store, workspace, rooms = () => null, vault = () => null, memberOf, members, push = null, publicUrl = "", testing = false, fetchImpl = undefined, log = () => {}, computer = null, machine = null, google = null, googleEndpoints = null, tcp = null }) {
+export function cloudBots({ store, workspace, rooms = () => null, vault = () => null, memberOf, members, push = null, publicUrl = "", testing = false, fetchImpl = undefined, log = () => {}, computer = null, machine = null, google = null, googleEndpoints = null, tcp = null, viaComputer = null }) {
   // The marketplace: `google` Colmena's web OAuth client ({clientId, clientSecret, project}, from
   // the Worker's secrets) or null; `tcp` the Worker's TCP sockets for mail (cloud/src/tcp.js).
   // Phase 4: `computer`, the cloud browser (browser-cloud.mjs); `machine`, the company's container
   // (server/machine/seam.mjs) where run_command runs.
   const fakeOn = () => !!testing && store.get("cloud", TEST_FLAGS_ID)?.fakeModel === true;
-  const provider = personalProviders({ store, vaultFor: vault, fake: fakeOn, ...(fetchImpl ? { fetchImpl } : {}) });
+  const provider = personalProviders({ store, vaultFor: vault, fake: fakeOn, viaComputer, ...(fetchImpl ? { fetchImpl } : {}) });
 
   // ---- apps (Composio) for the company: its key in the vault; the test app under the flag.
   const composio = new ComposioHub({ vault: vault("connections") });

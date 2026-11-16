@@ -28,6 +28,9 @@ export const CAPABILITY_LABELS = Object.freeze({
   dictado: "Dictado del sistema", codigo: "Claude Code de este ordenador",
 });
 export const OFFLINE_CODE = "AGENT_OFFLINE";
+/** «servicio» › «chatgpt-models»: the one address a computer asks for its person (agent.mjs). */
+export const CODEX_CLIENT_VERSION = "0.80.0";
+export const CHATGPT_MODELS_URL = "https://chatgpt.com/backend-api/codex/models?client_version=" + CODEX_CLIENT_VERSION;
 
 const B64URL = /^[A-Za-z0-9_-]+$/;
 export const DEVICE_ID = /^[a-f0-9]{24}$/;

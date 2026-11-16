@@ -86,8 +86,8 @@ export function jwtClaims(token) {
 
 export class CodexDeviceSession {
   /** `vault` (envelope vault of this person), `info()` / `setInfo(v)`: what the config keeps in the clear (email, account). */
-  constructor({ vault, fetchImpl = plainFetch, info = () => null, setInfo = () => {}, allowed = () => true, consented = () => true, clock = Date.now }) {
-    Object.assign(this, { vault, fetch: fetchImpl, info, setInfo, allowed, consented, clock });
+  constructor({ vault, fetchImpl = plainFetch, info = () => null, setInfo = () => {}, allowed = () => true, consented = () => true, clock = Date.now, viaComputer = null }) {
+    Object.assign(this, { vault, fetch: fetchImpl, info, setInfo, allowed, consented, clock, viaComputer });
     this.credentials = undefined; // undefined: not loaded yet
     this.models = [];
     this.refreshing = null;
@@ -173,6 +173,13 @@ export class CodexDeviceSession {
     // The Codex backend lists models for a Codex client: it names itself as Codex does (the
     // device sign-in is Codex's too), or the list is refused with a 403.
     const response = await this.fetch(CODEX.api + "/models?client_version=" + CODEX_CLIENT_VERSION, { redirect: "error", signal: AbortSignal.timeout(20000), headers: { ...(await this.headers()), originator: "codex_cli_rs", version: CODEX_CLIENT_VERSION, "User-Agent": "codex_cli_rs/" + CODEX_CLIENT_VERSION, Accept: "application/json" } });
+    if (!response.ok && this.viaComputer) {
+      // chatgpt.com refuses the list to Cloudflare's servers (an HTML 403) while it answers the
+      // turns: the person's own computer asks for it (server/agent-link › «chatgpt-models»).
+      const headers = await this.headers();
+      const got = await this.viaComputer({ authorization: headers.Authorization, account: headers["chatgpt-account-id"] || null }).catch(() => null);
+      if (got?.status === 200 && got.body) { this.models = normalizeModels(got.body); return this.models; }
+    }
     if (!response.ok) {
       const said = (await response.text().catch(() => "")).replace(/s+/g, " ").slice(0, 200);
       throw refuse("ChatGPT no ha dado la lista de modelos (" + response.status + (said ? ": " + said : "") + ").", 502);
@@ -203,10 +210,10 @@ export class CodexProvider extends OpenAIProvider {
 const NO_CLI = Object.freeze({ respond: async () => { throw refuse("Claude Code de este ordenador no existe en la nube.", 400); }, close() {} });
 
 export class PersonHub extends ProviderHub {
-  constructor({ store, personId, vault, fetchImpl = plainFetch, policy = () => aiPolicy(store) }) {
+  constructor({ store, personId, vault, fetchImpl = plainFetch, policy = () => aiPolicy(store), viaComputer = null }) {
     let hub = null;
     const session = new CodexDeviceSession({
-      vault, fetchImpl,
+      vault, fetchImpl, viaComputer,
       info: () => hub?.config().chatgpt || null,
       setInfo: (value) => hub?.saveConfig({ chatgpt: value }),
       allowed: () => policy().chatgptLogin,
@@ -283,8 +290,8 @@ function noAccount(personal) {
  * Worker has no master secret. `fake()`: the test flag (server/cloud/fake-model.mjs).
  */
 export class PersonalProviders {
-  constructor({ store, vaultFor = () => null, fetchImpl = plainFetch, fake = () => false, members = null }) {
-    Object.assign(this, { store, vaultFor, fetchImpl, fake, members });
+  constructor({ store, vaultFor = () => null, fetchImpl = plainFetch, fake = () => false, members = null, viaComputer = null }) {
+    Object.assign(this, { store, vaultFor, fetchImpl, fake, members, viaComputer });
     this.hubs = new Map();
     this.fakeOne = null;
   }
@@ -292,7 +299,7 @@ export class PersonalProviders {
   /** One person's hub (made once per wake-up of the workspace). */
   hub(personId) {
     if (!this.hubs.has(personId))
-      this.hubs.set(personId, new PersonHub({ store: this.store, personId, vault: this.vaultFor("ai-" + personId), fetchImpl: this.fetchImpl, policy: () => this.policy() }));
+      this.hubs.set(personId, new PersonHub({ store: this.store, personId, vault: this.vaultFor("ai-" + personId), fetchImpl: this.fetchImpl, policy: () => this.policy(), viaComputer: this.viaComputer ? (args) => this.viaComputer(personId, args) : null }));
     return this.hubs.get(personId);
   }
   current() {

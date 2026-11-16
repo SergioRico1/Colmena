@@ -272,6 +272,29 @@ export class AgentHub {
       }
     });
   }
+  /**
+   * A small service of the person's own computer that is not something lent to a bot (cap
+   * «servicio»): today only «chatgpt-models», ChatGPT's model list asked from the computer because
+   * chatgpt.com refuses it to Cloudflare's servers. Any of their computers online answers; an
+   * older desktop says it cannot (AgentError), and the caller keeps its own fallback.
+   */
+  async service({ personId, op, args = {}, timeout = 20_000 }) {
+    if (!personId) throw new AgentError("Solo para una persona.", "NOT_LENT");
+    const device = this.devicesOf(personId).find((d) => this.isOnline(d.id));
+    if (!device) throw new AgentError("Ningún ordenador de esta persona está conectado ahora.", OFFLINE_CODE);
+    const socket = this.liveSockets(device.id)[0];
+    const id = "s" + randomId(10);
+    const frame = { type: "call", id, cap: "servicio", op, args, bot: null, mission: null, person: { id: personId }, exp: this.clock() + timeout + 5000 };
+    return await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { this.pending.delete(id); reject(new AgentError("El ordenador no respondió a tiempo.", "TIMEOUT")); }, timeout);
+      timer.unref?.();
+      this.pending.set(id, { resolve, reject, timer, deviceId: device.id });
+      try { socket.send(JSON.stringify(frame)); } catch {
+        this.pending.delete(id); clearTimeout(timer);
+        reject(new AgentError(offlineMessage(device.name), OFFLINE_CODE));
+      }
+    });
+  }
 }
 
 /** A folder id the hub owns: «pc.<device>.<folder>» → {deviceId, folderId}, or null. */

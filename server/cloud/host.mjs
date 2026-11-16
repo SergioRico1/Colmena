@@ -123,7 +123,7 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   };
 
   // Bots (Phase 3): runtime, scheduler, connections and per-person AI accounts (bots-host.mjs).
-  let appRef = null, pushRef = null;
+  let appRef = null, pushRef = null, agentsRef = null;
   // The bots' browser (Phase 4): Browser Rendering pages, cookie jars sealed in the vault.
   const browser = browserDriver ? cloudBrowser({
     driver: browserDriver, vault: (ns) => (masters.length ? vault(ns) : null), log,
@@ -133,12 +133,14 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
     computer: browser, machine, google, googleEndpoints, tcp,
     store, workspace, vault: (ns) => (masters.length ? vault(ns) : null), memberOf, members, publicUrl, testing, fetchImpl, log,
     push: (personId, payload) => pushRef?.(personId, payload), rooms: () => appRef?.locals?.rooms,
+    // ChatGPT's model list through the person's own computer (chatgpt.com refuses it to Cloudflare).
+    viaComputer: (personId, args) => agentsRef ? agentsRef.service({ personId, op: "chatgpt-models", args }) : Promise.reject(Error("no agents")),
   });
   const runtime = bots.runtime;
 
   // Phase 5: each person's computers lend what only they have (server/agent-link): folders read
   // through the agent, browser, apps and commands, saved logins and Claude Code of that computer.
-  const agents = new AgentHub({
+  const agents = agentsRef = new AgentHub({
     store, workspace, memberOf, sockets: agentSockets, log,
     bots: () => store.list("bots").filter((b) => b.enabled !== false).map((b) => ({ id: b.id, name: b.name })),
     importer: (member, batch) => importBatch(store, member, batch),

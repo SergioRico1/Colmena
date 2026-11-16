@@ -9,6 +9,7 @@
 // password managers' answers, provider logins) never leave the computer; results never carry a
 // path outside a lent folder.
 import { createPrivateKey, sign as edSign } from "node:crypto";
+import { CHATGPT_MODELS_URL, CODEX_CLIENT_VERSION } from "./protocol.mjs";
 import {
   AgentError, CAPABILITIES, MAX_RESULT_CHARS, ReplayGuard, capabilityOf, cleanLends, helloPayload, toB64url,
 } from "./protocol.mjs";
@@ -106,8 +107,8 @@ export function fitResult(result) {
  * local allowlist; `execute(call)` → the local implementation's result (main.mjs); `onStatus`.
  */
 export class LocalAgent {
-  constructor({ url, identity, policy, execute, WebSocketImpl = globalThis.WebSocket, clock = () => Date.now(), log = () => {}, onStatus = () => {}, setTimer = setTimeout, clearTimer = clearTimeout }) {
-    Object.assign(this, { url: String(url || "").replace(/\/$/, ""), identity, policy, execute, WebSocketImpl, clock, log, onStatus, setTimer, clearTimer });
+  constructor({ url, identity, policy, execute, WebSocketImpl = globalThis.WebSocket, fetchImpl = (...a) => globalThis.fetch(...a), clock = () => Date.now(), log = () => {}, onStatus = () => {}, setTimer = setTimeout, clearTimer = clearTimeout }) {
+    Object.assign(this, { url: String(url || "").replace(/\/$/, ""), identity, policy, execute, WebSocketImpl, fetchImpl, clock, log, onStatus, setTimer, clearTimer });
     this.guard = new ReplayGuard({ clock });
     this.ws = null;
     this.state = { status: "idle", person: null, workspace: null, bots: [], device: null, error: null };
@@ -226,6 +227,11 @@ export class LocalAgent {
     const answer = (ok, payload) => this.send({ type: "result", id: call.id, ok, ...(ok ? { result: payload } : { error: payload }) });
     const replay = this.guard.check(call);
     if (replay) { answer(false, { message: replay, code: "REPLAY" }); return { replay }; }
+    // A service of this computer for its own person (not something lent to a bot): own answers.
+    if (call?.cap === "servicio") {
+      try { answer(true, fitResult(await this.service(call))); return { ok: true }; }
+      catch (error) { answer(false, { message: String(error?.message || error).slice(0, 600), code: String(error?.code || "ERROR").slice(0, 40) }); return { error: error?.message }; }
+    }
     const refused = refusalFor(this.policy(), call);
     if (refused) { answer(false, { message: refused, code: "NOT_LENT" }); return { refused: "policy", message: refused }; }
     try {
@@ -236,6 +242,22 @@ export class LocalAgent {
       answer(false, { message: String(error?.message || error).slice(0, 600), code: String(error?.code || "ERROR").slice(0, 40) });
       return { error: error?.message };
     }
+  }
+  /**
+   * «chatgpt-models»: ChatGPT's model list, which chatgpt.com refuses to Cloudflare's servers.
+   * Only that one address, with the person's own sign-in the cloud sends for it; nothing else
+   * can be asked through here (no URL and no other header comes from the cloud).
+   */
+  async service(call) {
+    if (call.op !== "chatgpt-models") throw Object.assign(Error("Este ordenador no hace eso."), { code: "NOT_LENT" });
+    const auth = String(call.args?.authorization || "");
+    const account = call.args?.account == null ? "" : String(call.args.account);
+    if (!/^Bearer [A-Za-z0-9._~+/=-]{20,8000}$/.test(auth) || (account && !/^[A-Za-z0-9_-]{1,120}$/.test(account))) throw Object.assign(Error("Petición no válida."), { code: "BAD_REQUEST" });
+    const response = await this.fetchImpl(CHATGPT_MODELS_URL, { redirect: "error", signal: AbortSignal.timeout(15_000), headers: { Authorization: auth, ...(account ? { "chatgpt-account-id": account } : {}), originator: "codex_cli_rs", version: CODEX_CLIENT_VERSION, "User-Agent": "codex_cli_rs/" + CODEX_CLIENT_VERSION, Accept: "application/json" } });
+    const text = await response.text();
+    let body = null;
+    try { body = JSON.parse(text); } catch {}
+    return { status: response.status, body: response.ok ? body : null };
   }
   /** «Llevar mis datos a la nube»: batches one after the other, each acknowledged. */
   async upload(batches, { installId, onProgress = () => {} } = {}) {

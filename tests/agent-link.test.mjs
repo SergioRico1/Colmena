@@ -530,3 +530,34 @@ test("computer tools: offered only to the lending person's bots, planned there, 
   assert.deepEqual(seen, ["plan:browser_open", "execute:browser_open:approved"]);
   assert.equal(store.get("approvals", "s1:c1").status, "executed");
 });
+
+test("service «chatgpt-models»: the person's own computer asks only that address, with only their sign-in", async (t) => {
+  const { hub, lab } = await hubLab(t);
+  const keys = deviceKeys();
+  const device = await hub.register(ANA, { name: "Portátil de Ana", publicKey: keys.publicKey });
+  hub.approve(ANA, device.id);
+  const asked = [];
+  const policy = { current: normalizePolicy({}) };
+  const agent = new LocalAgent({
+    url: "https://colmena.example", identity: () => ({ workspaceId: hub.workspace.id, deviceId: device.id, privateKey: keys.privateKey }),
+    policy: () => policy.current, execute: async () => { throw Error("never a lent capability"); }, WebSocketImpl: lab.FakeWS,
+    fetchImpl: async (url, init) => { asked.push({ url, headers: init.headers }); return Response.json({ models: [{ slug: "gpt-6-luna", visibility: "list", display_name: "Luna 6" }] }); },
+  });
+  agent.start();
+  t.after(() => agent.stop?.());
+  await until(() => agent.state.status === "online");
+  const token = "Bearer " + "a".repeat(40);
+  const got = await hub.service({ personId: ANA.id, op: "chatgpt-models", args: { authorization: token, account: "acc-1" } });
+  assert.equal(got.status, 200);
+  assert.equal(got.body.models[0].slug, "gpt-6-luna");
+  assert.equal(asked.length, 1);
+  assert.match(asked[0].url, /^https:\/\/chatgpt\.com\/backend-api\/codex\/models\?client_version=/);
+  assert.equal(asked[0].headers.Authorization, token);
+  assert.equal(asked[0].headers["chatgpt-account-id"], "acc-1");
+  // Nothing else goes through it: another service, or a header that is not a sign-in.
+  await assert.rejects(hub.service({ personId: ANA.id, op: "fetch", args: { url: "https://example.com" } }), /no hace eso/);
+  await assert.rejects(hub.service({ personId: ANA.id, op: "chatgpt-models", args: { authorization: "Bearer x\r\nHost: evil" } }), /no válida/);
+  assert.equal(asked.length, 1);
+  // Only the person's own computers: Beto has none online.
+  await assert.rejects(hub.service({ personId: BETO.id, op: "chatgpt-models", args: { authorization: token } }), (e) => e.code === OFFLINE_CODE);
+});
