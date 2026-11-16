@@ -248,8 +248,6 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   // their hub) plus the company's policy. The bot profile and Ajustes read them to offer accounts
   // and models; dropping them hid both.
   function filterState(s, me) {
-    const atlas = (s.bots || []).find((b) => b.id === "atlas");
-    if (s.ai) console.log("state ai: " + JSON.stringify({ primary: s.ai.primary, openai: s.ai.catalog?.openai?.length ?? null, models: (s.models || []).length, atlas: atlas ? { engine: atlas.engine || null, model: atlas.model } : null }));
     const mine = (x) => !x?.for || x.for.includes(me.id);
     const approvals = (s.approvals || []).filter((a) => mine(store.get("approvals", a.id) || a));
     return { ...s, approvals, notifications: (s.notifications || []).filter((n) => mine(store.get("notifications", n.id) || n)), ai: { ...(s.ai || {}), policy: aiPolicy(store), mine: provider.connectedFor(me.id), fake: fakeOn() } };
@@ -258,16 +256,16 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   /** {count, error}: ChatGPT's model list of one person, read now if it is still empty (20 s at most). */
   async function chatgptModelsFor(personId) {
     const hub = provider.hub(personId);
-    const said = (out) => { console.log("chatgpt models: " + JSON.stringify({ kind: hub.kind, session: hub.session?.models?.length || 0, offered: hub.modelsFor("openai").length, ...out })); return out; };
-    if (hub.kind !== "chatgpt") return said({ count: 0, error: null, kind: hub.kind || null });
-    if (hub.session?.models?.length) return said({ count: hub.session.models.length, error: null });
+    if (hub.kind !== "chatgpt") return { count: 0, error: null, kind: hub.kind || null };
+    if (hub.session?.models?.length) return { count: hub.session.models.length, error: null };
     try {
-      const list = await Promise.race([hub.openaiModels(), new Promise((_, no) => setTimeout(() => no(Error("ChatGPT tardó demasiado en dar su lista de modelos.")), 20_000))]);
+      let timer;
+      const late = new Promise((_, no) => { timer = setTimeout(() => no(Error("ChatGPT tardó demasiado en dar su lista de modelos.")), 20_000); });
+      const list = await Promise.race([hub.openaiModels(), late]).finally(() => clearTimeout(timer));
       if (list?.length) for (const fn of store.listeners) { try { fn({ type: "changed-local", kinds: ["account"] }); } catch {} }
-      return said({ count: list?.length || 0, error: null });
+      return { count: list?.length || 0, error: null };
     } catch (error) {
       log("chatgpt models: " + (error?.message || error));
-      console.error("chatgpt models: " + (error?.message || error));
       return { count: 0, error: String(error?.message || error).slice(0, 200) };
     }
   }

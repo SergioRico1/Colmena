@@ -41,7 +41,7 @@ function Files({ files }) {
           const w = Math.min(360, f.w || 360), h = f.w && f.h ? Math.round((w * f.h) / f.w) : null;
           return (
             <a key={f.id} href={fileUrl(f.id)} target="_blank" rel="noopener" className="ms-image" aria-label={"Abrir la imagen " + f.name}>
-              <img src={fileUrl(f.id)} alt={f.name} loading="lazy" width={w} height={h || undefined} style={{ aspectRatio: f.w && f.h ? `${f.w} / ${f.h}` : undefined }} />
+              <img src={fileUrl(f.id)} alt={f.name} data-lightbox="" data-name={f.name} loading="lazy" width={w} height={h || undefined} style={{ aspectRatio: f.w && f.h ? `${f.w} / ${f.h}` : undefined }} />
             </a>
           );
         }

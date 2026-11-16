@@ -46,7 +46,7 @@
 .ms-gone{margin:2px 0;font-size:var(--t-ui);font-style:italic;color:var(--c-text-3)}
 .ms-files{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .ms-image{display:block;max-width:min(360px,100%);border-radius:var(--r-md);overflow:hidden;border:1px solid var(--c-line);background:var(--c-sunken)}
-.ms-image img{display:block;max-width:100%;height:auto;max-height:360px;object-fit:contain}
+.ms-image img{display:block;cursor:zoom-in;max-width:100%;height:auto;max-height:360px;object-fit:contain}
 .ms-file{display:flex;align-items:center;gap:10px;min-width:220px;max-width:min(380px,100%);padding:8px 8px 8px 12px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-card);box-sizing:border-box}
 .ms-file-icon{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:var(--r-sm);background:var(--c-accent-soft);color:var(--c-accent-ink)}
 .ms-file-main{flex:1;min-width:0;display:flex;flex-direction:column}
