@@ -32,7 +32,7 @@
 .ms-row:hover,.ms-row:focus-within,.ms-row.is-touched{background:var(--c-hover)}
 .ms-row.is-highlight{background:var(--c-accent-soft);animation:c-flash 2.4s ease-out both}
 .ms-row.is-pending .ms-main{opacity:.6}
-.ms-gutter{flex:none;width:36px;display:flex;justify-content:center;padding-top:2px}
+.ms-gutter{flex:none;width:36px;display:flex;justify-content:center;align-items:flex-start;padding-top:2px}
 .ms-gutter-time{opacity:0;font:400 var(--t-micro)/22px 'Geist',sans-serif;color:var(--c-text-4);font-variant-numeric:tabular-nums}
 .ms-row:hover .ms-gutter-time,.ms-row:focus-within .ms-gutter-time{opacity:1}
 .ms-main{flex:1;min-width:0}

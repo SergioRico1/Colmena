@@ -3,7 +3,9 @@
 // message; the draft is kept per channel; while you type the channel's people see «escribiendo».
 // Also the box for editing a message in place (`editing`).
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, Paperclip, Smiley, X } from "../components/Icon.js";
+import { ArrowUp, ChevronDown, Paperclip, Smiley, X } from "../components/Icon.js";
+import { MenuButton } from "../components/Menu.js";
+import { PollDialog, TaskDialog, WhenDialog, commandMatches, runCommand } from "./Plus.jsx";
 import EmojiPicker from "./emoji/EmojiPicker.jsx";
 import { chat, uploadFile } from "./api.js";
 import { decodeForEdit, encode } from "./format.jsx";
@@ -28,6 +30,9 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [pick, setPick] = useState(null); // {query, start, index}
+  const [info, setInfo] = useState(null); // what a command or a scheduled send did
+  const [dialog, setDialog] = useState(null); // {kind: "task"|"poll"|"when", ...}
+  const [cmdIndex, setCmdIndex] = useState(0);
   const box = useRef(null);
   const draftTimer = useRef(null);
 
@@ -66,9 +71,14 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
     return [...people, ...bots, ...special];
   }, [pick, s.people, s.bots, s.me, ch]);
 
+  // «/enc…» at the start of an empty box: the commands that match.
+  const commands = editing ? null : commandMatches(text);
+  const pickCommand = (c) => { const next = "/" + c.name + " "; setText(next); setCmdIndex(0); requestAnimationFrame(() => { box.current?.focus(); box.current?.setSelectionRange(next.length, next.length); }); };
   const onChange = (e) => {
     const value = e.target.value;
     setText(value);
+    setCmdIndex(0);
+    if (info) setInfo(null);
     saveDraft(value);
     if (!editing && value.trim()) typing(channel, thread);
     const q = mentionQuery(value, e.target.selectionStart);
@@ -120,6 +130,17 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
     const body = encode(text.trim(), mentions);
     if (!body && !ready.length) return;
     setError(null);
+    // «/encargo», «/recordar», «/encuesta», «/resumen» (Plus.jsx): never sent as text.
+    if (!editing && /^\/[a-zñ]+(\s|$)/i.test(text.trim())) {
+      setBusy(true);
+      try {
+        const out = await runCommand(text, body, { channel, thread });
+        if (out.dialog) setDialog(out.dialog);
+        else { clearBox(); setInfo(out.notice || null); }
+      } catch (e) { setError(e.message); }
+      finally { setBusy(false); }
+      return;
+    }
     if (editing) {
       setBusy(true);
       try { await chat.patch(`/messages/${editing.id}`, { text: body }); onDone?.(); }
@@ -143,7 +164,38 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
     }
   };
 
+  const clearBox = () => {
+    setText(""); setMentions([]);
+    if (thread || editing) return;
+    clearTimeout(draftTimer.current);
+    chat.put(`/channels/${channel}/draft`, { text: "" }).catch(() => {});
+    upsertChannel({ id: channel, draft: "" });
+  };
+  // «Programar envío»: the text goes to the server and is sent as you at that time (chat-plus.mjs).
+  const later = async (when) => {
+    const body = encode(text.trim(), mentions);
+    if (!body) return;
+    if (files.length) { setError("Los archivos no se pueden programar: envíalos ahora o quítalos."); return; }
+    setBusy(true); setError(null);
+    try {
+      const r = await chat.post("/scheduled", { channel, text: body, thread, alsoChannel: !!(thread && also), ...(typeof when === "number" ? { at: when } : { when }) });
+      clearBox(); setDialog(null);
+      setInfo("Se enviará " + r.label + ". Lo tienes en Canales › Programados.");
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  };
+  const laterItems = () => [{ group: "Programar el envío", items: [
+    { label: "En 1 hora", onSelect: () => later("en 1 hora") },
+    { label: "Mañana", hint: "09:00", onSelect: () => later("mañana a las 9") },
+    { label: "El lunes", hint: "09:00", onSelect: () => later("el lunes a las 9") },
+    { label: "Elegir fecha y hora…", onSelect: () => setDialog({ kind: "when" }) },
+  ] }];
   const onKeyDown = (e) => {
+    if (commands?.length) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setCmdIndex((cmdIndex + 1) % commands.length); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setCmdIndex((cmdIndex - 1 + commands.length) % commands.length); return; }
+      if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) { e.preventDefault(); pickCommand(commands[cmdIndex] || commands[0]); return; }
+    }
     if (pick && candidates.length) {
       if (e.key === "ArrowDown") { e.preventDefault(); setPick({ ...pick, index: (pick.index + 1) % candidates.length }); return; }
       if (e.key === "ArrowUp") { e.preventDefault(); setPick({ ...pick, index: (pick.index - 1 + candidates.length) % candidates.length }); return; }
@@ -157,6 +209,15 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
   const listId = "mention-list-" + channel + (thread || "") + (editing?.id || "");
   return (
     <div className={"cp" + (editing ? " is-editing" : "")} onDragOver={(e) => { if (!editing && [...(e.dataTransfer?.types || [])].includes("Files")) e.preventDefault(); }} onDrop={(e) => { if (editing || !e.dataTransfer?.files?.length) return; e.preventDefault(); addFiles(e.dataTransfer.files); }}>
+      {commands?.length ? (
+        <ul role="listbox" className="cp-mentions" aria-label="Comandos">
+          {commands.map((c, i) => (
+            <li key={c.name} role="option" aria-selected={i === cmdIndex} className="cp-mention" onMouseDown={(e) => { e.preventDefault(); pickCommand(c); }}>
+              <span className="cp-cmd-name">{"/" + c.name}</span>{c.hint ? <span className="cp-cmd-hint">{c.hint}</span> : null}<span className="cp-mention-sub">{c.text}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {pick && candidates.length ? (
         <ul id={listId} role="listbox" className="cp-mentions" aria-label="Mencionar a">
           {candidates.map((c, i) => (
@@ -198,13 +259,20 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
             <button type="button" className="ch-btn is-primary" onClick={send} disabled={busy}>Guardar</button>
           </span>
         ) : (
-          <button type="button" className="cp-send" onClick={send} disabled={disabled || (!text.trim() && !files.some((f) => f.id))} aria-label="Enviar"><ArrowUp size={18} weight="bold" /></button>
+          <span className="cp-sendgroup">
+            <button type="button" className="cp-send" onClick={send} disabled={disabled || busy || (!text.trim() && !files.some((f) => f.id))} aria-label="Enviar"><ArrowUp size={18} weight="bold" /></button>
+            <MenuButton label="Programar el envío" menuLabel="Programar el envío" items={laterItems} placement="top-end" className="cp-later" disabled={disabled || busy || !text.trim() || text.trim().startsWith("/")}><ChevronDown size={14} /></MenuButton>
+          </span>
         )}
       </div>
       {alsoChannel && thread && !editing ? (
         <label className="cp-also"><input type="checkbox" checked={also} onChange={(e) => setAlso(e.target.checked)} /> {"También enviar a " + alsoChannel}</label>
       ) : null}
       {error ? <p className="ch-error cp-error" role="alert">{error}</p> : null}
+      {info ? <p className="cp-info" role="status">{info}</p> : null}
+      {dialog?.kind === "task" ? <TaskDialog channel={channel} thread={thread} title={dialog.title || ""} assignee={dialog.assignee || null} onClose={() => setDialog(null)} onDone={(t) => { clearBox(); setInfo(t); }} /> : null}
+      {dialog?.kind === "poll" ? <PollDialog channel={channel} thread={thread} question={dialog.question || ""} options={dialog.options || []} onClose={() => { setDialog(null); clearBox(); }} /> : null}
+      {dialog?.kind === "when" ? <WhenDialog onPick={(at) => later(at)} onClose={() => setDialog(null)} /> : null}
     </div>
   );
 }

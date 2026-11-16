@@ -35,7 +35,7 @@ export function fileHeaders(file, { download = false } = {}) {
   };
 }
 
-export function chatRoutes(app, { chat, importer, blobs, workspace, presence, push }) {
+export function chatRoutes(app, { chat, plus = null, channelBots = null, importer, blobs, workspace, presence, push }) {
   const me = () => currentPerson();
   const run = (fn) => async (req, res) => {
     try {
@@ -59,6 +59,8 @@ export function chatRoutes(app, { chat, importer, blobs, workspace, presence, pu
       push: { publicKey: push?.publicKey || null }, workspace,
       // Bots that may be named with @ (Phase 3): <@bot:id> in a message.
       bots: person.role === "guest" ? [] : chat.bots(),
+      // Your messages saved for later (chat-plus.mjs): the screens mark them.
+      saved: plus ? plus.savedIds(self.id) : [],
     };
   }));
   app.get("/api/chat/people", run(() => { chat.must(me()); return { people: chat.directory() }; }));
@@ -105,6 +107,36 @@ export function chatRoutes(app, { chat, importer, blobs, workspace, presence, pu
   app.post("/api/chat/messages/:id/pin", run((req) => chat.pin(me(), req.params.id, body(req).on !== false)));
   app.get("/api/chat/search", run((req) => chat.search(me(), String(req.query?.q || ""), { before: req.query?.before ? Number(req.query.before) : null })));
   app.get("/api/chat/mentions", run((req) => chat.mentions(me(), { before: req.query?.before ? Number(req.query.before) : null })));
+
+  // ---- encargos, polls, saved, scheduled messages, reminders (chat-plus.mjs) and «/resumen»
+  if (plus) {
+    const b = (req) => body(req);
+    app.post("/api/chat/channels/:id/tasks", run((req, res) => { res.status(201); return plus.createTask(me(), req.params.id, b(req)); }));
+    app.get("/api/chat/tasks", run((req) => plus.tasks(me(), { scope: String(req.query?.scope || "para-mi"), channel: req.query?.channel || null, status: req.query?.status || null })));
+    app.patch("/api/chat/tasks/:id", run((req) => plus.setTask(me(), req.params.id, b(req))));
+    app.post("/api/chat/channels/:id/polls", run((req, res) => { res.status(201); return plus.createPoll(me(), req.params.id, b(req)); }));
+    app.post("/api/chat/messages/:id/vote", run((req) => plus.vote(me(), req.params.id, b(req).options || [])));
+    app.post("/api/chat/messages/:id/poll", run((req) => plus.closePoll(me(), req.params.id, b(req).closed !== false)));
+    app.post("/api/chat/messages/:id/save", run((req) => plus.save(me(), req.params.id, b(req).on !== false)));
+    app.get("/api/chat/saved", run(() => plus.saved(me())));
+    app.post("/api/chat/scheduled", run((req, res) => { res.status(201); return plus.schedule(me(), b(req)); }));
+    app.get("/api/chat/scheduled", run(() => plus.timed(me(), "send")));
+    app.patch("/api/chat/scheduled/:id", run((req) => plus.editTimed(me(), req.params.id, b(req))));
+    app.delete("/api/chat/scheduled/:id", run((req) => plus.cancelTimed(me(), req.params.id)));
+    app.post("/api/chat/scheduled/:id/send", run((req) => plus.sendNow(me(), req.params.id)));
+    app.post("/api/chat/reminders", run((req, res) => { res.status(201); return plus.remind(me(), b(req)); }));
+    app.get("/api/chat/reminders", run(() => plus.timed(me(), "remind")));
+    app.delete("/api/chat/reminders/:id", run((req) => plus.cancelTimed(me(), req.params.id)));
+  }
+  if (channelBots) {
+    app.post("/api/chat/channels/:id/summary", run((req) => {
+      const person = me();
+      const row = chat.mustRead(person, req.params.id);
+      const thread = body(req).thread ? String(body(req).thread) : null;
+      if (thread) { const r = chat.mrow(thread); if (!r || r.channel !== row.id) throw new ChatError("Ese hilo ya no existe.", 404, "thread"); }
+      return channelBots.summarize(person, row, { thread });
+    }));
+  }
 
   // ---- files (the Durable Object streams uploads and downloads itself; these serve Node and small files)
   app.put("/api/chat/files", express.raw({ type: () => true, limit: "100mb" }), run(async (req, res) => {

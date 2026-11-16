@@ -12,6 +12,7 @@ import Thread from "../chat/Thread.jsx";
 import { PersonPanel } from "../chat/PersonProfile.jsx";
 import { Composer } from "../chat/Composer.jsx";
 import { ChannelInfo, PinsDialog, TopicDialog } from "../chat/ChannelDialogs.jsx";
+import { Ephemeral } from "../chat/Plus.jsx";
 import { channelTitle, chatState, dropChannel, loadChat, mergeGhosts, nameOf, onChatEvent, setOpenChannel, upsertChannel, useChat } from "../chat/store.js";
 import { ChatPage, Empty, dayLabel } from "../chat/ui.jsx";
 import { cachedPage, forgetPage, keepPage } from "../chat/pages.js";
@@ -268,6 +269,8 @@ export default function Canal({ params, query }) {
             {!loading && !edges.before ? <ChannelIntro ch={ch} title={title} s={s} /> : null}
             {edges.before && messages.length ? <div className="cv-more"><button type="button" className="ch-btn" onClick={older}>Ver mensajes anteriores</button></div> : null}
             {rows}
+            {/* Only for you (a bot's «/resumen» of the channel), until you dismiss it. */}
+            {(s.ephemeral?.get(id) || []).filter((m) => !m.threadId).map((m) => <Ephemeral key={m.id} m={m} />)}
             {edges.after ? <div className="cv-more"><button type="button" className="ch-btn" onClick={newer}>Ver mensajes más recientes</button></div> : null}
           </div>
           {unreadAbove ? <button type="button" className="cv-jump is-top" onClick={() => list.current?.querySelector(".cv-new")?.scrollIntoView({ block: "center" })}>Ir a lo no leído</button> : null}

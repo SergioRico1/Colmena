@@ -9,7 +9,7 @@ import { isCloud, sendLive } from "../lib/cloud.js";
 
 const listeners = new Set();
 const eventListeners = new Set();
-let state = { ready: false, error: null, me: null, people: new Map(), bots: new Map(), ghosts: new Map(), channels: new Map(), presence: new Map(), typing: new Map(), settings: {}, push: {}, workspace: null };
+let state = { ready: false, error: null, me: null, people: new Map(), bots: new Map(), ghosts: new Map(), channels: new Map(), presence: new Map(), typing: new Map(), settings: {}, push: {}, workspace: null, saved: new Set(), ephemeral: new Map() };
 let loading = null;
 let openChannel = null;
 let away = false;
@@ -35,6 +35,8 @@ export function loadChat({ force = false } = {}) {
       bots: new Map((b.bots || []).map((x) => ["bot:" + x.id, { ...x, id: "bot:" + x.id, botId: x.id, bot: true }])),
       channels: new Map(b.channels.map((c) => [c.id, c])),
       presence: new Map(b.people.filter((p) => p.presence !== "offline").map((p) => [p.id, p.presence])),
+      // Your messages saved for later (chat-plus.mjs).
+      saved: new Set(b.saved || []),
     });
     return state;
   }).catch((error) => { set({ error: error.message || "No se pudo cargar." }); loading = null; throw error; });
@@ -127,6 +129,9 @@ function onFrame(e) {
       setTimeout(() => clearTyping(ev.channel, ev.person, true), 6200);
       break;
     }
+    case "chat.saved": { const saved = new Set(state.saved); if (ev.on) saved.add(ev.message); else saved.delete(ev.message); set({ saved }); break; }
+    // Only for you, until you dismiss it or reload (a bot's «/resumen»).
+    case "chat.ephemeral": addEphemeral(ev.channel, { ...ev.message, channel: ev.channel, threadId: ev.thread || null }); break;
     default: break;
   }
   for (const fn of eventListeners) { try { fn(ev); } catch {} }
@@ -166,3 +171,17 @@ if (typeof window !== "undefined" && isCloud()) {
   for (const type of ["pointerdown", "keydown", "visibilitychange"]) window.addEventListener(type, activity, { passive: true });
   activity();
 }
+
+/** Messages only you see (a bot's «/resumen», a command's answer), per channel, until dismissed. */
+export function addEphemeral(channel, message) {
+  const ephemeral = new Map(state.ephemeral);
+  ephemeral.set(channel, [...(ephemeral.get(channel) || []).filter((m) => m.id !== message.id), message]);
+  set({ ephemeral });
+}
+export function dropEphemeral(channel, id) {
+  const ephemeral = new Map(state.ephemeral);
+  ephemeral.set(channel, (ephemeral.get(channel) || []).filter((m) => m.id !== id));
+  set({ ephemeral });
+}
+/** Saved for later, as you click (the server's frame confirms it). */
+export function markSaved(id, on) { const saved = new Set(state.saved); if (on) saved.add(id); else saved.delete(id); set({ saved }); }

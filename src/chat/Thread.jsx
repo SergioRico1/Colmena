@@ -5,6 +5,7 @@ import { ArrowLeft, X } from "../components/Icon.js";
 import { chat } from "./api.js";
 import { Composer } from "./Composer.jsx";
 import Message from "./Message.jsx";
+import { Ephemeral } from "./Plus.jsx";
 import { channelTitle, mergeGhosts, nameOf, onChatEvent, useChat } from "./store.js";
 
 export default function Thread({ channel, rootId, canPost, admin, onClose }) {
@@ -31,7 +32,8 @@ export default function Thread({ channel, rootId, canPost, admin, onClose }) {
       else setReplies((r) => r.filter((x) => x.id !== ev.id));
     }
   }), [channel, rootId, load]);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [replies.length]);
+  const mine = (s.ephemeral?.get(channel) || []).filter((m) => m.threadId === rootId).length;
+  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [replies.length, mine]);
   useEffect(() => {
     const key = (e) => { if (e.key === "Escape" && !e.defaultPrevented && panel.current?.contains(document.activeElement)) onClose(); };
     window.addEventListener("keydown", key);
@@ -51,6 +53,7 @@ export default function Thread({ channel, rootId, canPost, admin, onClose }) {
         {root ? <Message m={root} inThread canPost={canPost} admin={admin} /> : <p className="th-loading">Cargando…</p>}
         {root ? <div className="th-count">{replies.length === 1 ? "1 respuesta" : `${replies.length} respuestas`}</div> : null}
         {replies.map((m, i) => <Message key={m.id} m={m} inThread compact={i > 0 && replies[i - 1].author === m.author && m.at - replies[i - 1].at < 5 * 60000} canPost={canPost} admin={admin} />)}
+        {(s.ephemeral?.get(channel) || []).filter((m) => m.threadId === rootId).map((m) => <Ephemeral key={m.id} m={m} />)}
         <div ref={end} />
       </div>
       {typingHere.length ? <p className="th-typing" aria-live="polite">{typingHere.join(", ") + (typingHere.length === 1 ? " está escribiendo…" : " están escribiendo…")}</p> : <p className="th-typing" aria-live="polite" />}

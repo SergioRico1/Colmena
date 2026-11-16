@@ -3,7 +3,7 @@
 // in a thread, edit, pin, copy link, mark unread from here, delete). The actions show on hover, on
 // keyboard focus and, on a touch screen, after a tap.
 import { memo, useEffect, useState } from "react";
-import { ChatCircleText, Copy, Download, Ellipsis, FileText, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
+import { Bookmark, ChatCircleText, Copy, Download, Ellipsis, FileText, ListChecks, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
 import { navigate } from "../lib/router.jsx";
 import { chat, fileUrl } from "./api.js";
@@ -11,6 +11,8 @@ import { withMine } from "./reactions.js";
 import { Emoji } from "./emoji/index.jsx";
 import EmojiPicker, { rememberEmoji } from "./emoji/EmojiPicker.jsx";
 import { MessageText } from "./format.jsx";
+import Markdown from "../components/room/Markdown.jsx";
+import { Poll, RefLink, TaskCards, TaskDialog, remindItems, saveItem } from "./Plus.jsx";
 import { nameOf, personOf, useChat } from "./store.js";
 import { Avatar, sizeOf, timeOf, whenOf } from "./ui.jsx";
 import { Composer } from "./Composer.jsx";
@@ -88,6 +90,9 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState(null);
   const [picker, setPicker] = useState(null); // the button the emoji panel opens from
+  const [info, setInfo] = useState(null); // what an action did («Te lo recordaré mañana…»)
+  const [taskFor, setTaskFor] = useState(false); // «Crear encargo» open
+  const saved = !!s.saved?.has(m.id);
   const author = personOf(m.author, s);
   // A bot of the company answers as "bot:<id>" (Phase 3); an imported integration only has botName.
   const isBot = String(m.author || "").startsWith("bot:");
@@ -134,8 +139,11 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   const items = () => [
     { group: null, items: [
       onThread && !inThread ? { label: "Responder en un hilo", icon: ChatCircleText, onSelect: () => onThread(m) } : null,
-      m.author === me && canPost && !m.imported ? { label: "Editar", icon: Pencil, onSelect: () => setEditing(true) } : null,
+      m.author === me && canPost && !m.imported && !m.poll ? { label: "Editar", icon: Pencil, onSelect: () => setEditing(true) } : null,
       canPost ? { label: m.pinned ? "Quitar de fijados" : "Fijar en el canal", icon: m.pinned ? PinOff : Pin, onSelect: () => chat.post(`/messages/${m.id}/pin`, { on: !m.pinned }).catch((e) => setError(e.message)) } : null,
+      canPost && !m.pending ? { label: "Crear encargo…", icon: ListChecks, onSelect: () => setTaskFor(true) } : null,
+      remindItems(m, setInfo),
+      saveItem(m, saved, setError),
       { label: "Copiar enlace", icon: Copy, onSelect: () => navigator.clipboard?.writeText(location.origin + "/canal/" + m.channel + (m.threadId ? "?hilo=" + m.threadId : "?m=" + m.id)) },
       onUnread && !inThread ? { label: "Marcar como no leído desde aquí", icon: RotateCcw, onSelect: () => onUnread(m) } : null,
     ].filter(Boolean) },
@@ -157,6 +165,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
             {isBot ? <span className="ch-chip">Bot</span> : m.botName ? <span className="ch-chip">Integración</span> : author?.ghost && !m.botName ? <span className="ch-chip" title="Aún no ha entrado en Colmena">Importado</span> : null}
             <time className="ms-time" dateTime={new Date(m.at).toISOString()} title={new Date(m.at).toLocaleString("es-ES")}>{whenOf(m.at)}</time>
             {m.pinned ? <span className="ms-pinned"><Pin size={12} /> Fijado</span> : null}
+            {saved ? <span className="ms-pinned"><Bookmark size={12} weight="fill" /> Guardado</span> : null}
           </div>
         )}
         {m.broadcast && !inThread ? <p className="ms-note">Respondió en un hilo</p> : null}
@@ -164,15 +173,20 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
           <Composer editing={m} channel={m.channel} onDone={() => setEditing(false)} />
         ) : (
           <div className="ms-text" data-message-text="" onClick={onMention}>
-            {m.text ? <MessageText text={m.text} /> : null}
+            {/* A bot writes Markdown (server/cloud/channel-bots.mjs): headings, lists, tables, code. */}
+            {m.text ? (m.format === "md" ? <Markdown text={m.text} size={15} /> : <MessageText text={m.text} />) : null}
             {m.editedAt ? <span className="ms-edited" title={"Editado " + whenOf(m.editedAt)}> (editado)</span> : null}
           </div>
         )}
         <Files files={m.files} />
         <Preview p={m.preview} />
+        <Poll m={m} canPost={canPost} />
+        <TaskCards m={m} />
+        <RefLink m={m} />
         <Reactions m={{ ...m, reactions }} me={me} onReact={react} onMore={canPost ? setPicker : null} />
         {!inThread && m.replies ? <ThreadSummary m={m} onThread={onThread} /> : null}
         {error ? <p className="ch-error" role="alert">{error}</p> : null}
+        {info ? <p className="ms-info" role="status">{info} <button type="button" className="px-link" onClick={() => setInfo(null)}>Vale</button></p> : null}
       </div>
       {editing || m.pending ? null : (
         <div className="ms-tools" role="toolbar" aria-label="Acciones del mensaje">
@@ -182,6 +196,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
           <MenuButton label="Más acciones" menuLabel="Mensaje" items={items} placement="bottom-end" className="ms-tool"><Ellipsis size={17} /></MenuButton>
         </div>
       )}
+      {taskFor ? <TaskDialog channel={m.channel} message={m} onClose={() => setTaskFor(false)} onDone={setInfo} /> : null}
       {picker ? <EmojiPicker anchor={picker} title="Añadir una reacción" onPick={(e) => { react(e, true); setPicker(null); }} onClose={() => setPicker(null)} /> : null}
     </div>
   );

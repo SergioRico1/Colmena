@@ -2,7 +2,8 @@
 // browse and join, what was for you lately («Menciones»), and the two ways to start something:
 // a new channel (?nuevo=1) and a new direct message or group (?mensaje=1).
 import { useEffect, useState } from "react";
-import { At, Hash, LockSimple, MessageSquarePlus, Plus, Search } from "../components/Icon.js";
+import { At, Bookmark, Clock, Hash, ListChecks, LockSimple, MessageSquarePlus, Plus, Search } from "../components/Icon.js";
+import { SavedList, TasksList, TimedList } from "../chat/Plus.jsx";
 import { navigate } from "../lib/router.jsx";
 import { chat } from "../chat/api.js";
 import { PeoplePicker } from "../chat/ChannelDialogs.jsx";
@@ -124,7 +125,7 @@ function Mentions() {
               <li key={m.id} className={"ch-item cl-mention" + (seen ? "" : " is-new")}>
                 <Avatar id={m.author} size={32} />
                 <div className="ch-item-main">
-                  <a className="cl-mention-head" href={href}><b>{nameOf(m.author, s)}</b> {KIND[kind] || ""}{ch ? <span>{" en " + (ch.kind === "public" || ch.kind === "private" ? "#" : "") + channelTitle(ch, s)}</span> : null}<span className="cl-when">{whenOf(m.at)}</span></a>
+                  <a className="cl-mention-head" href={href}>{kind === "task" ? <><b>Un encargo</b> para ti, o uno tuyo terminado</> : <><b>{nameOf(m.author, s)}</b> {KIND[kind] || ""}</>}{ch ? <span>{" en " + (ch.kind === "public" || ch.kind === "private" ? "#" : "") + channelTitle(ch, s)}</span> : null}<span className="cl-when">{whenOf(m.at)}</span></a>
                   <div className="cl-mention-text"><MessageText text={m.text} /></div>
                 </div>
               </li>
@@ -138,7 +139,8 @@ function Mentions() {
 
 export default function Canales({ query }) {
   const s = useChat();
-  const [tab, setTab] = useState(query?.ver === "menciones" ? "menciones" : "explorar");
+  const TABS = ["explorar", "menciones", "encargos", "guardados", "programados"];
+  const [tab, setTab] = useState(TABS.includes(query?.ver) ? query.ver : "explorar");
   const close = () => navigate("/canales", { replace: true });
   const mentions = [...s.channels.values()].reduce((n, c) => n + (c.mentions || 0), 0);
   return (
@@ -147,8 +149,8 @@ export default function Canales({ query }) {
         <a className="ch-btn r-hide-phone" href="/canales?mensaje=1"><MessageSquarePlus size={16} /> Nuevo mensaje</a>
         {s.me?.role !== "guest" ? <a className="ch-btn is-primary" href="/canales?nuevo=1"><Plus size={16} /> Crear un canal</a> : null}
       </>}>
-      <Tabs label="Canales" value={tab} onChange={setTab} items={[{ id: "explorar", label: "Explorar" }, { id: "menciones", label: <><At size={15} /> Para ti</>, count: mentions || null }]} />
-      {tab === "explorar" ? <Browse /> : <Mentions />}
+      <Tabs label="Canales" value={tab} onChange={setTab} items={[{ id: "explorar", label: "Explorar" }, { id: "menciones", label: <><At size={15} /> Para ti</>, count: mentions || null }, { id: "encargos", label: <><ListChecks size={15} /> Encargos</> }, { id: "guardados", label: <><Bookmark size={15} /> Guardados</> }, { id: "programados", label: <><Clock size={15} /> Programados</> }]} />
+      {tab === "explorar" ? <Browse /> : tab === "menciones" ? <Mentions /> : tab === "encargos" ? <TasksList /> : tab === "guardados" ? <SavedList /> : <TimedList />}
       {query?.nuevo ? <NewChannel onClose={close} /> : null}
       {query?.mensaje ? <NewMessage onClose={close} /> : null}
     </ChatPage>

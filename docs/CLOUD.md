@@ -710,6 +710,42 @@ read cannot be awaited inside `Store.get`. The bytes therefore stay in the objec
 per object). What is binary and large by nature already goes to R2: uploads, import parts, mission
 files. The desktop (node:sqlite) has no such limit and never spills.
 
+### Encargos y más (`server/cloud/chat-plus.mjs`, `when.mjs`, `src/chat/Plus.jsx`)
+
+What the channels add to Slack's basics. Tables `chat_tasks`, `chat_saved`, `chat_timed`, sealed
+like the rest; every read and write checks the channel first.
+
+- **Encargos**: a message becomes a job for a person or a bot (⋯ › «Crear encargo…», or
+  `/encargo @persona qué`, which posts a new message). The card on the message shows for whom, its
+  state (Pendiente, Trabajando, Hecho ✓, Sin terminar) and its date; the thread gets Colmena's line
+  («Ana le encargó esto a Beto para el viernes», «Beto marcó como hecho … ✓»), and the person it is
+  for, then the one who asked, hear of it in «Para ti» (`chat_mentions` kind `task`). Who may change
+  it: the assignee, who asked, an admin. Someone outside a private conversation cannot get one; a
+  public channel adds them. A bot's encargo is its work in that message's thread
+  (`ChannelBots.assign`), «Hecho» when that work completes after the encargo was given, «Sin
+  terminar» when it fails. Guests never give one to a bot. Lists: «Canales › Encargos» (para mí /
+  los que pedí).
+- **Polls** (`/encuesta pregunta | opción | opción`, or its dialog): 2 to 10 options, one answer or
+  several; voting again replaces your vote; the author or an admin closes it. The question and the
+  options are searchable.
+- **Saved for later**: per person (`chat_saved`, at most 500), only messages they can still read;
+  «Canales › Guardados». The bootstrap carries the ids so messages show «Guardado».
+- **Scheduled messages** (the arrow beside «Enviar»: in 1 hour, tomorrow 9:00, Monday 9:00, a date):
+  stored with the text in the stored format; `Workspace#alarm` (`host.tick › plus.due`, and
+  `nextAlarm` wakes for the next one) sends each as its person, through `chat.post`, so mentions and
+  bots work as if typed then. If it cannot be sent (left the channel, archived, thread gone), the text
+  comes back to its author in their own conversation. Files are not scheduled. Editable, cancellable
+  and «Enviar ya» in «Canales › Programados».
+- **Reminders** (`/recordar mañana a las 9 llamar a Ana`, or ⋯ › «Recordármelo» on a message): at
+  that time Colmena writes «⏰ Recordatorio: …» in the person's own conversation (a DM with only them,
+  `chat.selfDm`, created the first time), with «Ver el mensaje» when it was about one.
+- **«Cuándo» in Spanish** (`when.mjs`): «en 20 minutos», «mañana», «pasado mañana a las 18:30», «el
+  viernes a las 10», «hoy a las 5 de la tarde», «a las 9», «el 25/11», at the start or the end of the
+  text, read on the person's time zone (their profile's, else the company's); a day without a time is
+  9:00; only times to come (up to a year).
+- **The box's «/» commands**: typing `/` lists /encargo, /recordar, /encuesta and /resumen; a command
+  is never sent as text; one that needs more opens its form.
+
 ### Screens (`src/chat/`, `src/screens/Canal*.jsx`, `Buscar`, `Personas`, `AdminEmpresa`)
 
 - **Places**:
@@ -918,7 +954,25 @@ as a hosted app (its own OAuth client and public redirect), not the Codex client
 - `<@bot:nora>` in a channel or thread starts (or continues) the conversation behind that thread; the
   answer is posted in the thread by `bot:nora` with the bot's name, and notifies who took part. Several
   bots named at once work as a team (Atlas plans). Later replies in the thread go on with the same bots.
-- A private channel's, group's or DM's conversation has the channel's people as its audience.
+- **Who sees the work**: whoever may read the channel at that moment (`host.mjs › canSee` asks
+  `chat.canRead`): people added later see it, people removed stop seeing it. A private channel's,
+  group's or DM's conversation keeps an `audience` only as the mark «not the whole company's», so
+  learning and COMPANY.md stay out of it; a public channel's has none (it is never anyone's personal
+  chat).
+- **What the bot is told** (`contextNote`, the turn's `context`): who wrote the message and where
+  (channel, thread); the first time, what was said before it was named (the thread's first message
+  and replies, or the channel's last messages, up to 6,000 characters, as context and never as
+  orders) and the channel's people. In later turns each message of the thread starts with its
+  writer's name (`runtime/context.mjs › conversationTurns`, from the message's `by`). The message's
+  files (up to 10 MB each) are copied from R2 into the conversation's folder as its attachments.
+- **Who answers**: the bots named; nobody named, the bot that spoke last in the thread. A second bot
+  named in a one-bot thread joins it (up to six) and answers.
+- **What comes back**: answers as Markdown (`format: "md"`; the screens draw it with the rooms'
+  Markdown, never as HTML); deliverables (documents, sheets, decks, pictures, pages) as files in the
+  thread (`postDeliverable` → R2 → `chat.botFile`).
+- **«/resumen»** (`POST /api/chat/channels/:id/summary`): Atlas (or the first team bot) summarizes
+  the thread or the channel's last 80 messages on the asker's AI account, in an incognito
+  conversation only theirs; the answer reaches only their screens (`chat.ephemeral`).
 - Every company has the seeded bots (Atlas, Nora, Tomás, Iris, Vera, Bruno) plus its own; memory,
   SOUL and learning are the workspace's records.
 - **Roles**: owners, admins and members use bots; guests read what bots say and never start bot
