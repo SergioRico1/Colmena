@@ -28,9 +28,14 @@ export const CAPABILITY_LABELS = Object.freeze({
   dictado: "Dictado del sistema", codigo: "Claude Code de este ordenador",
 });
 export const OFFLINE_CODE = "AGENT_OFFLINE";
-/** «servicio» › «chatgpt-models»: the one address a computer asks for its person (agent.mjs). */
-export const CODEX_CLIENT_VERSION = "0.80.0";
-export const CHATGPT_MODELS_URL = "https://chatgpt.com/backend-api/codex/models?client_version=" + CODEX_CLIENT_VERSION;
+/**
+ * «servicio» › «chatgpt-models»: the one address a computer asks for its person (agent.mjs). The
+ * Codex backend lists only the models a Codex release that new may use (an old one gets an empty
+ * list), so the cloud says which release to name; this is the default (Codex 0.169.0, 2026-11-13).
+ */
+export const CODEX_CLIENT_VERSION = "0.169.0";
+export const CODEX_VERSION_FORMAT = /^\d{1,3}\.\d{1,4}\.\d{1,4}$/;
+export const chatgptModelsUrl = (version = CODEX_CLIENT_VERSION) => "https://chatgpt.com/backend-api/codex/models?client_version=" + version;
 
 const B64URL = /^[A-Za-z0-9_-]+$/;
 export const DEVICE_ID = /^[a-f0-9]{24}$/;

@@ -9,7 +9,7 @@
 // password managers' answers, provider logins) never leave the computer; results never carry a
 // path outside a lent folder.
 import { createPrivateKey, sign as edSign } from "node:crypto";
-import { CHATGPT_MODELS_URL, CODEX_CLIENT_VERSION } from "./protocol.mjs";
+import { CODEX_CLIENT_VERSION, CODEX_VERSION_FORMAT, chatgptModelsUrl } from "./protocol.mjs";
 import {
   AgentError, CAPABILITIES, MAX_RESULT_CHARS, ReplayGuard, capabilityOf, cleanLends, helloPayload, toB64url,
 } from "./protocol.mjs";
@@ -253,7 +253,9 @@ export class LocalAgent {
     const auth = String(call.args?.authorization || "");
     const account = call.args?.account == null ? "" : String(call.args.account);
     if (!/^Bearer [A-Za-z0-9._~+/=-]{20,8000}$/.test(auth) || (account && !/^[A-Za-z0-9_-]{1,120}$/.test(account))) throw Object.assign(Error("Petición no válida."), { code: "BAD_REQUEST" });
-    const response = await this.fetchImpl(CHATGPT_MODELS_URL, { redirect: "error", signal: AbortSignal.timeout(15_000), headers: { Authorization: auth, ...(account ? { "chatgpt-account-id": account } : {}), originator: "codex_cli_rs", version: CODEX_CLIENT_VERSION, "User-Agent": "codex_cli_rs/" + CODEX_CLIENT_VERSION, Accept: "application/json" } });
+    // Only a version number may come from the cloud (the release of Codex to name): nothing else.
+    const version = CODEX_VERSION_FORMAT.test(String(call.args?.clientVersion || "")) ? String(call.args.clientVersion) : CODEX_CLIENT_VERSION;
+    const response = await this.fetchImpl(chatgptModelsUrl(version), { redirect: "error", signal: AbortSignal.timeout(15_000), headers: { Authorization: auth, ...(account ? { "chatgpt-account-id": account } : {}), originator: "codex_cli_rs", version, "User-Agent": "codex_cli_rs/" + version, Accept: "application/json" } });
     const text = await response.text();
     let body = null;
     try { body = JSON.parse(text); } catch {}

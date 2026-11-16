@@ -554,6 +554,13 @@ test("service «chatgpt-models»: the person's own computer asks only that addre
   assert.match(asked[0].url, /^https:\/\/chatgpt\.com\/backend-api\/codex\/models\?client_version=/);
   assert.equal(asked[0].headers.Authorization, token);
   assert.equal(asked[0].headers["chatgpt-account-id"], "acc-1");
+  assert.match(asked[0].url, /client_version=0.169.0$/, "a recent Codex release by default (an old one gets an empty list)");
+  // The cloud may name the Codex release, as a version number and nothing else.
+  await hub.service({ personId: ANA.id, op: "chatgpt-models", args: { authorization: token, clientVersion: "0.200.1" } });
+  assert.match(asked.at(-1).url, /client_version=0.200.1$/);
+  await hub.service({ personId: ANA.id, op: "chatgpt-models", args: { authorization: token, clientVersion: "1.0&x=y" } });
+  assert.match(asked.at(-1).url, /client_version=0.169.0$/);
+  asked.splice(1);
   // Nothing else goes through it: another service, or a header that is not a sign-in.
   await assert.rejects(hub.service({ personId: ANA.id, op: "fetch", args: { url: "https://example.com" } }), /no hace eso/);
   await assert.rejects(hub.service({ personId: ANA.id, op: "chatgpt-models", args: { authorization: "Bearer x\r\nHost: evil" } }), /no válida/);

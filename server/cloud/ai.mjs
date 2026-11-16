@@ -67,7 +67,8 @@ export function cloudBaseUrl(raw) {
 // the code; nothing comes back to a loopback address. Each person must turn «device code
 // login» on in their ChatGPT security settings (a workspace admin, for ChatGPT Business).
 // The Codex CLI release this client says it is (its /models answers by client version).
-const CODEX_CLIENT_VERSION = "0.80.0";
+// Codex's /models answers only for a release this new (an old one gets an empty list).
+const CODEX_CLIENT_VERSION = "0.169.0";
 export const CODEX = Object.freeze({
   issuer: "https://auth.openai.com",
   clientId: "app_EMoamEEZ73f0CkXaXp7hrann",
@@ -177,7 +178,7 @@ export class CodexDeviceSession {
       // chatgpt.com refuses the list to Cloudflare's servers (an HTML 403) while it answers the
       // turns: the person's own computer asks for it (server/agent-link › «chatgpt-models»).
       const headers = await this.headers();
-      const got = await this.viaComputer({ authorization: headers.Authorization, account: headers["chatgpt-account-id"] || null })
+      const got = await this.viaComputer({ authorization: headers.Authorization, account: headers["chatgpt-account-id"] || null, clientVersion: CODEX_CLIENT_VERSION })
         .catch((error) => { console.error("chatgpt models via computer: " + (error?.code ? error.code + " " : "") + (error?.message || error)); return null; });
       if (got?.status === 200 && got.body) { this.models = normalizeModels(got.body); return this.models; }
       if (got) console.error("chatgpt models via computer: OpenAI answered " + got.status);

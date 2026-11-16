@@ -461,7 +461,7 @@ async function devTest(request, env, url) {
   const what = url.pathname.slice("/auth/dev/test/".length);
   if (what === "fake-model" && request.method === "POST") return json(await stub.setTestFlags(id, { fakeModel: data.on === true }));
   if (what === "probe" && request.method === "GET") return json(await stub.probe(id));
-  if (what === "ai" && request.method === "GET") return json(await stub.aiProbe(id));
+  if (what === "ai" && request.method === "GET") { try { return json(await stub.aiProbe(id)); } catch (e) { return json({ failed: String(e?.stack || e?.message || e).slice(0, 1500) }); } }
   if (what === "evict" && request.method === "POST") {
     // The object resets itself (DurableObjectState#abort): the call fails on purpose.
     try { await stub.evict(id); } catch {}

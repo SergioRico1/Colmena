@@ -320,7 +320,16 @@ export class Workspace extends DurableObject {
     for (const m of host.members()) {
       const hub = host.bots.provider.hub(m.id);
       const read = await host.bots.chatgptModelsFor(m.id).catch((e) => ({ error: String(e?.message || e) }));
-      out.push({ person: m.id.slice(0, 8), role: m.role, kind: hub.kind || null, primary: hub.primary || null, session: hub.session?.models?.length || 0, offered: hub.modelsFor("openai").length, sample: hub.modelsFor("openai").slice(0, 4).map((x) => x.slug), devices: host.agents.devicesOf(m.id).map((d) => ({ name: d.name, online: host.agents.isOnline(d.id) })), read });
+      let raw = null;
+      if (hub.kind === "chatgpt") {
+        try {
+          const h = await hub.session.headers();
+          const got = await host.agents.service({ personId: m.id, op: "chatgpt-models", args: { authorization: h.Authorization, account: h["chatgpt-account-id"] || null, clientVersion: "0.169.0" } });
+          const body = got?.body;
+          raw = { status: got?.status, keys: body && typeof body === "object" ? Object.keys(body).slice(0, 20) : typeof body, count: Array.isArray(body?.models) ? body.models.length : null, first: String(JSON.stringify(Array.isArray(body?.models) ? body.models[0] ?? null : body ?? null)).slice(0, 700) };
+        } catch (e) { raw = { error: String(e?.code || "") + " " + String(e?.message || e).slice(0, 300) }; }
+      }
+      out.push({ raw, person: m.id.slice(0, 8), role: m.role, kind: hub.kind || null, primary: hub.primary || null, session: hub.session?.models?.length || 0, offered: hub.modelsFor("openai").length, sample: hub.modelsFor("openai").slice(0, 4).map((x) => x.slug), devices: host.agents.devicesOf(m.id).map((d) => ({ name: d.name, online: host.agents.isOnline(d.id) })), read });
     }
     return out;
   }
