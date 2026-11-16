@@ -605,9 +605,12 @@ export class ProviderHub {
       if (!this.kind || this.kind === "local") return [];
       if (this.kind === "chatgpt" && Array.isArray(this.session?.models) && this.session.models.length) return this.session.models;
       // An API key's list (or a ChatGPT one read through openaiModels): the last one read.
-      const list = Array.isArray(this.openaiList) ? this.openaiList : Array.isArray(this.session?.models) ? this.session.models : [];
-      if (!list.length) this.warmOpenAI();
-      return list;
+      const list = Array.isArray(this.openaiList) && this.openaiList.length ? this.openaiList : Array.isArray(this.session?.models) ? this.session.models : [];
+      if (list.length) return list;
+      this.warmOpenAI();
+      // OpenAI may refuse the list (chatgpt.com blocks it from Cloudflare's servers while it
+      // answers the turns): the models this workspace has really worked with stand in for it.
+      return this.kind === "chatgpt" ? this.knownOpenai() : list;
     }
     const list = catalogOf(engine);
     if (!list.length) return [];
@@ -806,6 +809,21 @@ export class ProviderHub {
       .then((list) => { if (list?.length) for (const fn of this.store?.listeners || []) { try { fn({ type: "changed-local", kinds: ["account"] }); } catch {} } })
       .catch((e) => console.error("chatgpt models: " + (e?.message || e)))
       .finally(() => { this.warming = null; });
+  }
+  /**
+   * ChatGPT models known to work here: those this workspace's steps really used. Never a guessed
+   * name: «Automático» picks from this list, and a model the plan does not have would fail.
+   */
+  knownOpenai() {
+    if (this.known && Date.now() - this.known.at < 60000) return this.known.list;
+    const seen = new Set();
+    for (const step of this.store?.list?.("steps") || []) {
+      const m = step?.model;
+      if (typeof m === "string" && m.length <= 80 && /^(gpt-|od)/.test(m) && !m.includes("/")) seen.add(m);
+    }
+    const list = [...seen].sort().map((slug) => ({ slug, label: slug }));
+    this.known = { at: Date.now(), list };
+    return list;
   }
   async openaiModels() {
     const kind = this.kind;

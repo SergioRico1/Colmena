@@ -382,3 +382,13 @@ test("ProviderHub: ChatGPT's models read with an API key can be chosen for a bot
   assert.equal(chooseModel({ id: "vera", role: "Redacta", modelPin: "gpt-6-sol" }, hub.modelsFor("openai")).slug, "gpt-6-sol");
   assert.equal(chooseModel({ id: "vera", role: "Redacta" }, hub.modelsFor("openai")).slug, "gpt-6-luna");
 });
+
+test("ProviderHub: when OpenAI refuses ChatGPT's list, the models this workspace used stand in", async (t) => {
+  const session = { status: () => ({ kind: "chatgpt", canInfer: true }), models: [], listModels: async () => { throw Error("ChatGPT no ha dado la lista de modelos (403)."); } };
+  const { hub, store } = await hubFor(t, async () => new Response("", { status: 404 }), { session });
+  store.put("steps", { id: "s1", missionId: "m1", model: "gpt-6-luna", status: "completed" });
+  store.put("steps", { id: "s2", missionId: "m1", model: "anthropic/claude-opus-5-5", status: "completed" });
+  const slugs = hub.modelsFor("openai").map((m) => m.slug);
+  assert.deepEqual(slugs, ["gpt-6-luna"], "only what was used here; other engines' models stay out");
+  assert.equal(chooseModel({ id: "vera", role: "Redacta", modelPin: "gpt-6-luna" }, hub.modelsFor("openai")).slug, "gpt-6-luna");
+});
