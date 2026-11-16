@@ -10,7 +10,7 @@ import { Alert, BotMark, Panel, UNDO_MS, select } from "./v3.jsx";
 
 const small = { ...select, width: "100%", height: "32px", padding: "0 6px", fontSize: "var(--t-ui)" };
 
-export default function BotModels() {
+export default function BotModels({ chatgpt = null }) {
   const store = useStore();
   const act = useAction();
   const bots = (store.bots || []).filter((b) => b.enabled !== false && !b.archived);
@@ -23,6 +23,7 @@ export default function BotModels() {
   return (
     <Panel anchor="modelo-por-bot" title="Modelo de cada bot" sub="Automático elige uno por su trabajo. Si tu cuenta no tiene el que elijas, usa el automático." style={{ gap: "4px" }}>
       <Alert>{act.error}</Alert>
+      {chatgpt?.error ? <p role="note" style={{ margin: 0, fontSize: "var(--t-meta)", lineHeight: 1.5, color: "var(--c-text-3)" }}>{"No hay modelos de ChatGPT para elegir: " + chatgpt.error}</p> : null}
       <div role="table" aria-label="Modelo de cada bot" style={{ display: "flex", flexDirection: "column" }}>
         {bots.map((b) => {
           const choice = botModelChoice(store, b);

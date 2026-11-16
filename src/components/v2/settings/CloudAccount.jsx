@@ -142,7 +142,7 @@ export default function CloudAccount() {
         ))}
         <ConnectOther engines={engines} catalog={{}} />
       </div>
-      <BotModels />
+      <BotModels chatgpt={data?.chatgptModels} />
       <CodeAndApps />
     </>
   );
