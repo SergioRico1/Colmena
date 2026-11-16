@@ -67,20 +67,46 @@ const EMOJI_RE = (() => {
   catch { return /(?:[\u{1F1E6}-\u{1F1FF}]{2}|[#*0-9]\uFE0F?\u20E3|\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|[\u{1F3FB}-\u{1F3FF}])?)*)/gu; }
 })();
 
-/** A plain run of text with its emojis drawn; returns the string itself when there are none. */
-export function withEmoji(text, key = "e", size = 20) {
-  if (!text || !/[\u00A9\u00AE\u203C-\u3299\u{1F000}-\u{1FAFF}#*0-9]/u.test(text)) return text;
+/** A text cut into plain runs (strings) and emojis ({emoji}); [text] when it has none. */
+export function splitEmoji(text) {
+  if (!text || !/[\u00A9\u00AE\u203C-\u3299\u{1F000}-\u{1FAFF}#*0-9]/u.test(text)) return [text];
   EMOJI_RE.lastIndex = 0;
   const out = [];
-  let at = 0, m, i = 0;
+  let at = 0, m;
   while ((m = EMOJI_RE.exec(text))) {
     if (m.index > at) out.push(text.slice(at, m.index));
-    out.push(<Emoji key={key + "-" + i++} char={m[0]} size={size} />);
+    out.push({ emoji: m[0] });
     at = m.index + m[0].length;
   }
-  if (!out.length) return text;
+  if (!out.length) return [text];
   if (at < text.length) out.push(text.slice(at));
   return out;
+}
+
+/**
+ * For react-markdown (src/components/room/Markdown.jsx): each emoji outside code becomes
+ * <span data-emoji="…">, which the Markdown's `span` draws with <Emoji>.
+ */
+export function rehypeEmoji() {
+  const walk = (node) => {
+    if (!node.children || (node.type === "element" && (node.tagName === "code" || node.tagName === "pre"))) return;
+    const out = [];
+    for (const child of node.children) {
+      if (child.type !== "text") { walk(child); out.push(child); continue; }
+      const parts = splitEmoji(child.value);
+      if (parts.length === 1 && typeof parts[0] === "string") { out.push(child); continue; }
+      for (const p of parts) out.push(typeof p === "string" ? { type: "text", value: p } : { type: "element", tagName: "span", properties: { dataEmoji: p.emoji }, children: [{ type: "text", value: p.emoji }] });
+    }
+    node.children = out;
+  };
+  return (tree) => { walk(tree); };
+}
+
+/** A plain run of text with its emojis drawn; returns the string itself when there are none. */
+export function withEmoji(text, key = "e", size = 20) {
+  const parts = splitEmoji(text);
+  if (parts.length === 1 && typeof parts[0] === "string") return text;
+  return parts.map((p, i) => (typeof p === "string" ? p : <Emoji key={key + "-" + i} char={p.emoji} size={size} />));
 }
 
 /** True when a text is only emojis (at most `max`) and spaces: shown large, as in Slack. */

@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import BotFace from "../BotFace.jsx";
 import { useStore } from "../../lib/store.jsx";
+import { withEmoji } from "../../chat/emoji/index.jsx";
 
 // «@Vera» as a pill (Colmena 4: design/v4 › .mention): the bot's own small face and its name in
 // the accent ink on its soft tint, the same in a message and while you write it, in both themes.
@@ -71,15 +72,16 @@ export function PillText({ text }) {
   const { bots = [] } = useStore() || {};
   const value = String(text || "");
   const found = findMentions(value, bots);
-  if (!found.length) return value;
+  // Plain runs have their emojis drawn with Blobmoji (src/chat/emoji).
+  if (!found.length) return withEmoji(value, "pt", 20);
   const parts = [];
   let at = 0;
   found.forEach((f, i) => {
-    if (f.start > at) parts.push(value.slice(at, f.start));
+    if (f.start > at) parts.push(withEmoji(value.slice(at, f.start), "pt" + i, 20));
     parts.push(<MentionPill key={i} bot={f.bot} name={value.slice(f.start + 1, f.end)} />);
     at = f.end;
   });
-  if (at < value.length) parts.push(value.slice(at));
+  if (at < value.length) parts.push(withEmoji(value.slice(at), "ptz", 20));
   return parts;
 }
 

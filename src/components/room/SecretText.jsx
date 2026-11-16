@@ -4,6 +4,7 @@ import { post } from "../../lib/api.js";
 import { isCloud } from "../../lib/cloud.js";
 import { useResource } from "../../lib/store.jsx";
 import { maskSecret, secretSegments, suggestKey } from "../../lib/secretMask.js";
+import { withEmoji } from "../../chat/emoji/index.jsx";
 
 // A key, token or password you pasted into a message (src/lib/secretMask.js) is drawn masked:
 // its first characters and then •, with «Mostrar» for that one value. Copying keeps the real
@@ -103,7 +104,9 @@ export function MaskedSecret({ secret, messageId = null }) {
  * `text` with its secrets masked and its saved-key markers as pills; every other piece goes
  * through `plain(text, key)` (mention pills and so on).
  */
-export function SecretText({ text, messageId = null, plain = (t) => t }) {
+// Plain runs have their emojis drawn with Blobmoji (src/chat/emoji), as in team messaging.
+const drawEmoji = (t, key) => withEmoji(t, "se" + key, 20);
+export function SecretText({ text, messageId = null, plain = drawEmoji }) {
   const value = String(text || "");
   const pieces = [];
   let at = 0;
