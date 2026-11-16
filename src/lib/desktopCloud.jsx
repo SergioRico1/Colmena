@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "./store.jsx";
 import { isCloud } from "./cloud.js";
+import DesktopWelcome from "../components/DesktopWelcome.jsx";
 
 // The desktop app in cloud mode (docs/CLOUD.md › Phase 5; desktop/preload-cloud.cjs): the tray's
 // face and the taskbar counter follow what waits for you and what your bots are doing, and a new
@@ -30,5 +31,5 @@ export default function DesktopCloudBridge() {
       api.notify({ title: n.title || "Colmena", body: n.text || "", url: n.url || "/bandeja" }).catch(() => {});
     }
   }, [api, ready, notifications]);
-  return null;
+  return api ? <DesktopWelcome bridge={api} /> : null;
 }
