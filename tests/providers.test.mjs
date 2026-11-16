@@ -370,3 +370,15 @@ test("OpenCode key: spaces, line breaks and invisible characters around it are d
   assert.equal(saved.get("opencode-apikey").key, fake);
   assert.equal(hub.connected("opencode-go"), true);
 });
+
+test("ProviderHub: ChatGPT's models read with an API key can be chosen for a bot", async (t) => {
+  const { fetchImpl } = capture((c) => (c.url.endsWith("/v1/models") ? Response.json({ data: [{ id: "gpt-6-sol" }, { id: "gpt-6-luna" }, { id: "gpt-image-1" }] }) : new Response("", { status: 404 })));
+  const { hub } = await hubFor(t, fetchImpl);
+  assert.deepEqual(hub.modelsFor("openai"), [], "nothing before an account");
+  await hub.setApiKey("sk-TEST_ONLY_0123456789abcdefghij");
+  assert.deepEqual(hub.modelsFor("openai"), [], "not read yet");
+  await hub.models();
+  assert.deepEqual(hub.modelsFor("openai").map((m) => m.slug), ["gpt-6-luna", "gpt-6-sol"]);
+  assert.equal(chooseModel({ id: "vera", role: "Redacta", modelPin: "gpt-6-sol" }, hub.modelsFor("openai")).slug, "gpt-6-sol");
+  assert.equal(chooseModel({ id: "vera", role: "Redacta" }, hub.modelsFor("openai")).slug, "gpt-6-luna");
+});

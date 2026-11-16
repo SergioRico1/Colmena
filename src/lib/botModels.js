@@ -16,7 +16,10 @@ export function botEngine(store, bot) {
 export function botModelList(store, bot) {
   const engine = botEngine(store, bot);
   if (!engine) return [];
-  const list = store?.ai?.catalog?.[engine] || (engine === "openai" ? store?.models : null) || [];
+  const catalog = store?.ai?.catalog?.[engine];
+  // ChatGPT's own list may be missing from the catalogue (read later, or with an API key): the
+  // account's models in /api/state › models are its (the other engines' slugs carry «engine/»).
+  const list = catalog?.length ? catalog : engine === "openai" ? (store?.models || []).filter((m) => m?.slug && !String(m.slug).includes("/")) : [];
   return list.filter((m) => m?.slug && !m.utility);
 }
 

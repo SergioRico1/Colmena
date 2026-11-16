@@ -601,7 +601,12 @@ export class ProviderHub {
   }
   /** Models of an engine in the {slug, label, families, utility} shape models.mjs reads. */
   modelsFor(engine = this.primary) {
-    if (engine === "openai") return this.kind === "local" ? [] : Array.isArray(this.session?.models) ? this.session.models : [];
+    if (engine === "openai") {
+      if (!this.kind || this.kind === "local") return [];
+      if (this.kind === "chatgpt" && Array.isArray(this.session?.models) && this.session.models.length) return this.session.models;
+      // An API key's list (or a ChatGPT one read through openaiModels): the last one read.
+      return Array.isArray(this.openaiList) ? this.openaiList : Array.isArray(this.session?.models) ? this.session.models : [];
+    }
     const list = catalogOf(engine);
     if (!list.length) return [];
     // Ajustes › Avanzado can pin a model to a family; the pinned one wins that family. A pin
@@ -790,7 +795,7 @@ export class ProviderHub {
     const kind = this.kind;
     if (kind === "chatgpt") {
       const list = this.session.models?.length ? this.session.models : await this.session.listModels();
-      return list.map((m) => ({ slug: m.slug, label: m.display_name || m.label || m.slug }));
+      return (this.openaiList = list.map((m) => ({ slug: m.slug, label: m.display_name || m.label || m.slug })));
     }
     if (kind === "local") {
       const { model } = this.config().local;
@@ -801,12 +806,12 @@ export class ProviderHub {
       const response = await this.fetch(OPENAI_API + "/models", { redirect: "error", signal: AbortSignal.timeout(15000), headers: { Authorization: "Bearer " + key } });
       if (!response.ok) throw Error(`OpenAI rechazo la peticion (${response.status}).`);
       const data = await response.json();
-      return (Array.isArray(data?.data) ? data.data : [])
+      return (this.openaiList = (Array.isArray(data?.data) ? data.data : [])
         .map((m) => m?.id)
         .filter((id) => typeof id === "string" && /^(gpt-|o\d)/.test(id) && !/(audio|realtime|tts|transcribe|image|embedding|search)/.test(id))
         .sort()
         .slice(0, 100)
-        .map((slug) => ({ slug, label: slug }));
+        .map((slug) => ({ slug, label: slug })));
     }
     return [];
   }
