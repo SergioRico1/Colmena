@@ -7,6 +7,7 @@ import { del, patch, post } from "../../../lib/api.js";
 import { later, useHidden } from "../../../lib/undoToast.js";
 import SkeletonList from "../../v2/Skeleton.jsx";
 import DocHistory from "../../v2/team/DocHistory.jsx";
+import CompanyDoc from "./CompanyDoc.jsx";
 
 // Biblioteca › Memoria (design/V3Memoria.dc.html): what your bots know about you. A box to tell
 // them something; what they deduced from mail, webs or apps waits in «Por revisar» and is not
@@ -155,6 +156,7 @@ export default function Memory({ memories, bots, missions = [], expert }) {
 
   return (
     <>
+      <CompanyDoc />
       <label style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 8px 8px 20px", borderRadius: "var(--r-lg)", background: "var(--c-card)", border: "1px solid var(--c-line)" }}>
         <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Cuéntales algo para que lo recuerden"}</span>
         <input className="c-bare" type="text" value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") tell(); }} placeholder="Cuéntales algo para que lo recuerden: «Los viernes salgo a las 15:00»" style={{ flex: "1", minWidth: "0", height: "50px", border: "0", background: "transparent", fontSize: "var(--t-read)" }} />

@@ -1,13 +1,15 @@
 // Versions of the documents that shape a bot and what it knows of you: each bot's SOUL.md
 // and the person's USER.md. Every write keeps the text it leaves behind, so any earlier
 // version can be seen and restored (a restore is one more version: nothing is lost).
-// records 'docVersions': {id, doc: 'soul'|'user', botId, content, hash, source, reason, approvalId, createdAt}
+// records 'docVersions': {id, doc: 'soul'|'user'|'company', botId, content, hash, source, reason, approvalId, createdAt}
 import { createHash } from "node:crypto";
 import { id, now } from "./store.mjs";
 
 export const DOC_SOURCES = Object.freeze({
   inicial: "Como era al principio",
   "tú": "Lo editaste tú",
+  // COMPANY.md: anyone in the company edits it; the reason says who.
+  "edición": "Editado",
   propuesta: "Propuesta aprobada",
   "condensación": "Lo resumió Colmena",
   restaurado: "Restaurado",
@@ -27,7 +29,7 @@ export function listVersions(store, doc, botId = null) {
  * time, then the new text. Writing the same text again records nothing. Keeps the last 30.
  */
 export function recordVersion(store, { doc, botId = null, content, previous = null, source = "tú", reason = null, approvalId = null }) {
-  if (!store || !["soul", "user"].includes(doc)) return null;
+  if (!store || !["soul", "user", "company"].includes(doc)) return null;
   const list = listVersions(store, doc, botId);
   const at = now();
   let seq = (list[0]?.seq || 0) + 1;

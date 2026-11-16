@@ -636,3 +636,56 @@ test("older memories about a person get the person of their conversation; the sh
   assert.equal(store.get("docVersions", "v1"), null);
   assert.equal(makeLearningPersonal(store), null);
 });
+
+test("COMPANY.md: the whole company reads it and writes it, every bot reads it, and Colmena adds only what is already shared", async (t) => {
+  const { as, store } = await company(t);
+  const ana = as(ANA), beto = as(BETO), gil = as(GIL);
+  const empty = (await beto("GET", "/company-doc")).data;
+  assert.equal(empty.content, "");
+  assert.match(empty.template, /COMPANY\.md/);
+  assert.equal((await ana("PUT", "/company-doc", { content: "# COMPANY.md\n\n## Qué hacemos\nMuebles de exterior." })).status, 200);
+  const edited = await beto("PUT", "/company-doc", { content: "# COMPANY.md\n\n## Qué hacemos\nMuebles de exterior.\n\n## Cómo trabajamos\nEl cierre contable es el día 5." });
+  assert.equal(edited.status, 200);
+  assert.equal(edited.data.updatedBy, "Beto");
+  assert.equal((await gil("PUT", "/company-doc", { content: "nada" })).status, 403, "a guest only reads");
+  assert.match((await gil("GET", "/company-doc")).data.content, /cierre contable/);
+  assert.equal((await ana("PUT", "/company-doc", { content: "La clave del banco es sk-live-abcdefghijklmnopqrstuvwxyz123456" })).status, 400);
+  const versions = (await ana("GET", "/company-doc/versions")).data;
+  assert.equal(versions.length, 2);
+  assert.match(versions[0].reason, /Beto/);
+  // Every bot's turn carries it.
+  const { composeInstructions } = await import("../server/soul.mjs");
+  const { asPerson } = await import("../server/identity.mjs");
+  const prompt = asPerson(ANA, () => composeInstructions(store, store.get("bots", "atlas"), { directory: store.directory }));
+  assert.match(prompt, /Lo que sabe la empresa \(COMPANY\.md\)[\s\S]*cierre contable/);
+  // The daily round: only the team's knowledge that is already shared.
+  const anaChat = (await ana("POST", "/missions", { prompt: "hola", mode: "solo", botIds: ["atlas"], conversation: true })).data.id;
+  const at = new Date().toISOString();
+  store.put("memories", { id: "shared", text: "Los presupuestos se mandan en PDF con el logo nuevo", target: "memory", scope: "equipo", source: "dedujo", active: true, tier: "core", createdAt: at });
+  store.put("memories", { id: "private", text: "Ana negocia en secreto con Lumbre", target: "memory", scope: "equipo", source: "dedujo", missionId: anaChat, active: true, tier: "core", createdAt: at });
+  store.put("memories", { id: "personal", text: "Ana prefiere el té", target: "user", personId: ANA.id, active: true, tier: "core", createdAt: at });
+  const { learnCompanyDoc, sharedTeamMemories } = await import("../server/company-doc.mjs");
+  assert.deepEqual(sharedTeamMemories(store).map((m) => m.id), ["shared"]);
+  let asked = null;
+  const out = await learnCompanyDoc(store, async (params) => { asked = JSON.parse(params.input[0].content); return { text: JSON.stringify({ add: asked.recuerdosNuevos }) }; }, { model: "colmena-prueba" });
+  assert.equal(out.status, "completed");
+  assert.deepEqual(asked.recuerdosNuevos, ["Los presupuestos se mandan en PDF con el logo nuevo"]);
+  const doc = (await beto("GET", "/company-doc")).data.content;
+  assert.match(doc, /cierre contable es el día 5/, "what people wrote stays");
+  assert.match(doc, /## Lo que han aprendido los bots[\s\S]*logo nuevo/);
+  assert.doesNotMatch(doc, /Lumbre|té/);
+});
+
+test("hosted documents (COMPANY.md, USER.md, SOUL.md) live in the workspace's store, never on a disk it does not have", async (t) => {
+  const { as, store } = await company(t);
+  const { existsSync } = await import("node:fs");
+  await as(ANA)("PUT", "/company-doc", { content: "# COMPANY.md\nMuebles de exterior." });
+  await as(ANA)("PUT", "/user-profile", { content: "- Ana prefiere respuestas cortas" });
+  assert.match(store.get("docs", "COMPANY.md").content, /Muebles/);
+  assert.match(store.get("docs", `people/${ANA.id}/USER.md`).content, /Ana prefiere/);
+  assert.equal(existsSync(path.join(store.directory, "COMPANY.md")), false);
+  const { writeSoul, readSoul } = await import("../server/soul.mjs");
+  writeSoul("atlas", "Eres Atlas, coordinas al equipo con frases cortas y claras.", { directory: store.directory, store });
+  assert.match(readSoul("atlas", { directory: store.directory }), /coordinas al equipo/);
+  assert.ok(store.get("docs", "bots/atlas/SOUL.md"));
+});

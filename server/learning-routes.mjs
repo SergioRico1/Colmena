@@ -7,6 +7,7 @@ import { versionsView } from "./doc-history.mjs";
 import { learningTimeline, teachPrompt, TEACH_SOURCES } from "./journey.mjs";
 import { listVerdicts } from "./verdicts.mjs";
 import { canSeeMission, profileKey } from "./visibility.mjs";
+import { COMPANY_LIMIT, companyDoc, companyVersions, restoreCompanyVersion, saveCompanyDoc } from "./company-doc.mjs";
 
 // HTTP routes of the learning loop and bot capabilities. The coordinator mounts them
 // in createApp() BEFORE the final `/api` 404 handler:  registerLearningRoutes(app, { store, runtime, computerAvailable })
@@ -155,6 +156,14 @@ export function registerLearningRoutes(app, { store, runtime, computerAvailable 
   });
   app.get("/api/user-profile/versions", (_req, res) => res.json(versionsView(store, "user", profileKey())));
   app.post("/api/user-profile/versions/:vid/restore", (req, res) => res.json(restoreUserProfileVersion(store, req.params.vid)));
+  // COMPANY.md (company-doc.mjs): everyone in the company reads it and writes it.
+  app.get("/api/company-doc", (_req, res) => res.json(companyDoc(store)));
+  app.put("/api/company-doc", (req, res) => {
+    const { content } = check(z.object({ content: z.string().max(COMPANY_LIMIT) }).strict(), req.body);
+    res.json(saveCompanyDoc(store, content));
+  });
+  app.get("/api/company-doc/versions", (_req, res) => res.json(companyVersions(store)));
+  app.post("/api/company-doc/versions/:vid/restore", (req, res) => res.json(restoreCompanyVersion(store, req.params.vid)));
   app.post("/api/user-profile/condense", async (_req, res) => {
     if (typeof runtime?.condenseUserProfile !== "function") throw httpError(501, "Disponible más adelante.");
     const result = await runtime.condenseUserProfile({ force: true });

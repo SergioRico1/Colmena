@@ -4,7 +4,7 @@
 // the conversation it was learned in (nobody's when that is unknown: then it is never used),
 // and retires the shared USER.md and its versions: the memories it condensed go back to each
 // person's prompt and are condensed again into their own profile. Runs once per workspace.
-import { rmSync } from "node:fs";
+import { rmSync } from "../doc-files.mjs";
 import { memoryTarget, userProfilePath } from "../memory.mjs";
 import { chatOwner, personalChat } from "../threads.mjs";
 

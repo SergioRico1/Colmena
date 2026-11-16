@@ -33,6 +33,7 @@ import { importBatch } from "../agent-link/migrate.mjs";
 import { CAPABILITY_LABELS } from "../agent-link/protocol.mjs";
 import { chatOwner, personalChat } from "../threads.mjs";
 import { splitSharedChats } from "./split-chats.mjs";
+import { mountDocs } from "../doc-files.mjs";
 import { makeLearningPersonal } from "./personal-learning.mjs";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
@@ -77,6 +78,8 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   store.personal = personalFields();
   // No disk: mission files (attachments, deliverables) go to `files` (server/file-store.mjs).
   if (files && store.directory) mountFiles(store.directory, files);
+  // Its documents (SOUL.md, USER.md, COMPANY.md) go to its store, encrypted (server/doc-files.mjs).
+  if (store.directory) mountDocs(store.directory, store);
   // --- secrets: the envelope vault (one namespace per desktop vault)
   let vault = () => null;
   if (masters.length) {

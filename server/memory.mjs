@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync, renameSync, mkdirSync, lstatSync } from "node:fs";
+// Hosted, the workspace folder is mounted on its store (doc-files.mjs): no disk there.
+import { readFileSync, writeFileSync, renameSync, mkdirSync, lstatSync } from "./doc-files.mjs";
 import path from "node:path";
 import { id, now } from "./store.mjs";
 import { buildIndex, contradicts, rank } from "./memory-rank.mjs";

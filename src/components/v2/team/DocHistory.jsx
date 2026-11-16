@@ -10,9 +10,9 @@ import { C } from "../../../lib/theme.js";
 // version: nothing is lost.
 
 
-/** `doc` 'soul' (needs `botId`) or 'user'. `limit` versions are shown until «Ver todas». */
+/** `doc` 'soul' (needs `botId`), 'user' or 'company' (COMPANY.md). `limit` versions are shown until «Ver todas». */
 export default function DocHistory({ doc, botId = null, limit = 4, empty = "Aún no ha cambiado." }) {
-  const url = doc === "soul" ? `/bots/${encodeURIComponent(botId)}/soul/versions` : "/user-profile/versions";
+  const url = doc === "soul" ? `/bots/${encodeURIComponent(botId)}/soul/versions` : doc === "company" ? "/company-doc/versions" : "/user-profile/versions";
   const { data, setData, loading } = useResource(url);
   const { act, busy, error } = useAction();
   const [open, setOpen] = useState(null);

@@ -19,6 +19,7 @@ import { isOtherPerson } from "./origin.mjs";
 import { coordinatorName } from "./bot-looks.mjs";
 import { asPerson, currentPerson } from "./identity.mjs";
 import { profileDirectory, profileKey } from "./visibility.mjs";
+import { learnCompanyDoc } from "./company-doc.mjs";
 
 /** Where the person's profile state lives (learningState): "main" on the desktop, one per person hosted. */
 const profileState = () => (profileKey() ? "profile:" + profileKey() : "main");
@@ -982,6 +983,15 @@ export async function learningTick(store, infer, { at = new Date(), model = null
     }
     if (out.profile?.status !== "completed")
       store.put("learningState", { ...(store.get("learningState", "main") || { id: "main" }), lastProfileAt: at.toISOString() });
+  }
+  // COMPANY.md: once a day, what the team already shares that matters to the whole company.
+  const company = store.get("learningState", "company") || {};
+  if (!company.learnedAt || time - Date.parse(company.learnedAt) >= 86400000) {
+    // Hosted, with the AI account of the company's owner (the first one).
+    const owner = people ? people.find((p) => p.role === "owner") || people.find((p) => p.role === "admin") || null : null;
+    const run = () => learnCompanyDoc(store, infer, { model, at, signal });
+    try { out.company = people ? (owner ? await asPerson(owner, run) : { status: "skipped", reason: "sin dueño" }) : await run(); }
+    catch (error) { out.company = { status: "failed", error: error.message }; store.put("learningState", { ...(store.get("learningState", "company") || { id: "company" }), learnedAt: at.toISOString() }); }
   }
   return out;
 }
