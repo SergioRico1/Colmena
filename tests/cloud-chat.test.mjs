@@ -279,8 +279,10 @@ test("files: upload, send, download for those who can read the channel; dangerou
 test("notifications: preferences, mute, «no molestar», active screens, and the mail digest", async (t) => {
   const online = new Map();
   let now = Date.parse("2026-03-10T10:00:00Z");
-  const { as, chat } = await company(t, [ANA, BETO, GIL], { presence: () => online });
+  const { as, chat, feed } = await company(t, [ANA, BETO, GIL], { presence: () => online });
   chat.now = () => now;
+  const betoScreen = feed(BETO);
+  const notices = () => betoScreen.filter((e) => e.type === "chat.notify");
   const pushed = [];
   chat.push = async (pid, payload) => { pushed.push({ pid, payload }); };
   const ana = as(ANA), beto = as(BETO);
@@ -294,6 +296,16 @@ test("notifications: preferences, mute, «no molestar», active screens, and the
   online.set(BETO.id, "active");
   await ana("POST", `/chat/channels/${general.id}/messages`, { text: "<@" + BETO.id + "> otra" });
   assert.equal(pushed.length, 1, "no push while the person is active");
+  // …but the open app shows it (Slack's desktop notice), with where it goes.
+  assert.equal(notices().length, 1, "the active screen gets the notice live");
+  assert.match(notices()[0].body, /@Beto otra/);
+  assert.equal(notices()[0].channel, general.id);
+  assert.match(notices()[0].url, new RegExp("^/canal/" + general.id));
+  online.set(BETO.id, "away");
+  await ana("POST", `/chat/channels/${general.id}/messages`, { text: "<@" + BETO.id + "> ¿sigues?" });
+  assert.equal(notices().length, 2, "away with the app open: the app shows it too");
+  assert.equal(pushed.length, 2, "and the other devices get it");
+  pushed.pop();
   online.delete(BETO.id);
   await beto("PATCH", "/chat/me", { dnd: { until: now + 3600000 } });
   await ana("POST", `/chat/channels/${general.id}/messages`, { text: "<@" + BETO.id + "> y otra" });

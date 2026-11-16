@@ -849,6 +849,7 @@ export class TeamChat {
     const meta = this.meta(row);
     const nameOf = (id) => this.member(id)?.name || this.ghost(id)?.name || (id.startsWith("bot:") ? this.bots().find((b) => "bot:" + b.id === id)?.name : null) || null;
     const pushes = [];
+    const live = []; // on line right now: the app shows the notice itself (desktop or browser)
     const mention = this.q("INSERT OR IGNORE INTO chat_mentions(person, seq, channel, at, kind) VALUES(?,?,?,?,?)");
     this.tx(() => {
       for (const m of members) {
@@ -871,15 +872,21 @@ export class TeamChat {
         else if (m.muted) wants = kind === "mention";
         else if (level === "all") wants = true;
         else wants = !!kind;
-        if (!wants || doNotDisturb(profile, at, this.zone()) || online.get(pid) === "active") continue;
-        pushes.push(pid);
+        if (!wants || doNotDisturb(profile, at, this.zone())) continue;
+        // Someone with Colmena open gets it over their live socket (Slack's desktop notice: the
+        // app shows it unless that conversation is in front of them). Away from it (or offline),
+        // on their other devices too (Web Push), as before.
+        const state = online.get(pid);
+        if (state === "active" || state === "away") live.push(pid);
+        if (state !== "active") pushes.push(pid);
       }
     });
-    if (this.push && pushes.length) {
+    if ((this.push && pushes.length) || live.length) {
       const where = direct ? (row.kind === "dm" ? nameOf(author.id) || "Mensaje directo" : "Grupo") : "#" + (meta.name || "canal");
       const body = plainText(view.text, nameOf, (cid) => (this.row(cid) ? this.meta(this.row(cid)).name : null)).replace(/\s+/g, " ").trim().slice(0, 140) || (view.files.length ? "Ha enviado un archivo" : "");
       const payload = { title: direct && row.kind === "dm" ? where : (author.name || "Alguien") + " en " + where, body: direct && row.kind === "dm" ? body : body, url: "/canal/" + row.id + (view.threadId ? "?hilo=" + view.threadId : "?m=" + view.id), tag: "chat-" + row.id };
-      for (const pid of pushes) this.defer(this.push(pid, payload));
+      if (this.push) for (const pid of pushes) this.defer(this.push(pid, payload));
+      if (live.length) this.emit({ type: "chat.notify", channel: row.id, thread: view.threadId || null, author: author.id, ...payload }, { people: live });
     }
     return notInChannel;
   }

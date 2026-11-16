@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useStore } from "./store.jsx";
 import { isCloud } from "./cloud.js";
 import DesktopWelcome from "../components/DesktopWelcome.jsx";
+import { startNotices } from "../chat/notices.js";
 
 // The desktop app in cloud mode (docs/CLOUD.md › Phase 5; desktop/preload-cloud.cjs): the tray's
 // face and the taskbar counter follow what waits for you and what your bots are doing, and a new
@@ -12,8 +13,12 @@ const WORKING = new Set(["queued", "planning", "running"]);
 
 export default function DesktopCloudBridge() {
   const api = bridge();
+  // Messages for you (channels, direct messages, threads): a system notice, as in Slack (chat/notices.js).
+  const notifyMode = useRef("both");
+  useEffect(() => (isCloud() ? startNotices({ mode: () => notifyMode.current }) : undefined), []);
   const { ready, approvals = [], missions = [], notifications = [], paused, settings = {} } = useStore();
   const seen = useRef(null);
+  notifyMode.current = settings.notifyMode || "both";
   const waiting = approvals.filter((a) => a.status === "pending").length;
   const working = missions.filter((m) => WORKING.has(m.status)).length;
   const finished = missions.filter((m) => m.status === "completed").length;
