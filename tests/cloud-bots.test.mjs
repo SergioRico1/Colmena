@@ -484,3 +484,31 @@ test("web_fetch in the cloud refuses private addresses and follows checked redir
   await assert.rejects(web("http://127.0.0.1/"), /solo páginas públicas/);
   assert.equal(createHmac("sha256", "x").update("y").digest("hex").length, 64);
 });
+
+test("a chat with a bot is its person's: nobody else sees it or writes into it, each person has their own thread", async (t) => {
+  const { as, store, host } = await company(t);
+  const ana = as(ANA), beto = as(BETO);
+  const first = await ana("POST", "/missions", { prompt: "Mi nómina de octubre", mode: "solo", botIds: ["atlas"], conversation: true });
+  assert.equal(first.status, 201, JSON.stringify(first.data));
+  const anaChat = first.data.id;
+  assert.deepEqual(store.get("missions", anaChat).audience, [ANA.id]);
+  await settled(host);
+  // Beto does not get it in his state, cannot open it, write in it or continue it.
+  assert.ok(!(await beto("GET", "/state")).data.missions.some((m) => m.id === anaChat));
+  assert.equal((await beto("GET", `/missions/${anaChat}`)).status, 404);
+  assert.equal((await beto("POST", `/missions/${anaChat}/messages`, { text: "hola" })).status, 404);
+  assert.equal((await beto("POST", "/missions", { prompt: "sigo aquí", conversationOf: anaChat })).status, 404);
+  // Writing to Atlas, Beto gets his own thread; Ana's next message continues hers.
+  const his = await beto("POST", "/missions", { prompt: "Hola Atlas", mode: "solo", botIds: ["atlas"], conversation: true });
+  assert.notEqual(his.data.id, anaChat);
+  assert.deepEqual(store.get("missions", his.data.id).audience, [BETO.id]);
+  await settled(host);
+  const again = await ana("POST", "/missions", { prompt: "Y la de noviembre", mode: "solo", botIds: ["atlas"], conversation: true });
+  assert.equal(again.data.id, anaChat);
+  assert.ok(!(await ana("GET", "/state")).data.missions.some((m) => m.id === his.data.id));
+  await settled(host);
+  // A chat from before audiences (only createdBy) stays its creator's.
+  store.patch("missions", anaChat, { audience: undefined });
+  assert.equal((await beto("GET", `/missions/${anaChat}`)).status, 404);
+  assert.ok((await ana("GET", "/state")).data.missions.some((m) => m.id === anaChat));
+});

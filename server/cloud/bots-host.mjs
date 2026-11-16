@@ -37,6 +37,7 @@ import { computerExtraTools } from "../computer/wire.mjs";
 import { BROWSER_TOOLS } from "../computer/policy.mjs";
 import { cleanTimeZone } from "../timezone.mjs";
 import { randomUUID } from "node:crypto";
+import { personalChat } from "../threads.mjs";
 
 export const TEST_FLAGS_ID = "test-flags";
 const ACTIVE = new Set(["queued", "planning", "running"]);
@@ -140,7 +141,8 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   runtime.create = (args) => {
     const mission = create(args);
     const p = asker();
-    return p ? store.patch("missions", mission.id, { askedBy: p.id, createdBy: mission.createdBy || p.id }) : mission;
+    // A chat with one bot is the person's own: nobody else in the company sees it (host.mjs › canSee).
+    return p ? store.patch("missions", mission.id, { askedBy: p.id, createdBy: mission.createdBy || p.id, ...(personalChat(mission) && !mission.audience ? { audience: [p.id] } : {}) }) : mission;
   };
   const addMessage = runtime.addMessage.bind(runtime);
   runtime.addMessage = (missionId, ...rest) => {

@@ -20,7 +20,7 @@ import { attachmentInput, attachmentRecord, writeMissionAttachments } from "../f
 import { context, missionSummary, artifactSummary, toolCalls } from "../state.mjs";
 import { btwQuestion } from "../btw.mjs";
 import { authorView } from "../identity.mjs";
-import { botThread } from "../threads.mjs";
+import { botThread, mayUseChat } from "../threads.mjs";
 import { HttpError, critiqueAbout, notFound, short, missionCreate, check, safe } from "./shared.mjs";
 
 /** Rooms and chats: creating them, messages, the queue, branches, restore points, plans and what the page reads of them. */
@@ -37,6 +37,7 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
     const { attachments, refs, ...data } = check(missionCreate, req.body);
     // conversationOf = previous mission of a 1:1 chat; the new turn continues it.
     const previous = data.conversationOf ? mustGet("missions", data.conversationOf, "Conversación") : null;
+    if (previous && !mayUseChat(previous)) throw new HttpError(404, "No existe esa conversación.");
     if (previous) Object.assign(data, { mode: "solo", conversation: true });
     const botIds = [...new Set(data.botIds.length ? data.botIds : previous?.botIds || [])];
     botIds.forEach(enabledBot);

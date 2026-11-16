@@ -31,6 +31,7 @@ import { AgentHub } from "../agent-link/hub.mjs";
 import { agentExtraTools, agentFolders } from "../agent-link/cloud-tools.mjs";
 import { importBatch } from "../agent-link/migrate.mjs";
 import { CAPABILITY_LABELS } from "../agent-link/protocol.mjs";
+import { chatOwner, personalChat } from "../threads.mjs";
 
 /** Places of the desktop that need the person's computer (phases 4–5): the screens hide them. */
 export const CLOUD_HIDDEN = Object.freeze(["codigo", "ordenador", "dictado", "voz", "gestores", "copias", "cifrado", "carpetas", "personas-buzon"]);
@@ -100,8 +101,16 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
    * (people who joined before it existed are never sent back to it).
    */
   const onboardingOf = (id) => { const r = store.get("cloud", "onboarding:" + id); return { started: !!r, step: ONBOARDING_STEPS.includes(r?.step) ? r.step : ONBOARDING_STEPS[0], finished: !!r?.finished }; };
-  /** Who may see a conversation: everyone in the workspace, or only its `audience` (a direct message). */
-  const canSee = (mission, person = currentPerson()) => !mission?.audience || (isPerson(person) && mission.audience.includes(person.id));
+  /**
+   * Who may see a conversation: only its `audience` (a direct message, a private room, a chat
+   * with a bot); a chat with a bot without one (before 2026-11-16) only the person who started
+   * it; anything else everyone in the workspace.
+   */
+  const canSee = (mission, person = currentPerson()) => {
+    if (mission?.audience) return isPerson(person) && mission.audience.includes(person.id);
+    if (personalChat(mission) && chatOwner(mission)) return isPerson(person) && chatOwner(mission) === person.id;
+    return true;
+  };
   const missionOf = (id) => store.get("missions", id) || (store.get("rooms", id)?.missionId ? store.get("missions", store.get("rooms", id).missionId) : null);
 
   const rooms = {
