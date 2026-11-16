@@ -8,6 +8,7 @@ import { MicButton, appendDictation } from "../../interaction/Voice.jsx";
 import { SHAPES } from "../Presence.jsx";
 import { TOOL_KEYS, TOOL_LABEL, skillMarkdown } from "../../team/common.jsx";
 import { autonomyLabel, Seg } from "../../v3/team/parts.jsx";
+import { COLORS, ColorPicker, ShapePicker } from "../../team/LookPicker.jsx";
 
 // Colmena 4 · «Nuevo bot» (design/V3NuevoBot.dc.html, v4 look), a page inside Equipo: three steps —
 // 1 Describe (as to a new colleague; Atlas checks what is missing), 2 Ajusta (name, role,
@@ -16,8 +17,6 @@ import { autonomyLabel, Seg } from "../../v3/team/parts.jsx";
 // bot itself: every choice is its BotFace, drawn live with the name and role you type. Honey is not offered as a
 // colour (it means «te necesita») and ink belongs to Atlas.
 // No circle: circles are people (src/lib/identity.js). A bot that already has one is drawn as the capsule.
-const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"], ["capsule", "cápsula"]];
-const COLORS = [["#0E7C86", "verde azulado"], ["#2F6BFF", "azul"], ["#7B4DFF", "violeta"], ["#FF5CA8", "rosa"], ["#FF7A1A", "naranja"], ["#0B8A5F", "verde"], ["#B4236E", "frambuesa"]];
 const EXAMPLES = [
   ["Contable", "Que lea las facturas de proveedores que llegan al correo, las apunte en la hoja de gastos y me avise si alguna pasa de 500 € o vence esta semana. Que nunca pague nada."],
   ["Atención al cliente", "Que conteste los correos de clientes con nuestro tono cercano y me pase los que sean quejas. Que nunca envíe nada sin preguntarme."],
@@ -223,32 +222,8 @@ export default function NewBot({ onClose, onHired }) {
                 <label style={label}>{"Nombre"}<input className="c-quiet" type="text" value={d.name} maxLength="20" onChange={(e) => set({ name: e.target.value })} placeholder="Ponle un nombre" style={input} /></label>
                 <label style={label}>{"Puesto"}<input className="c-quiet" type="text" value={d.role} maxLength="100" onChange={(e) => set({ role: e.target.value })} placeholder="Qué hace, en pocas palabras" style={input} /></label>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text-2)" }}>{"Forma"}</span>
-                <div role="radiogroup" aria-label="Forma" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  {SHAPE_LIST.map(([id, l]) => {
-                    const on = d.shape === id;
-                    return (
-                      <button key={id} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ shape: id })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", border: `${on ? 2 : 1}px solid ${on ? "var(--c-text)" : "var(--c-line)"}`, borderRadius: "var(--r-md)", background: on ? "var(--c-hover)" : "var(--c-card)", cursor: "pointer" }}>
-                        <BotFace bot={{ id: "nuevo", name: d.name, shape: id, color: d.color, role: d.role }} size={32} decorative />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text-2)" }}>{"Color "}<span style={{ fontWeight: "400", color: "var(--c-text-3)" }}>{"· la miel es para «te necesita» y la tinta, para quien coordina"}</span></span>
-                <div role="radiogroup" aria-label="Color" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                  {COLORS.map(([hex, l]) => {
-                    const on = d.color.toUpperCase() === hex;
-                    return (
-                      <button key={hex} type="button" role="radio" aria-checked={on ? "true" : "false"} aria-label={l} title={l} onClick={() => set({ color: hex })} style={{ width: "52px", height: "52px", display: "grid", placeItems: "center", padding: "0", border: `${on ? 2 : 1}px solid ${on ? "var(--c-text)" : "var(--c-line)"}`, borderRadius: "var(--r-md)", background: on ? "var(--c-hover)" : "var(--c-card)", cursor: "pointer" }}>
-                        <BotFace bot={{ id: "nuevo", name: d.name, shape: d.shape, color: hex, role: d.role }} size={32} decorative />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <ShapePicker bot={draftBot} value={d.shape} onChange={(shape) => set({ shape })} />
+              <ColorPicker bot={draftBot} value={d.color} onChange={(color) => set({ color })} />
               <label style={label}>
                 {"Instrucciones · Colmena las ha preparado"}
                 <textarea className="c-quiet" rows="5" value={d.instructions} onChange={(e) => set({ instructions: e.target.value })} style={{ padding: "12px 14px", border: "1px solid rgb(var(--c-ink-rgb) / .14)", borderRadius: "var(--r-lg)", fontSize: "var(--t-body)", fontWeight: "400", lineHeight: "1.55", color: "var(--c-text)", fontFamily: "inherit", resize: "vertical" }} />

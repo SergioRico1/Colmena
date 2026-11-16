@@ -7,6 +7,7 @@ import Shell from "../components/v2/Shell.jsx";
 import BotBrowser from "../components/v3/team/BotBrowser.jsx";
 import { portraitOf } from "../lib/bots.js";
 import PortraitPicker from "../components/team/PortraitPicker.jsx";
+import BotLookDialog from "../components/team/BotLookDialog.jsx";
 import SkillReview from "../components/team/SkillReview.jsx";
 import Journey from "../components/team/Journey.jsx";
 import StandingOrdersCard from "../components/interaction/StandingOrders.jsx";
@@ -98,6 +99,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
   const { act, busy, error } = useAction();
   const [reviewId, setReviewId] = useState(query?.skill || null);
   const [portrait, setPortrait] = useState(false);
+  const [lookOpen, setLookOpen] = useState(false);
   const [tab, setTab] = useState("como");
   const [usage, setUsage] = useState(null);
 
@@ -169,14 +171,15 @@ export default function EquipoBot({ params = {}, query = {} }) {
   const duplicate = async () => { const copy = await act(() => post(`/bots/${encodeURIComponent(bot.id)}/duplicate`)); if (copy?.id) navigate(`/equipo/${copy.id}`); };
   const retire = () => later({ id: "bot:" + bot.id, keys: ["bot:" + bot.id], text: `${bot.name} sale del equipo`, ms: UNDO_MS, error: "No se pudo retirar", run: async () => { await act(() => patch(`/bots/${encodeURIComponent(bot.id)}`, { enabled: false })); navigate("/equipo"); } });
   const tint = `color-mix(in srgb, ${color} 14%, var(--c-app))`;
-  // «Otro nombre» / «Otro color» (server/bot-looks.mjs): the next look of a built-in bot's own
-  // sequence, drawn at once on its face above, with 10 s to undo.
-  const looks = !!bot.builtin && !!settings.botLooks?.key;
-  const relook = (what) => act(async () => {
-    const before = { name: bot.name, color: bot.color };
-    const r = merge(await post(`/bots/${encodeURIComponent(bot.id)}/look`, { what }));
-    if (r) reversible({ id: "bot-look:" + bot.id, text: what === "name" ? `${before.name} ahora se llama ${r.name}` : `${r.name} tiene otro color`, ms: UNDO_MS, undo: async () => merge(await patch(`/bots/${encodeURIComponent(bot.id)}`, what === "name" ? { name: before.name } : { color: before.color })) });
-  });
+  // «Nombre y aspecto»: the name, shape and colour you choose (BotLookDialog.jsx), one change
+  // with «Deshacer»; the sidebar and the chats draw the new look at once.
+  const saveLook = async (body) => {
+    const before = Object.fromEntries(Object.keys(body).map((k) => [k, bot[k]]));
+    merge(await patch(`/bots/${encodeURIComponent(bot.id)}`, body));
+    await store.run(async () => null).catch(() => {});
+    const text = body.name ? `${before.name} ahora se llama ${body.name}` : `${bot.name} tiene otro aspecto`;
+    reversible({ id: "bot-look:" + bot.id, text, ms: UNDO_MS, undo: async () => { merge(await patch(`/bots/${encodeURIComponent(bot.id)}`, before)); await store.run(async () => null).catch(() => {}); } });
+  };
 
   return (
     <Shell active="equipo" background="var(--c-app)" extraCss={MD_CSS}>
@@ -204,6 +207,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {live.length ? <button type="button" disabled={busy} onClick={pause} className="u4-sec" style={{ ...B.secondary, ...B.lg }}>{"Pausar"}</button> : null}
             <More round light label={`Más opciones de ${bot.name}`} items={[
+              { label: "Nombre y aspecto", icon: Sliders, run: () => setLookOpen(true) },
               { label: portraitOf(bot) ? "Cambiar el retrato" : "Darle un retrato", icon: ImagePlus, run: () => setPortrait(true) },
               { label: "Duplicar", icon: CopyPlus, run: duplicate, disabled: busy ? "Espera a que termine lo anterior" : false },
               { label: "Qué cuenta de IA usa", icon: Brain, run: () => navigate("/ajustes/ia") },
@@ -212,7 +216,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
             <a href={`/chat/${encodeURIComponent(bot.id)}`} className="u4-pri" style={{ ...B.primary, ...B.lg }}>{"Hablar con " + bot.name}</a>
           </div>
         </div>
-        <Facts bot={bot} ai={ai} looks={looks ? { busy, relook } : null} />
+        <Facts bot={bot} ai={ai} onLook={() => setLookOpen(true)} />
         <nav aria-label="Secciones de la ficha" style={{ maxWidth: "1080px", width: "100%", margin: "0 auto", display: "flex", flexWrap: "wrap", gap: "4px" }}>
           {SECTIONS.map(([s, label]) => (
             <a key={s} href={`#${s}`} onClick={go(s)} aria-current={tab === s ? "location" : undefined} style={{ height: "40px", padding: "0 12px", display: "inline-flex", alignItems: "center", marginBottom: "-1px", borderBottom: `2px solid ${tab === s ? "var(--c-text)" : "transparent"}`, color: tab === s ? "var(--c-text)" : "var(--c-text-2)", fontSize: "var(--t-ui)", fontWeight: tab === s ? "600" : "500" }}>{label}</a>
@@ -233,6 +237,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
         <Usage bot={bot} usage={usage} missions={missions} settings={settings} expert={expert} learning={learning} busy={busy} change={change} />
         <History bot={bot} data={data} missions={missions} learnedBy={learnedBy} />
       </main>
+      {lookOpen ? <BotLookDialog bot={bot} onSave={saveLook} onClose={() => setLookOpen(false)} /> : null}
       {portrait ? <PortraitPicker bot={bot} onClose={() => setPortrait(false)} onSaved={(p) => setData((d) => (d ? { ...d, portrait: p } : d))} /> : null}
       {reviewId ? <SkillReview skillId={reviewId} onClose={() => { setReviewId(null); if (new URLSearchParams(location.search).has("skill")) history.replaceState(null, "", location.pathname + location.hash); }} /> : null}
     </Shell>
@@ -240,7 +245,7 @@ export default function EquipoBot({ params = {}, query = {} }) {
 }
 
 /** The profile facts (the prototype's right panel): how it thinks, its autonomy, what it can use, since when. */
-function Facts({ bot, ai, looks = null }) {
+function Facts({ bot, ai, onLook = null }) {
   const engine = (ai?.engines || []).find((e) => e.connected && (!bot.engine || e.id === bot.engine)) || (ai?.engines || []).find((e) => e.connected);
   const thinks = [bot.model?.label || engine?.label || engine?.name, bot.thinking ? THINKING.find((t) => t[0] === bot.thinking)?.[1] : null].filter(Boolean).join(" · ") || "Sin cuenta de IA";
   const apps = TOOL_KEYS.filter((k) => bot.tools?.[k] && bot.tools[k] !== "none");
@@ -252,10 +257,9 @@ function Facts({ bot, ai, looks = null }) {
       <div><dt style={dt}>{"Cómo piensa"}</dt><dd style={dd}><Brain size={16} aria-hidden="true" style={icon} />{thinks}</dd></div>
       <div><dt style={dt}>{"Autonomía"}</dt><dd style={dd} title={autonomyHint(bot.autonomy)}><Sliders size={16} aria-hidden="true" style={icon} />{autonomyLabel(bot.autonomy)}</dd></div>
       <div><dt style={dt}>{"Puede usar"}</dt><dd style={dd}>{apps.length ? apps.map((k) => <span key={k} style={TAG}>{TOOL_LABEL[k]}</span>) : <span style={{ color: C.text3, fontSize: "var(--t-meta)" }}>{"Ninguna app todavía"}</span>}</dd></div>
-      {looks ? (
+      {onLook ? (
         <div><dt style={dt}>{"Aspecto"}</dt><dd style={dd}>
-          <button type="button" className="u4-sec" disabled={looks.busy} onClick={() => looks.relook("name")} aria-label={`Otro nombre para ${bot.name}`} style={{ ...B.secondary, height: "28px", padding: "0 10px" }}>{"Otro nombre"}</button>
-          {bot.id === "atlas" ? null : <button type="button" className="u4-sec" disabled={looks.busy} onClick={() => looks.relook("color")} aria-label={`Otro color para ${bot.name}`} style={{ ...B.secondary, height: "28px", padding: "0 10px" }}>{"Otro color"}</button>}
+          <button type="button" className="u4-sec" onClick={onLook} aria-label={`Cambiar el nombre y el aspecto de ${bot.name}`} style={{ ...B.secondary, height: "28px", padding: "0 10px" }}>{"Cambiar nombre y aspecto"}</button>
         </dd></div>
       ) : null}
       <div><dt style={dt}>{"En el equipo"}</dt><dd style={dd}>{bot.createdAt ? "Desde " + shortDate(bot.createdAt) : "Desde el principio"}{bot.missionCount ? <span style={{ color: C.text3, fontSize: "var(--t-meta)" }}>{" · " + plural(bot.missionCount, "tarea abierta", "tareas abiertas")}</span> : null}</dd></div>

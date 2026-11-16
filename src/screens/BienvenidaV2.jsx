@@ -6,6 +6,7 @@ import { WindowDots } from "../components/v2/Rail.jsx";
 import ProviderMark from "../components/v2/ProviderMark.jsx";
 import { B, ROLES, APP_TASK, ROLE_CHIPS, STEPS, nameDraft, roleChips } from "../lib/onboarding.js";
 import TeamStep from "../components/v3/onboarding/TeamStep.jsx";
+import BotLookDialog from "../components/team/BotLookDialog.jsx";
 import { useAction, useStore } from "../lib/store.jsx";
 import { useExpert } from "../lib/expert.js";
 import { patch, post } from "../lib/api.js";
@@ -62,7 +63,8 @@ const card4 = { borderRadius: "var(--r-md)", background: "var(--c-card)", border
 const peopleOffFor = (peers) => !peers || peers.relay?.status === "off";
 
 export default function BienvenidaV2({ query = {} }) {
-  const { bots = [], settings = {}, provider, authError, ai, account = null, peers = null, teams = [] } = useStore();
+  const { bots = [], settings = {}, provider, authError, ai, account = null, peers = null, teams = [], run: refresh } = useStore();
+  const [looking, setLooking] = useState(null); // the bot whose name and look are being chosen
   const [expert, setExpert] = useExpert();
   const engines = ai?.engines || [];
   const info = (id) => engines.find((e) => e.id === id) || (id === "openai" && provider?.connected ? { id, connected: true, detail: provider.label } : null);
@@ -112,10 +114,12 @@ export default function BienvenidaV2({ query = {} }) {
   const writer = real("vera") || B.vera;
   const coordinator = real("atlas")?.name || B.atlas.name;
   const [relooked, setRelooked] = useState("");
-  const relook = (m, what) => run("look", async () => {
-    const bot = await post(`/bots/${encodeURIComponent(m.id)}/look`, { what });
-    setRelooked(what === "name" ? `${m.name} ahora se llama ${bot.name}.` : `${bot.name} tiene otro color.`);
-  });
+  // «Cambiar nombre y aspecto»: the name, shape and colour chosen freely (BotLookDialog.jsx).
+  const saveLook = (m) => async (body) => {
+    await patch(`/bots/${encodeURIComponent(m.id)}`, body);
+    await refresh(async () => null).catch(() => {});
+    setRelooked(body.name ? `${m.name} ahora se llama ${body.name}.` : `${m.name} tiene otro aspecto.`);
+  };
 
   const run = async (k, fn) => {
     if (busy) return undefined;
@@ -346,9 +350,8 @@ export default function BienvenidaV2({ query = {} }) {
                     {team.map((m) => {
                       const atlas = m.id === "atlas";
                       const keep = atlas || !dropped.includes(m.id);
-                      // Names and colours are this person's own (server/bot-looks.mjs): «Otro nombre» and
-                      // «Otro color» walk the bot's own sequence, never to one another of yours has.
-                      const here = !!real(m.id) && !!settings.botLooks?.key;
+                      // Each bot's name, shape and colour, chosen freely (BotLookDialog.jsx).
+                      const here = !!real(m.id);
                       const pill = { height: "28px", padding: "0 10px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: "var(--c-text)", fontSize: "var(--t-meta)", fontWeight: "600", cursor: busy ? "default" : "pointer" };
                       return (
                         <div key={m.id} style={{ ...card4, display: "flex", flexDirection: "column", gap: "10px", padding: "12px 14px", opacity: keep ? 1 : 0.55, transition: "opacity .2s ease" }}>
@@ -362,15 +365,15 @@ export default function BienvenidaV2({ query = {} }) {
                           </div>
                           {here && keep ? (
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingLeft: "60px" }}>
-                              <button type="button" disabled={!!busy} onClick={() => relook(m, "name")} aria-label={`Otro nombre para ${m.name}`} style={pill}>{"Otro nombre"}</button>
-                              {atlas ? null : <button type="button" disabled={!!busy} onClick={() => relook(m, "color")} aria-label={`Otro color para ${m.name}`} style={pill}>{"Otro color"}</button>}
+                              <button type="button" disabled={!!busy} onClick={() => setLooking(m.id)} aria-label={`Cambiar el nombre y el aspecto de ${m.name}`} style={pill}>{"Cambiar nombre y aspecto"}</button>
                             </div>
                           ) : null}
                         </div>
                       );
                     })}
                   </div>
-                  <p role="status" style={{ margin: "-18px 0 0", minHeight: "20px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{relooked || "Tus compañeros verán estos nombres y colores; los de cada persona son distintos."}</p>
+                  <p role="status" style={{ margin: "-18px 0 0", minHeight: "20px", fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{relooked || "Tus compañeros verán estos nombres y colores; puedes cambiarlos cuando quieras."}</p>
+                  {looking && real(looking) ? <BotLookDialog bot={real(looking)} onSave={saveLook(real(looking))} onClose={() => setLooking(null)} /> : null}
                 </>
               ) : null}
 
