@@ -9,6 +9,7 @@ import { navigate } from "../lib/router.jsx";
 import { chat } from "../chat/api.js";
 import Message from "../chat/Message.jsx";
 import Thread from "../chat/Thread.jsx";
+import { PersonPanel } from "../chat/PersonProfile.jsx";
 import { Composer } from "../chat/Composer.jsx";
 import { ChannelInfo, PinsDialog, TopicDialog } from "../chat/ChannelDialogs.jsx";
 import { channelTitle, chatState, dropChannel, loadChat, mergeGhosts, nameOf, onChatEvent, setOpenChannel, upsertChannel, useChat } from "../chat/store.js";
@@ -37,7 +38,8 @@ export default function Canal({ params, query }) {
   const stick = useRef(true);
   const anchor = useRef(null); // keeps the view still while older messages come in above
   const focusId = query?.m || null;
-  const threadId = query?.hilo || null;
+  const personId = query?.persona || null;
+  const threadId = personId ? null : query?.hilo || null;
   const ch = s.channels.get(id) || info;
   const me = s.me?.id;
   const admin = ["owner", "admin"].includes(s.me?.role);
@@ -287,6 +289,7 @@ export default function Canal({ params, query }) {
               </div>
             ) : null}
         </div>
+        {personId ? <PersonPanel key={personId} personId={personId} onClose={closeThread} /> : null}
         {threadId ? <Thread key={threadId} channel={id} rootId={threadId} canPost={canPost} admin={admin} onClose={closeThread} /> : null}
       </div>
       {dialog === "pins" ? <PinsDialog channel={id} onClose={() => setDialog(null)} onOpen={(m) => { setDialog(null); navigate(`/canal/${id}?m=${m.id}`); }} /> : null}

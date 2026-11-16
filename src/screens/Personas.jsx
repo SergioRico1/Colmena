@@ -3,49 +3,18 @@
 // (?p=<id>, or ?p=yo for your own, editable) with «Enviar mensaje»; and a group message with up
 // to 8 others. Data: useChat() (src/chat/store.js), kept live by the socket's chat.* frames.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, BellSlash, ChatCircleText, Search, Pencil, UsersThree, X } from "../components/Icon.js";
+import { ArrowLeft, ChatCircleText, Search, Pencil, UsersThree, X } from "../components/Icon.js";
 import { navigate } from "../lib/router.jsx";
 import { chat } from "../chat/api.js";
 import { upsertChannel, useChat } from "../chat/store.js";
-import { Avatar, ChatPage, Empty, ROLE_LABEL, localTimeOf, whenOf } from "../chat/ui.jsx";
+import { Avatar, ChatPage, Empty, localTimeOf } from "../chat/ui.jsx";
+import { Chips, Profile, Status, useMinute } from "../chat/PersonProfile.jsx";
 import ProfileEditor from "../chat/ProfileEditor.jsx";
 import "../chat/people.css";
 
 const GROUP_MAX = 8; // others besides you (server/cloud/chat.mjs › CHAT_LIMITS.groupMax)
 const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 const byName = (a, b) => (a.name || "").localeCompare(b.name || "", "es", { sensitivity: "base" });
-const cityOf = (tz) => (tz && tz !== "UTC" ? tz.split("/").pop().replace(/_/g, " ") : tz || "");
-
-/** The clock moves: local times re-render each half minute. */
-function useMinute() {
-  const [, tick] = useState(0);
-  useEffect(() => { const t = setInterval(() => tick((n) => n + 1), 30000); return () => clearInterval(t); }, []);
-}
-
-/** How to name someone in a search filter (server/cloud/chat.mjs › findPerson). */
-const handleOf = (p) => (p.email ? p.email : (p.name || "").replace(/\s+/g, ""));
-
-function Chips({ p, presence }) {
-  return (
-    <>
-      {p.role === "owner" || p.role === "admin" || p.role === "guest" ? <span className="ch-chip">{ROLE_LABEL[p.role]}</span> : null}
-      {p.deactivated ? <span className="ch-chip">Desactivada</span> : null}
-      {!p.deactivated && (p.away || presence === "away") ? <span className="ch-chip">Ausente</span> : null}
-      {!p.deactivated && p.dnd ? <span className="ch-chip"><BellSlash size={12} />No molestar</span> : null}
-    </>
-  );
-}
-
-function Status({ status }) {
-  if (!status || (!status.emoji && !status.text)) return null;
-  return (
-    <span className="pp-status">
-      {status.emoji ? <span className="pp-status-emoji" aria-hidden="true">{status.emoji}</span> : null}
-      <span className="ch-ellipsis">{status.text || ""}</span>
-    </span>
-  );
-}
-
 export default function Personas({ query = {} }) {
   const s = useChat();
   useMinute();
@@ -227,40 +196,5 @@ export default function Personas({ query = {} }) {
         ) : null}
       </div>
     </ChatPage>
-  );
-}
-
-function Profile({ p, you, busy, error, onMessage, onEdit }) {
-  const s = useChat();
-  const presence = s.presence.get(p.id);
-  const local = p.tz ? localTimeOf(p.tz) : null;
-  const state = p.deactivated ? "Desactivada" : presence === "active" ? "Conectada" : presence === "away" ? "Ausente" : "Desconectada";
-  return (
-    <div className="pp-profile">
-      <div className="pp-profile-top">
-        <Avatar id={p.id} size={72} />
-        <h3 className="pp-profile-name">{p.name}{you ? <span className="pp-you"> (tú)</span> : null}</h3>
-        {p.title ? <p className="pp-profile-title">{p.title}</p> : null}
-        {p.status ? <Status status={p.status} /> : null}
-        <div className="pp-chips"><Chips p={p} presence={presence} /></div>
-      </div>
-
-      <div className="ch-row-actions pp-profile-actions">
-        {you ? (
-          <button type="button" className="ch-btn is-primary" onClick={onEdit}><Pencil size={16} />Editar tu perfil</button>
-        ) : (
-          <button type="button" className="ch-btn is-primary" disabled={p.deactivated || busy} onClick={onMessage}><ChatCircleText size={16} />{busy ? "Abriendo…" : "Enviar mensaje"}</button>
-        )}
-        <a className="ch-btn" href={"/buscar?q=" + encodeURIComponent("from:@" + handleOf(p))}><Search size={16} />{you ? "Tus mensajes" : "Sus mensajes"}</a>
-      </div>
-      {error ? <p className="ch-error">{error}</p> : null}
-
-      <dl className="pp-facts">
-        <div><dt>Estado</dt><dd>{state}{!p.deactivated && p.dnd ? (p.dndUntil ? " · no molestar hasta " + whenOf(p.dndUntil) : " · no molestar") : ""}</dd></div>
-        {local ? <div><dt>Hora local</dt><dd>{local}{cityOf(p.tz) ? " · " + cityOf(p.tz) : ""}</dd></div> : null}
-        {p.email ? <div><dt>Correo</dt><dd><a className="ch-link" href={"mailto:" + p.email}>{p.email}</a></dd></div> : null}
-        <div><dt>Rol</dt><dd>{ROLE_LABEL[p.role] || "Miembro"}</dd></div>
-      </dl>
-    </div>
   );
 }

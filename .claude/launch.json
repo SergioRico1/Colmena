@@ -97,50 +97,123 @@
     {
       "name": "mu-relay",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["relay/server.mjs", "--port", "4390", "--data", ".local/mu-relay"],
+      "runtimeArgs": [
+        "relay/server.mjs",
+        "--port",
+        "4390",
+        "--data",
+        ".local/mu-relay"
+      ],
       "port": 4390
     },
     {
       "name": "mu-sergio",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["server/index.mjs", "--production"],
+      "runtimeArgs": [
+        "server/index.mjs",
+        "--production"
+      ],
       "port": 4341,
-      "env": { "COLMENA_DATA_DIR": ".local/mu-sergio", "COLMENA_PORT": "4341", "COLMENA_RELAY_URL": "http://127.0.0.1:4390" }
+      "env": {
+        "COLMENA_DATA_DIR": ".local/mu-sergio",
+        "COLMENA_PORT": "4341",
+        "COLMENA_RELAY_URL": "http://127.0.0.1:4390"
+      }
     },
     {
       "name": "mu-marta",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["server/index.mjs", "--production"],
+      "runtimeArgs": [
+        "server/index.mjs",
+        "--production"
+      ],
       "port": 4342,
-      "env": { "COLMENA_DATA_DIR": ".local/mu-marta", "COLMENA_PORT": "4342", "COLMENA_RELAY_URL": "http://127.0.0.1:4390" }
+      "env": {
+        "COLMENA_DATA_DIR": ".local/mu-marta",
+        "COLMENA_PORT": "4342",
+        "COLMENA_RELAY_URL": "http://127.0.0.1:4390"
+      }
     },
     {
       "name": "mu-luis",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["server/index.mjs", "--production"],
+      "runtimeArgs": [
+        "server/index.mjs",
+        "--production"
+      ],
       "port": 4343,
-      "env": { "COLMENA_DATA_DIR": ".local/mu-luis", "COLMENA_PORT": "4343", "COLMENA_RELAY_URL": "http://127.0.0.1:4390" }
+      "env": {
+        "COLMENA_DATA_DIR": ".local/mu-luis",
+        "COLMENA_PORT": "4343",
+        "COLMENA_RELAY_URL": "http://127.0.0.1:4390"
+      }
     },
     {
       "name": "mu-h-sergio",
       "runtimeExecutable": "node",
-      "runtimeArgs": [".local/mu-harness.mjs"],
+      "runtimeArgs": [
+        ".local/mu-harness.mjs"
+      ],
       "port": 4351,
-      "env": { "COLMENA_DATA_DIR": ".local/muh-sergio", "COLMENA_PORT": "4351", "COLMENA_RELAY_URL": "http://127.0.0.1:4390", "MU_NAME": "Sergio Rico" }
+      "env": {
+        "COLMENA_DATA_DIR": ".local/muh-sergio",
+        "COLMENA_PORT": "4351",
+        "COLMENA_RELAY_URL": "http://127.0.0.1:4390",
+        "MU_NAME": "Sergio Rico"
+      }
     },
     {
       "name": "mu-h-marta",
       "runtimeExecutable": "node",
-      "runtimeArgs": [".local/mu-harness.mjs"],
+      "runtimeArgs": [
+        ".local/mu-harness.mjs"
+      ],
       "port": 4352,
-      "env": { "COLMENA_DATA_DIR": ".local/muh-marta", "COLMENA_PORT": "4352", "COLMENA_RELAY_URL": "http://127.0.0.1:4390", "MU_NAME": "Marta Ruiz" }
+      "env": {
+        "COLMENA_DATA_DIR": ".local/muh-marta",
+        "COLMENA_PORT": "4352",
+        "COLMENA_RELAY_URL": "http://127.0.0.1:4390",
+        "MU_NAME": "Marta Ruiz"
+      }
     },
     {
       "name": "mu-h-luis",
       "runtimeExecutable": "node",
-      "runtimeArgs": [".local/mu-harness.mjs"],
+      "runtimeArgs": [
+        ".local/mu-harness.mjs"
+      ],
       "port": 4353,
-      "env": { "COLMENA_DATA_DIR": ".local/muh-luis", "COLMENA_PORT": "4353", "COLMENA_RELAY_URL": "http://127.0.0.1:4390", "MU_NAME": "Luis Gómez" }
+      "env": {
+        "COLMENA_DATA_DIR": ".local/muh-luis",
+        "COLMENA_PORT": "4353",
+        "COLMENA_RELAY_URL": "http://127.0.0.1:4390",
+        "MU_NAME": "Luis Gómez"
+      }
+    },
+    {
+      "name": "cloud",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "cloud/node_modules/wrangler/bin/wrangler.js",
+        "dev",
+        "--cwd",
+        "cloud",
+        "--local",
+        "--port",
+        "8790",
+        "--ip",
+        "127.0.0.1",
+        "--persist-to",
+        "E:/NexoBot/.local/cloud-state",
+        "--env-file",
+        "E:/NexoBot/.local/cloud.env",
+        "--var",
+        "JURISDICTION:",
+        "--var",
+        "MACHINE_JURISDICTION:",
+        "--enable-containers=false"
+      ],
+      "port": 8790
     }
   ]
 }

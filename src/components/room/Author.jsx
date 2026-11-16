@@ -37,14 +37,15 @@ function personInitials(person) {
  * draws the dot (filled green: here; a ring: not), cut out of `ring` (the surface behind).
  */
 export function PersonAvatar({ person, size = 40, ring = "var(--c-app)", presence = null, label = null }) {
-  const dot = size >= 28 ? 11 : 9;
-  const font = size >= 40 ? "var(--t-ui)" : size >= 28 ? "var(--t-caption)" : "var(--t-micro)";
+  // A large picture (a profile panel) scales its initials and presence dot with it.
+  const dot = size >= 96 ? Math.round(size / 9) : size >= 28 ? 11 : 9;
+  const font = size >= 96 ? Math.round(size * 0.36) + "px" : size >= 40 ? "var(--t-ui)" : size >= 28 ? "var(--t-caption)" : "var(--t-micro)";
   const initials = personInitials(person);
   const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": "true" };
   return (
     <span {...a11y} style={{ position: "relative", flex: "none", width: size + "px", height: size + "px", display: "grid", placeItems: "center", borderRadius: "var(--r-circle)", ...avatarColors(person?.color || tintOf(person?.name)), font: `600 ${font}/1 'Geist', sans-serif`, letterSpacing: "0.01em" }}>
       {size < 22 ? initials.slice(0, 1) : fitInitials(initials, size)}
-      {presence ? <span style={{ position: "absolute", right: "-2px", bottom: "-2px", width: dot + "px", height: dot + "px", boxSizing: "border-box", borderRadius: "var(--r-circle)", background: presence === "online" ? "var(--c-ok)" : ring, border: `2px solid ${ring}`, boxShadow: presence === "online" ? "none" : "inset 0 0 0 2px var(--c-text-3)" }} /> : null}
+      {presence ? <span style={{ position: "absolute", right: size >= 96 ? Math.round(size / 14) + "px" : "-2px", bottom: size >= 96 ? Math.round(size / 14) + "px" : "-2px", width: dot + "px", height: dot + "px", boxSizing: "border-box", borderRadius: "var(--r-circle)", background: presence === "online" ? "var(--c-ok)" : ring, border: `2px solid ${ring}`, boxShadow: presence === "online" ? "none" : "inset 0 0 0 2px var(--c-text-3)" }} /> : null}
     </span>
   );
 }

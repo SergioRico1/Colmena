@@ -5,6 +5,7 @@
 import { memo, useEffect, useState } from "react";
 import { ChatCircleText, Copy, Download, Ellipsis, FileText, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
+import { navigate } from "../lib/router.jsx";
 import { chat, fileUrl } from "./api.js";
 import { withMine } from "./reactions.js";
 import { MessageText } from "./format.jsx";
@@ -105,6 +106,19 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
       setError(e.message);
     });
   };
+  // As in Slack, a name, an avatar or an @mention opens that person's profile beside the
+  // conversation (?persona=, src/chat/PersonProfile.jsx); a bot's opens its page in «Equipo».
+  const personTarget = (id) => {
+    const p = personOf(id, s);
+    if (p?.bot) return (p.botId || String(id).startsWith("bot:")) ? "/equipo/" + encodeURIComponent(p.botId || String(id).slice(4)) : null;
+    return p && !p.ghost && s.people.has(p.id) ? "/canal/" + m.channel + "?persona=" + encodeURIComponent(p.id) : null;
+  };
+  const openPerson = (id) => { const to = personTarget(id); if (to) navigate(to); };
+  const onMention = (e) => {
+    const el = e.target.closest?.("[data-person]");
+    if (el && personTarget(el.dataset.person)) { e.preventDefault(); openPerson(el.dataset.person); }
+  };
+  const canOpen = !!personTarget(m.author);
   if (m.deleted) {
     return (
       <div className="ms-row is-deleted" data-message-id={m.id}>
@@ -128,12 +142,14 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
       onClick={(e) => { if (!e.target.closest("a,button,input,textarea,label,[role='toolbar']")) e.currentTarget.classList.toggle("is-touched"); }}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove("is-touched"); }}>
       <div className="ms-gutter">
-        {compact ? <time className="ms-gutter-time" dateTime={new Date(m.at).toISOString()}>{timeOf(m.at)}</time> : <Avatar id={m.author} size={36} />}
+        {compact ? <time className="ms-gutter-time" dateTime={new Date(m.at).toISOString()}>{timeOf(m.at)}</time>
+          : canOpen ? <button type="button" className="ms-person ms-person-face" onClick={() => openPerson(m.author)} aria-label={"Ver el perfil de " + name} tabIndex={-1}><Avatar id={m.author} size={36} /></button>
+          : <Avatar id={m.author} size={36} />}
       </div>
       <div className="ms-main">
         {compact ? null : (
           <div className="ms-head">
-            <span className="ms-name">{name}</span>
+            {canOpen ? <button type="button" className="ms-name ms-person" onClick={() => openPerson(m.author)} title={"Ver el perfil de " + name}>{name}</button> : <span className="ms-name">{name}</span>}
             {isBot ? <span className="ch-chip">Bot</span> : m.botName ? <span className="ch-chip">Integración</span> : author?.ghost && !m.botName ? <span className="ch-chip" title="Aún no ha entrado en Colmena">Importado</span> : null}
             <time className="ms-time" dateTime={new Date(m.at).toISOString()} title={new Date(m.at).toLocaleString("es-ES")}>{whenOf(m.at)}</time>
             {m.pinned ? <span className="ms-pinned"><Pin size={12} /> Fijado</span> : null}
@@ -143,7 +159,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
         {editing ? (
           <Composer editing={m} channel={m.channel} onDone={() => setEditing(false)} />
         ) : (
-          <div className="ms-text" data-message-text="">
+          <div className="ms-text" data-message-text="" onClick={onMention}>
             {m.text ? <MessageText text={m.text} /> : null}
             {m.editedAt ? <span className="ms-edited" title={"Editado " + whenOf(m.editedAt)}> (editado)</span> : null}
           </div>

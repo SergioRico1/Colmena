@@ -179,3 +179,9 @@
 @media (pointer: coarse){
   .sr-token{height:36px;padding:0 12px}
 }
+/* The profile beside a conversation (src/chat/PersonProfile.jsx › PersonPanel), as in Slack: a
+   large picture on top, the two main actions side by side. */
+.pp-side .th-body{padding:0}
+.pp-side .pp-profile-top > :first-child{align-self:center;margin:4px 0 14px}
+.pp-side .pp-profile-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pp-side .pp-profile-actions > *{justify-content:center}
