@@ -14,6 +14,7 @@
 //   /hooks/<workspace>/h/<id>  a routine's public webhook address (Phase 3)
 //   /agent/connect             a person's computer: its local agent's socket (Phase 5)
 //   /auth/desktop/*            the desktop app signs in through the system browser (Phase 5)
+import "./fetch-redirect.js"; // first: the shared server's `redirect: "error"` on the Workers runtime
 import { Directory } from "./directory.js";
 import { Workspace } from "./workspace.js";
 import { Machine } from "./machine.js";
