@@ -177,8 +177,10 @@ export class CodexDeviceSession {
       // chatgpt.com refuses the list to Cloudflare's servers (an HTML 403) while it answers the
       // turns: the person's own computer asks for it (server/agent-link › «chatgpt-models»).
       const headers = await this.headers();
-      const got = await this.viaComputer({ authorization: headers.Authorization, account: headers["chatgpt-account-id"] || null }).catch(() => null);
+      const got = await this.viaComputer({ authorization: headers.Authorization, account: headers["chatgpt-account-id"] || null })
+        .catch((error) => { console.error("chatgpt models via computer: " + (error?.code ? error.code + " " : "") + (error?.message || error)); return null; });
       if (got?.status === 200 && got.body) { this.models = normalizeModels(got.body); return this.models; }
+      if (got) console.error("chatgpt models via computer: OpenAI answered " + got.status);
     }
     if (!response.ok) {
       const said = (await response.text().catch(() => "")).replace(/s+/g, " ").slice(0, 200);
