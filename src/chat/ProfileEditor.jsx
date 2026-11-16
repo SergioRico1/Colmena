@@ -1,13 +1,13 @@
-// «Tu perfil» in team messaging (src/screens/Personas.jsx): what others see of you (title, time
-// zone, status), whether you are around («Ausente», «No molestar» now or on a schedule), what
+// «Tu perfil» in team messaging (src/screens/Personas.jsx): what others see of you (picture, title,
+// phone, time zone, status), whether you are around («Ausente», «No molestar» now or on a schedule), what
 // reaches you (keywords, the mail digest) and the notifications on this device. Saved with
 // PATCH /api/chat/me, which answers with your whole profile (server/cloud/chat.mjs › myProfile).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Select from "../components/Select.jsx";
 import { BellSlash, Bell, Check } from "../components/Icon.js";
-import { chat } from "./api.js";
+import { chat, uploadPhoto } from "./api.js";
 import { setMyProfile, useChat } from "./store.js";
-import { whenOf } from "./ui.jsx";
+import { Avatar, whenOf } from "./ui.jsx";
 import { disablePush, enablePush, pushState, refreshPush, testPush } from "./push.js";
 import "./people.css";
 
@@ -50,7 +50,7 @@ const DAYS = [[1, "L", "lunes"], [2, "M", "martes"], [3, "X", "miércoles"], [4,
 function formOf(p = {}) {
   const s = p.dnd?.schedule || null;
   return {
-    title: p.title || "", tz: p.tz || "",
+    title: p.title || "", phone: p.phone || "", tz: p.tz || "",
     emoji: p.statusEmoji || "", text: p.statusText || "", clear: p.statusUntil && p.statusUntil > Date.now() ? "keep" : "never",
     away: !!p.away,
     schedOn: !!s?.on, from: s?.from || "22:00", to: s?.to || "08:00", days: s?.days?.length ? [...s.days].sort() : [1, 2, 3, 4, 5],
@@ -101,6 +101,7 @@ export default function ProfileEditor() {
     const untilNow = profile.dnd?.until && profile.dnd.until > Date.now() ? profile.dnd.until : null;
     save({
       title: form.title.trim(),
+      phone: form.phone.trim(),
       tz: form.tz || null,
       statusEmoji: hasStatus ? form.emoji : "",
       statusText: hasStatus ? form.text.trim() : "",
@@ -125,14 +126,43 @@ export default function ProfileEditor() {
     if (form.emoji === emoji) return set({ emoji: "" });
     set({ emoji, ...(!form.text.trim() || PRESET_TEXTS.has(form.text.trim()) ? { text: label } : {}) });
   };
+  // The picture is saved at once (it is not part of the form).
+  const pick = useRef(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  async function changePhoto(file) {
+    if (!file) return;
+    setPhotoBusy(true);
+    setNote(null);
+    try { setMyProfile(await uploadPhoto(file)); setNote({ ok: true, text: "Foto guardada." }); }
+    catch (error) { setNote({ ok: false, text: error.message || "No se pudo guardar la foto." }); }
+    finally { setPhotoBusy(false); if (pick.current) pick.current.value = ""; }
+  }
+  async function removePhoto() {
+    setPhotoBusy(true);
+    try { setMyProfile(await chat.del("/me/photo")); setNote({ ok: true, text: "Foto quitada." }); }
+    catch (error) { setNote({ ok: false, text: error.message || "No se pudo quitar la foto." }); }
+    finally { setPhotoBusy(false); }
+  }
   const toggleDay = (d) => set({ days: form.days.includes(d) ? form.days.filter((x) => x !== d) : [...form.days, d].sort() });
 
   return (
     <form className="pp-editor" onSubmit={submit} noValidate>
       <div className="pp-editor-body">
         <h3 className="pp-group-title">Sobre ti</h3>
+        <div className="pp-photo">
+          <Avatar id={s.me?.id} size={72} presence={false} />
+          <div className="pp-photo-actions">
+            <button type="button" className="ch-btn" disabled={photoBusy} onClick={() => pick.current?.click()}>{photoBusy ? "Guardando…" : profile.photo ? "Cambiar foto" : "Subir foto"}</button>
+            {profile.photo ? <button type="button" className="ch-btn" disabled={photoBusy} onClick={removePhoto}>Quitar</button> : null}
+            <input ref={pick} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => changePhoto(e.target.files?.[0])} />
+          </div>
+        </div>
         <label className="ch-field">Cargo o función
           <input className="ch-input" value={form.title} maxLength={80} placeholder="Por ejemplo, Diseño de producto" onChange={(e) => set({ title: e.target.value })} />
+        </label>
+        <label className="ch-field">Teléfono
+          <input className="ch-input" type="tel" autoComplete="tel" value={form.phone} maxLength={32} placeholder="Por ejemplo, +34 600 000 000" onChange={(e) => set({ phone: e.target.value })} />
+          <small>Lo ve todo el equipo en tu perfil. Déjalo vacío si no quieres compartirlo.</small>
         </label>
         <div className="ch-field">
           <span>Zona horaria</span>

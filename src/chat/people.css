@@ -185,3 +185,6 @@
 .pp-side .pp-profile-top > :first-child{align-self:center;margin:4px 0 14px}
 .pp-side .pp-profile-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .pp-side .pp-profile-actions > *{justify-content:center}
+/* Your picture in «Tu perfil» (src/chat/ProfileEditor.jsx). */
+.pp-photo{display:flex;align-items:center;gap:16px;margin:4px 0 16px}
+.pp-photo-actions{display:flex;flex-wrap:wrap;gap:8px}

@@ -63,6 +63,16 @@ export function chatRoutes(app, { chat, importer, blobs, workspace, presence, pu
   }));
   app.get("/api/chat/people", run(() => { chat.must(me()); return { people: chat.directory() }; }));
   app.patch("/api/chat/me", run((req) => chat.updateMe(me(), body(req))));
+  app.put("/api/chat/me/photo", express.raw({ type: () => true, limit: "1mb" }), run((req) => chat.setPhoto(me(), { type: req.headers["content-type"], body: req.body ? new Uint8Array(req.body) : null })));
+  app.delete("/api/chat/me/photo", run(() => chat.clearPhoto(me())));
+  // The address carries the picture's version (?v=), so it never changes under the same URL.
+  app.get("/api/chat/people/:id/photo", run(async (req, res) => {
+    const photo = chat.photoOf(me(), req.params.id);
+    const found = await blobs.get(photo.key);
+    if (!found) throw new ChatError("No tiene foto.", 404);
+    res.set({ "Content-Type": photo.type, "Content-Length": String(found.size), "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox", "Cache-Control": "private, max-age=31536000, immutable" });
+    Readable.fromWeb(found.body).pipe(res);
+  }));
   app.get("/api/chat/presence", run(() => { chat.must(me()); return { presence: Object.fromEntries(presence()) }; }));
 
   // ---- channels

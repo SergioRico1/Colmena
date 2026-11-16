@@ -529,3 +529,28 @@ test("big values: over 2 MB a record is kept in pieces on a Durable Object, encr
     assert.equal(storage.sql.exec("SELECT count(*) AS n FROM colmena_spill").one().n, 0);
   }
 });
+
+test("profile phone and picture: everyone in the company sees them; the picture has a versioned address", async (t) => {
+  const { as } = await company(t, [ANA, BETO], { blobs: new MemoryBlobs() });
+  const ana = as(ANA), beto = as(BETO);
+  assert.equal((await ana("PATCH", "/chat/me", { phone: "llámame" })).status, 400);
+  assert.equal((await ana("PATCH", "/chat/me", { phone: "+34 692 91 22 38" })).data.phone, "+34 692 91 22 38");
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
+  assert.equal((await ana("PUT", "/chat/me/photo", png, { "Content-Type": "image/svg+xml" })).status, 400);
+  assert.equal((await ana("PUT", "/chat/me/photo", new Uint8Array(600 * 1024), { "Content-Type": "image/png" })).status, 413);
+  const first = (await ana("PUT", "/chat/me/photo", png, { "Content-Type": "image/png" })).data.photo;
+  assert.match(first, /^[0-9a-f]{12}$/);
+  const seen = (await beto("GET", "/chat/people")).data.people.find((p) => p.id === ANA.id);
+  assert.equal(seen.phone, "+34 692 91 22 38");
+  assert.equal(seen.photo, first);
+  const got = await beto("GET", `/chat/people/${ANA.id}/photo?v=${first}`);
+  assert.equal(got.status, 200);
+  assert.equal(got.headers.get("content-type"), "image/png");
+  assert.match(got.headers.get("cache-control"), /immutable/);
+  assert.deepEqual([...got.data], [...png]);
+  const second = (await ana("PUT", "/chat/me/photo", png, { "Content-Type": "image/webp" })).data.photo;
+  assert.notEqual(second, first);
+  assert.equal((await ana("DELETE", "/chat/me/photo")).data.photo, null);
+  assert.equal((await beto("GET", `/chat/people/${ANA.id}/photo`)).status, 404);
+  assert.equal((await as(null)("GET", `/chat/people/${ANA.id}/photo`)).status, 401);
+});

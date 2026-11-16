@@ -32,6 +32,8 @@ import SidebarComb from "./SidebarComb.jsx";
 import { DOWNLOADS, detectOs } from "../DesktopRoute.jsx";
 import { Download } from "../Icon.js";
 import { useChatTitle } from "../../chat/title.js";
+import { useChat } from "../../chat/store.js";
+import { photoUrl } from "../../chat/api.js";
 import { prefetchHref } from "../../lib/prefetchHref.js";
 
 // The Colmena sidebar, the same on every screen (docs/PLAN-equipo-y-salas.md; Colmena 4:
@@ -325,7 +327,7 @@ export default function Sidebar({ active = "inicio" }) {
   // desktop the last item is «Cerrar Colmena» (the window's own red dot, said in words).
   const meHeader = (
     <>
-      <PersonAvatar person={me} size={40} ring={C.raised} presence={peers?.me ? (statusMode === "away" ? "offline" : "online") : null} />
+      {store.cloud ? <MyPicture person={me} ring={C.raised} presence={peers?.me ? (statusMode === "away" ? "offline" : "online") : null} /> : <PersonAvatar person={me} size={40} ring={C.raised} presence={peers?.me ? (statusMode === "away" ? "offline" : "online") : null} />}
       <span style={{ minWidth: "0", display: "flex", flexDirection: "column", gap: "2px" }}>
         <span style={{ fontWeight: "600", fontSize: "var(--t-ui)", ...ellipsis, flex: "none" }}>{userName}</span>
         <span style={{ fontSize: "var(--t-caption)", color: C.text3, ...ellipsis, flex: "none" }}>{peers?.me ? myStatus : store.cloud ? store.cloud.workspace?.name || "Tu empresa" : "Solo en este ordenador"}</span>
@@ -589,7 +591,7 @@ export default function Sidebar({ active = "inicio" }) {
       <div ref={meRef} style={{ position: "relative", flex: "none", alignSelf: "stretch", display: "flex", flexDirection: folded ? "column" : "row", alignItems: "center", gap: folded ? "4px" : "10px", padding: folded ? "8px 0 10px" : "10px 10px 12px", borderTop: line(), ...noDrag }}>
         <MenuButton label={`${userName}, ${myStatus}. Tu perfil y ajustes`} showTitle={false} title={folded ? `${userName} · ${myStatus}` : undefined} menuLabel="Tu perfil" items={meEntries} header={meHeader} open={menu === "me"} onOpenChange={opened("me")} placement="top-start" openStyle={{ background: C.sidebarHover }}
           className="v3-hover" style={{ flex: folded ? "none" : "1", minWidth: "0", display: "flex", alignItems: "center", justifyContent: folded ? "center" : "flex-start", gap: "10px", padding: folded ? "4px" : "5px 6px", border: "0", borderRadius: "var(--r-md)", background: current === "ajustes" ? C.sidebarHover : "transparent", color: C.text, textAlign: "left", cursor: "pointer" }}>
-          <PersonAvatar person={me} size={32} ring={C.sidebar} presence={peers?.me ? (statusMode === "away" ? "offline" : "online") : null} />
+          {store.cloud ? <MyPicture person={me} size={32} ring={C.sidebar} presence={peers?.me ? (statusMode === "away" ? "offline" : "online") : null} /> : <PersonAvatar person={me} size={32} ring={C.sidebar} presence={peers?.me ? (statusMode === "away" ? "offline" : "online") : null} />}
           {folded ? null : (
             <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", gap: "1px" }}>
               <span style={{ fontSize: "var(--t-ui)", fontWeight: "600", lineHeight: "1.2", ...ellipsis, flex: "none" }}>{userName}</span>
@@ -624,3 +626,11 @@ const SIDEBAR_CSS = `
 @keyframes v3sheet{from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){[data-v3-sidebar] *{animation:none!important;transition:none!important}}
 `;
+
+/** Your avatar in the account chip, with your picture in the hosted app (Tu perfil › Subir foto). */
+function MyPicture({ person, ring, presence, size = 40 }) {
+  const chat = useChat();
+  const id = chat.me?.id;
+  const photo = id ? photoUrl({ id, photo: chat.people.get(id)?.photo || chat.me?.profile?.photo }) : null;
+  return <PersonAvatar person={person} photo={photo} size={size} ring={ring} presence={presence} />;
+}

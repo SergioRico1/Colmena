@@ -1,5 +1,5 @@
-// A person's profile in team messaging: photo-like avatar, name, title, status, presence, local
-// time, mail and role, with «Enviar mensaje» and «Sus mensajes». Shown in «Personas» (?p=<id>) and,
+// A person's profile in team messaging: picture, name, title, status, presence, local time,
+// phone, mail and role, with «Enviar mensaje» and «Sus mensajes». Shown in «Personas» (?p=<id>) and,
 // as in Slack, beside a conversation when you click someone's name or avatar (PersonPanel, used by
 // src/screens/Canal.jsx with ?persona=<id>).
 import { useEffect, useRef, useState } from "react";
@@ -70,6 +70,7 @@ export function Profile({ p, you, busy, error, onMessage, onEdit, size = 72 }) {
       <dl className="pp-facts">
         <div><dt>Estado</dt><dd>{state}{!p.deactivated && p.dnd ? (p.dndUntil ? " · no molestar hasta " + whenOf(p.dndUntil) : " · no molestar") : ""}</dd></div>
         {local ? <div><dt>Hora local</dt><dd>{local}{cityOf(p.tz) ? " · " + cityOf(p.tz) : ""}</dd></div> : null}
+        {p.phone ? <div><dt>Teléfono</dt><dd><a className="ch-link" href={"tel:" + p.phone.replace(/[^\d+]/g, "")}>{p.phone}</a></dd></div> : null}
         {p.email ? <div><dt>Correo</dt><dd><a className="ch-link" href={"mailto:" + p.email}>{p.email}</a></dd></div> : null}
         <div><dt>Rol</dt><dd>{ROLE_LABEL[p.role] || "Miembro"}</dd></div>
       </dl>

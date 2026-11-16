@@ -61,3 +61,25 @@ export async function uploadFile(channel, file, { onProgress, signal } = {}) {
 }
 
 export const fileUrl = (id, { download = false } = {}) => "/api/chat/files/" + encodeURIComponent(id) + (download ? "?download=1" : "");
+
+/** Where someone's picture is (its version in the address: cached for good), or null. */
+export const photoUrl = (person) => (person?.photo && person?.id ? "/api/chat/people/" + encodeURIComponent(person.id) + "/photo?v=" + encodeURIComponent(person.photo) : null);
+
+/**
+ * Your picture: the centre square of the image, 256×256, as WebP (PNG where the browser cannot
+ * write WebP); then PUT /api/chat/me/photo. Resolves with your profile.
+ */
+export async function uploadPhoto(file) {
+  if (!/^image\//.test(file?.type || "")) throw Error("Elige una imagen (PNG, JPG o WebP).");
+  const bitmap = await createImageBitmap(file).catch(() => { throw Error("No se pudo leer esa imagen."); });
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 256, 256);
+  bitmap.close?.();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.88));
+  const out = blob?.type === "image/webp" ? blob : await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  return putBytes("/chat/me/photo", out, { type: out.type });
+}

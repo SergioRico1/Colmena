@@ -48,7 +48,7 @@ export const ONBOARDING_STEPS = Object.freeze(["ia", "bots", "equipo", "escritor
 const MISSION_PATH = /^\/api\/(missions|rooms)\/([^/]+)/;
 const MEMBER_FIELDS = (m) => ({ id: m.id, name: m.name || m.email || "Alguien", email: m.email || null, role: ROLES.includes(m.role) ? m.role : "member", deactivated: !!m.deactivated });
 /** Uploads that are bytes, not JSON (the Durable Object streams them itself; Node gets them here). */
-const BINARY_WRITES = [/^\/api\/chat\/files$/, /^\/api\/chat\/import\/[^/]+\/parts\/\d+$/];
+const BINARY_WRITES = [/^\/api\/chat\/files$/, /^\/api\/chat\/me\/photo$/,/^\/api\/chat\/import\/[^/]+\/parts\/\d+$/];
 
 const noSession = () => ({ status: () => null, models: [], start: async () => { throw Error("No disponible en la nube."); }, closePending() {}, logout: async () => ({ ok: true }), listModels: async () => [] });
 

@@ -31,6 +31,8 @@ export const CHAT_LIMITS = Object.freeze({
   keywords: 20,
   statusText: 100,
   title: 80,
+  phone: 32,
+  photoMax: 512 * 1024, // the browser shrinks a picture to 256×256 before it uploads it
   searchPage: 30,
 });
 
@@ -246,13 +248,18 @@ export class TeamChat {
   /** What everyone in the workspace sees of a person's profile (keywords and devices stay theirs). */
   publicProfile(id, p = this.profile(id), at = this.now()) {
     const status = p.statusText || p.statusEmoji ? (p.statusUntil && p.statusUntil < at ? null : { text: p.statusText || "", emoji: p.statusEmoji || "", until: p.statusUntil || null }) : null;
-    return { title: p.title || "", tz: p.tz || null, status, away: !!p.away, dnd: doNotDisturb(p, at, this.zone()), dndUntil: p.dnd?.until && p.dnd.until > at ? p.dnd.until : null };
+    return { title: p.title || "", phone: p.phone || "", photo: p.photo?.v || null, tz: p.tz || null, status, away: !!p.away, dnd: doNotDisturb(p, at, this.zone()), dndUntil: p.dnd?.until && p.dnd.until > at ? p.dnd.until : null };
   }
   /** Changes to your own profile: title, time zone, status, «ausente», «no molestar», keywords, mail digest. */
   updateMe(person, patch = {}) {
     this.must(person);
     const p = this.profile(person.id);
     if ("title" in patch) p.title = cleanLine(patch.title, CHAT_LIMITS.title);
+    if ("phone" in patch) {
+      const phone = cleanLine(patch.phone, CHAT_LIMITS.phone + 1);
+      if (phone && (phone.length > CHAT_LIMITS.phone || !/^\+?[\d\s().-]{3,}$/.test(phone) || (phone.match(/\d/g) || []).length < 3)) fail("Escribe el teléfono solo con números, espacios y, si quieres, el prefijo con +.");
+      p.phone = phone;
+    }
     if ("tz" in patch) {
       const tz = patch.tz ? String(patch.tz).slice(0, 64) : null;
       if (tz) { try { new Intl.DateTimeFormat("en-US", { timeZone: tz }); } catch { fail("Zona horaria no válida."); } }
@@ -276,6 +283,44 @@ export class TeamChat {
     this.setProfile(person.id, p);
     this.emit({ type: "chat.profile", person: person.id, profile: this.publicProfile(person.id, p) }, { people: "all" });
     return this.myProfile(person.id, p);
+  }
+  /**
+   * Your picture (Slack's profile photo): a small image the browser already cut to 256×256, kept
+   * in the company's file store under a new key each time, so its address can be cached for good.
+   */
+  async setPhoto(person, { type, body }) {
+    this.must(person);
+    if (!this.blobs) fail("Este espacio no guarda archivos.", 503);
+    const kind = String(type || "").toLowerCase();
+    if (!/^image\/(png|jpeg|webp)$/.test(kind)) fail("La foto tiene que ser PNG, JPG o WebP.");
+    if (!body?.length) fail("La foto está vacía.");
+    if (body.length > CHAT_LIMITS.photoMax) fail("La foto es demasiado grande.", 413);
+    const v = randomBytes(6).toString("hex");
+    const key = "chat/people/" + person.id + "/photo-" + v;
+    await this.blobs.put(key, body, { size: body.length, type: kind });
+    const p = this.profile(person.id);
+    const old = p.photo?.key;
+    p.photo = { key, v, type: kind };
+    this.setProfile(person.id, p);
+    if (old) this.defer(this.blobs.remove(old));
+    this.emit({ type: "chat.profile", person: person.id, profile: this.publicProfile(person.id, p) }, { people: "all" });
+    return this.myProfile(person.id, p);
+  }
+  clearPhoto(person) {
+    this.must(person);
+    const p = this.profile(person.id);
+    if (p.photo?.key) this.defer(this.blobs?.remove(p.photo.key));
+    delete p.photo;
+    this.setProfile(person.id, p);
+    this.emit({ type: "chat.profile", person: person.id, profile: this.publicProfile(person.id, p) }, { people: "all" });
+    return this.myProfile(person.id, p);
+  }
+  /** Someone's picture, for anyone in the company: {key, type} or a 404. */
+  photoOf(viewer, personId) {
+    this.must(viewer);
+    const photo = this.profile(String(personId || "")).photo;
+    if (!photo?.key) fail("No tiene foto.", 404);
+    return photo;
   }
   myProfile(id, p = this.profile(id)) { return { ...this.publicProfile(id, p), keywords: p.keywords || [], digest: p.digest !== false, dnd: p.dnd || null, dndNow: doNotDisturb(p, this.now(), this.zone()), statusText: p.statusText || "", statusEmoji: p.statusEmoji || "", statusUntil: p.statusUntil || null }; }
   /** «Personas»: everyone in the workspace (deactivated people flagged), with profiles and presence. */
