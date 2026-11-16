@@ -12,7 +12,7 @@ export function botEngine(store, bot) {
   return bot?.engine || store?.ai?.primary || null;
 }
 
-/** The models a bot may pin: its engine's list, without the internal utility ones. */
+/** The models a bot may pin: its engine's whole list (a «utility» model may be the one it uses). */
 export function botModelList(store, bot) {
   const engine = botEngine(store, bot);
   if (!engine) return [];
@@ -20,7 +20,7 @@ export function botModelList(store, bot) {
   // ChatGPT's own list may be missing from the catalogue (read later, or with an API key): the
   // account's models in /api/state › models are its (the other engines' slugs carry «engine/»).
   const list = catalog?.length ? catalog : engine === "openai" ? (store?.models || []).filter((m) => m?.slug && !String(m.slug).includes("/")) : [];
-  return list.filter((m) => m?.slug && !m.utility);
+  return list.filter((m) => m?.slug);
 }
 
 /** `{ value, options }` for a Select: "" is «Automático», with what it chooses now. */

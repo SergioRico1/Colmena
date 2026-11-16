@@ -244,10 +244,13 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
     return null;
   }
   /** /api/state for one person: approvals and notices meant for others are not theirs. */
+  // /api/state for one person: their accounts of AI (engines, primary, catalogue: built as them, with
+  // their hub) plus the company's policy. The bot profile and Ajustes read them to offer accounts
+  // and models; dropping them hid both.
   function filterState(s, me) {
     const mine = (x) => !x?.for || x.for.includes(me.id);
     const approvals = (s.approvals || []).filter((a) => mine(store.get("approvals", a.id) || a));
-    return { ...s, approvals, notifications: (s.notifications || []).filter((n) => mine(store.get("notifications", n.id) || n)), ai: { policy: aiPolicy(store), mine: provider.connectedFor(me.id), fake: fakeOn() } };
+    return { ...s, approvals, notifications: (s.notifications || []).filter((n) => mine(store.get("notifications", n.id) || n)), ai: { ...(s.ai || {}), policy: aiPolicy(store), mine: provider.connectedFor(me.id), fake: fakeOn() } };
   }
 
   // ---------------------------------------------------------------- routes

@@ -145,6 +145,15 @@ test("AI accounts are per person: keys, config and vault apart; the terms switch
   assert.equal((await ana("POST", "/auth/local", { baseUrl: "http://127.0.0.1:1234", model: "x" })).status, 404);
   assert.equal((await ana("GET", "/state")).data.ai.mine, true);
   assert.equal((await beto("GET", "/state")).data.ai.mine, false);
+  // Each one's own accounts and their models reach the screens (the bot profile and Ajustes offer them).
+  const anaAi = (await ana("GET", "/state")).data.ai;
+  assert.ok(anaAi.engines?.some((e) => e.id === "openai" && e.connected), "Ana's ChatGPT key is listed as hers");
+  assert.ok(anaAi.catalog && typeof anaAi.catalog === "object", "the catalogue of models is there");
+  assert.ok(!(await beto("GET", "/state")).data.ai.engines?.some((e) => e.connected), "Beto sees none of Ana's accounts");
+  const anaState = (await ana("GET", "/state")).data;
+  const { botModelChoice } = await import("../src/lib/botModels.js");
+  const offered = botModelChoice(anaState, anaState.bots[0]).options.map(([v]) => v);
+  assert.ok(offered.includes("gpt-5"), "the model picker offers Ana's ChatGPT models: " + JSON.stringify(offered));
   // Subscriptions: ON by default (the owner's decision); only an admin turns them off; nothing is
   // asked of OpenAI or Anthropic until the person confirms the line for that provider.
   assert.deepEqual([aiPolicy(store).chatgptLogin, aiPolicy(store).claudeToken], [true, true], "the default is on");
