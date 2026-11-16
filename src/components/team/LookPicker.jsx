@@ -2,10 +2,9 @@ import BotFace from "../BotFace.jsx";
 
 // A bot's look from Colmena's own options: its shape (the silhouette of its role) and its colour,
 // each drawn as the bot will look. Shared by «Nuevo bot» (NewBot.jsx) and the profile's
-// «Nombre y aspecto» (BotLookDialog.jsx). Honey and ink are not offered: honey means «te
-// necesita» and ink marks who coordinates.
+// «Nombre y aspecto» (BotLookDialog.jsx). Honey is not offered: it means «te necesita».
 export const SHAPE_LIST = [["hex", "hexágono"], ["square", "cuadrado"], ["diamond", "rombo"], ["arch", "arco"], ["leaf", "hoja"], ["capsule", "cápsula"]];
-export const COLORS = [["#0E7C86", "verde azulado"], ["#2F6BFF", "azul"], ["#7B4DFF", "violeta"], ["#FF5CA8", "rosa"], ["#FF7A1A", "naranja"], ["#0B8A5F", "verde"], ["#B4236E", "frambuesa"]];
+export const COLORS = [["#0E7C86", "verde azulado"], ["#2F6BFF", "azul"], ["#7B4DFF", "violeta"], ["#FF5CA8", "rosa"], ["#FF7A1A", "naranja"], ["#0B8A5F", "verde"], ["#B4236E", "frambuesa"], ["#12131A", "tinta"]];
 
 const heading = { fontSize: "var(--t-ui)", fontWeight: "600", color: "var(--c-text-2)" };
 const tile = (on) => ({ width: "52px", height: "52px", display: "grid", placeItems: "center", padding: "0", border: `${on ? 2 : 1}px solid ${on ? "var(--c-text)" : "var(--c-line)"}`, borderRadius: "var(--r-md)", background: on ? "var(--c-hover)" : "var(--c-card)", cursor: "pointer" });
@@ -32,7 +31,7 @@ export function ColorPicker({ bot, value, onChange, disabled = false }) {
   const current = String(value || "").toUpperCase();
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      <span style={heading}>{"Color "}<span style={{ fontWeight: "400", color: "var(--c-text-3)" }}>{"· la miel es para «te necesita» y la tinta, para quien coordina"}</span></span>
+      <span style={heading}>{"Color "}<span style={{ fontWeight: "400", color: "var(--c-text-3)" }}>{"· la miel se reserva para «te necesita»"}</span></span>
       <div role="radiogroup" aria-label="Color" style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
         {COLORS.map(([hex, l]) => {
           const on = current === hex;
