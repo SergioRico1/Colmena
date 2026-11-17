@@ -34,6 +34,8 @@ async function company(t, people = [ANA, BETO, GIL], { blobs = null, presence = 
   const host = hostWorkspace({ store, workspace: { id: randomBytes(16).toString("hex"), name: "Pruebas" }, files: new SqlFiles(storage.sql), blobs: blobs || new SqlBlobs(storage.sql), previews: false, presence, vapid, defer: (p) => deferred.push(p), log: () => {} });
   host.syncMembers(people, { name: "Pruebas" });
   const server = http.createServer(host.app);
+  // A socket kept for the next request must outlive the client's reuse of it (ECONNRESET on slow runners).
+  server.keepAliveTimeout = 60_000;
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const base = "http://127.0.0.1:" + server.address().port;
   t.after(async () => {
@@ -461,7 +463,8 @@ test("link previews: SSRF protection (private addresses, redirects, ports, crede
   assert.equal(parsePreview("<p>nada</p>", "https://example.com/"), null);
 });
 
-test("performance: a channel of 50,000 messages opens by pages", async (t) => {
+// Seeding 50,000 sealed messages takes ~3 minutes on a Windows runner: room past the default 5.
+test("performance: a channel of 50,000 messages opens by pages", { timeout: 600_000 }, async (t) => {
   const { as, chat } = await company(t);
   const ana = as(ANA);
   const general = (await ana("GET", "/chat/channels")).data.channels.find((c) => c.name === "general");

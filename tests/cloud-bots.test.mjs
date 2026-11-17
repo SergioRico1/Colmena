@@ -52,6 +52,8 @@ async function company(t, { testing = true, fake = true, fetchImpl = undefined }
     host.syncMembers([ANA, BETO, GIL, DORA], { name: "Pruebas" });
     if (fake) host.setTestFlags({ fakeModel: true });
     const server = http.createServer(host.app);
+  // A socket kept for the next request must outlive the client's reuse of it (ECONNRESET on slow runners).
+  server.keepAliveTimeout = 60_000;
     await new Promise((r) => server.listen(0, "127.0.0.1", r));
     servers.push({ server, host, store });
     const base = "http://127.0.0.1:" + server.address().port;

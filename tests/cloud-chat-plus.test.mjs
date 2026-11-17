@@ -30,6 +30,8 @@ async function company(t, people = [ANA, BETO, GIL, DORA]) {
   const host = hostWorkspace({ store, workspace: { id: randomBytes(16).toString("hex"), name: "Pruebas" }, files: new SqlFiles(storage.sql), blobs: new SqlBlobs(storage.sql), previews: false, defer: () => {}, log: () => {}, presence: () => new Map([[BETO.id, "active"]]) });
   host.syncMembers(people, { name: "Pruebas" });
   const server = http.createServer(host.app);
+  // A socket kept for the next request must outlive the client's reuse of it (ECONNRESET on slow runners).
+  server.keepAliveTimeout = 60_000;
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const base = "http://127.0.0.1:" + server.address().port;
   t.after(async () => {
