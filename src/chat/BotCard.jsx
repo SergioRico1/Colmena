@@ -3,7 +3,7 @@
 // who is responsible for it, what it thinks with and how much of the plan is left, and a box to
 // write to it without leaving the channel. Its banner is Colmena's pixels settling into the comb,
 // in the bot's own colour (src/components/Hive.jsx).
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowUp, Check, Flag, Hourglass, X } from "../components/Icon.js";
 import BotFace from "../components/BotFace.jsx";
@@ -13,7 +13,8 @@ import { post } from "../lib/api.js";
 import { navigate } from "../lib/router.jsx";
 import { chat } from "./api.js";
 import { nameOf, useChat } from "./store.js";
-import { Avatar } from "./ui.jsx";
+import { Avatar, botNow } from "./ui.jsx";
+import { placeStyle, usePopover } from "./popover.js";
 import "./botcard.css";
 
 const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "");
@@ -45,30 +46,7 @@ export default function BotCard({ id, anchor, onClose }) {
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(null);
-  const [place, setPlace] = useState(null);
-  const box = useRef(null);
-
-  useLayoutEffect(() => {
-    const at = () => {
-      const r = anchor?.getBoundingClientRect?.();
-      const w = Math.min(340, window.innerWidth - 16);
-      const h = Math.min(box.current?.offsetHeight || 560, window.innerHeight - 16);
-      if (!r) return setPlace({ left: (window.innerWidth - w) / 2, top: 8, w });
-      const left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
-      const below = r.bottom + 6 + h <= window.innerHeight - 8;
-      setPlace({ left, top: below ? r.bottom + 6 : Math.max(8, r.top - 6 - h), w });
-    };
-    at();
-    window.addEventListener("resize", at);
-    return () => window.removeEventListener("resize", at);
-  }, [anchor, editing]);
-  useEffect(() => {
-    const down = (e) => { if (box.current && !box.current.contains(e.target) && !anchor?.contains?.(e.target)) onClose(); };
-    const key = (e) => { if (e.key === "Escape") { e.stopPropagation(); onClose(); anchor?.focus?.(); } };
-    document.addEventListener("pointerdown", down, true);
-    document.addEventListener("keydown", key, true);
-    return () => { document.removeEventListener("pointerdown", down, true); document.removeEventListener("keydown", key, true); };
-  }, [anchor, onClose]);
+  const { box, place } = usePopover(anchor, onClose, { again: editing });
 
   const saveTalk = async () => {
     setError(null);
@@ -91,13 +69,13 @@ export default function BotCard({ id, anchor, onClose }) {
   const online = !live?.limited && live?.status !== "pausado";
 
   return createPortal(
-    <div ref={box} className="bc" role="dialog" aria-label={"Ficha de " + bot.name} style={place ? { left: place.left + "px", top: place.top + "px", width: place.w + "px" } : { visibility: "hidden" }}>
+    <div ref={box} className="bc" role="dialog" aria-label={"Ficha de " + bot.name} style={placeStyle(place)}>
       <div className="bc-banner">
         <PixelBanner color={bot.color || "#7c8cff"} seed={bot.botId} height={84} />
         <button type="button" className="bc-close" onClick={onClose} aria-label="Cerrar la ficha"><X size={16} /></button>
       </div>
       <div className="bc-face">
-        <BotFace bot={{ ...bot, id: bot.botId }} size={72} decorative />
+        <BotFace bot={{ ...bot, id: bot.botId }} size={72} mood={botNow(live).mood} decorative alive />
         <span className={"bc-dot" + (online ? " is-on" : "")} aria-hidden="true" />
       </div>
       <div className="bc-body">

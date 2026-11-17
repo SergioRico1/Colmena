@@ -8,7 +8,8 @@ import Markdown from "../components/room/Markdown.jsx";
 import { chat } from "./api.js";
 import { MessageText } from "./format.jsx";
 import { channelTitle, mergeGhosts, nameOf, useChat, workingIn } from "./store.js";
-import { Avatar, whenOf } from "./ui.jsx";
+import { Avatar, LiveBotFace, whenOf } from "./ui.jsx";
+import { EmptyArt } from "../components/Hive.jsx";
 import "./botcard.css";
 
 const list = (names) => (names.length > 2 ? names.slice(0, 2).join(", ") + " y " + (names.length - 2) + " más" : names.join(" y "));
@@ -30,7 +31,7 @@ export function Typing({ channel, thread = null }) {
   return (
     <div className="ty" role="status" aria-live="polite">
       <span className="ty-dots" aria-hidden="true"><i /><i /><i /></span>
-      <span className="ty-faces" aria-hidden="true">{[...typing, ...bots].slice(0, 3).map((id) => <Avatar key={id} id={id} size={20} presence={false} />)}</span>
+      <span className="ty-faces" aria-hidden="true">{[...typing, ...bots].slice(0, 3).map((id) => (bots.includes(id) ? <LiveBotFace key={id} id={id} size={20} working /> : <Avatar key={id} id={id} size={20} presence={false} />))}</span>
       <span className="ty-text">{parts}…</span>
     </div>
   );
@@ -69,7 +70,7 @@ export function ChannelSearch({ channel, onOpen, onClose }) {
         <input ref={box} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") onClose(); }} placeholder="Buscar palabras, from:@ana, has:file…" aria-label={"Buscar " + where} />
       </label>
       {error ? <p className="ch-error" role="alert">{error}</p> : null}
-      {results === null ? <p className="cs-empty">Escribe para buscar solo {where}.</p> : !results.length ? <p className="cs-empty">Nada con esas palabras {where}.</p> : (
+      {results === null ? <p className="cs-empty">Escribe para buscar solo {where}.</p> : !results.length ? <div className="cs-empty"><EmptyArt seed={q} /><p>Nada con esas palabras {where}.</p></div> : (
         <ul className="cs-list">
           {results.map(({ message: m }) => (
             <li key={m.id}>

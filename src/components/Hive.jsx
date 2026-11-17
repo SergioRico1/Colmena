@@ -1,5 +1,7 @@
 import { memo, useId, useMemo } from "react";
 import { combCells, hexPath, pitch, seeded } from "../lib/hive.js";
+export { bumpPulse } from "../lib/hive.js";
+import BotFace from "./BotFace.jsx";
 
 // Colmena's two textures in one place: the honeycomb (lib/hive.js, the sidebar's comb) and the
 // pixels its bots are made of (lib/pixelBot.js). Decorative only: aria-hidden, no motion, no
@@ -51,6 +53,54 @@ export const PixelBanner = memo(function PixelBanner({ color = "#6b7cff", seed =
       <g fill="#fff" shapeRendering="crispEdges">{pixels.map((p, i) => <rect key={i} x={p.x} y={p.y} width={P} height={P} opacity={p.o} />)}</g>
       <path d={cells.join("")} fill="none" stroke="#fff" strokeOpacity="0.38" strokeWidth="1.5" />
     </svg>
+  );
+});
+
+/**
+ * A conversation's last 24 hours as a little comb (server/cloud/chat.mjs › pulse): twelve cells
+ * of two hours, oldest at the left of the top row; the busier, the fuller. The newest cell has a
+ * ring. In the accent's ink (never honey).
+ */
+export const PulseComb = memo(function PulseComb({ pulse, className = "" }) {
+  if (!pulse?.counts?.length) return null;
+  const R = 5.2, { cw, rh } = pitch(R);
+  const max = Math.max(1, ...pulse.counts);
+  const total = pulse.counts.reduce((a, b) => a + b, 0);
+  const busiest = pulse.counts.indexOf(Math.max(...pulse.counts));
+  const hour = (i) => new Date(pulse.from + i * 7200000).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const label = total ? `Últimas 24 horas: ${total} ${total === 1 ? "mensaje" : "mensajes"} · lo más movido, de ${hour(busiest)} a ${hour(busiest + 1)}` : "Sin mensajes en las últimas 24 horas";
+  const W = cw * 6.5 + 2, H = rh + R * 2 + 2;
+  return (
+    <svg className={"hv-pulse " + className} role="img" aria-label={label} viewBox={`0 0 ${W} ${H}`} width={W * 2} height={H * 2}>
+      <title>{label}</title>
+      {pulse.counts.map((n, i) => {
+        const row = i < 6 ? 0 : 1, col = i % 6;
+        const x = 1 + cw / 2 + col * cw + (row ? cw / 2 : 0), y = 1 + R + row * rh;
+        const level = n ? 0.22 + 0.78 * (n / max) : 0;
+        return (
+          <path key={i} d={hexPath(x, y, R - 0.6)} fill="var(--c-accent)" fillOpacity={level} stroke={i === 11 ? "var(--c-accent-ink)" : "var(--c-text)"} strokeOpacity={i === 11 ? 0.9 : 0.16} strokeWidth={i === 11 ? 0.9 : 0.6} />
+        );
+      })}
+    </svg>
+  );
+});
+
+/**
+ * The picture of an empty list: one of Colmena's pixel bots, blinking, on a few comb cells. The
+ * same `seed` (the list's title) gives the same bot.
+ */
+export const EmptyArt = memo(function EmptyArt({ seed = "" }) {
+  const PALETTE = ["#6E48F0", "#2F6BFF", "#16895A", "#D23F86", "#0E8FA8", "#E0510C"];
+  const SHAPES = ["hex", "capsule", "square", "diamond", "leaf", "arch"];
+  const h = hash(seed);
+  const bot = { id: "empty-" + (h % 97), name: "Colmena", color: PALETTE[h % PALETTE.length], shape: SHAPES[(h >> 3) % SHAPES.length] };
+  const R = 15, { cw, rh } = pitch(R);
+  const cells = [[0, 1], [1, 1], [2, 1], [0.5, 0], [1.5, 0]].map(([c, r]) => hexPath(18 + c * cw, 18 + r * rh, R - 1.5)).join("");
+  return (
+    <div className="hv-empty" aria-hidden="true">
+      <svg className="hv-empty-comb" viewBox={`0 0 ${36 + cw * 2} ${36 + rh}`} width={36 + cw * 2} height={36 + rh}><path d={cells} fill="none" stroke="var(--c-text)" strokeOpacity="0.12" strokeWidth="1.2" /></svg>
+      <span className="hv-empty-bot"><BotFace bot={bot} size={48} decorative alive /></span>
+    </div>
   );
 });
 

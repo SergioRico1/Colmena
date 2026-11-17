@@ -751,6 +751,34 @@ like the rest; every read and write checks the channel first.
   channels are their own (colour, shape, portrait from the company's list).
 - **The box's «/» commands**: typing `/` lists /encargo, /recordar, /encuesta and /resumen; a command
   is never sent as text; one that needs more opens its form.
+- **Formatting bar** («Aa» in the box, remembered per device; `src/chat/formatText.js`): bold,
+  italic, strike, link, lists, quote, code and code block, writing the marks messages already read
+  (`*`, `_`, `~`, `` ` ``, ```` ``` ````, `> `, `- `, `1. `, `[texto](url)` → `<url|texto>`).
+  Ctrl+B, Ctrl+I, Ctrl+Mayús+X/U/7/8/9; the sidebar's own Ctrl+B gives way when the box took it.
+  Messages draw `> ` lines as a quote and `- ` / `1. ` lines as list items.
+- **The «@» list** shows each company bot's face and what it is doing (libre, trabajando, esperando,
+  en pausa, sin plan, or «No habla contigo»), the free ones first.
+- **Pixel bots that live**: `BotFace alive` blinks at rest (the eyes' `lids` from
+  `lib/pixelBot.js`, on each bot's own beat) and bobs a pixel at work; used in cards, the sidebar,
+  the «@» list, who is typing and the empty lists (never in the timeline). Reduced motion stops it.
+- **Hand a message to a bot**: drag it (by its face or the grip) onto a bot in the sidebar, or
+  «Pedírselo a un bot…» in its menu (`src/chat/askBot.js`, `AskBot.jsx`): «Pedir a Nora» quotes it,
+  asks what you want, and posts `@Nora …` in the message's thread, so the bot works there with the
+  thread for context and everyone sees it.
+- **File previews** (`src/chat/files.js`, `FileCard.jsx`, `FileViewer.jsx`, loaded only when
+  wanted): a file is a card with its kind in colour and, up to 4 MB, a picture of its first page,
+  slide or rows; «Ver» opens it beside the conversation (`?archivo=<id>`, up to 25 MB) without
+  downloading: PDF with pdf.js, Word with mammoth (cleaned to a short list of tags, links only
+  http(s)/mailto, images only data:), Excel and PowerPoint read from their XML (200 rows × 30
+  columns a sheet, text and first picture of each slide), CSV, Markdown and text. Nothing is run or
+  framed. A link opened anew asks `HEAD /api/chat/files/:id` for the name.
+- **A person's quick card** (`PersonCard.jsx`): their name, face or @mention opens it in place
+  (pixels in their colour, title, status, connected or not, their time) with «Mensaje» and «Ver
+  perfil» (the side panel).
+- **The channel's pulse**: `GET /api/chat/channels/:id` carries `pulse` {from, counts[12]}, the
+  messages of the last 24 hours in two-hour cells (counts only); the header draws it as a little
+  comb in the accent ink, and live messages move it on (`lib/hive.js › bumpPulse`).
+- **Empty lists** show one of Colmena's pixel bots blinking on a few comb cells (`EmptyArt`).
 
 ### Screens (`src/chat/`, `src/screens/Canal*.jsx`, `Buscar`, `Personas`, `AdminEmpresa`)
 

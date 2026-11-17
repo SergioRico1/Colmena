@@ -12,14 +12,16 @@ import "../styles/conversation.css";
 //   <BotFace bot={bot} size={24} state="work" />        rest | work | wait | pause (Presence states)
 //   <BotFace bot={bot} size={48} owner={owner} />       someone else's bot: their round chip
 //   <BotFace bot={bot} size={20} decorative />          the name is already written beside it
+//   <BotFace bot={bot} size={32} alive />               it blinks now and then; working, it bobs
 //
 // Sizes: 20 · 24 · 32 · 48 · 96 (any size works; those are whole pixels per cell). The shape
 // marks the role (hex Coordinador, capsule Investigación, square Datos, diamond Diseño, leaf
 // Redacción, arch Código; a role of your own keeps its shape and wears no prop), the colour is
 // the bot's own tone of its person's family. People are never drawn here: they are circles.
-// The «trabajando» twinkle blinks unless the system asks for reduced motion (base.css).
+// The «trabajando» twinkle blinks unless the system asks for reduced motion (base.css); `alive`
+// adds a blink at rest and a bob at work (a few places only: cards, the sidebar, who is typing).
 // A portrait the person chose for the bot (server/portraits.mjs) still shows, in its shape.
-function BotFace({ bot, size = 32, state = null, mood = null, owner = null, decorative = false, label = null, style = null, className }) {
+function BotFace({ bot, size = 32, state = null, mood = null, owner = null, decorative = false, label = null, style = null, className, alive = false }) {
   const portrait = portraitOf(bot);
   const face = portrait ? null : botFaceSpec({ bot, size, state, mood, owner });
   const name = label || face?.label || bot?.name || "Bot";
@@ -30,10 +32,14 @@ function BotFace({ bot, size = 32, state = null, mood = null, owner = null, deco
   }
   const { spec } = face;
   const b = spec.badge;
+  const working = face.spec.spark.length > 0;
+  // Each bot blinks on its own beat (its seed), so a row of them never blinks together.
+  const beat = alive ? { "--pb-cell": size / spec.n + "px", "--pb-delay": -((spec.rects.length * 7 + size) % 50) / 10 + "s" } : null;
   const row = (r) => <rect key={r.y * 100 + r.x} x={r.x} y={r.y} width={r.w} height="1" fill={r.fill} />;
   return (
-    <svg {...a11y} className={className} width={size} height={size} viewBox={`0 0 ${spec.n} ${spec.n}`} shapeRendering="crispEdges" overflow="visible" focusable="false" data-bot-face="" style={{ display: "block", flex: "none", ...style }}>
+    <svg {...a11y} width={size} height={size} viewBox={`0 0 ${spec.n} ${spec.n}`} shapeRendering="crispEdges" overflow="visible" focusable="false" data-bot-face="" className={[className, alive ? "pb-alive" + (working ? " is-work" : "") : ""].filter(Boolean).join(" ") || undefined} style={{ display: "block", flex: "none", ...beat, ...style }}>
       {spec.rects.map(row)}
+      {alive && !working && spec.lids.length ? <g className="pb-lids">{spec.lids.map(row)}</g> : null}
       {spec.spark.length ? <g className="pb-spark">{spec.spark.map(row)}</g> : null}
       {b ? (
         <g shapeRendering="geometricPrecision" data-owner-badge="">

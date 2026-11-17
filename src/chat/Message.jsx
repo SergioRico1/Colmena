@@ -1,11 +1,12 @@
 // One message of a channel or a thread (src/screens/Canal.jsx, src/chat/Thread.jsx): author and
 // time, text, files, link preview, reactions, the thread's summary, and its actions (react, reply
 // in a thread, edit, pin, copy link, mark unread from here, delete). The actions show on hover, on
-// keyboard focus and, on a touch screen, after a tap.
+// keyboard focus and, on a touch screen, after a tap. A message can be dragged (by its face or
+// the grip) onto a bot in the sidebar to hand it over (askBot.js); files show as cards with a
+// preview (FileCard.jsx); a person's name or face opens their quick card (PersonCard.jsx).
 import { memo, useEffect, useState } from "react";
-import { Bookmark, ChatCircleText, Copy, Download, Ellipsis, FileText, ListChecks, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
+import { Bookmark, ChatCircleText, Copy, Ellipsis, GripVertical, ListChecks, Pencil, Pin, PinOff, Robot, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
-import { navigate } from "../lib/router.jsx";
 import { chat, fileUrl } from "./api.js";
 import { withMine } from "./reactions.js";
 import { Emoji } from "./emoji/index.jsx";
@@ -16,7 +17,10 @@ import { Poll, RefLink, TaskCards, TaskDialog, remindItems, saveItem } from "./P
 import { nameOf, personOf, useChat } from "./store.js";
 import { useStore } from "../lib/store.jsx";
 import BotCard from "./BotCard.jsx";
-import { Avatar, sizeOf, timeOf, whenOf } from "./ui.jsx";
+import PersonCard from "./PersonCard.jsx";
+import { FileCard } from "./FileCard.jsx";
+import { askBotAbout, dragMessage } from "./askBot.js";
+import { Avatar, timeOf, whenOf } from "./ui.jsx";
 import { Composer } from "./Composer.jsx";
 
 export const QUICK = ["👍", "❤️", "😂", "🎉", "🙏", "👀", "✅", "🔥"];
@@ -40,7 +44,7 @@ function Reactions({ m, me, onReact, onMore = null }) {
   );
 }
 
-function Files({ files }) {
+function Files({ files, channel }) {
   if (!files?.length) return null;
   return (
     <div className="ms-files">
@@ -54,17 +58,7 @@ function Files({ files }) {
             </a>
           );
         }
-        const href = f.id ? fileUrl(f.id, { download: true }) : f.link || null;
-        return (
-          <div key={f.id || i} className="ms-file">
-            <span className="ms-file-icon" aria-hidden="true"><FileText size={20} /></span>
-            <span className="ms-file-main">
-              <span className="ms-file-name">{f.name}</span>
-              <span className="ms-file-meta">{f.id ? sizeOf(f.size) : f.link ? "Enlace del archivo original" : "No se incluyó en la exportación"}</span>
-            </span>
-            {href ? <a className="ch-iconbtn" href={href} {...(f.id ? { download: f.name } : { target: "_blank", rel: "noopener noreferrer" })} aria-label={(f.id ? "Descargar " : "Abrir ") + f.name}><Download size={18} /></a> : null}
-          </div>
-        );
+        return <FileCard key={f.id || i} f={f} channel={channel} />;
       })}
     </div>
   );
@@ -121,18 +115,18 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   // As in Slack, a name, an avatar or an @mention opens that person's profile beside the
   // conversation (?persona=, src/chat/PersonProfile.jsx); a bot of the company opens its card
   // right there (BotCard.jsx).
-  const [card, setCard] = useState(null); // {id, anchor}
+  const [card, setCard] = useState(null); // {id, anchor, kind: "bot"|"person"}
   const companyBot = (id) => String(id || "").startsWith("bot:") && id !== "bot:colmena" && s.bots?.has(id);
   const personTarget = (id) => {
     const p = personOf(id, s);
     if (companyBot(id)) return "card";
     if (p?.bot) return null;
-    return p && !p.ghost && s.people.has(p.id) ? "/canal/" + m.channel + "?persona=" + encodeURIComponent(p.id) : null;
+    return p && !p.ghost && s.people.has(p.id) ? "person" : null;
   };
   const openPerson = (id, anchor = null) => {
     const to = personTarget(id);
-    if (to === "card") setCard({ id, anchor });
-    else if (to) navigate(to);
+    if (to === "card") setCard({ id, anchor, kind: "bot" });
+    else if (to === "person") setCard({ id: personOf(id, s).id, anchor, kind: "person" });
   };
   const onMention = (e) => {
     const el = e.target.closest?.("[data-person]");
@@ -141,6 +135,9 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   // ⏳ beside a bot's name while it waits for its plan to renew (/api/state › bots[].limited).
   const liveBot = isBot && companyBot(m.author) ? (store.bots || []).find((b) => b.id === String(m.author).slice(4)) : null;
   const canOpen = !!personTarget(m.author);
+  // Handing it to a bot: dragged onto one in the sidebar, or from the menu (askBot.js).
+  const askable = canPost && !m.pending && s.me?.role !== "guest" && [...(s.bots?.keys() || [])].some((k) => k !== "bot:colmena");
+  const drag = askable ? { draggable: true, onDragStart: (e) => dragMessage(e, m) } : {};
   if (m.deleted) {
     return (
       <div className="ms-row is-deleted" data-message-id={m.id}>
@@ -155,6 +152,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
       m.author === me && canPost && !m.imported && !m.poll ? { label: "Editar", icon: Pencil, onSelect: () => setEditing(true) } : null,
       canPost ? { label: m.pinned ? "Quitar de fijados" : "Fijar en el canal", icon: m.pinned ? PinOff : Pin, onSelect: () => chat.post(`/messages/${m.id}/pin`, { on: !m.pinned }).catch((e) => setError(e.message)) } : null,
       canPost && !m.pending ? { label: "Crear encargo…", icon: ListChecks, onSelect: () => setTaskFor(true) } : null,
+      askable ? { label: "Pedírselo a un bot…", icon: Robot, onSelect: () => askBotAbout(null, m) } : null,
       remindItems(m, setInfo),
       saveItem(m, saved, setError),
       { label: "Copiar enlace", icon: Copy, onSelect: () => navigator.clipboard?.writeText(location.origin + "/canal/" + m.channel + (m.threadId ? "?hilo=" + m.threadId : "?m=" + m.id)) },
@@ -166,7 +164,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
     <div className={"ms-row" + (compact ? " is-compact" : "") + (highlight ? " is-highlight" : "") + (m.pending ? " is-pending" : "")} data-message-id={m.id} tabIndex={-1}
       onClick={(e) => { if (!e.target.closest("a,button,input,textarea,label,[role='toolbar']")) e.currentTarget.classList.toggle("is-touched"); }}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove("is-touched"); }}>
-      <div className="ms-gutter">
+      <div className="ms-gutter" {...drag}>
         {compact ? <time className="ms-gutter-time" dateTime={new Date(m.at).toISOString()}>{timeOf(m.at)}</time>
           : canOpen ? <button type="button" className="ms-person ms-person-face" onClick={(e) => openPerson(m.author, e.currentTarget)} aria-label={(isBot ? "Ver la ficha de " : "Ver el perfil de ") + name} tabIndex={-1}><Avatar id={m.author} size={36} /></button>
           : <Avatar id={m.author} size={36} />}
@@ -192,7 +190,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
             {m.editedAt ? <span className="ms-edited" title={"Editado " + whenOf(m.editedAt)}> (editado)</span> : null}
           </div>
         )}
-        <Files files={m.files} />
+        <Files files={m.files} channel={m.channel} />
         <Preview p={m.preview} />
         <Poll m={m} canPost={canPost} />
         <TaskCards m={m} />
@@ -207,10 +205,12 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
           {canPost ? QUICK.slice(0, 3).map((e) => <button key={e} type="button" className="ms-tool ms-tool-emoji r-hide-phone" onClick={() => react(e)} aria-label={"Reaccionar con " + e}><Emoji char={e} size={18} /></button>) : null}
           {canPost ? <button type="button" className="ms-tool" aria-label="Añadir una reacción" aria-expanded={!!picker} onClick={(e) => setPicker(picker ? null : e.currentTarget)}><SmilePlus size={17} /></button> : null}
           {onThread && !inThread ? <button type="button" className="ms-tool" aria-label="Responder en un hilo" onClick={() => onThread(m)}><ChatCircleText size={17} /></button> : null}
+          {askable ? <span className="ms-tool ms-grip r-hide-phone" {...drag} title="Arrastra a un bot de la barra lateral para pedírselo" aria-hidden="true"><GripVertical size={17} /></span> : null}
           <MenuButton label="Más acciones" menuLabel="Mensaje" items={items} placement="bottom-end" className="ms-tool"><Ellipsis size={17} /></MenuButton>
         </div>
       )}
-      {card ? <BotCard id={card.id} anchor={card.anchor} onClose={() => setCard(null)} /> : null}
+      {card?.kind === "bot" ? <BotCard id={card.id} anchor={card.anchor} onClose={() => setCard(null)} /> : null}
+      {card?.kind === "person" ? <PersonCard id={card.id} anchor={card.anchor} channel={m.channel} onClose={() => setCard(null)} /> : null}
       {taskFor ? <TaskDialog channel={m.channel} message={m} onClose={() => setTaskFor(false)} onDone={setInfo} /> : null}
       {picker ? <EmojiPicker anchor={picker} title="Añadir una reacción" onPick={(e) => { react(e, true); setPicker(null); }} onClose={() => setPicker(null)} /> : null}
     </div>

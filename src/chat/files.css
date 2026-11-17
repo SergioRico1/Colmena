@@ -1,0 +1,65 @@
+/* Files in conversations (FileCard.jsx) and their previews (FileViewer.jsx). Each kind has its
+   tint (never honey: honey is «te necesita»). */
+.fc{--fc:var(--c-accent);display:flex;flex-direction:column;width:min(320px,100%);border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-card);overflow:hidden;box-sizing:border-box}
+.fc.is-pdf,.fc-icon.is-pdf{--fc:#D23F3F}
+.fc.is-docx,.fc-icon.is-docx{--fc:#2F6BFF}
+.fc.is-xlsx,.fc-icon.is-xlsx,.fc.is-csv,.fc-icon.is-csv{--fc:#16895A}
+.fc.is-pptx,.fc-icon.is-pptx{--fc:#E0510C}
+.fc.is-md,.fc-icon.is-md,.fc.is-text,.fc-icon.is-text,.fc.is-other,.fc-icon.is-other{--fc:var(--c-text-2)}
+.fc-thumb{display:block;width:100%;height:150px;padding:0;border:0;border-bottom:1px solid var(--c-line);background:var(--c-sunken);cursor:pointer;overflow:hidden;text-align:left}
+.fc-thumb:hover .fv-thumb{transform:scale(1.015)}
+.fc-row{display:flex;align-items:center;gap:10px;padding:8px 6px 8px 10px}
+.fc-icon{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:var(--r-sm);background:color-mix(in srgb, var(--fc) 13%, transparent);color:color-mix(in oklab, var(--fc), var(--c-text) 22%)}
+.fc-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+.fc-name{max-width:100%;padding:0;border:0;background:none;color:var(--c-text);font:500 var(--t-ui)/1.3 'Geist',sans-serif;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button.fc-name{cursor:pointer}
+button.fc-name:hover{text-decoration:underline}
+.fc-meta{font-size:var(--t-caption);color:var(--c-text-3)}
+
+/* The small picture: the top of the first page, slide or sheet. */
+.fv-thumb{position:relative;height:100%;overflow:hidden;transition:transform .2s ease;pointer-events:none}
+.fv-thumb.is-loading{background:linear-gradient(90deg,var(--c-sunken),var(--c-chip),var(--c-sunken));background-size:200% 100%;animation:fv-shine 1.4s ease-in-out infinite}
+@keyframes fv-shine{to{background-position:-200% 0}}
+.fv-thumb.is-error{background:var(--c-sunken)}
+.fv-thumb .fv-page{display:block;width:84%;height:auto;margin:12px auto 0;background:#fff;box-shadow:0 1px 3px rgb(0 0 0 / .18)}
+.fv-thumb .fv-slide{width:84%;margin:12px auto 0}
+.fv-shrink{width:200%;height:200%;transform:scale(.5);transform-origin:0 0}
+.fv-shrink .fv-grid-wrap{margin:20px}
+.fv-shrink .fv-doc,.fv-shrink .fv-md,.fv-shrink .fv-text{width:84%;height:100%;margin:24px auto 0;padding:24px 28px;box-sizing:border-box;background:#fff;color:#1b1b1f;box-shadow:0 2px 6px rgb(0 0 0 / .18);overflow:hidden}
+
+/* The side panel. */
+.fp{width:min(560px,46vw)}
+.fp-title{flex-direction:row;align-items:center;gap:10px}
+.fp-title .fc-icon{width:30px;height:30px}
+.fp-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fp-body{padding:16px;background:var(--c-sunken)}
+.fv{display:flex;flex-direction:column;gap:12px}
+.fv-note{margin:0;font-size:var(--t-meta);color:var(--c-text-3)}
+.fv-pages{display:flex;flex-direction:column;gap:12px}
+.fv-page{display:block;width:100%;height:auto;background:#fff;box-shadow:0 1px 4px rgb(0 0 0 / .2)}
+.fv-image{display:block;max-width:100%;height:auto;margin:0 auto;border-radius:var(--r-sm)}
+.fv-doc{padding:32px 36px;background:#fff;color:#1b1b1f;box-shadow:0 1px 4px rgb(0 0 0 / .2);font:400 14px/1.6 'Geist',sans-serif;overflow-wrap:anywhere}
+.fv-doc h1,.fv-doc h2,.fv-doc h3{margin:1em 0 .4em;line-height:1.25}
+.fv-doc h1{font-size:1.6em}.fv-doc h2{font-size:1.3em}.fv-doc h3{font-size:1.1em}
+.fv-doc p{margin:0 0 .7em}
+.fv-doc img{max-width:100%;height:auto}
+.fv-doc table{border-collapse:collapse;margin:.6em 0}
+.fv-doc td,.fv-doc th{padding:4px 8px;border:1px solid #d5d7de;vertical-align:top}
+.fv-doc a{color:#1f4fd1}
+.fv-md{padding:24px 28px;border-radius:var(--r-sm);background:var(--c-card)}
+.fv-text{margin:0;padding:16px;border-radius:var(--r-sm);background:var(--c-card);font:400 var(--t-meta)/1.5 'Geist Mono',ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.fv-slides{display:flex;flex-direction:column;gap:14px}
+.fv-slide{position:relative;display:flex;gap:4%;aspect-ratio:16 / 9;padding:5% 6%;box-sizing:border-box;background:#fff;color:#1b1b1f;box-shadow:0 1px 4px rgb(0 0 0 / .2);overflow:hidden;container-type:inline-size}
+.fv-slide-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1.6cqw}
+.fv-slide-title{margin:0 0 1.5cqw;font:700 5.4cqw/1.15 'Geist',sans-serif}
+.fv-slide-line{margin:0;font:400 2.9cqw/1.35 'Geist',sans-serif}
+.fv-slide-img{flex:none;width:40%;height:100%;object-fit:contain}
+.fv-grid-wrap{overflow:auto;max-height:70vh;border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-card)}
+.fv-grid-wrap.is-small{max-height:none;overflow:hidden}
+.fv-grid{border-collapse:collapse;font:400 var(--t-meta)/1.35 'Geist',sans-serif;font-variant-numeric:tabular-nums}
+.fv-grid th,.fv-grid td{padding:5px 10px;border-right:1px solid var(--c-line);border-bottom:1px solid var(--c-line);white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.fv-grid th{position:sticky;top:0;background:var(--c-chip);font-weight:600}
+.fv-tabs{display:flex;gap:4px;overflow-x:auto}
+.fv-tab{flex:none;height:30px;padding:0 12px;border:1px solid var(--c-line);border-radius:999px;background:var(--c-card);color:var(--c-text-2);font:500 var(--t-meta)/1 'Geist',sans-serif;cursor:pointer}
+.fv-tab[aria-selected="true"]{background:var(--c-btn);border-color:var(--c-btn);color:var(--c-btn-text)}
+@media (prefers-reduced-motion:reduce){.fv-thumb,.fv-thumb.is-loading{animation:none;transition:none}}

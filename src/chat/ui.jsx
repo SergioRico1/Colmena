@@ -5,9 +5,11 @@ import { useEffect, useId, useRef } from "react";
 import Shell from "../components/v2/Shell.jsx";
 import { PersonAvatar } from "../components/room/Author.jsx";
 import BotFace from "../components/BotFace.jsx";
+import { EmptyArt } from "../components/Hive.jsx";
 import { X } from "../components/Icon.js";
 import { useTopTitle } from "./title.js";
 import { personOf, useChat } from "./store.js";
+import { useStore } from "../lib/store.jsx";
 import { photoUrl } from "./api.js";
 import "./chat.css";
 
@@ -41,6 +43,37 @@ export function Avatar({ id, size = 32, presence = true }) {
   return <PersonAvatar person={{ name: p.name, color: p.color || null }} photo={p.ghost ? null : photoUrl(p)} size={size} presence={online === "online" ? "online" : online ? "offline" : null} ring="var(--c-app)" />;
 }
 
+const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "");
+/**
+ * What a company bot is doing, from the runtime's live list (/api/state › bots): {key, word, mood}.
+ * key: libre | trabaja | espera | pausa | limite. Never honey: that is only «te necesita».
+ */
+export function botNow(live) {
+  if (live?.limited) return { key: "limite", word: "Sin plan" + (live.limited.resumeAt || live.limited.resetsAt ? " hasta las " + hm(live.limited.resumeAt || live.limited.resetsAt) : ""), mood: "pausa" };
+  if (live?.status === "pausado" || live?.enabled === false) return { key: "pausa", word: "En pausa", mood: "pausa" };
+  if (live?.status === "espera") return { key: "espera", word: "Esperando una respuesta", mood: "espera" };
+  if (live?.status === "trabaja" || live?.busy) return { key: "trabaja", word: "Trabajando" + (live.activity?.verb ? " · " + live.activity.verb : ""), mood: "trabajando" };
+  return { key: "libre", word: "Libre", mood: "libre" };
+}
+/** The runtime's live entry of a company bot ("bot:nora" or "nora"), or null. */
+export function useLiveBot(id) {
+  const store = useStore();
+  const botId = String(id || "").replace(/^bot:/, "");
+  return (store.bots || []).find((b) => b.id === botId) || null;
+}
+
+/**
+ * A company bot's face as it is right now: blinking while free, bobbing at work, eyes shut while
+ * paused or out of plan. `working` forces the work look (a channel frame says so).
+ */
+export function LiveBotFace({ id, size = 24, working = false }) {
+  const s = useChat();
+  const live = useLiveBot(id);
+  const b = s.bots?.get(String(id).startsWith("bot:") ? id : "bot:" + id);
+  const mood = working ? "trabajando" : botNow(live).mood;
+  return <BotFace bot={{ id: b?.botId || String(id).replace(/^bot:/, ""), name: b?.name || "Bot", color: b?.color || null, shape: b?.shape || null, role: b?.role || null, portrait: b?.portrait || null }} size={size} mood={mood} decorative alive />;
+}
+
 /** A small presence dot: active (green), away (ring), offline (nothing). */
 export function Presence({ id }) {
   const s = useChat();
@@ -54,9 +87,11 @@ export function Count({ n, strong = false, label }) {
   return <span className={"ch-count" + (strong ? " is-strong" : "")} aria-label={label || `${n} sin leer`}>{n > 99 ? "99+" : n}</span>;
 }
 
-export function Empty({ title, children = null, action = null }) {
+/** An empty list: one of Colmena's pixel bots on a few comb cells (components/Hive.jsx), a title, a line, an action. */
+export function Empty({ title, children = null, action = null, art = true }) {
   return (
     <div className="ch-empty">
+      {art ? <EmptyArt seed={title} /> : null}
       <p className="ch-empty-title">{title}</p>
       {children ? <p className="ch-empty-text">{children}</p> : null}
       {action}

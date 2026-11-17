@@ -883,4 +883,10 @@ test("«Nora está trabajando…» while its step runs; searching inside one cha
   const here = (await as(ANA)("GET", "/chat/search?q=presupuesto&channel=" + general.id)).data.results;
   assert.deepEqual(here.map((r) => r.message.text), ["presupuesto de aquí"]);
   assert.equal((await as(ANA)("GET", "/chat/search?q=presupuesto")).data.results.length, 2);
+  // The header's comb: the last 24 hours in twelve counts, the newest last (counts only).
+  const pulse = (await as(ANA)("GET", "/chat/channels/" + other.id)).data.pulse;
+  assert.equal(pulse.counts.length, 12);
+  assert.deepEqual(pulse.counts.slice(0, 11), Array(11).fill(0));
+  assert.equal(pulse.counts[11], 1);
+  assert.ok(Date.now() - pulse.from <= 24 * 3600000 + 60000);
 });

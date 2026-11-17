@@ -66,3 +66,15 @@ export const SEEDED_TEAM = Object.freeze([
   { id: "vera", name: "Vera", role: "Redacción", shape: "leaf", color: "#7B4DFF", intro: "Escribo correos, textos y documentos con tu tono." },
   { id: "bruno", name: "Bruno", role: "Código", shape: "arch", color: "#FF7A1A", intro: "Programo, reviso código y te explico lo que cambia." },
 ]);
+
+/** Moves a pulse on to `now` (older two-hour cells drop off the left) and counts one message. */
+export function bumpPulse(pulse, now = Date.now()) {
+  if (!pulse) return pulse;
+  let { from, counts } = pulse;
+  const step = 7200000;
+  const shift = Math.floor((now - (from + 24 * 3600000)) / step) + 1;
+  if (shift > 0) { counts = [...counts.slice(Math.min(12, shift)), ...Array(Math.min(12, shift)).fill(0)]; from += shift * step; }
+  else counts = [...counts];
+  counts[Math.min(11, Math.max(0, Math.floor((now - from) / step)))]++;
+  return { from, counts };
+}

@@ -1,7 +1,8 @@
 // A channel or a direct message of hosted Colmena (docs/CLOUD.md › Phase 2), at /canal/:id.
 // The timeline is read by pages (50 at a time, older ones as you scroll up), opens at your first
 // unread message with a «Nuevo» line, or around a message (?m=), and keeps itself current over
-// the live socket. ?hilo= opens a thread beside it. Reading the end marks the channel as read.
+// the live socket. ?hilo= opens a thread beside it, ?archivo= a file's preview (FileCard.jsx).
+// Reading the end marks the channel as read. The header carries the last 24 hours as a little comb.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowDown, Bell, BellSlash, Check, Ellipsis, Hash, LockSimple, Pin, Robot, Search, UserPlus, UsersThree } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
@@ -14,7 +15,9 @@ import { Composer } from "../chat/Composer.jsx";
 import { ChannelInfo, PinsDialog, TopicDialog } from "../chat/ChannelDialogs.jsx";
 import { Ephemeral } from "../chat/Plus.jsx";
 import { ChannelSearch, Typing } from "../chat/Live.jsx";
-import { HexField } from "../components/Hive.jsx";
+import { HexField, PulseComb, bumpPulse } from "../components/Hive.jsx";
+import { FilePanel } from "../chat/FileCard.jsx";
+import { AskBotHost } from "../chat/AskBot.jsx";
 import { channelTitle, chatState, dropChannel, loadChat, mergeGhosts, nameOf, onChatEvent, setOpenChannel, setWorking, upsertChannel, useChat } from "../chat/store.js";
 import { ChatPage, Empty, dayLabel } from "../chat/ui.jsx";
 import { cachedPage, forgetPage, keepPage } from "../chat/pages.js";
@@ -44,7 +47,9 @@ export default function Canal({ params, query }) {
   const anchor = useRef(null); // keeps the view still while older messages come in above
   const focusId = query?.m || null;
   const personId = query?.persona || null;
-  const threadId = personId ? null : query?.hilo || null;
+  const fileId = personId ? null : query?.archivo || null;
+  const threadId = personId || fileId ? null : query?.hilo || null;
+  const [pulse, setPulse] = useState(null); // the last 24 hours, in twelve cells (header)
   const ch = s.channels.get(id) || info;
   const me = s.me?.id;
   const admin = ["owner", "admin"].includes(s.me?.role);
@@ -84,6 +89,7 @@ export default function Canal({ params, query }) {
         const view = await viewing;
         if (!live) return;
         setInfo(view);
+        setPulse(view.pulse || null);
         // The bots at work in it right now.
         for (const w of view.working || []) setWorking(id, w.thread, w.bot, true);
         const unreadFrom = unreadOf(view);
@@ -184,6 +190,7 @@ export default function Canal({ params, query }) {
   // ---- live frames
   useEffect(() => onChatEvent((ev) => {
     if (ev.channel !== id) return;
+    if (ev.type === "chat.message" && ev.message) setPulse((p) => bumpPulse(p, ev.message.at || Date.now()));
     if (ev.type === "chat.message" && ev.message && (!ev.message.threadId || ev.message.broadcast)) {
       setMessages((m) => {
         if (edges.after) return m;
@@ -203,6 +210,8 @@ export default function Canal({ params, query }) {
   // ---- actions
   const openThread = (m) => navigate(`/canal/${id}?hilo=${m.threadId || m.id}`, { replace: !!threadId });
   const closeThread = () => navigate(`/canal/${id}`, { replace: true });
+  // Closing a file's preview goes back to the thread it was opened from, if any.
+  const closeFile = () => navigate(`/canal/${id}` + (query?.hilo ? `?hilo=${query.hilo}` : ""), { replace: true });
   const markUnread = (m) => chat.post(`/channels/${id}/read`, { seq: m.seq - 1 }).then((r) => { upsertChannel({ id, readSeq: r.readSeq, unread: r.unread, mentions: r.mentions }); setNewLine(m.seq - 1); setNotice("Marcado como no leído desde ese mensaje."); }).catch((e) => setNotice(e.message));
   const join = async () => {
     try { const view = await chat.post(`/channels/${id}/join`, {}); upsertChannel(view); setInfo(view); }
@@ -246,6 +255,7 @@ export default function Canal({ params, query }) {
   const sub = ch ? (ch.archived ? "Archivado · solo lectura" : isChannel ? ch.topic || ch.description || "" : ch.kind === "dm" ? s.people.get((ch.people || []).find((p) => p !== me))?.title || "" : (ch.people || []).length + " personas") : "";
   const actions = ch ? (
     <>
+      <PulseComb pulse={pulse} className="cv-pulse r-hide-phone" />
       {isChannel ? <button type="button" className="ch-btn cv-members r-hide-phone" onClick={() => setDialog("info")} aria-label={`${info?.memberCount ?? ch.memberCount ?? 0} personas en el canal`}><UsersThree size={16} />{info?.memberCount ?? ch.memberCount ?? ""}</button> : null}
       <button type="button" className="ch-iconbtn" onClick={() => setSearching((x) => !x)} aria-pressed={searching} aria-label={"Buscar en " + (isChannel ? "#" + title : "esta conversación")} title={"Buscar en " + (isChannel ? "#" + title : "esta conversación")}><Search size={18} /></button>
       {member ? <MenuButton label="Avisos" menuLabel="Avisos" items={bell} className="ch-iconbtn" placement="bottom-end">{myCh?.muted ? <BellSlash size={18} /> : <Bell size={18} />}</MenuButton> : null}
@@ -299,9 +309,11 @@ export default function Canal({ params, query }) {
             ) : null}
         </div>
         {personId ? <PersonPanel key={personId} personId={personId} onClose={closeThread} /> : null}
-        {searching && !personId ? <ChannelSearch key={id} channel={id} onClose={() => setSearching(false)} onOpen={(m) => { if (m.threadId && !m.broadcast) setSearching(false); navigate(`/canal/${id}` + (m.threadId && !m.broadcast ? `?hilo=${m.threadId}` : `?m=${m.id}`)); }} /> : null}
+        {fileId ? <FilePanel key={fileId} id={fileId} onClose={closeFile} /> : null}
+        {searching && !personId && !fileId ? <ChannelSearch key={id} channel={id} onClose={() => setSearching(false)} onOpen={(m) => { if (m.threadId && !m.broadcast) setSearching(false); navigate(`/canal/${id}` + (m.threadId && !m.broadcast ? `?hilo=${m.threadId}` : `?m=${m.id}`)); }} /> : null}
         {threadId && !searching ? <Thread key={threadId} channel={id} rootId={threadId} canPost={canPost} admin={admin} onClose={closeThread} /> : null}
       </div>
+      <AskBotHost channel={id} />
       {dialog === "pins" ? <PinsDialog channel={id} onClose={() => setDialog(null)} onOpen={(m) => { setDialog(null); navigate(`/canal/${id}?m=${m.id}`); }} /> : null}
       {dialog === "info" ? <ChannelInfo channel={id} info={info} onClose={() => setDialog(null)} onChanged={(v) => setInfo(v)} /> : null}
       {dialog === "topic" ? <TopicDialog channel={id} info={info} onClose={() => setDialog(null)} onChanged={(v) => { setInfo(v); upsertChannel({ id, topic: v.topic, description: v.description, name: v.name }); }} /> : null}

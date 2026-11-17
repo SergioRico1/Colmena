@@ -77,9 +77,34 @@ export function MessageText({ text }) {
     <>
       {parts.map((part, i) => i % 2
         ? <pre key={i} className="ch-pre"><code>{decode(part.replace(/^\n/, ""))}</code></pre>
-        : <Fragment key={i}>{part.split("\n").map((line, j, all) => <Fragment key={j}>{inline(line, i + "-" + j, me, size)}{j < all.length - 1 ? <br /> : null}</Fragment>)}</Fragment>)}
+        : <Fragment key={i}>{lines(part, i, me, size)}</Fragment>)}
     </>
   );
+}
+
+/**
+ * The lines of a run of text: «> » lines together as a quote, «- » / «• » lines as a list item
+ * (the formatting bar writes both: Composer.jsx), the rest with a line break between them.
+ */
+function lines(part, i, me, size) {
+  const all = part.split("\n");
+  const out = [];
+  for (let j = 0; j < all.length; j++) {
+    const line = all[j];
+    if (/^&gt; ?/.test(line)) {
+      const quote = [];
+      while (j < all.length && /^&gt; ?/.test(all[j])) { quote.push(all[j].replace(/^&gt; ?/, "")); j++; }
+      j--;
+      out.push(<span key={j} className="ch-quote">{quote.map((q, k) => <Fragment key={k}>{inline(q, i + "-" + j + "q" + k, me, size)}{k < quote.length - 1 ? <br /> : null}</Fragment>)}</span>);
+      continue;
+    }
+    const bullet = /^[-•] (.*)$/.exec(line);
+    if (bullet) { out.push(<span key={j} className="ch-li"><span className="ch-li-dot" aria-hidden="true">•</span><span>{inline(bullet[1], i + "-" + j, me, size)}</span></span>); continue; }
+    const numbered = /^(\d+)\. (.*)$/.exec(line);
+    if (numbered) { out.push(<span key={j} className="ch-li"><span className="ch-li-dot" aria-hidden="true">{numbered[1] + "."}</span><span>{inline(numbered[2], i + "-" + j, me, size)}</span></span>); continue; }
+    out.push(<Fragment key={j}>{inline(line, i + "-" + j, me, size)}{j < all.length - 1 && !/^(&gt; ?|[-•] |\d+\. )/.test(all[j + 1]) ? <br /> : null}</Fragment>);
+  }
+  return out;
 }
 
 /** Plain words of a stored text (notifications, the reply preview, titles). */
@@ -102,6 +127,8 @@ export function encode(text, mentions = []) {
   const known = [...mentions].sort((a, b) => b.label.length - a.label.length);
   for (const m of known) s = s.split(escapeText(m.label)).join(m.id === "channel" ? "<!channel>" : m.id === "here" ? "<!here>" : "<@" + m.id + ">");
   s = s.replace(/(^|\s)@canal\b/g, "$1<!channel>").replace(/(^|\s)@aquí(?=\s|$|[.,;:!?])/g, "$1<!here>");
+  // [texto](https://…) from the formatting bar's «Enlace» → Slack's <url|texto>.
+  s = s.replace(/\[([^\]\n|<>]+)\]\(((?:https?:\/\/|mailto:)[^\s()<>|]+)\)/g, "<$2|$1>");
   return s;
 }
 /** A stored text back into the composer (for editing), with the mentions it holds. */
@@ -110,6 +137,8 @@ export function decodeForEdit(text) {
   const s = String(text || "")
     .replace(/<@([^>]+)>/g, (_, id) => { const label = "@" + nameOf(id); mentions.push({ label, id }); return label; })
     .replace(/<!(?:channel|everyone)>/g, "@canal").replace(/<!here>/g, "@aquí")
-    .replace(/<#([^>|]+)(?:\|([^>]*))?>/g, (_, id, label) => "#" + (chatState().channels.get(id)?.name || label || "canal"));
+    .replace(/<#([^>|]+)(?:\|([^>]*))?>/g, (_, id, label) => "#" + (chatState().channels.get(id)?.name || label || "canal"))
+    .replace(/<((?:https?|mailto):[^|>]+)\|([^>]*)>/g, (_, url, label) => "[" + label + "](" + url + ")")
+    .replace(/<((?:https?|mailto):[^|>]+)>/g, "$1");
   return { text: decode(s), mentions };
 }

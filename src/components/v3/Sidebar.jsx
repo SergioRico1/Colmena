@@ -1,4 +1,5 @@
 import BotFace from "../BotFace.jsx";
+import { MESSAGE_MIME, askBotAbout } from "../../chat/askBot.js";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useStore, useResource } from "../../lib/store.jsx";
@@ -119,6 +120,7 @@ export default function Sidebar({ active = "inicio" }) {
   const current = placeId(active);
   const here = conversationPath(pathname);
   const [expert, setExpert] = useExpert();
+  const [dropOn, setDropOn] = useState(null); // the bot a channel message is dragged over (chat/AskBot.jsx)
   const [menu, setMenu] = useState(null); // "new" | "team" | "me": which menu is open (components/Menu.js)
   // Ctrl+K's «Nuevo…» opens this same menu (the palette shows its shortcut, Ctrl N).
   useEffect(() => {
@@ -262,7 +264,8 @@ export default function Sidebar({ active = "inicio" }) {
   useEffect(() => {
     const onKey = (e) => {
       const mod = e.ctrlKey || e.metaKey;
-      if (!mod || e.altKey) return;
+      // Taken already: Ctrl B in a channel's message box is bold (chat/Composer.jsx).
+      if (!mod || e.altKey || e.defaultPrevented) return;
       const k = e.key.toLowerCase();
       if (e.shiftKey && k === "e") { e.preventDefault(); setExpert(!expert); return; }
       if (e.shiftKey) return;
@@ -399,9 +402,17 @@ export default function Sidebar({ active = "inicio" }) {
   const botRow = (b) => {
     const on = b.href === here;
     const bot = { ...(botOf(b.id) || b), shape: b.shape };
+    // A channel's message dropped here: this bot is asked about it in its thread (chat/AskBot.jsx).
+    const carries = (e) => [...(e.dataTransfer?.types || [])].includes(MESSAGE_MIME);
+    const drop = {
+      onDragOver: (e) => { if (!carries(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = "copy"; if (dropOn !== b.id) setDropOn(b.id); },
+      onDragLeave: (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropOn((x) => (x === b.id ? null : x)); },
+      onDrop: (e) => { if (!carries(e)) return; e.preventDefault(); setDropOn(null); askBotAbout(b.id, e.dataTransfer.getData(MESSAGE_MIME)); },
+    };
+    const target = dropOn === b.id ? { outline: "2px solid " + C.focus, outlineOffset: "-2px", background: C.sidebarHover } : null;
     return (
-      <a key={b.id} href={b.href} onPointerEnter={() => prefetchHref(b.href)} aria-label={rowLabel("bot", b)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...rowStyle(on, 44), padding: "4px 8px", fontWeight: "400" }}>
-        <BotFace bot={bot} size={32} state={faceState(b)} decorative />
+      <a key={b.id} href={b.href} onPointerEnter={() => prefetchHref(b.href)} aria-label={rowLabel("bot", b)} aria-current={on ? "page" : undefined} className={on ? undefined : "v3-hover"} style={{ ...rowStyle(on, 44), padding: "4px 8px", fontWeight: "400", ...target }} {...drop}>
+        <BotFace bot={bot} size={32} state={faceState(b)} decorative alive />
         <span style={{ flex: "1", minWidth: "0", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px" }}>
           <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: "1.1", fontWeight: b.unread ? "700" : "500", color: C.text }}>{b.name}</span>
           {b.role ? <Tag>{b.role}</Tag> : null}

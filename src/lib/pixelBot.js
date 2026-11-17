@@ -196,6 +196,7 @@ function draw({ shape, color, role, seed, mood, n }) {
   const put = (kind, [i, j], onlyEmpty) => { if (i < 0 || j < 0 || i >= n || j >= n) return; if (onlyEmpty && isBody[j][i]) return; grid[j][i] = kind; };
   const F = FACES[n][mood] || FACES[n].libre;
   for (const k of ["eye", "dim", "hi"]) (F[k] || []).forEach((p) => isBody[p[1]][p[0]] && put(k, p));
+  const face = new Set([...(F.eye || []), ...(F.hi || [])].map(([i, j]) => j * n + i));
   const P = PROPS[role]?.[n];
   if (P) {
     (P.off || []).forEach(([k, ...cells]) => cells.forEach((p) => put(k, p, true)));
@@ -203,8 +204,9 @@ function draw({ shape, color, role, seed, mood, n }) {
   }
   const kind = mood === "trabajando" ? "spark" : "zz";
   (MOOD_MARKS[mood]?.[n] || []).forEach((p) => { if (!isBody[p[1]][p[0]] && !grid[p[1]][p[0]]) grid[p[1]][p[0]] = kind; });
-  // Runs of one colour per row → rects.
-  const rects = [], spark = [];
+  // Runs of one colour per row → rects. `lids`: the eyes again in the visor's colour, drawn over
+  // them for a blink (BotFace › alive).
+  const rects = [], spark = [], lids = [];
   for (let j = 0; j < n; j++) {
     let i = 0;
     while (i < n) {
@@ -213,17 +215,19 @@ function draw({ shape, color, role, seed, mood, n }) {
       let e = i;
       while (e + 1 < n && grid[j][e + 1] === k) e++;
       (k === "spark" ? spark : rects).push({ x: i, y: j, w: e - i + 1, fill: T[k] });
+      for (let x = i; x <= e; x++) if ((k === "eye" || k === "hi") && face.has(j * n + x)) lids.push({ x, y: j, w: 1, fill: T.plate });
       i = e + 1;
     }
   }
-  return { rects, spark };
+  return { rects, spark, lids };
 }
 
 const cache = new Map();
 const CACHE_MAX = 600;
 /**
  * The drawing for these inputs, in cells (viewBox 0 0 n n): `rects` [{x, y, w, fill}] (one cell
- * tall), `spark` (the working twinkle, drawn in its own group), `badge` {cx, cy, r, ring, color,
+ * tall), `spark` (the working twinkle, drawn in its own group), `lids` (the eyes in the visor's
+ * colour, for a blink), `badge` {cx, cy, r, ring, color,
  * text, fontSize} in cells, or null. Cached.
  */
 export function pixelBotSpec({ shape = "hex", color = "#6E48F0", role = null, seed = 0, size = 32, mood = "libre", owner = null } = {}) {
@@ -234,7 +238,7 @@ export function pixelBotSpec({ shape = "hex", color = "#6E48F0", role = null, se
   const key = [shapeKey(shape), color, r, s % 2, s % 7, m, n, size, owner ? owner.initials + owner.color : ""].join("|");
   const hit = cache.get(key);
   if (hit) return hit;
-  const { rects, spark } = draw({ shape, color, role: r, seed: s, mood: m, n });
+  const { rects, spark, lids } = draw({ shape, color, role: r, seed: s, mood: m, n });
   const c = size / n; // px per cell
   let badge = null;
   if (owner) {
@@ -242,7 +246,7 @@ export function pixelBotSpec({ shape = "hex", color = "#6E48F0", role = null, se
     const text = 2 * rpx >= 17 ? (2 * rpx < 22 ? String(owner.initials || "").slice(0, 1) : String(owner.initials || "").slice(0, 2)) : "";
     badge = { cx: (size - rpx + size * 0.04) / c, cy: (size - rpx + size * 0.04) / c, r: rpx / c, ring: Math.max(1.5, size * 0.045) / c, color: safeColor(owner.color), text, fontSize: Math.max(11, Math.round(rpx * 0.95)) / c };
   }
-  const spec = Object.freeze({ n, size, rects, spark, badge });
+  const spec = Object.freeze({ n, size, rects, spark, lids, badge });
   if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value);
   cache.set(key, spec);
   return spec;

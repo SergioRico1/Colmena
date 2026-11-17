@@ -442,6 +442,16 @@ export class TeamChat {
     return this.q("SELECT c.* FROM chat_members m JOIN chat_channels c ON c.id=m.channel WHERE m.person=?").all(person.id)
       .map((row) => this.channelView(row, person));
   }
+  /**
+   * How lively a conversation was in the last 24 hours, for the comb in its header: 12 counts of
+   * two hours each, oldest first, from `from` (counts only, never what was said).
+   */
+  pulse(id, now = Date.now()) {
+    const from = now - 24 * 3600000;
+    const counts = Array(12).fill(0);
+    for (const r of this.q("SELECT at FROM chat_messages WHERE channel=? AND at>=? AND deleted=0 ORDER BY at LIMIT 5000").all(id, from)) counts[Math.min(11, Math.max(0, Math.floor((r.at - from) / 7200000)))]++;
+    return { from, counts };
+  }
   /** «Explorar canales»: every public channel (not for guests), joined or not. */
   browse(person) {
     const m = this.must(person);
@@ -452,6 +462,7 @@ export class TeamChat {
     const row = this.mustRead(person, id);
     const view = this.channelView(row, person);
     view.memberIds = this.memberIds(id);
+    view.pulse = this.pulse(id);
     view.canManage = (() => { try { this.mustManageChannel(person, row); return true; } catch { return false; } })();
     return view;
   }

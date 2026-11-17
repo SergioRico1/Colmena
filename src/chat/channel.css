@@ -193,3 +193,28 @@
 .ms-row:hover .ms-reaction-add,.ms-row:focus-within .ms-reaction-add,.ms-row.is-touched .ms-reaction-add{opacity:1}
 .ms-reaction-add:hover{color:var(--c-text)}
 .ms-tool-emoji .emo{margin:0}
+
+/* The formatting bar over the box («Aa», Composer.jsx) and what each bot is doing in the «@» list. */
+.cp-fmt{display:flex;align-items:center;gap:2px;padding:4px 6px;border:1px solid var(--c-line-strong);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;background:var(--c-card);overflow-x:auto;scrollbar-width:none}
+.cp-fmt + .cp-box{border-top-left-radius:0;border-top-right-radius:0;border-top-color:var(--c-line)}
+.cp:focus-within .cp-fmt{border-color:var(--c-focus)}
+.cp-fmt-btn{flex:none;width:30px;height:28px;display:grid;place-items:center;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text-2);cursor:pointer}
+.cp-fmt-btn:hover{background:var(--c-hover);color:var(--c-text)}
+.cp-fmt-btn:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
+.cp-fmt-sep{flex:none;width:1px;height:16px;margin:0 4px;background:var(--c-line)}
+.cp-emoji.is-on{background:var(--c-chip);color:var(--c-text)}
+.cp-bot-now{flex:none;display:inline-flex;align-items:center;gap:6px;font-size:var(--t-caption);color:var(--c-text-3);white-space:nowrap}
+.cp-bot-now::before{content:"";width:7px;height:7px;border-radius:var(--r-xs);background:var(--c-text-4)}
+.cp-bot-now.is-libre{color:var(--c-ok-ink)}
+.cp-bot-now.is-libre::before{background:var(--c-ok)}
+.cp-bot-now.is-trabaja{color:var(--c-accent-ink)}
+.cp-bot-now.is-trabaja::before{background:var(--c-accent)}
+.cp-bot-now.is-limite{color:var(--c-error)}
+.cp-bot-now.is-limite::before{background:var(--c-error)}
+@media (pointer: coarse){.cp-fmt-btn{width:40px;height:40px}}
+
+/* The header's comb of the last 24 hours (components/Hive.jsx › PulseComb), and the grip to drag a message to a bot. */
+.cv-pulse{flex:none;margin-right:4px;cursor:default}
+.ms-grip{cursor:grab}
+.ms-grip:active{cursor:grabbing}
+.ms-gutter[draggable="true"]{cursor:grab}

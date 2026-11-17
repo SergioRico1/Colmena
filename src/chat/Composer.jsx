@@ -1,16 +1,34 @@
 // The message box of team messaging: Enter sends, Mayús+Enter is a new line; «@» names someone
 // (or @canal / @aquí), files go up as you add them (button, paste or drop) and travel with the
 // message; the draft is kept per channel; while you type the channel's people see «escribiendo».
-// Also the box for editing a message in place (`editing`).
+// Also the box for editing a message in place (`editing`). «Aa» shows a formatting bar (bold,
+// italic, strike, code, lists, quote, link) that writes the marks the messages already read
+// (format.jsx); Ctrl+B, Ctrl+I, Ctrl+Mayús+X, Ctrl+Mayús+7/8/9 and Ctrl+Mayús+U do the same.
+// In the «@» list each bot shows its face and what it is doing (free first).
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, ChevronDown, Paperclip, Smiley, X } from "../components/Icon.js";
+import { ArrowUp, ChevronDown, Code, CodeBlock, LinkSimple, ListBullets, ListOrdered, Paperclip, Quote, Smiley, TextAa, TextB, TextItalic, TextStrikethrough, X } from "../components/Icon.js";
+import { useStore } from "../lib/store.jsx";
 import { MenuButton } from "../components/Menu.js";
 import { PollDialog, TaskDialog, WhenDialog, commandMatches, runCommand } from "./Plus.jsx";
 import EmojiPicker from "./emoji/EmojiPicker.jsx";
 import { chat, uploadFile } from "./api.js";
 import { decodeForEdit, encode } from "./format.jsx";
 import { chatState, typing, useChat, upsertChannel } from "./store.js";
-import { Avatar, sizeOf } from "./ui.jsx";
+import { Avatar, LiveBotFace, botNow, sizeOf } from "./ui.jsx";
+import { formatText } from "./formatText.js";
+
+/** The formatting bar: on or off, remembered on this device. */
+const FMT_KEY = "colmena.chat.format";
+const fmtOn = () => { try { return localStorage.getItem(FMT_KEY) === "1"; } catch { return false; } };
+const BOT_ORDER = { libre: 0, trabaja: 1, espera: 2, pausa: 3, limite: 4 };
+const FORMATS = [
+  ["bold", "Negrita", TextB, "Ctrl+B"], ["italic", "Cursiva", TextItalic, "Ctrl+I"], ["strike", "Tachado", TextStrikethrough, "Ctrl+Mayús+X"],
+  null, ["link", "Enlace", LinkSimple, "Ctrl+Mayús+U"], null,
+  ["numbers", "Lista numerada", ListOrdered, "Ctrl+Mayús+7"], ["bullets", "Lista", ListBullets, "Ctrl+Mayús+8"], null,
+  ["quote", "Cita", Quote, "Ctrl+Mayús+9"], ["code", "Código", Code, null], ["block", "Bloque de código", CodeBlock, null],
+];
+const SHORTCUT = { b: "bold", i: "italic" };
+const SHIFT_SHORTCUT = { x: "strike", u: "link", Digit7: "numbers", Digit8: "bullets", Digit9: "quote" };
 
 const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
@@ -33,6 +51,8 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
   const [info, setInfo] = useState(null); // what a command or a scheduled send did
   const [dialog, setDialog] = useState(null); // {kind: "task"|"poll"|"when", ...}
   const [cmdIndex, setCmdIndex] = useState(0);
+  const [fmt, setFmt] = useState(fmtOn);
+  const store = useStore();
   const box = useRef(null);
   const draftTimer = useRef(null);
 
@@ -64,12 +84,28 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
       .sort((a, b) => (members.has(b.id) ? 1 : 0) - (members.has(a.id) ? 1 : 0) || a.name.localeCompare(b.name, "es")).slice(0, 7)
       .map((p) => ({ id: p.id, label: "@" + p.name, name: p.name, sub: p.title || p.email }));
     // The company's bots (Phase 3): «@Nora» is stored as <@bot:nora>, like a person.
+    // What each bot is doing (/api/state › bots): the free ones first; one that does not talk to
+    // you says so (bot-access.mjs).
     const bots = [...(s.bots?.values() || [])].filter((b) => !q || fold(b.name).split(/\s+/).some((w) => w.startsWith(q)))
-      .sort((a, b) => a.name.localeCompare(b.name, "es")).slice(0, 5)
-      .map((b) => ({ id: b.id, label: "@" + b.name, name: b.name, sub: "Bot" + (b.title ? " · " + b.title : "") }));
+      .map((b) => {
+        const now = botNow((store.bots || []).find((x) => x.id === b.botId));
+        const closed = Array.isArray(b.talkTo) && b.talkTo.length > 0 && !b.talkTo.includes(s.me?.id) && b.createdBy !== s.me?.id;
+        return { id: b.id, label: "@" + b.name, name: b.name, sub: b.title || "Bot", bot: true, now: closed ? { key: "pausa", word: "No habla contigo" } : now };
+      })
+      .sort((a, b) => BOT_ORDER[a.now.key] - BOT_ORDER[b.now.key] || a.name.localeCompare(b.name, "es")).slice(0, 5);
     const special = ch && ch.kind !== "dm" ? [{ id: "channel", label: "@canal", name: "canal", sub: "Avisa a todo el canal" }, { id: "here", label: "@aquí", name: "aquí", sub: "Avisa a quien esté conectado" }].filter((x) => !q || x.name.startsWith(q)) : [];
     return [...people, ...bots, ...special];
-  }, [pick, s.people, s.bots, s.me, ch]);
+  }, [pick, s.people, s.bots, s.me, ch, store.bots]);
+
+  const format = (kind) => {
+    const el = box.current;
+    if (!el) return;
+    const out = formatText(text, el.selectionStart ?? text.length, el.selectionEnd ?? text.length, kind);
+    setText(out.text);
+    saveDraft(out.text);
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(out.start, out.end); });
+  };
+  const toggleFmt = () => { const on = !fmt; setFmt(on); try { localStorage.setItem(FMT_KEY, on ? "1" : "0"); } catch { /* private window */ } };
 
   // «/enc…» at the start of an empty box: the commands that match.
   const commands = editing ? null : commandMatches(text);
@@ -202,6 +238,10 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
       if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); choose(candidates[pick.index]); return; }
       if (e.key === "Escape") { e.preventDefault(); setPick(null); return; }
     }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      const kind = e.shiftKey ? SHIFT_SHORTCUT[e.key.toLowerCase()] || SHIFT_SHORTCUT[e.code] : SHORTCUT[e.key.toLowerCase()];
+      if (kind) { e.preventDefault(); format(kind); return; }
+    }
     if (e.key === "Escape" && editing) { e.preventDefault(); onDone?.(); return; }
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); }
   };
@@ -222,8 +262,9 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
         <ul id={listId} role="listbox" className="cp-mentions" aria-label="Mencionar a">
           {candidates.map((c, i) => (
             <li key={c.id} role="option" aria-selected={i === pick.index} className="cp-mention" onMouseDown={(e) => { e.preventDefault(); choose(c); }}>
-              {c.id === "channel" || c.id === "here" ? <span className="cp-at" aria-hidden="true">@</span> : <Avatar id={c.id} size={22} />}
+              {c.id === "channel" || c.id === "here" ? <span className="cp-at" aria-hidden="true">@</span> : c.bot ? <LiveBotFace id={c.id} size={22} /> : <Avatar id={c.id} size={22} />}
               <span className="cp-mention-name">{c.name}</span><span className="cp-mention-sub">{c.sub}</span>
+              {c.bot ? <span className={"cp-bot-now is-" + c.now.key}>{c.now.word}</span> : null}
             </li>
           ))}
         </ul>
@@ -240,6 +281,15 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
           ))}
         </ul>
       ) : null}
+      {fmt && !disabled ? (
+        <div className="cp-fmt" role="toolbar" aria-label="Formato">
+          {FORMATS.map((x, i) => {
+            if (!x) return <span key={"s" + i} className="cp-fmt-sep" aria-hidden="true" />;
+            const [kind, label, Icon, keys] = x;
+            return <button key={kind} type="button" className="cp-fmt-btn" title={label + (keys ? " (" + keys + ")" : "")} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={() => format(kind)}><Icon size={16} /></button>;
+          })}
+        </div>
+      ) : null}
       <div className="cp-box">
         {editing ? null : (
           <label className="cp-attach ch-iconbtn" title="Adjuntar archivos">
@@ -251,6 +301,7 @@ export function Composer({ channel, thread = null, editing = null, placeholder =
           onPaste={(e) => { if (!editing && e.clipboardData?.files?.length) { e.preventDefault(); addFiles(e.clipboardData.files); } }}
           placeholder={placeholder} aria-label={placeholder} role="combobox" aria-expanded={!!(pick && candidates.length)} aria-controls={listId} aria-autocomplete="list"
           aria-activedescendant={undefined} />
+        <button type="button" className={"cp-emoji ch-iconbtn" + (fmt ? " is-on" : "")} title="Formato" aria-label={fmt ? "Ocultar el formato" : "Mostrar el formato"} aria-pressed={fmt} disabled={disabled} onClick={toggleFmt}><TextAa size={18} aria-hidden="true" /></button>
         <button type="button" className="cp-emoji ch-iconbtn" title="Emoji" aria-label="Añadir un emoji" aria-expanded={!!emojiAt} disabled={disabled} onClick={(e) => openEmoji(e.currentTarget)}><Smiley size={18} aria-hidden="true" /></button>
         {emojiAt ? <EmojiPicker anchor={emojiAt} title="Añadir un emoji" onPick={insertEmoji} onClose={() => setEmojiAt(null)} /> : null}
         {editing ? (
