@@ -272,8 +272,11 @@ export function hostWorkspace({ store, workspace, masters = [], files = null, bl
   chatRef = chat;
   // Encargos, polls, saved messages, scheduled messages and reminders (chat-plus.mjs).
   const plus = new ChatPlus({ chat, runAs: (person, fn) => asPerson(person, fn), log });
-  const channelBots = new ChannelBots({ store, runtime, chat, plus, blobs: blobStore, canThink: (person) => bots.provider.connectedFor(person.id), log });
+  const channelBots = new ChannelBots({ store, runtime, chat, plus, blobs: blobStore, canThink: (person) => bots.provider.connectedFor(person.id), runAs: (person, fn) => asPerson(person, fn), log });
   plus.bots = channelBots;
+  // A bot named in a channel also gets that channel's tools (polls, encargos, coming back later).
+  const beforeChannel = runtime.extraTools;
+  runtime.extraTools = (bot, mission) => [...(typeof beforeChannel === "function" ? beforeChannel(bot, mission) : []), ...channelBots.tools(bot, mission)];
   const importer = new SlackImport({ chat, blobs: blobStore, log });
 
   // ---- the workspace's own routes (people, direct messages); after the guard like the rest

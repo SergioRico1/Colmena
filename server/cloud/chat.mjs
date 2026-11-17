@@ -433,6 +433,8 @@ export class TeamChat {
         unread: this.q("SELECT count(*) AS n FROM (SELECT 1 FROM chat_messages WHERE channel=? AND top=1 AND seq>? AND deleted=0 AND (author IS NULL OR author<>?) LIMIT 100)").get(row.id, mem.read_seq, mem.person)?.n || 0,
         mentions: this.q("SELECT count(*) AS n FROM chat_mentions WHERE person=? AND channel=? AND seen=0").get(mem.person, row.id)?.n || 0,
       });
+      // How far each of the others read (the double check «Visto»), for conversations of up to 50 people.
+      if (view.memberCount <= 50) view.reads = Object.fromEntries(this.q("SELECT person, read_seq FROM chat_members WHERE channel=? AND person<>?").all(row.id, mem.person).map((r) => [r.person, r.read_seq]));
     }
     return view;
   }
@@ -890,6 +892,25 @@ export class TeamChat {
     this.emit({ type: "chat.update", channel: row.channel, message: view }, { people: this.memberIds(row.channel), channel: row.channel });
     return view;
   }
+  /** A bot's reaction (channel-bots.mjs mirrors the runtime's `react`): «bot:<id>» among who reacted. */
+  botReact(messageId, botId, emoji, on = true) {
+    const row = this.mrow(messageId);
+    if (!row || row.deleted || this.row(row.channel)?.archived) return null;
+    const e = String(emoji || "");
+    if (!EMOJI_OK.test(e)) return null;
+    const who = "bot:" + botId;
+    const data = this.mdata(row);
+    const r = data.reactions || (data.reactions = {});
+    const list = new Set(r[e] || []);
+    if (on === list.has(who)) return null;
+    if (on && !r[e] && Object.keys(r).length >= CHAT_LIMITS.reactionsPerMessage) return null;
+    if (on) list.add(who); else list.delete(who);
+    if (list.size) r[e] = [...list]; else delete r[e];
+    this.q("UPDATE chat_messages SET data=? WHERE seq=?").run(this.seal(data, "message\u0000" + row.id), row.seq);
+    const view = this.messageView(this.mrow(messageId), data);
+    this.emit({ type: "chat.update", channel: row.channel, message: view }, { people: this.memberIds(row.channel), channel: row.channel });
+    return view;
+  }
   pin(person, messageId, on = true) {
     this.must(person);
     const row = this.mrow(messageId);
@@ -934,6 +955,8 @@ export class TeamChat {
     });
     const view = this.channelView(this.row(id), person);
     this.emit({ type: "chat.read", channel: id, readSeq: target, unread: view.unread, mentions: view.mentions }, { people: [person.id] });
+    // «Visto»: the others in the conversation see how far you read (the double check).
+    if (target > mem.read_seq) this.emit({ type: "chat.seen", channel: id, person: person.id, readSeq: target }, { people: this.memberIds(id).filter((p) => p !== person.id), channel: id });
     return { readSeq: target, unread: view.unread, mentions: view.mentions };
   }
   setDraft(person, id, text) {
@@ -1111,13 +1134,15 @@ export class TeamChat {
    * the public channels (not for guests). Filters: from:@persona, in:#canal (or in:@persona for a
    * DM), has:file, has:link, has:pin, before:/after:/on: YYYY-MM-DD, during: YYYY-MM or YYYY.
    */
-  search(person, query, { before = null, limit = CHAT_LIMITS.searchPage } = {}) {
+  search(person, query, { before = null, limit = CHAT_LIMITS.searchPage, channel = null } = {}) {
     const me = this.must(person);
     const parsed = parseQuery(String(query || "").slice(0, 300));
     const readable = new Map();
     for (const r of this.q("SELECT c.id, c.kind, c.data FROM chat_members m JOIN chat_channels c ON c.id=m.channel WHERE m.person=?").all(me.id)) readable.set(r.id, r);
     if (me.role !== "guest") for (const r of this.q("SELECT id, kind, data FROM chat_channels WHERE kind='public'").all()) readable.set(r.id, r);
     let channels = [...readable.keys()];
+    // Inside one conversation (the search of a channel's header): only there.
+    if (channel) channels = readable.has(channel) ? [channel] : [];
     const filters = [];
     const args = [];
     const unknown = [];

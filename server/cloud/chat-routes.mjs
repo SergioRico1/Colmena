@@ -82,7 +82,8 @@ export function chatRoutes(app, { chat, plus = null, channelBots = null, importe
   app.get("/api/chat/channels/browse", run(() => ({ channels: chat.browse(me()) })));
   app.post("/api/chat/channels", run((req, res) => { res.status(201); return chat.createChannel(me(), body(req)); }));
   app.post("/api/chat/dm", run((req) => chat.openDm(me(), Array.isArray(body(req).people) ? body(req).people : [])));
-  app.get("/api/chat/channels/:id", run((req) => chat.channel(me(), req.params.id)));
+  // With the bots at work in it right now (a screen that opens late still sees «Nora está trabajando…»).
+  app.get("/api/chat/channels/:id", run((req) => ({ ...chat.channel(me(), req.params.id), working: channelBots ? channelBots.workingIn(req.params.id) : [] })));
   app.patch("/api/chat/channels/:id", run((req) => chat.updateChannel(me(), req.params.id, body(req))));
   app.post("/api/chat/channels/:id/join", run((req) => chat.join(me(), req.params.id)));
   app.post("/api/chat/channels/:id/leave", run((req) => chat.leave(me(), req.params.id)));
@@ -105,7 +106,9 @@ export function chatRoutes(app, { chat, plus = null, channelBots = null, importe
   app.delete("/api/chat/messages/:id", run((req) => chat.remove(me(), req.params.id)));
   app.post("/api/chat/messages/:id/reactions", run((req) => chat.react(me(), req.params.id, body(req).emoji, body(req).on !== false)));
   app.post("/api/chat/messages/:id/pin", run((req) => chat.pin(me(), req.params.id, body(req).on !== false)));
-  app.get("/api/chat/search", run((req) => chat.search(me(), String(req.query?.q || ""), { before: req.query?.before ? Number(req.query.before) : null })));
+  app.get("/api/chat/search", run((req) => chat.search(me(), String(req.query?.q || ""), { before: req.query?.before ? Number(req.query.before) : null, channel: req.query?.channel ? String(req.query.channel) : null })));
+  // «Quién puede hablarle» of a bot (bot-access.mjs): whoever made it, or an admin.
+  if (channelBots) app.put("/api/chat/bots/:id/talk", run((req) => channelBots.setTalk(me(), req.params.id, body(req).people)));
   app.get("/api/chat/mentions", run((req) => chat.mentions(me(), { before: req.query?.before ? Number(req.query.before) : null })));
 
   // ---- encargos, polls, saved, scheduled messages, reminders (chat-plus.mjs) and «/resumen»

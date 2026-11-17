@@ -803,3 +803,87 @@ test("«/resumen»: a bot summarizes the thread for whoever asks, on their scree
   assert.equal((await as(BETO)("POST", "/chat/channels/" + secret.id + "/summary", {})).status, 404, "a channel you cannot read");
   assert.equal((await as(GIL)("POST", "/chat/channels/" + general.id + "/summary", {})).status, 404, "a guest outside the channel");
 });
+
+test("a bot's channel tools: a poll that closes by itself when everyone voted (and the bot hears it), an encargo, a follow-up", async (t) => {
+  const { host, as, store } = await company(t);
+  const room = (await as(ANA)("POST", "/chat/channels", { name: "nombres", kind: "private", members: [BETO.id] })).data;
+  const poll = JSON.stringify({ question: "¿Nombre del bot?", options: ["Bento", "Luna"], multi: false });
+  const sent = (await as(ANA)("POST", "/chat/channels/" + room.id + "/messages", { text: "<@bot:nora> haz una encuesta [[tool:channel_poll|" + poll + "]]" })).data.message;
+  await settled(host);
+  const mission = store.list("missions").find((m) => m.channelThread?.root === sent.id);
+  let thread = (await as(ANA)("GET", "/chat/messages/" + sent.id + "/thread")).data.replies;
+  const pollMsg = thread.find((m) => m.poll);
+  assert.ok(pollMsg, "the poll is in the thread");
+  assert.equal(pollMsg.author, "bot:nora");
+  await as(ANA)("POST", "/chat/messages/" + pollMsg.id + "/vote", { options: ["o1"] });
+  const last = await as(BETO)("POST", "/chat/messages/" + pollMsg.id + "/vote", { options: ["o2"] });
+  assert.equal(last.data.poll.closed, true, "closed once both voted");
+  await settled(host);
+  thread = (await as(ANA)("GET", "/chat/messages/" + sent.id + "/thread")).data.replies;
+  assert.ok(thread.some((m) => m.author === "bot:colmena" && /Han votado todos/.test(m.text)));
+  const heard = store.where("messages", "missionId", mission.id).find((m) => m.origin === "encuesta");
+  assert.match(heard.text, /Bento: 1 \(Ana\); Luna: 1 \(Beto\)/);
+  assert.equal(store.get("missions", mission.id).askedBy, ANA.id, "the bot keeps working for Ana, not for whoever voted last");
+  // An encargo for Beto, by name.
+  const task = JSON.stringify({ assignee: "beto", title: "Elegir el nombre", due: "" });
+  await as(ANA)("POST", "/chat/channels/" + room.id + "/messages", { text: "<@bot:nora> encárgaselo [[tool:channel_task|" + task + "]]", thread: sent.id });
+  await settled(host);
+  const mine = (await as(BETO)("GET", "/chat/tasks?scope=para-mi")).data.items;
+  assert.equal(mine[0].task.title, "Elegir el nombre");
+  assert.equal(mine[0].task.createdBy, ANA.id, "asked by the person the bot works for");
+  assert.equal(mine[0].message.author, "bot:nora");
+  // A follow-up: at that time the bot goes on by itself.
+  const later = JSON.stringify({ when: "en 2 horas", note: "traer las ideas" });
+  await as(ANA)("POST", "/chat/channels/" + room.id + "/messages", { text: "<@bot:nora> vuelve luego [[tool:channel_followup|" + later + "]]", thread: sent.id });
+  await settled(host);
+  await host.plus.due(Date.now() + 3 * 3600000);
+  await settled(host);
+  const back = store.where("messages", "missionId", mission.id).find((m) => m.origin === "seguimiento");
+  assert.match(back.text, /traer las ideas/);
+});
+
+test("a bot's reactions show on the channel's message; a bot that talks only to some people says so", async (t) => {
+  const { host, as, store } = await company(t);
+  const general = await generalOf(as(ANA));
+  const sent = (await as(BETO)("POST", "/chat/channels/" + general.id + "/messages", { text: "<@bot:nora> gracias! [[tool:react|{\"emoji\":\"🙌\"}]]" })).data.message;
+  await settled(host);
+  await until(async () => (await as(ANA)("GET", "/chat/channels/" + general.id + "/messages")).data.messages.find((m) => m.id === sent.id)?.reactions.some((r) => r.emoji === "🙌" && r.people.includes("bot:nora")));
+  // Nora only for Ana: Beto is told in the thread, nothing runs for him.
+  assert.equal((await as(BETO)("PUT", "/chat/bots/nora/talk", { people: [ANA.id] })).status, 403, "only its maker or an admin");
+  assert.equal((await as(ANA)("PUT", "/chat/bots/nora/talk", { people: [ANA.id] })).status, 200);
+  assert.deepEqual((await as(BETO)("GET", "/chat/bootstrap")).data.bots.find((b) => b.id === "nora").talkTo, [ANA.id]);
+  const asked = (await as(BETO)("POST", "/chat/channels/" + general.id + "/messages", { text: "<@bot:nora> hazme un resumen" })).data.message;
+  await settled(host);
+  assert.equal(store.list("missions").filter((m) => m.channelThread?.root === asked.id).length, 0);
+  const note = (await as(BETO)("GET", "/chat/messages/" + asked.id + "/thread")).data.replies.at(-1);
+  assert.match(note.text, /^Nora solo habla con Ana\./);
+  // Nor in a chat of his own.
+  assert.equal((await as(BETO)("POST", "/missions", { prompt: "hola", mode: "solo", botIds: ["nora"], conversation: true })).status, 403);
+  assert.equal((await as(ANA)("PUT", "/chat/bots/nora/talk", { people: [] })).status, 200, "back to everyone");
+});
+
+test("«Nora está trabajando…» while its step runs; how far each person read; searching inside one channel", async (t) => {
+  const { host, as } = await company(t);
+  const general = await generalOf(as(ANA));
+  const frames = [];
+  t.after(host.openFeed(BETO, (e) => { if (["chat.working", "chat.seen"].includes(e.type)) frames.push(e); }, { watching: () => general.id }));
+  await as(BETO)("POST", "/chat/channels/" + general.id + "/join");
+  const sent = (await as(ANA)("POST", "/chat/channels/" + general.id + "/messages", { text: "<@bot:nora> piensa [[slow:300]]" })).data.message;
+  await until(() => frames.some((f) => f.type === "chat.working" && f.on));
+  assert.deepEqual((await as(BETO)("GET", "/chat/channels/" + general.id)).data.working, [{ thread: sent.id, bot: "bot:nora" }]);
+  await settled(host);
+  await until(() => frames.some((f) => f.type === "chat.working" && !f.on));
+  // Read receipts: Ana reads, Beto's screen learns it; the channel view says how far each one read.
+  await as(BETO)("POST", "/chat/channels/" + general.id + "/messages", { text: "¿lo habéis visto?" });
+  await as(ANA)("POST", "/chat/channels/" + general.id + "/read", {});
+  await until(() => frames.some((f) => f.type === "chat.seen" && f.person === ANA.id));
+  const view = (await as(BETO)("GET", "/chat/channels/" + general.id)).data;
+  assert.ok(view.reads[ANA.id] >= view.lastSeq - 0, "Ana read to the end");
+  // Search inside the channel only.
+  const other = (await as(ANA)("POST", "/chat/channels", { name: "otro" })).data;
+  await as(ANA)("POST", "/chat/channels/" + other.id + "/messages", { text: "presupuesto de otro sitio" });
+  await as(ANA)("POST", "/chat/channels/" + general.id + "/messages", { text: "presupuesto de aquí" });
+  const here = (await as(ANA)("GET", "/chat/search?q=presupuesto&channel=" + general.id)).data.results;
+  assert.deepEqual(here.map((r) => r.message.text), ["presupuesto de aquí"]);
+  assert.equal((await as(ANA)("GET", "/chat/search?q=presupuesto")).data.results.length, 2);
+});

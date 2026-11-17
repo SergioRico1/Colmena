@@ -43,6 +43,8 @@ export const TOOL_SEARCH = Object.freeze({
 export const CORE_TOOLS = new Set([
   // Answering and asking the person; reacting instead of an empty message.
   "ask_user", "react",
+  // In a channel's thread (server/cloud/channel-bots.mjs): what a bot does there, at hand.
+  "channel_poll", "channel_close_poll", "channel_task", "channel_followup",
   // Asking whoever made the request, in a turn for another person (server/room-work.mjs).
   "ask_room",
   // Memory and skills: the system prompt tells every bot to use them by name.

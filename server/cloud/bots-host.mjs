@@ -38,6 +38,7 @@ import { BROWSER_TOOLS } from "../computer/policy.mjs";
 import { cleanTimeZone } from "../timezone.mjs";
 import { randomUUID } from "node:crypto";
 import { personalChat } from "../threads.mjs";
+import { mayTalk, talkRefusal } from "./bot-access.mjs";
 
 export const TEST_FLAGS_ID = "test-flags";
 const ACTIVE = new Set(["queued", "planning", "running"]);
@@ -137,8 +138,19 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
     return mission.askedBy || rule?.ownerId || mission.createdBy || null;
   };
   const asker = () => { const p = currentPerson(); return isPerson(p) && memberOf(p.id) ? p : null; };
+  // «Quién puede hablarle» (bot-access.mjs): a person never starts work with, or writes to, a bot
+  // that does not talk to them. Routines and Colmena's own turns (nobody asking) pass.
+  const nameOfMember = (id) => memberOf(id)?.name || null;
+  const mustTalk = (p, botIds) => {
+    if (!p) return;
+    for (const id of botIds || []) {
+      const bot = store.get("bots", id);
+      if (bot && !mayTalk(bot, p.id)) throw Object.assign(Error(talkRefusal(bot, nameOfMember)), { status: 403 });
+    }
+  };
   const create = runtime.create.bind(runtime);
   runtime.create = (args) => {
+    mustTalk(asker(), args?.automationId ? [] : args?.botIds);
     const mission = create(args);
     const p = asker();
     // A chat with one bot is the person's own: nobody else in the company sees it (host.mjs › canSee).
@@ -147,6 +159,11 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
   const addMessage = runtime.addMessage.bind(runtime);
   runtime.addMessage = (missionId, ...rest) => {
     const p = asker();
+    const opts = rest[2] || {};
+    if (p && !opts.origin && !opts.automationId) {
+      const m = store.get("missions", missionId);
+      mustTalk(p, Array.isArray(opts.to) && opts.to.length ? opts.to : m?.mode === "solo" ? m.botIds : []);
+    }
     if (p && store.get("missions", missionId) && store.get("missions", missionId).askedBy !== p.id) store.patch("missions", missionId, { askedBy: p.id });
     return addMessage(missionId, ...rest);
   };

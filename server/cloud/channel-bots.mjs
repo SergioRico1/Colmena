@@ -17,6 +17,7 @@ import path from "node:path";
 import { ChatError, CHAT_LIMITS, plainText } from "./chat.mjs";
 import { ATTACHMENT_LIMITS, readMissionBytes, writeMissionAttachments } from "../files.mjs";
 import { now } from "../store.mjs";
+import { mayTalk, talkList, talkRefusal } from "./bot-access.mjs";
 
 const BOT_MENTION = /<@bot:([a-z0-9_-]{1,40})>/g;
 const ANSWER_KINDS = new Set(["message"]);
@@ -26,17 +27,39 @@ const fileName = (title, ext) => (String(title || "entregable").replace(/\.[a-z0
 
 export class ChannelBots {
   /** `canThink(person)`: has this person an AI account? Without one the bot cannot answer them. */
-  constructor({ store, runtime, chat, blobs = null, plus = null, canUse = () => true, canThink = () => true, log = () => {} }) {
-    Object.assign(this, { store, runtime, chat, blobs, plus, canUse, canThink, log });
+  /** `runAs(person, fn)`: work as that person (a poll's result reaches the bot as whoever it works for). */
+  constructor({ store, runtime, chat, blobs = null, plus = null, canUse = () => true, canThink = () => true, runAs = (p, fn) => fn(), log = () => {} }) {
+    Object.assign(this, { store, runtime, chat, blobs, plus, canUse, canThink, runAs, log });
     this.told = new Set(); // person:thread pairs already told «connect your AI account»
     this.ended = new Map(); // mission → status last seen (an encargo ends on the change)
+    this.working = new Map(); // step → {channel, thread, bot} while it runs («Nora está trabajando…»)
     this.listener = (change) => this.onRecord(change);
     store.listeners.add(this.listener);
+    if (plus) {
+      // A bot's poll that closed by itself, and a bot's follow-up that is due: the bot goes on.
+      plus.onPollClosed = (view, poll) => this.pollClosed(view, poll);
+      plus.onFollowup = (d) => this.resume(d.missionId, d.botId, "[Colmena] Es la hora que te apuntaste para volver a este hilo" + (d.note ? ": «" + d.note + "»" : "") + ". Retómalo donde lo dejaste.", "seguimiento");
+    }
   }
   stop() { this.store.listeners.delete(this.listener); }
-  /** Bots that may be named: enabled, for the team (not a personal bot). */
+  /** Bots that may be named: enabled, for the team (not a personal bot), with what their face and card need. */
   list() {
-    return this.store.list("bots").filter((b) => b.enabled !== false && b.audience !== "yo").map((b) => ({ id: b.id, name: b.name || b.id, title: b.role || b.title || "" }));
+    return this.store.list("bots").filter((b) => b.enabled !== false && b.audience !== "yo").map((b) => ({
+      id: b.id, name: b.name || b.id, title: b.role || b.title || "",
+      color: b.color || null, shape: b.shape || null, role: b.role || null, portrait: typeof b.portrait === "string" ? b.portrait : null,
+      createdBy: b.createdBy || null, talkTo: talkList(b),
+    }));
+  }
+  /** «Quién puede hablarle»: everyone (`people` empty or null) or those people. Its maker or an admin. */
+  setTalk(person, botId, people) {
+    const me = this.chat.must(person);
+    const bot = this.store.get("bots", String(botId || ""));
+    if (!bot || bot.audience === "yo") throw new ChatError("No existe ese bot.", 404, "bot");
+    if (!this.chat.isAdmin(person) && bot.createdBy !== me.id) throw new ChatError("Solo quien creó este bot, o quien administra la empresa, puede decidirlo.", 403, "bot");
+    const ids = [...new Set((Array.isArray(people) ? people : []).map(String))].filter((id) => this.chat.member(id)).slice(0, 200);
+    this.store.patch("bots", bot.id, { talkTo: ids.length ? ids : null });
+    this.chat.emit({ type: "chat.bots", bots: this.list() }, { people: "all" });
+    return { talkTo: ids.length ? ids : null };
   }
   named(text) {
     const known = new Set(this.list().map((b) => b.id));
@@ -88,6 +111,15 @@ export class ChannelBots {
       this.note(row.id, root, `${list} no ${who.length > 1 ? "pueden" : "puede"} trabajar para ti todavía: los bots piensan con la cuenta de IA de quien les pide algo, y aún no has conectado la tuya. Conéctala en Ajustes › Tu cuenta de IA y vuelve a pedírselo aquí.`);
       return null;
     }
+    // «Quién puede hablarle» (bot-access.mjs): a bot that does not talk to this person says so, once here.
+    const nameOf = (id) => this.chat.member(id)?.name || null;
+    const target = bots.length ? bots : existing?.mode === "solo" ? [this.lastBot(existing)] : [];
+    const refused = target.filter((id) => !mayTalk(this.store.get("bots", id), person.id));
+    if (refused.length) {
+      this.note(row.id, root, refused.map((id) => talkRefusal(this.store.get("bots", id), nameOf)).join(" "));
+      bots = bots.filter((id) => !refused.includes(id));
+      if (!bots.length) return null;
+    }
     const files = (view.files || []).filter((f) => f.id);
     const context = this.contextNote(person, row, view, { first: !existing, root, names });
     if (existing) {
@@ -96,7 +128,13 @@ export class ChannelBots {
       if (extra.length) this.store.patch("missions", existing.id, { botIds: [...existing.botIds, ...extra].slice(0, 6) });
       // Nobody named: the bot that spoke last in the thread goes on (a team's coordinator decides).
       const to = bots.length ? bots : existing.mode === "solo" ? [this.lastBot(existing)] : null;
-      const send = (attachments = [], note = "") => this.runtime.addMessage(existing.id, text, attachments, { context: context + note, ...(to ? { to } : {}) });
+      // The turn's message remembers the channel's message it came from: the bot's reactions to it
+      // show there too (mirrorReactions).
+      const send = (attachments = [], note = "") => {
+        const sent = this.runtime.addMessage(existing.id, text, attachments, { context: context + note, ...(to ? { to } : {}) });
+        if (sent?.id) this.store.patch("messages", sent.id, { chatMessage: view.id });
+        return sent;
+      };
       if (!files.length) send();
       else void this.copyFiles(existing.id, files).then(({ attachments, note }) => send(attachments, note)).catch((error) => this.log("bot files: " + (error?.message || error)));
       return existing.id;
@@ -111,6 +149,8 @@ export class ChannelBots {
       audience: row.kind === "public" ? null : this.chat.memberIds(row.id),
       createdBy: person.id, askedBy: person.id,
     });
+    const opening = this.store.where("messages", "missionId", mission.id).find((m) => m.role === "user");
+    if (opening) this.store.patch("messages", opening.id, { chatMessage: view.id });
     const launch = () => void Promise.resolve(this.runtime.launch(mission.id)).catch((error) => this.log("bot turn: " + (error?.message || error)));
     if (!files.length) launch();
     else {
@@ -208,6 +248,8 @@ export class ChannelBots {
   onRecord(change) {
     if (change?.type !== "record") return;
     if (change.kind === "missions" && change.data) return this.onMission(change.data);
+    if (change.kind === "steps" && change.data) return this.onStep(change.data);
+    if (change.kind === "messages" && change.op === "update" && change.data?.chatMessage) return this.mirrorReactions(change.data);
     if (change.kind !== "messages" || change.op !== "insert") return;
     const m = change.data;
     if (m?.role !== "assistant" || !m.botId) return;
@@ -232,6 +274,94 @@ export class ChannelBots {
       this.log("bot answer: " + (error?.message || error));
     }
   }
+  /**
+   * The bot's reactions to a message it got (the runtime's `react`, and its 👀 «lo estoy mirando»
+   * that goes when it answers) on the channel's message it came from.
+   */
+  mirrorReactions(message) {
+    const row = this.chat.mrow(message.chatMessage);
+    if (!row) return;
+    const want = new Set((Array.isArray(message.reactions) ? message.reactions : []).filter((r) => r?.by && this.store.get("bots", r.by)).map((r) => r.emoji + "\n" + r.by));
+    const have = new Set();
+    for (const [emoji, who] of Object.entries(this.chat.mdata(row).reactions || {})) for (const p of who) if (String(p).startsWith("bot:") && p !== "bot:colmena") have.add(emoji + "\n" + p.slice(4));
+    for (const k of want) if (!have.has(k)) { const [emoji, bot] = k.split("\n"); this.chat.botReact(row.id, bot, emoji, true); }
+    for (const k of have) if (!want.has(k)) { const [emoji, bot] = k.split("\n"); this.chat.botReact(row.id, bot, emoji, false); }
+  }
+  /** «Nora está trabajando…» in its thread while one of its steps runs (no timers: the step's own changes). */
+  onStep(step) {
+    const was = this.working.get(step.id);
+    const running = step.status === "running";
+    if (running === !!was) return;
+    if (!running) {
+      this.working.delete(step.id);
+      this.chat.emit({ type: "chat.working", channel: was.channel, thread: was.thread, bot: "bot:" + was.bot, on: false }, { people: this.chat.memberIds(was.channel), channel: was.channel });
+      return;
+    }
+    const link = this.store.get("missions", step.missionId)?.channelThread;
+    if (!link || !step.botId) return;
+    const w = { channel: link.channel, thread: link.root, bot: step.botId };
+    this.working.set(step.id, w);
+    this.chat.emit({ type: "chat.working", channel: w.channel, thread: w.thread, bot: "bot:" + w.bot, on: true }, { people: this.chat.memberIds(w.channel), channel: w.channel });
+  }
+  /** Who is working in a channel right now (a screen that opens it late): [{thread, bot}]. */
+  workingIn(channel) { return [...this.working.values()].filter((w) => w.channel === channel).map((w) => ({ thread: w.thread, bot: "bot:" + w.bot })); }
+  /** A turn Colmena gives a bot in its conversation (a poll closed, a follow-up due), as whoever it works for. */
+  resume(missionId, botId, text, origin) {
+    const mission = this.store.get("missions", missionId);
+    if (!mission || mission.status === "cancelled") return null;
+    const member = this.chat.member(mission.askedBy || mission.createdBy);
+    if (!member) return null;
+    const person = { id: member.id, name: member.name, email: member.email, role: member.role };
+    return this.runAs(person, () => this.runtime.addMessage(missionId, text, [], { origin, to: [botId] }));
+  }
+  pollClosed(view, poll) {
+    if (!poll.missionId || !String(poll.by || "").startsWith("bot:")) return;
+    const bot = poll.by.slice(4);
+    this.chat.postBot(view.channel, { botId: "colmena", botName: "Colmena", text: "Han votado todos: la encuesta «" + poll.question + "» se ha cerrado.", thread: view.threadId || view.id });
+    this.resume(poll.missionId, bot, "[Colmena] Tu encuesta «" + poll.question + "» se ha cerrado porque ya han votado todos. Resultado: " + this.plus.pollResult(poll) + ". Dilo en el hilo y sigue con lo que toque.", "encuesta");
+  }
+
+  // ------------------------------------------------------------------ the bot's tools in a channel
+  /**
+   * Runtime#extraTools: what a bot can do in the channel it was named in (only there): a poll,
+   * closing its poll, an encargo for someone of the channel, and coming back later by itself.
+   */
+  tools(bot, mission) {
+    const link = mission?.channelThread;
+    if (!bot || !link || !this.plus || mission.incognito) return [];
+    const asker = mission.askedBy || mission.createdBy;
+    const where = { channel: link.channel, thread: link.root, botId: bot.id, botName: bot.name || bot.id };
+    const run = (fn) => async (args) => { try { return await fn(args || {}); } catch (error) { return { ok: false, error: error?.message || String(error) }; } };
+    const tool = (name, description, properties, fn) => ({ name, strict: true, description, capability: "siempre", parameters: { type: "object", additionalProperties: false, required: Object.keys(properties), properties }, run: run(fn) });
+    return [
+      tool("channel_poll", "Publica una encuesta en este hilo del canal para que voten las personas (de 2 a 10 opciones). Úsala cuando haya que decidir entre opciones. Se cierra sola cuando han votado todos y entonces te llega el resultado para que lo anuncies.",
+        { question: { type: "string", description: "La pregunta." }, options: { type: "array", items: { type: "string" }, description: "Las opciones, de 2 a 10." }, multi: { type: "boolean", description: "true si se puede elegir más de una." } },
+        (a) => { const v = this.plus.botPoll({ ...where, question: a.question, options: a.options, multi: !!a.multi, missionId: mission.id }); return { ok: true, poll: v.poll.question, options: v.poll.options.map((o) => o.text), note: "Publicada en el hilo. Te avisaré cuando hayan votado todos." }; }),
+      tool("channel_close_poll", "Cierra tu encuesta abierta de este hilo (cuando ya no haga falta esperar más votos) y te devuelve el resultado.", {},
+        () => { const v = this.plus.closeBotPoll(where); return { ok: true, result: v.poll.options.map((o) => o.text + ": " + o.count).join("; ") }; }),
+      tool("channel_task", "Crea un encargo en este hilo para una persona del canal o para otro bot: una tarjeta con su estado (Pendiente / Hecho) que ven todos. Úsala cuando alguien deba hacer algo concreto.",
+        { assignee: { type: "string", description: "El nombre de la persona o del bot." }, title: { type: "string", description: "Qué hay que hacer, en una frase." }, due: { type: "string", description: "Para cuándo («mañana», «el viernes», «el 25/11 a las 10»), o vacío." } },
+        (a) => { const who = this.findAssignee(link.channel, a.assignee); const t = this.plus.botTask({ ...where, by: asker, assignee: who, title: a.title, due: a.due || null }); return { ok: true, task: t.title, for: this.chat.member(who)?.name || a.assignee, due: t.due ? new Date(t.due).toISOString() : null }; }),
+      tool("channel_followup", "Te apunta para volver a este hilo más tarde por tu cuenta (por ejemplo «vuelvo mañana a las 9 con las ideas»). A esa hora se te avisa y sigues aquí.",
+        { when: { type: "string", description: "Cuándo: «en 2 horas», «mañana a las 9», «el viernes a las 10»." }, note: { type: "string", description: "Qué tienes que hacer al volver." } },
+        (a) => { const f = this.plus.followup({ by: asker, missionId: mission.id, botId: bot.id, when: a.when, note: a.note }); return { ok: true, at: new Date(f.at).toISOString(), label: f.label, note: "Dilo en tu respuesta: volverás " + f.label + "." }; }),
+    ];
+  }
+  /** A person or a bot of the channel by name («Ana», «ana gómez», «Nora»): their id, or a refusal. */
+  findAssignee(channel, name) {
+    const fold = (s) => String(s || "").normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+    const want = fold(name).replace(/^@/, "");
+    if (!want) throw Error("Di para quién es.");
+    const people = this.chat.memberIds(channel).map((id) => this.chat.member(id)).filter(Boolean);
+    const exact = people.find((p) => fold(p.name) === want) || people.find((p) => fold(p.name).split(/\s+/)[0] === want);
+    if (exact) return exact.id;
+    const bot = this.list().find((b) => fold(b.name) === want || b.id === want);
+    if (bot) return "bot:" + bot.id;
+    const near = people.filter((p) => fold(p.name).includes(want));
+    if (near.length === 1) return near[0].id;
+    throw Error(near.length ? "Hay varias personas que se llaman así: " + near.map((p) => p.name).join(", ") + ". Di el nombre completo." : "No hay nadie con ese nombre en este canal.");
+  }
+
   /** A bot's encargo ends with its work: done when it completes, not done when it fails. */
   onMission(mission) {
     if (!mission.channelThread || !this.plus) return;

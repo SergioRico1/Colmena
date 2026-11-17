@@ -129,6 +129,46 @@ export class ChatPlus {
     }
     return this.taskView(this.taskRow(id));
   }
+  /**
+   * An encargo a bot gives in its thread (its tool, channel-bots.mjs): a message of the bot with
+   * the card. It counts as asked by `by`, the person the bot works for (they may change it).
+   * `assignee`: a person's id or «bot:<id>».
+   */
+  botTask({ channel, thread, botId, botName, by, assignee, title, due = null }) {
+    const row = this.chat.row(channel);
+    if (!row) fail("Ese canal ya no existe.");
+    const asker = this.chat.member(by);
+    if (!asker) fail("No sé para quién trabajas.");
+    const who = String(assignee || "");
+    if (who.startsWith("bot:")) {
+      if (!this.chat.bots().some((b) => "bot:" + b.id === who)) fail("Ese bot no está disponible.");
+    } else if (!this.chat.member(who) || !this.chat.canRead({ id: who }, row)) fail("Esa persona no está en esta conversación.");
+    const clean = line(title, PLUS_LIMITS.title);
+    if (!clean) fail("Di qué hay que hacer.");
+    let dueAt = null;
+    if (due) {
+      dueAt = parseWhen(String(due), { now: this.now(), tz: this.tzOf(by) })?.at ?? null;
+      if (!dueAt) fail("No entiendo la fecha: usa «mañana», «el viernes», «el 25/11 a las 10».");
+    }
+    const id = randomUUID(), at = this.now();
+    const view = this.chat.postBot(channel, { botId, botName, text: clean, thread, extra: { tasks: [id] } });
+    if (!view) fail("No se pudo publicar el encargo.");
+    this.q("INSERT INTO chat_tasks(id, channel, seq, assignee, created_by, status, at, due, data) VALUES(?,?,?,?,?,?,?,?,?)")
+      .run(id, channel, view.seq, who, by, "open", at, dueAt, this.chat.seal({ title: clean }, "task\u0000" + id));
+    this.chat.patchMessage(view.id, () => true);
+    const source = this.chat.mrow(view.id);
+    if (!who.startsWith("bot:") && who !== by) this.tell(who, source, "task", { title: (botName || "Un bot") + " te ha encargado algo", body: clean.slice(0, 140), url: "/canal/" + channel + "?hilo=" + this.rootOf(source), tag: "task-" + id });
+    return this.taskView(this.taskRow(id));
+  }
+  /** A bot's «vuelvo mañana a las 9»: at that time its conversation goes on by itself (fire). */
+  followup({ by, missionId, botId, when, note = "" }) {
+    if (!this.chat.member(by)) fail("No sé para quién trabajas.");
+    const due = this.dueOf(by, null, when);
+    if (this.q("SELECT count(*) AS n FROM chat_timed WHERE kind='followup' AND person=?").get(by).n >= PLUS_LIMITS.timedPerPerson) fail("Hay demasiados seguimientos pendientes.");
+    const id = randomUUID();
+    this.q("INSERT INTO chat_timed(id, person, kind, due, data) VALUES(?,?,?,?,?)").run(id, by, "followup", due, this.chat.seal({ missionId, botId, note: line(note, 500) }, "timed\u0000" + id));
+    return { id, at: due, label: whenLabel(due, { now: this.now(), tz: this.tzOf(by) }) };
+  }
   plainOf(row) { return this.plainText(this.chat.mdata(row).text); }
   /** A stored text (Slack's format) as plain words: names for mentions, labels for links. */
   plainText(text) { return line(text || "", 2000).replace(/<@([^>]+)>/g, (_, id) => "@" + this.name(id)).replace(/<[^>]*\|([^>]*)>/g, "$1").replace(/<([^>]*)>/g, "$1").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"); }
@@ -185,21 +225,39 @@ export class ChatPlus {
   // ------------------------------------------------------------------ polls
   createPoll(person, channelId, { question, options = [], multi = false, thread = null } = {}) {
     const me = this.chat.must(person);
+    const poll = this.pollOf(question, options, multi, me.id);
+    const sent = this.chat.post(person, channelId, { text: "", thread }, { extra: { poll } });
+    this.chat.index(sent.message.seq, poll.question + " " + poll.options.map((o) => o.text).join(" "));
+    return sent;
+  }
+  /** Options as a poll keeps them, or a refusal (2 to 10, no repeats, no empty ones). */
+  pollOf(question, options, multi, by) {
     const q = line(question, PLUS_LIMITS.question);
     if (!q) fail("Escribe la pregunta.");
     const opts = [...new Set((Array.isArray(options) ? options : []).map((o) => line(o, PLUS_LIMITS.pollOption)).filter(Boolean))];
     if (opts.length < 2) fail("Una encuesta necesita al menos dos opciones.");
     if (opts.length > PLUS_LIMITS.pollOptions) fail("Como mucho " + PLUS_LIMITS.pollOptions + " opciones.");
-    const poll = { question: q, options: opts.map((text, i) => ({ id: "o" + (i + 1), text })), votes: {}, multi: !!multi, by: me.id, closed: false };
-    const sent = this.chat.post(person, channelId, { text: "", thread }, { extra: { poll } });
-    this.chat.index(sent.message.seq, q + " " + opts.join(" "));
-    return sent;
+    return { question: q, options: opts.map((text, i) => ({ id: "o" + (i + 1), text })), votes: {}, multi: !!multi, by, closed: false };
+  }
+  /**
+   * A bot's poll in its thread (channel-bots.mjs). `closeWhenAll`: it closes by itself once every
+   * person of the conversation voted, and the bot hears the result (`onPollClosed`).
+   */
+  botPoll({ channel, thread, botId, botName, question, options, multi = false, closeWhenAll = true, missionId = null }) {
+    const poll = { ...this.pollOf(question, options, multi, "bot:" + botId), closeWhenAll: !!closeWhenAll, missionId };
+    const view = this.chat.postBot(channel, { botId, botName, text: "", thread, extra: { poll } });
+    if (!view) fail("No se pudo publicar la encuesta.");
+    this.chat.index(view.seq, poll.question + " " + poll.options.map((o) => o.text).join(" "));
+    return view;
   }
   vote(person, messageId, choice = []) {
     const me = this.chat.must(person);
     const row = this.readable(person, messageId);
     this.chat.mustPost(person, row.channel);
     const ids = [...new Set(Array.isArray(choice) ? choice : [choice])].map(String);
+    // People who can vote: the conversation's people, guests too (a poll among everyone there).
+    const voters = this.chat.memberIds(row.channel).filter((p) => this.chat.member(p));
+    let closedNow = null;
     const view = this.chat.patchMessage(messageId, (d) => {
       if (!d.poll) fail("Ese mensaje no es una encuesta.", 400, "poll");
       if (d.poll.closed) fail("La encuesta está cerrada.", 409, "closed");
@@ -209,7 +267,10 @@ export class ChatPlus {
       for (const o of d.poll.options) votes[o.id] = (d.poll.votes?.[o.id] || []).filter((p) => p !== me.id);
       for (const id of chosen) votes[id].push(me.id);
       d.poll.votes = votes;
+      const voted = new Set(Object.values(votes).flat());
+      if (d.poll.closeWhenAll && voters.length && voters.every((p) => voted.has(p))) { d.poll.closed = true; closedNow = d.poll; }
     });
+    if (closedNow) try { this.onPollClosed?.(view, closedNow); } catch (error) { this.log("poll: " + (error?.message || error)); }
     return view;
   }
   closePoll(person, messageId, closed = true) {
@@ -219,6 +280,21 @@ export class ChatPlus {
     if (!d.poll) fail("Ese mensaje no es una encuesta.", 400, "poll");
     if (row.author !== me.id && !this.chat.isAdmin(person)) fail("Solo quien la creó puede cerrarla.", 403, "poll");
     return this.chat.patchMessage(messageId, (x) => { x.poll.closed = !!closed; });
+  }
+  /** A bot closes its own poll (its tool); the latest open one of its thread when none is named. */
+  closeBotPoll({ channel, thread, botId }) {
+    const who = "bot:" + botId;
+    const root = this.chat.mrow(thread);
+    if (!root) fail("Ese hilo ya no existe.");
+    const rows = [root, ...this.q("SELECT * FROM chat_messages WHERE thread=? AND deleted=0 ORDER BY seq DESC LIMIT 100").all(root.seq)];
+    const mine = rows.find((r) => r.author === who && r.channel === channel && this.chat.mdata(r).poll && !this.chat.mdata(r).poll.closed);
+    if (!mine) fail("No tienes ninguna encuesta abierta en este hilo.");
+    return this.chat.patchMessage(mine.id, (x) => { x.poll.closed = true; });
+  }
+  /** A poll's result in words, for the bot that asked. */
+  pollResult(poll) {
+    const votes = poll.votes || {};
+    return poll.options.map((o) => `${o.text}: ${(votes[o.id] || []).length} (${(votes[o.id] || []).map((p) => this.name(p)).join(", ") || "nadie"})`).join("; ");
   }
 
   // ------------------------------------------------------------------ saved for later
@@ -350,6 +426,8 @@ export class ChatPlus {
     const member = this.chat.member(r.person);
     if (!member) return null;
     const person = { id: member.id, name: member.name, email: member.email, role: member.role };
+    // A bot's follow-up: its conversation goes on as the person it works for (channel-bots.mjs).
+    if (r.kind === "followup") return this.runAs(person, () => this.onFollowup?.(d));
     // Your own conversation only when something has to reach you there.
     const self = () => this.chat.selfDm(member.id);
     if (r.kind === "remind") {
