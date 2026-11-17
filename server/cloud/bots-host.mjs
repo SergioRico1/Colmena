@@ -18,6 +18,9 @@
 // - The fake model (fake-model.mjs) only when the Worker allows tests and the workspace's test
 //   flag is on.
 import { Runtime } from "../runtime.mjs";
+import { Readable } from "node:stream";
+import { zipStream } from "./zip.mjs";
+import { canSeeMission } from "../visibility.mjs";
 import { Scheduler } from "../scheduler.mjs";
 import { Connections } from "../connections.mjs";
 import { ComposioHub } from "../nexo/composio.mjs";
@@ -350,6 +353,31 @@ export function cloudBots({ store, workspace, rooms = () => null, vault = () => 
       await v.save(binding, { token, at: now(), by: me.id });
       return { ok: true, scope };
     }));
+    // «Exportar mis chats con bots»: this person's own chats with bots, in the company export's
+    // format (colmena-export-1), so the desktop brings them in like the channels
+    // (server/cloud-import.mjs). Only their own: chats are personal (visibility.mjs).
+    app.get("/api/cloud/export/mine.zip", (req, res) => {
+      const me = currentPerson();
+      if (!isPerson(me)) return res.status(401).json({ error: "Inicia sesión." });
+      const company = store.get("cloud", "workspace") || {};
+      const chats = store.list("missions").filter((m) => m.conversation && !m.channelThread && !m.incognito && canSeeMission(store, m, me) && (m.askedBy || m.createdBy) === me.id);
+      const botName = (id) => store.get("bots", id)?.name || id;
+      const enc = (v) => new TextEncoder().encode(JSON.stringify(v));
+      function* entries() {
+        yield { name: "workspace.json", data: enc({ id: workspace?.id || null, name: company.title || workspace?.name || "Colmena en la nube", exportedAt: new Date().toISOString(), format: "colmena-export-1", personal: true }) };
+        yield { name: "people.json", data: enc({ members: [{ id: me.id, name: me.name }], ghosts: [] }) };
+        yield { name: "channels.json", data: enc(chats.map((m) => ({ id: m.id, kind: "chat", name: botName(m.botIds?.[0]), members: [me.id] }))) };
+        for (const m of chats) {
+          const rows = store.where("messages", "missionId", m.id).filter((x) => (x.role === "user" || x.role === "assistant") && (!x.kind || x.kind === "message") && x.text).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+          yield { name: "chats/chat-" + m.id + "/messages-0000.json", deflate: true, data: enc(rows.map((x, i) => ({
+            id: x.id, seq: i + 1, at: Date.parse(x.at) || Date.now(), text: x.text,
+            ...(x.role === "user" ? { author: me.id } : { author: "bot:" + (x.botId || m.botIds?.[0] || "bot"), botName: botName(x.botId || m.botIds?.[0]), format: "md" }),
+          }))) };
+        }
+      }
+      res.set({ "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="colmena-mis-chats-${new Date().toISOString().slice(0, 10)}.zip"`, "Cache-Control": "no-store" });
+      Readable.fromWeb(zipStream(entries())).pipe(res);
+    });
     // «Mis apps» (Phase 4): this person's own connected accounts instead of the company's.
     app.get("/api/cloud/apps/mine", wrap(() => ({ on: personalApps(currentPerson().id) })));
     app.put("/api/cloud/apps/mine", wrap(async (req) => {

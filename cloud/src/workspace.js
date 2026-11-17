@@ -318,6 +318,23 @@ export class Workspace extends DurableObject {
    * Test-only (FAKE_MODEL_TOKEN): who each chat with a bot belongs to and who wrote in it, as
    * counts per person. No message text, names or titles.
    */
+  /** Test only: how much a company holds (counts only, never content), before moving it to devices. */
+  async countsProbe(workspaceId) {
+    const host = await this.boot(workspaceId);
+    const count = (sql) => { try { return host.chat?.q(sql).get()?.n ?? null; } catch { return null; } };
+    const missions = host.store.list("missions");
+    return {
+      channels: count("SELECT count(*) AS n FROM chat_channels WHERE kind IN ('public','private')"),
+      directs: count("SELECT count(*) AS n FROM chat_channels WHERE kind IN ('dm','group')"),
+      messages: count("SELECT count(*) AS n FROM chat_messages WHERE deleted=0"),
+      files: count("SELECT count(*) AS n FROM chat_files"),
+      lastMessageAt: count("SELECT max(at) AS n FROM chat_messages"),
+      botChats: missions.filter((m) => m.conversation && !m.channelThread).length,
+      tasks: missions.filter((m) => !m.conversation && !m.channelThread).length,
+      botMessages: host.store.list("messages").length,
+      routines: host.store.list("automations").length,
+    };
+  }
   async chatsProbe(workspaceId) {
     const host = await this.boot(workspaceId);
     const short = (id) => (id ? String(id).slice(0, 8) : null);

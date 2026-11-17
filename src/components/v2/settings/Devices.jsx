@@ -4,6 +4,7 @@ import { del, get, patch, post } from "../../../lib/api.js";
 import { isCloud } from "../../../lib/cloud.js";
 import { useStore } from "../../../lib/store.jsx";
 import { Alert, Chip, Confirm, anchorOf, btn, danger, mono } from "./v3.jsx";
+import { CloudExport, CloudImport } from "./CloudMove.jsx";
 
 const HONEY = { background: "var(--c-honey-soft, var(--c-chip))", color: "var(--c-honey-text)" };
 const BLUE = { background: "var(--c-accent-soft)", color: "var(--c-accent-ink)" };
@@ -140,6 +141,7 @@ function CloudDevices() {
   const devices = (data?.devices || []).filter((d) => d.status !== "revoked");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <CloudExport />
       <ThisComputer devices={data?.devices || []} workspaceId={data?.workspace?.id} reload={reload} />
       {error ? <Alert>{error}</Alert> : null}
       <section {...anchorOf("dispositivos")} aria-label="Tus dispositivos" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden", scrollMarginTop: "24px" }}>
@@ -173,5 +175,5 @@ function LocalMode() {
 }
 
 export default function DevicesSection() {
-  return isCloud() ? <CloudDevices /> : <LocalMode />;
+  return isCloud() ? <CloudDevices /> : <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}><LocalMode /><CloudImport /></div>;
 }

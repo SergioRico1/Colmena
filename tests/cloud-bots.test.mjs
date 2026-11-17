@@ -892,3 +892,21 @@ test("«Nora está trabajando…» while its step runs; searching inside one cha
   assert.equal(pulse.counts[11], 1);
   assert.ok(Date.now() - pulse.from <= 24 * 3600000 + 60000);
 });
+
+test("«Exportar mis chats con bots»: only your own chats, in the export's format the desktop brings in", async (t) => {
+  const { as, base, host } = await company(t);
+  const ana = as(ANA), beto = as(BETO);
+  const mine = (await ana("POST", "/missions", { prompt: "Mi nómina de octubre", mode: "solo", botIds: ["atlas"], conversation: true })).data;
+  await beto("POST", "/missions", { prompt: "Lo de Beto", mode: "solo", botIds: ["atlas"], conversation: true });
+  await settled(host);
+  const r = await fetch(base + "/api/cloud/export/mine.zip", { headers: { "X-Colmena-Person": JSON.stringify(ANA) } });
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get("content-type"), "application/zip");
+  const { previewExport } = await import("../server/cloud-import.mjs");
+  const preview = await previewExport(Buffer.from(await r.arrayBuffer()));
+  assert.deepEqual(preview.members.map((p) => p.id), [ANA.id], "only Ana");
+  assert.equal(preview.channels.length, 1, "only her chat: " + JSON.stringify(preview.channels));
+  assert.equal(preview.channels[0].id, mine.id);
+  assert.match(preview.channels[0].title, /^Chat con /);
+  assert.ok(preview.channels[0].messages >= 2, "her message and the bot's answer");
+});

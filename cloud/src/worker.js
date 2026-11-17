@@ -455,6 +455,7 @@ async function devTest(request, env, url) {
   const bearer = /^Bearer (\S+)$/.exec(request.headers.get("Authorization") || "")?.[1];
   if (!env.FAKE_MODEL_TOKEN || !sameSecret(bearer || "", env.FAKE_MODEL_TOKEN)) throw new HttpError(404, "No encontrado.");
   const data = request.method === "POST" ? await body(request) : Object.fromEntries(url.searchParams);
+  if (url.pathname === "/auth/dev/test/inventory" && request.method === "GET") return json(await dir(env, "inventory"));
   const id = String(data.workspace || "");
   if (!ID.test(id)) throw new HttpError(400, "Falta el espacio.");
   const stub = workspaceStub(env, id);
@@ -462,6 +463,7 @@ async function devTest(request, env, url) {
   if (what === "fake-model" && request.method === "POST") return json(await stub.setTestFlags(id, { fakeModel: data.on === true }));
   if (what === "probe" && request.method === "GET") return json(await stub.probe(id));
   if (what === "learned" && request.method === "GET") { try { return json(await stub.learnedProbe(id)); } catch (e) { return json({ failed: String(e?.stack || e?.message || e).slice(0, 1500) }); } }
+  if (what === "counts" && request.method === "GET") return json(await stub.countsProbe(id));
   if (what === "chats" && request.method === "GET") { try { return json(await stub.chatsProbe(id)); } catch (e) { return json({ failed: String(e?.stack || e?.message || e).slice(0, 1500) }); } }
   if (what === "ai" && request.method === "GET") { try { return json(await stub.aiProbe(id)); } catch (e) { return json({ failed: String(e?.stack || e?.message || e).slice(0, 1500) }); } }
   if (what === "evict" && request.method === "POST") {

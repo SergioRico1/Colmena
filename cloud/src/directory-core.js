@@ -337,6 +337,10 @@ export class DirectoryCore {
     const w = this.row("SELECT * FROM workspaces WHERE id=?", id);
     return w ? { id: w.id, name: w.name, createdAt: w.created_at, domains: parseDomains(w.domains) } : null;
   }
+  /** Test only (the Worker checks the test secret): every company and how many people it has; no addresses. */
+  inventory() {
+    return this.rows("SELECT w.id, w.name, w.created_at AS createdAt, (SELECT count(*) FROM memberships m WHERE m.workspace_id = w.id AND m.deactivated_at IS NULL) AS members FROM workspaces w ORDER BY w.created_at");
+  }
   workspacesOf(userId) {
     return this.rows("SELECT w.id, w.name, m.role FROM memberships m JOIN workspaces w ON w.id = m.workspace_id WHERE m.user_id=? AND m.deactivated_at IS NULL ORDER BY m.created_at, m.rowid", userId);
   }
