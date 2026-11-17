@@ -6,6 +6,7 @@ import { chat } from "./api.js";
 import { Composer } from "./Composer.jsx";
 import Message from "./Message.jsx";
 import { Ephemeral } from "./Plus.jsx";
+import { Typing } from "./Live.jsx";
 import { channelTitle, mergeGhosts, nameOf, onChatEvent, useChat } from "./store.js";
 
 export default function Thread({ channel, rootId, canPost, admin, onClose }) {
@@ -40,7 +41,6 @@ export default function Thread({ channel, rootId, canPost, admin, onClose }) {
     return () => window.removeEventListener("keydown", key);
   }, [onClose]);
   const ch = s.channels.get(channel);
-  const typingHere = [...(s.typing.get(channel) || new Map())].filter(([, t]) => t.thread === rootId && t.until > Date.now()).map(([p]) => nameOf(p, s));
   return (
     <aside ref={panel} tabIndex={-1} className="th r-overlay" aria-label="Hilo">
       <div className="th-head">
@@ -56,9 +56,9 @@ export default function Thread({ channel, rootId, canPost, admin, onClose }) {
         {(s.ephemeral?.get(channel) || []).filter((m) => m.threadId === rootId).map((m) => <Ephemeral key={m.id} m={m} />)}
         <div ref={end} />
       </div>
-      {typingHere.length ? <p className="th-typing" aria-live="polite">{typingHere.join(", ") + (typingHere.length === 1 ? " está escribiendo…" : " están escribiendo…")}</p> : <p className="th-typing" aria-live="polite" />}
       {canPost && root && !root.deleted ? (
-        <div className="th-composer r-composer">
+        <div className="th-composer r-composer" style={{ position: "relative" }}>
+          <Typing channel={channel} thread={rootId} />
           <Composer channel={channel} thread={rootId} placeholder="Responder…" alsoChannel={ch && ch.kind !== "dm" && ch.kind !== "group" ? "#" + channelTitle(ch, s) : ch ? "la conversación" : null} autoFocus
             onPending={(m) => setReplies((r) => [...r, m])}
             onSent={(m, clientId) => setReplies((r) => (m ? [...r.filter((x) => x.clientId !== clientId && x.id !== m.id), m] : r.filter((x) => x.clientId !== clientId)))} />

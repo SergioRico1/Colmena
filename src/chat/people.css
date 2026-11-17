@@ -188,3 +188,8 @@
 /* Your picture in «Tu perfil» (src/chat/ProfileEditor.jsx). */
 .pp-photo{display:flex;align-items:center;gap:16px;margin:4px 0 16px}
 .pp-photo-actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* The banner of a profile (Hive.jsx › PixelBanner) and the face that sits on it. */
+.pp-banner{display:block;width:100%;border-radius:var(--r-md);margin-bottom:-40px}
+.pp-face{display:inline-grid;border-radius:999px;box-shadow:0 0 0 4px var(--c-raised, var(--c-card));position:relative}
+.pp-side .pp-banner{border-radius:var(--r-md)}

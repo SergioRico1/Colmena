@@ -743,6 +743,13 @@ like the rest; every read and write checks the channel first.
   viernes a las 10», «hoy a las 5 de la tarde», «a las 9», «el 25/11», at the start or the end of the
   text, read on the person's time zone (their profile's, else the company's); a day without a time is
   9:00; only times to come (up to a year).
+- **«Visto»** (the double check): a conversation of up to 50 people carries `reads` {person:
+  read_seq} in its view, and `chat.seen` frames update it when someone reads further. Your own
+  messages show ✓ (sent) or ✓✓ (seen, with who) by how far the others read.
+- **Search inside one conversation**: `GET /api/chat/search?channel=` limits it there; the header's
+  magnifier opens it beside the conversation with «en #canal» already set.
+- **Bots in text** keep their colour: an @mention of a bot is tinted with it, and their faces in the
+  channels are their own (colour, shape, portrait from the company's list).
 - **The box's «/» commands**: typing `/` lists /encargo, /recordar, /encuesta and /resumen; a command
   is never sent as text; one that needs more opens its form.
 
@@ -970,6 +977,26 @@ as a hosted app (its own OAuth client and public redirect), not the Codex client
 - **What comes back**: answers as Markdown (`format: "md"`; the screens draw it with the rooms'
   Markdown, never as HTML); deliverables (documents, sheets, decks, pictures, pages) as files in the
   thread (`postDeliverable` → R2 → `chat.botFile`).
+- **The bot's tools in a channel** (`ChannelBots.tools`, only in a channel's thread, always listed:
+  `tool-search.mjs › CORE_TOOLS`): `channel_poll` (its own poll; it closes by itself once every
+  person of the conversation voted, Colmena says so in the thread and the bot gets the result as a
+  turn of its own, as the person it works for), `channel_close_poll`, `channel_task` (an encargo for
+  a person or bot of the channel, by name, asked by the person it works for) and `channel_followup`
+  («vuelvo mañana a las 9»: a `chat_timed` row of kind `followup`; at that time the conversation
+  goes on). Its reactions (the runtime's `react`, and the 👀 while it looks at a message) show on
+  the channel's message the turn came from (`chatMessage` on the turn's message; `mirrorReactions`
+  → `chat.botReact`).
+- **«Nora está trabajando…»**: a step that starts or stops running sends `chat.working` {channel,
+  thread, bot, on}; `GET /api/chat/channels/:id` carries `working` for a screen that opens late. The
+  screens show it with who is typing, in a pill over the box (`src/chat/Live.jsx › Typing`).
+- **«Quién puede hablarle»** (`bot-access.mjs`, `talkTo` on the bot): everyone, or some people (its
+  maker always). `PUT /api/chat/bots/:id/talk` (its maker or an admin). A refused person gets a line
+  in the thread; creating a chat or room with it, or writing to it, answers 403
+  (`bots-host.mjs › mustTalk`).
+- **The bot's card** (`src/chat/BotCard.jsx`): a click on its face, name or @mention. What it does
+  now (`/api/state › bots[]`: activity, limited, status), who may talk to it (editable), who is
+  responsible, what it thinks with and the plan's windows, a box that writes to its chat. ⏳ beside its
+  name while it waits for the plan to renew.
 - **«/resumen»** (`POST /api/chat/channels/:id/summary`): Atlas (or the first team bot) summarizes
   the thread or the channel's last 80 messages on the asker's AI account, in an incognito
   conversation only theirs; the answer reaches only their screens (`chat.ephemeral`).

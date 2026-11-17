@@ -1,0 +1,89 @@
+/* A bot's card (src/chat/BotCard.jsx). Tokens only; the banner carries the bot's colour. */
+.bc{position:fixed;z-index:60;max-height:calc(100vh - 16px);overflow-y:auto;border:1px solid var(--c-line);border-radius:var(--r-lg);background:var(--c-raised);box-shadow:var(--c-shadow-pop);animation:bc-in .16s ease-out}
+@keyframes bc-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.bc{animation:none}}
+.bc-banner{position:relative;height:84px;overflow:hidden;border-radius:var(--r-lg) var(--r-lg) 0 0}
+.bc-banner .hv-banner{display:block}
+.bc-close{position:absolute;top:8px;right:8px;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:999px;background:rgb(255 255 255 / .78);color:#1b1b1f;cursor:pointer}
+.bc-close:hover{background:#fff}
+.bc-face{position:relative;width:84px;height:84px;margin:-44px 0 0 16px;display:grid;place-items:center;border-radius:var(--r-lg);background:var(--c-raised);box-shadow:0 0 0 4px var(--c-raised)}
+.bc-dot{position:absolute;right:2px;bottom:2px;width:14px;height:14px;border-radius:var(--r-xs);background:var(--c-text-4);box-shadow:0 0 0 3px var(--c-raised)}
+.bc-dot.is-on{background:var(--c-ok, #2f9e44)}
+.bc-body{display:flex;flex-direction:column;gap:10px;padding:8px 16px 16px}
+.bc-name{font:700 var(--t-lead, 20px)/1.2 'Geist',sans-serif;color:var(--c-text)}
+.bc-sub{margin-top:-6px;font-size:var(--t-meta);color:var(--c-text-3)}
+.bc-chip{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:var(--c-chip);font:600 var(--t-meta)/1 'Geist',sans-serif;color:var(--c-text)}
+.bc-now{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--r-md);background:var(--c-chip)}
+.bc-now b{display:block;font:600 var(--t-ui)/1.35 'Geist',sans-serif;color:var(--c-text)}
+.bc-now small{display:block;font-size:var(--t-caption);color:var(--c-text-3)}
+.bc-pulse{flex:none;width:10px;height:10px;margin-top:5px;border-radius:var(--r-xs);background:var(--c-text-4)}
+.bc-pulse.is-on{background:var(--c-accent-ink);animation:bc-pulse 1.4s ease-in-out infinite}
+@keyframes bc-pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.bc-pulse.is-on{animation:none}}
+.bc-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px}
+.bc-label{font:600 var(--t-meta)/1.3 'Geist',sans-serif;color:var(--c-text-2)}
+.bc-link{padding:0;border:0;background:none;color:var(--c-text-2);font:600 var(--t-meta)/1.3 'Geist',sans-serif;cursor:pointer}
+.bc-link:hover{color:var(--c-text)}
+.bc-who{display:flex;align-items:center;gap:8px;margin-top:-4px;font-size:var(--t-ui);color:var(--c-text)}
+.bc-faces{display:inline-flex;gap:2px}
+.bc-edit{display:flex;flex-direction:column;gap:6px;margin-top:-4px}
+.bc-check{display:flex;align-items:center;gap:8px;font-size:var(--t-ui);color:var(--c-text);cursor:pointer}
+.bc-people{list-style:none;margin:0;padding:6px 8px;max-height:160px;overflow-y:auto;border:1px solid var(--c-line);border-radius:var(--r-sm);display:flex;flex-direction:column;gap:6px}
+.bc-actions{display:flex;justify-content:flex-end;gap:6px}
+.bc-facts{display:flex;flex-direction:column;gap:8px;margin:0;padding-top:10px;border-top:1px solid var(--c-line)}
+.bc-facts dt{font-size:var(--t-caption);color:var(--c-text-3)}
+.bc-facts dd{margin:0;font-size:var(--t-ui);color:var(--c-text)}
+.bc-plan{display:flex;flex-direction:column;gap:6px}
+.bc-plan-text{font-size:var(--t-caption);color:var(--c-text-3)}
+.bc-bars{display:flex;gap:4px}
+.bc-bar{flex:1;height:6px;overflow:hidden;border-radius:999px;background:var(--c-chip)}
+.bc-bar>span{display:block;height:100%;transform-origin:left;background:var(--c-text-2)}
+.bc-bar.is-full>span{background:var(--c-error)}
+.bc-limit{margin:-2px 0 0;font:600 var(--t-meta)/1.3 'Geist',sans-serif;color:var(--c-error)}
+.bc-send{display:flex;align-items:center;gap:6px;padding:4px 4px 4px 12px;border:1px solid var(--c-line-strong);border-radius:var(--r-lg);background:var(--c-card)}
+.bc-send:focus-within{border-color:var(--c-focus);box-shadow:0 0 0 3px var(--c-accent-soft)}
+.bc-send input{flex:1;min-width:0;height:34px;border:0;background:transparent;color:var(--c-text);font:400 var(--t-ui)/1 'Geist',sans-serif;outline:none}
+.bc-send button{flex:none;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:var(--r-md);background:var(--c-btn);color:var(--c-btn-text);cursor:pointer}
+.bc-send button:disabled{background:var(--c-chip);color:var(--c-text-4);cursor:default}
+.bc-sent,.bc-note{margin:0;font-size:var(--t-meta);color:var(--c-text-2)}
+.bc-more{align-self:flex-start;font-size:var(--t-meta);color:var(--c-text-3)}
+
+/* Bots in text: an @mention in the bot's own colour (format.jsx). */
+.ch-mention.is-bot{background:color-mix(in srgb, var(--bot-color, var(--c-accent)) 16%, transparent);color:color-mix(in oklab, var(--bot-ink, var(--c-accent-ink)), var(--c-text) 30%)}
+
+/* Who is typing or working, floating over the box (Canal.jsx, Thread.jsx). */
+.ty{position:absolute;left:16px;bottom:calc(100% + 6px);z-index:5;display:inline-flex;align-items:center;gap:8px;max-width:calc(100% - 32px);padding:4px 12px 4px 6px;border:1px solid var(--c-line);border-radius:999px;background:var(--c-raised);box-shadow:var(--c-shadow-lift);font-size:var(--t-meta);color:var(--c-text-2);animation:bc-in .16s ease-out}
+.ty b{color:var(--c-text);font-weight:600}
+.ty-faces{display:inline-flex}
+.ty-faces>*+*{margin-left:-6px}
+.ty-dots{display:inline-flex;gap:3px}
+.ty-dots i{width:4px;height:4px;border-radius:var(--r-xs);background:var(--c-text-3);animation:ty-dot 1.2s ease-in-out infinite}
+.ty-dots i:nth-child(2){animation-delay:.15s}
+.ty-dots i:nth-child(3){animation-delay:.3s}
+@keyframes ty-dot{40%{transform:translateY(-3px);background:var(--c-text)}}
+@media (prefers-reduced-motion:reduce){.ty,.ty-dots i{animation:none}}
+.ty-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* «Visto»: the check on your own messages. */
+.ms-seen{display:inline-flex;vertical-align:-2px;margin-left:6px;color:var(--c-text-4)}
+.ms-seen.is-read{color:var(--c-accent-ink)}
+
+/* The search of one conversation, beside it. */
+.cs{display:flex;flex-direction:column;min-height:0}
+.cs-box{display:flex;align-items:center;gap:8px;margin:12px 16px;padding:0 10px;border:1px solid var(--c-line-strong);border-radius:var(--r-md);background:var(--c-card)}
+.cs-box:focus-within{border-color:var(--c-focus);box-shadow:0 0 0 3px var(--c-accent-soft)}
+.cs-chip{flex:none;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;background:var(--c-chip);font:600 var(--t-caption)/1 'Geist',sans-serif;color:var(--c-text-2)}
+.cs-box input{flex:1;min-width:0;height:36px;border:0;background:transparent;color:var(--c-text);font:400 var(--t-ui)/1 'Geist',sans-serif;outline:none}
+.cs-list{list-style:none;margin:0;padding:0 8px 16px;overflow-y:auto}
+.cs-item{display:block;width:100%;padding:8px;border:0;border-radius:var(--r-sm);background:transparent;text-align:left;cursor:pointer;color:var(--c-text)}
+.cs-item:hover,.cs-item:focus-visible{background:var(--c-chip)}
+.cs-head{display:flex;align-items:center;gap:6px;font-size:var(--t-caption);color:var(--c-text-3)}
+.cs-head b{color:var(--c-text);font-size:var(--t-meta)}
+.cs-text{margin-top:2px;font-size:var(--t-ui);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cs-empty{padding:16px;font-size:var(--t-meta);color:var(--c-text-3)}
+
+/* Hive touches: the comb behind a channel's opening and the empty lists. */
+.cv-intro{position:relative;overflow:hidden}
+.cv-intro .hv-field{position:absolute;top:-10px;right:-10px;pointer-events:none}
+.cv-intro>*:not(.hv-field){position:relative}
+.cs-box input:focus,.cs-box input:focus-visible,.bc-send input:focus,.bc-send input:focus-visible{outline:none;box-shadow:none}

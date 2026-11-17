@@ -3,7 +3,7 @@
 // unread message with a «Nuevo» line, or around a message (?m=), and keeps itself current over
 // the live socket. ?hilo= opens a thread beside it. Reading the end marks the channel as read.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowDown, Bell, BellSlash, Check, Ellipsis, Hash, LockSimple, Pin, Robot, UserPlus, UsersThree } from "../components/Icon.js";
+import { ArrowDown, Bell, BellSlash, Check, Ellipsis, Hash, LockSimple, Pin, Robot, Search, UserPlus, UsersThree } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
 import { navigate } from "../lib/router.jsx";
 import { chat } from "../chat/api.js";
@@ -13,7 +13,9 @@ import { PersonPanel } from "../chat/PersonProfile.jsx";
 import { Composer } from "../chat/Composer.jsx";
 import { ChannelInfo, PinsDialog, TopicDialog } from "../chat/ChannelDialogs.jsx";
 import { Ephemeral } from "../chat/Plus.jsx";
-import { channelTitle, chatState, dropChannel, loadChat, mergeGhosts, nameOf, onChatEvent, setOpenChannel, upsertChannel, useChat } from "../chat/store.js";
+import { ChannelSearch, Typing } from "../chat/Live.jsx";
+import { HexField } from "../components/Hive.jsx";
+import { channelTitle, chatState, dropChannel, loadChat, mergeGhosts, nameOf, onChatEvent, setOpenChannel, setWorking, upsertChannel, useChat } from "../chat/store.js";
 import { ChatPage, Empty, dayLabel } from "../chat/ui.jsx";
 import { cachedPage, forgetPage, keepPage } from "../chat/pages.js";
 import MessagesSkeleton from "../components/v2/chat/MessagesSkeleton.jsx";
@@ -34,6 +36,8 @@ export default function Canal({ params, query }) {
   const [atBottom, setAtBottom] = useState(true);
   const [dialog, setDialog] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [searching, setSearching] = useState(false); // the search of this conversation, beside it
+  useEffect(() => { setSearching(false); }, [id]);
   const list = useRef(null);
   const fetching = useRef(false);
   const stick = useRef(true);
@@ -80,6 +84,9 @@ export default function Canal({ params, query }) {
         const view = await viewing;
         if (!live) return;
         setInfo(view);
+        // How far the others read (the double check) and the bots at work in it right now.
+        if (view.reads) upsertChannel({ id, reads: view.reads });
+        for (const w of view.working || []) setWorking(id, w.thread, w.bot, true);
         const unreadFrom = unreadOf(view);
         const page = early && unreadFrom === guess ? await early : await load(modeFor(unreadFrom));
         if (!live) return;
@@ -238,10 +245,10 @@ export default function Canal({ params, query }) {
   }
   const icon = !ch ? <Hash size={19} /> : ch.kind === "private" ? <LockSimple size={19} aria-label="Privado" /> : ch.kind === "public" ? <Hash size={19} /> : ch.kind === "group" ? <UsersThree size={19} /> : null;
   const sub = ch ? (ch.archived ? "Archivado · solo lectura" : isChannel ? ch.topic || ch.description || "" : ch.kind === "dm" ? s.people.get((ch.people || []).find((p) => p !== me))?.title || "" : (ch.people || []).length + " personas") : "";
-  const typingHere = [...(s.typing.get(id) || new Map())].filter(([, t]) => !t.thread && t.until > Date.now()).map(([p]) => nameOf(p, s));
   const actions = ch ? (
     <>
       {isChannel ? <button type="button" className="ch-btn cv-members r-hide-phone" onClick={() => setDialog("info")} aria-label={`${info?.memberCount ?? ch.memberCount ?? 0} personas en el canal`}><UsersThree size={16} />{info?.memberCount ?? ch.memberCount ?? ""}</button> : null}
+      <button type="button" className="ch-iconbtn" onClick={() => setSearching((x) => !x)} aria-pressed={searching} aria-label={"Buscar en " + (isChannel ? "#" + title : "esta conversación")} title={"Buscar en " + (isChannel ? "#" + title : "esta conversación")}><Search size={18} /></button>
       {member ? <MenuButton label="Avisos" menuLabel="Avisos" items={bell} className="ch-iconbtn" placement="bottom-end">{myCh?.muted ? <BellSlash size={18} /> : <Bell size={18} />}</MenuButton> : null}
       <MenuButton label="Más opciones del canal" menuLabel={isChannel ? "#" + title : title} items={more} className="ch-iconbtn" placement="bottom-end"><Ellipsis size={18} /></MenuButton>
     </>
@@ -275,13 +282,13 @@ export default function Canal({ params, query }) {
           </div>
           {unreadAbove ? <button type="button" className="cv-jump is-top" onClick={() => list.current?.querySelector(".cv-new")?.scrollIntoView({ block: "center" })}>Ir a lo no leído</button> : null}
           {(!atBottom || edges.after) && !loading ? <button type="button" className="cv-jump" onClick={toEnd}><ArrowDown size={14} /> Ir al final</button> : null}
-          <p className="cv-typing" aria-live="polite">{typingHere.length ? typingHere.join(", ") + (typingHere.length === 1 ? " está escribiendo…" : " están escribiendo…") : ""}</p>
           {notice ? <p className="cv-notice" role="status"><span>{notice}</span><button type="button" className="ch-btn" onClick={() => setNotice(null)}>Vale</button></p> : null}
           {ch?.archived ? <div className="cv-banner">Este canal está archivado: se puede leer, pero ya no admite mensajes.</div>
             : !member && ch ? (
               <div className="cv-banner"><span>{"Estás viendo #" + title + "."}</span><button type="button" className="ch-btn is-primary" onClick={join}>Unirme al canal</button></div>
             ) : ch ? (
-              <div className="cv-composer r-composer">
+              <div className="cv-composer r-composer" style={{ position: "relative" }}>
+                <Typing channel={id} />
                 <Composer key={id} channel={id} initialDraft={myCh?.draft || ""} placeholder={isChannel ? "Escribe en #" + title : "Escribe a " + title}
                   onPending={(m) => { stick.current = true; setMessages((all) => (edges.after ? all : [...all, m])); }}
                   onSent={(m, clientId, notIn) => {
@@ -293,7 +300,8 @@ export default function Canal({ params, query }) {
             ) : null}
         </div>
         {personId ? <PersonPanel key={personId} personId={personId} onClose={closeThread} /> : null}
-        {threadId ? <Thread key={threadId} channel={id} rootId={threadId} canPost={canPost} admin={admin} onClose={closeThread} /> : null}
+        {searching && !personId ? <ChannelSearch key={id} channel={id} onClose={() => setSearching(false)} onOpen={(m) => { if (m.threadId && !m.broadcast) setSearching(false); navigate(`/canal/${id}` + (m.threadId && !m.broadcast ? `?hilo=${m.threadId}` : `?m=${m.id}`)); }} /> : null}
+        {threadId && !searching ? <Thread key={threadId} channel={id} rootId={threadId} canPost={canPost} admin={admin} onClose={closeThread} /> : null}
       </div>
       {dialog === "pins" ? <PinsDialog channel={id} onClose={() => setDialog(null)} onOpen={(m) => { setDialog(null); navigate(`/canal/${id}?m=${m.id}`); }} /> : null}
       {dialog === "info" ? <ChannelInfo channel={id} info={info} onClose={() => setDialog(null)} onChanged={(v) => setInfo(v)} /> : null}
@@ -315,6 +323,7 @@ function ChannelIntro({ ch, title, s }) {
   }
   return (
     <div className="cv-intro">
+      <HexField width={300} height={130} r={13} />
       <h2 className="cv-intro-title">{(ch.kind === "private" ? "" : "#") + title}</h2>
       <p className="cv-intro-text">{ch.description || (ch.kind === "private" ? "Un canal privado: solo lo ven sus miembros." : "El principio de #" + title + ".")}</p>
       {ch.kind === "private" ? <p className="cv-intro-text"><LockSimple size={14} /> Privado</p> : null}

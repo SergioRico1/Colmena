@@ -8,6 +8,9 @@ import { navigate } from "../lib/router.jsx";
 import { chat } from "./api.js";
 import { upsertChannel, useChat } from "./store.js";
 import { Avatar, Empty, ROLE_LABEL, localTimeOf, whenOf } from "./ui.jsx";
+import { PixelBanner } from "../components/Hive.jsx";
+import { familyInk } from "../lib/personColor.js";
+import { personTint } from "../lib/identity.js";
 import "./people.css";
 
 export const cityOf = (tz) => (tz && tz !== "UTC" ? tz.split("/").pop().replace(/_/g, " ") : tz || "");
@@ -49,8 +52,10 @@ export function Profile({ p, you, busy, error, onMessage, onEdit, size = 72 }) {
   const state = p.deactivated ? "Desactivada" : presence === "active" ? "Conectada" : presence === "away" ? "Ausente" : "Desconectada";
   return (
     <div className="pp-profile">
+      {/* Colmena's pixels settling into the comb, in the person's own colour (components/Hive.jsx). */}
+      <PixelBanner className="pp-banner" color={familyInk(p.color || personTint(p.name))} seed={p.id} height={76} />
       <div className="pp-profile-top">
-        <Avatar id={p.id} size={size} />
+        <span className="pp-face"><Avatar id={p.id} size={size} /></span>
         <h3 className="pp-profile-name">{p.name}{you ? <span className="pp-you"> (tú)</span> : null}</h3>
         {p.title ? <p className="pp-profile-title">{p.title}</p> : null}
         {p.status ? <Status status={p.status} /> : null}

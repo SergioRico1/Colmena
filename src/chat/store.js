@@ -9,7 +9,7 @@ import { isCloud, sendLive } from "../lib/cloud.js";
 
 const listeners = new Set();
 const eventListeners = new Set();
-let state = { ready: false, error: null, me: null, people: new Map(), bots: new Map(), ghosts: new Map(), channels: new Map(), presence: new Map(), typing: new Map(), settings: {}, push: {}, workspace: null, saved: new Set(), ephemeral: new Map() };
+let state = { ready: false, error: null, me: null, people: new Map(), bots: new Map(), ghosts: new Map(), channels: new Map(), presence: new Map(), typing: new Map(), settings: {}, push: {}, workspace: null, saved: new Set(), ephemeral: new Map(), working: new Map() };
 let loading = null;
 let openChannel = null;
 let away = false;
@@ -32,7 +32,7 @@ export function loadChat({ force = false } = {}) {
       ready: true, error: null, me: b.me, workspace: b.workspace, settings: b.settings || {}, push: b.push || {},
       people: new Map(b.people.map((p) => [p.id, p])),
       // The company's bots (Phase 3): named in text as <@bot:<id>>, they answer as author "bot:<id>".
-      bots: new Map((b.bots || []).map((x) => ["bot:" + x.id, { ...x, id: "bot:" + x.id, botId: x.id, bot: true }])),
+      bots: botMap(b.bots),
       channels: new Map(b.channels.map((c) => [c.id, c])),
       presence: new Map(b.people.filter((p) => p.presence !== "offline").map((p) => [p.id, p.presence])),
       // Your messages saved for later (chat-plus.mjs).
@@ -118,6 +118,12 @@ function onFrame(e) {
       if (ev.view && state.channels.has(ev.channel)) upsertChannel(Object.fromEntries(Object.entries(ev.view).filter(([k]) => !["readSeq", "unread", "mentions", "draft", "notify", "muted", "member"].includes(k))));
       break;
     case "chat.people": set({ people: new Map(ev.people.map((p) => [p.id, p])) }); break;
+    // A bot's card changed (who may talk to it): the list the screens and «@» read.
+    case "chat.bots": set({ bots: botMap(ev.bots) }); break;
+    // «Nora está trabajando…» in a thread of a channel (server/cloud/channel-bots.mjs › onStep).
+    case "chat.working": setWorking(ev.channel, ev.thread, ev.bot, ev.on); break;
+    // How far someone else read (the double check «Visto»).
+    case "chat.seen": { const ch = state.channels.get(ev.channel); if (ch) upsertChannel({ id: ev.channel, reads: { ...(ch.reads || {}), [ev.person]: ev.readSeq } }); break; }
     case "chat.profile": { const p = state.people.get(ev.person); if (p) set({ people: new Map(state.people).set(ev.person, { ...p, ...ev.profile }) }); break; }
     case "chat.presence": { const presence = new Map(state.presence); if (ev.presence === "offline") presence.delete(ev.person); else presence.set(ev.person, ev.presence); set({ presence }); break; }
     case "chat.typing": {
@@ -185,3 +191,22 @@ export function dropEphemeral(channel, id) {
 }
 /** Saved for later, as you click (the server's frame confirms it). */
 export function markSaved(id, on) { const saved = new Set(state.saved); if (on) saved.add(id); else saved.delete(id); set({ saved }); }
+
+/** The company's bots by "bot:<id>" (Phase 3): named in text as <@bot:<id>>, they answer as that author. */
+function botMap(list) {
+  return new Map((list || []).map((x) => ["bot:" + x.id, { ...x, id: "bot:" + x.id, botId: x.id, bot: true }]));
+}
+/** Bots at work per channel: Map(channel → Map("thread|bot" → {thread, bot, since})). */
+export function setWorking(channel, thread, bot, on) {
+  const working = new Map(state.working || []);
+  const here = new Map(working.get(channel) || []);
+  const key = (thread || "") + "|" + bot;
+  if (on) here.set(key, { thread: thread || null, bot, since: Date.now() }); else here.delete(key);
+  working.set(channel, here);
+  set({ working });
+}
+/** The bots working in a channel (a thread's, or all of it), newest first. */
+export function workingIn(s, channel, thread = undefined) {
+  // A step that never said it stopped (a lost frame) stops counting after 20 minutes.
+  return [...(s.working?.get(channel)?.values() || [])].filter((w) => Date.now() - w.since < 20 * 60000 && (thread === undefined || w.thread === thread));
+}

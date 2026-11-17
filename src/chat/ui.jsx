@@ -35,7 +35,8 @@ export function Avatar({ id, size = 32, presence = true }) {
   const s = useChat();
   const p = personOf(id, s) || { name: "?" };
   // A bot of the company (Phase 3): its pixel character, from its id and name.
-  if (p.bot && p.botId) return <BotFace bot={{ id: p.botId, name: p.name }} size={size} decorative />;
+  // Its own colour, shape and portrait (the company's list carries them: channel-bots.mjs › list).
+  if (p.bot && p.botId) return <BotFace bot={{ id: p.botId, name: p.name, color: p.color || null, shape: p.shape || null, role: p.role || null, portrait: p.portrait || null }} size={size} decorative />;
   const online = presence && !p.ghost ? (s.presence.get(p.id) === "active" ? "online" : s.presence.get(p.id) === "away" ? "away" : null) : null;
   return <PersonAvatar person={{ name: p.name, color: p.color || null }} photo={p.ghost ? null : photoUrl(p)} size={size} presence={online === "online" ? "online" : online ? "offline" : null} ring="var(--c-app)" />;
 }

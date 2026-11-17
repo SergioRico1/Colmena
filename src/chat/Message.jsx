@@ -3,7 +3,7 @@
 // in a thread, edit, pin, copy link, mark unread from here, delete). The actions show on hover, on
 // keyboard focus and, on a touch screen, after a tap.
 import { memo, useEffect, useState } from "react";
-import { Bookmark, ChatCircleText, Copy, Download, Ellipsis, FileText, ListChecks, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
+import { Bookmark, Check, Checks, ChatCircleText, Copy, Download, Ellipsis, FileText, ListChecks, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
 import { navigate } from "../lib/router.jsx";
 import { chat, fileUrl } from "./api.js";
@@ -14,6 +14,8 @@ import { MessageText } from "./format.jsx";
 import Markdown from "../components/room/Markdown.jsx";
 import { Poll, RefLink, TaskCards, TaskDialog, remindItems, saveItem } from "./Plus.jsx";
 import { nameOf, personOf, useChat } from "./store.js";
+import { useStore } from "../lib/store.jsx";
+import BotCard from "./BotCard.jsx";
 import { Avatar, sizeOf, timeOf, whenOf } from "./ui.jsx";
 import { Composer } from "./Composer.jsx";
 
@@ -86,6 +88,7 @@ function Preview({ p }) {
  */
 function Message({ m, compact = false, inThread = false, onThread = null, onUnread = null, canPost = true, admin = false, highlight = false }) {
   const s = useChat();
+  const store = useStore();
   const me = s.me?.id;
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState(null);
@@ -116,17 +119,30 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
     });
   };
   // As in Slack, a name, an avatar or an @mention opens that person's profile beside the
-  // conversation (?persona=, src/chat/PersonProfile.jsx); a bot's opens its page in «Equipo».
+  // conversation (?persona=, src/chat/PersonProfile.jsx); a bot of the company opens its card
+  // right there (BotCard.jsx).
+  const [card, setCard] = useState(null); // {id, anchor}
+  const companyBot = (id) => String(id || "").startsWith("bot:") && id !== "bot:colmena" && s.bots?.has(id);
   const personTarget = (id) => {
     const p = personOf(id, s);
-    if (p?.bot) return (p.botId || String(id).startsWith("bot:")) ? "/equipo/" + encodeURIComponent(p.botId || String(id).slice(4)) : null;
+    if (companyBot(id)) return "card";
+    if (p?.bot) return null;
     return p && !p.ghost && s.people.has(p.id) ? "/canal/" + m.channel + "?persona=" + encodeURIComponent(p.id) : null;
   };
-  const openPerson = (id) => { const to = personTarget(id); if (to) navigate(to); };
+  const openPerson = (id, anchor = null) => {
+    const to = personTarget(id);
+    if (to === "card") setCard({ id, anchor });
+    else if (to) navigate(to);
+  };
   const onMention = (e) => {
     const el = e.target.closest?.("[data-person]");
-    if (el && personTarget(el.dataset.person)) { e.preventDefault(); openPerson(el.dataset.person); }
+    if (el && personTarget(el.dataset.person)) { e.preventDefault(); openPerson(el.dataset.person, el); }
   };
+  // ⏳ beside a bot's name while it waits for its plan to renew (/api/state › bots[].limited).
+  const liveBot = isBot && companyBot(m.author) ? (store.bots || []).find((b) => b.id === String(m.author).slice(4)) : null;
+  // «Visto» (the double check) on your own messages of the channel: who of the others read this far.
+  const ch = s.channels.get(m.channel);
+  const seenBy = m.author === me && !m.pending && (!m.threadId || m.broadcast) && ch?.reads ? Object.entries(ch.reads).filter(([p, seq]) => seq >= m.seq && s.people.has(p)).map(([p]) => p) : null;
   const canOpen = !!personTarget(m.author);
   if (m.deleted) {
     return (
@@ -155,15 +171,17 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove("is-touched"); }}>
       <div className="ms-gutter">
         {compact ? <time className="ms-gutter-time" dateTime={new Date(m.at).toISOString()}>{timeOf(m.at)}</time>
-          : canOpen ? <button type="button" className="ms-person ms-person-face" onClick={() => openPerson(m.author)} aria-label={"Ver el perfil de " + name} tabIndex={-1}><Avatar id={m.author} size={36} /></button>
+          : canOpen ? <button type="button" className="ms-person ms-person-face" onClick={(e) => openPerson(m.author, e.currentTarget)} aria-label={(isBot ? "Ver la ficha de " : "Ver el perfil de ") + name} tabIndex={-1}><Avatar id={m.author} size={36} /></button>
           : <Avatar id={m.author} size={36} />}
       </div>
       <div className="ms-main">
         {compact ? null : (
           <div className="ms-head">
-            {canOpen ? <button type="button" className="ms-name ms-person" onClick={() => openPerson(m.author)} title={"Ver el perfil de " + name}>{name}</button> : <span className="ms-name">{name}</span>}
+            {canOpen ? <button type="button" className="ms-name ms-person" onClick={(e) => openPerson(m.author, e.currentTarget)} title={(isBot ? "Ver la ficha de " : "Ver el perfil de ") + name}>{name}</button> : <span className="ms-name">{name}</span>}
+            {liveBot?.limited ? <span title="Esperando a que se renueve el plan" aria-label="Esperando al plan">⏳</span> : null}
             {isBot ? <span className="ch-chip">Bot</span> : m.botName ? <span className="ch-chip">Integración</span> : author?.ghost && !m.botName ? <span className="ch-chip" title="Aún no ha entrado en Colmena">Importado</span> : null}
             <time className="ms-time" dateTime={new Date(m.at).toISOString()} title={new Date(m.at).toLocaleString("es-ES")}>{whenOf(m.at)}</time>
+            {!compact && seenBy ? <span className={"ms-seen" + (seenBy.length ? " is-read" : "")} title={seenBy.length ? "Visto por " + seenBy.map((p) => nameOf(p, s)).join(", ") : "Enviado"} aria-label={seenBy.length ? "Visto por " + seenBy.length : "Enviado"}>{seenBy.length ? <Checks size={15} weight="bold" /> : <Check size={15} weight="bold" />}</span> : null}
             {m.pinned ? <span className="ms-pinned"><Pin size={12} /> Fijado</span> : null}
             {saved ? <span className="ms-pinned"><Bookmark size={12} weight="fill" /> Guardado</span> : null}
           </div>
@@ -175,6 +193,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
           <div className="ms-text" data-message-text="" onClick={onMention}>
             {/* A bot writes Markdown (server/cloud/channel-bots.mjs): headings, lists, tables, code. */}
             {m.text ? (m.format === "md" ? <Markdown text={m.text} size={15} /> : <MessageText text={m.text} />) : null}
+            {compact && seenBy ? <span className={"ms-seen" + (seenBy.length ? " is-read" : "")} title={seenBy.length ? "Visto por " + seenBy.map((p) => nameOf(p, s)).join(", ") : "Enviado"} aria-label={seenBy.length ? "Visto por " + seenBy.length : "Enviado"}>{seenBy.length ? <Checks size={15} weight="bold" /> : <Check size={15} weight="bold" />}</span> : null}
             {m.editedAt ? <span className="ms-edited" title={"Editado " + whenOf(m.editedAt)}> (editado)</span> : null}
           </div>
         )}
@@ -196,6 +215,7 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
           <MenuButton label="Más acciones" menuLabel="Mensaje" items={items} placement="bottom-end" className="ms-tool"><Ellipsis size={17} /></MenuButton>
         </div>
       )}
+      {card ? <BotCard id={card.id} anchor={card.anchor} onClose={() => setCard(null)} /> : null}
       {taskFor ? <TaskDialog channel={m.channel} message={m} onClose={() => setTaskFor(false)} onDone={setInfo} /> : null}
       {picker ? <EmojiPicker anchor={picker} title="Añadir una reacción" onPick={(e) => { react(e, true); setPicker(null); }} onClose={() => setPicker(null)} /> : null}
     </div>

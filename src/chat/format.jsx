@@ -5,6 +5,7 @@
 import { Fragment } from "react";
 import { channelTitle, chatState, nameOf } from "./store.js";
 import { onlyEmoji, withEmoji } from "./emoji/index.jsx";
+import { familyInk } from "../lib/personColor.js";
 
 const decode = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
 const safeHref = (url) => (/^(https?:\/\/|mailto:)/i.test(url) ? url : null);
@@ -49,7 +50,12 @@ function inline(text, key, me, size) {
     if (m.index > at) out.push(...emphasis(text.slice(at, m.index), key + "e" + i, size));
     const k = key + "t" + i++;
     if (m[1] != null) out.push(<code key={k} className="ch-code">{decode(m[1])}</code>);
-    else if (m[2]) out.push(<span key={k} className={"ch-mention" + (m[2] === me ? " is-me" : "")} data-person={m[2]}>{"@" + nameOf(m[2])}</span>);
+    else if (m[2]) {
+      // A bot is named in its own colour (its ink readable on the tint: lib/personColor.js).
+      const bot = m[2].startsWith("bot:") ? s.bots?.get(m[2]) : null;
+      const tone = bot?.color ? { "--bot-color": bot.color, "--bot-ink": familyInk(bot.color) } : undefined;
+      out.push(<span key={k} className={"ch-mention" + (m[2] === me ? " is-me" : "") + (bot ? " is-bot" : "")} data-person={m[2]} style={tone}>{"@" + nameOf(m[2])}</span>);
+    }
     else if (m[3]) {
       const ch = s.channels.get(m[3]);
       out.push(<a key={k} className="ch-mention" href={"/canal/" + m[3]}>{"#" + (ch ? channelTitle(ch) : m[4] || "canal")}</a>);
