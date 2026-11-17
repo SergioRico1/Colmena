@@ -44,9 +44,10 @@ export async function fileMeta(id) {
 
 // The bytes of each file, read once (a few at a time are kept).
 const bytes = new Map();
-export function readBytes(id) {
+/** `src`: where to read it (a desktop room's file: /api/peers/files/:id); a channel's file by default. */
+export function readBytes(id, src = null) {
   if (!bytes.has(id)) {
-    const p = fetch(fileUrl(id, { download: true }), { credentials: "same-origin" }).then((r) => {
+    const p = fetch(src || fileUrl(id, { download: true }), { credentials: "same-origin" }).then((r) => {
       if (!r.ok) throw new Error("No se pudo leer el archivo.");
       return r.arrayBuffer();
     });

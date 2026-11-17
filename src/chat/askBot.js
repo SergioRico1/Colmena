@@ -7,7 +7,7 @@ const EVENT = "colmena:ask-bot";
 
 /** What a dragged message carries: enough to ask about it and to quote it. */
 export function dragMessage(e, m) {
-  const data = JSON.stringify({ id: m.id, channel: m.channel, threadId: m.threadId || null, author: m.author, text: String(m.text || "").slice(0, 600), files: (m.files || []).map((f) => f.name).slice(0, 5) });
+  const data = JSON.stringify({ id: m.id, channel: m.channel || null, room: m.room || null, threadId: m.threadId || null, author: m.author, text: String(m.text || "").slice(0, 600), files: (m.files || []).map((f) => f.name).slice(0, 5) });
   e.dataTransfer.setData(MESSAGE_MIME, data);
   e.dataTransfer.setData("text/plain", String(m.text || ""));
   e.dataTransfer.effectAllowed = "copy";
@@ -17,7 +17,8 @@ export function dragMessage(e, m) {
 export function askBotAbout(botId, message) {
   let m = message;
   if (typeof m === "string") { try { m = JSON.parse(m); } catch { return; } }
-  if (!m?.id || !m?.channel) return;
+  // A channel's message (hosted Colmena) or a desktop room's (room/RoomLive.jsx › AskBotHere).
+  if (!m?.id) return;
   window.dispatchEvent(new CustomEvent(EVENT, { detail: { botId: botId ? (String(botId).startsWith("bot:") ? botId : "bot:" + botId) : null, message: m } }));
 }
 

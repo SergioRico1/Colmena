@@ -1,4 +1,5 @@
 import { stepOf } from "../../lib/type.js";
+import Emphasis from "./Emphasis.jsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PillText } from "../v2/MentionPill.jsx";
 import { createPortal } from "react-dom";
@@ -102,7 +103,7 @@ export function UserText({ text, size = 15, messageId = null }) {
         if (!body) return null;
         return b.quoted
           ? <blockquote key={i} style={{ margin: 0, padding: "2px 0 2px 12px", borderLeft: "3px solid var(--c-line-strong)", color: "var(--c-text-2)", fontSize: stepOf(size - 1) + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} />} /></blockquote>
-          : <p key={i} style={{ margin: 0, fontSize: size + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} plain={(x) => <PillText text={x} />} />} /></p>;
+          : <p key={i} style={{ margin: 0, fontSize: size + "px", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><SecretText text={body} messageId={messageId} plain={(t) => <NoteText text={t} plain={(x) => <Emphasis text={x} render={(y) => <PillText text={y} />} />} />} /></p>;
       })}
     </div>
   );

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { THUMB_MAX } from "../../../chat/files.js";
+import "../../../chat/files.css";
 import { Download, File, FileImage, FileSpreadsheet, FileText, Lock, Presentation, RotateCw, X } from "../../Icon.js";
 import { get, post } from "../../../lib/api.js";
 import { useDialogFocus } from "../../../lib/useDialogFocus.js";
@@ -12,6 +14,9 @@ export const fileUrl = (id, download = false) => `/api/peers/files/${enc(id)}${d
 const ICON = { image: FileImage, pdf: FileText, doc: FileText, sheet: FileSpreadsheet, deck: Presentation, text: FileText };
 const KIND = { image: "Imagen", pdf: "PDF", doc: "Word", sheet: "Excel", deck: "PowerPoint", text: "Texto" };
 const TINT = { pdf: C.errorSoft, doc: "var(--c-kind-doc-bg)", sheet: C.okSoft, deck: "var(--c-kind-ppt-bg)", image: "var(--c-kind-img-bg)", text: C.chip };
+// A picture of the first page, slide or rows (chat/FileViewer.jsx, read here when wanted).
+const Thumb = lazy(() => import("../../../chat/FileViewer.jsx").then((m) => ({ default: m.Thumb })));
+const THUMB_KINDS = new Set(["pdf", "doc", "sheet", "deck"]);
 export const sizeText = (n) => (n >= 1048576 ? (n / 1048576).toFixed(n >= 10485760 ? 0 : 1).replace(".", ",") + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
 const pill = { display: "inline-flex", alignItems: "center", gap: "6px", height: "32px", padding: "0 12px", border: 0, borderRadius: "var(--r-sm)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, textDecoration: "none" };
 
@@ -25,6 +30,11 @@ export function FileCard({ file, onOpen, onChanged }) {
       {ready && file.kind === "image" ? (
         <button type="button" onClick={() => onOpen(file)} aria-label={"Ver " + file.name} style={{ padding: 0, border: 0, borderRadius: "var(--r-lg)", overflow: "hidden", cursor: "zoom-in", background: "var(--c-sunken)", lineHeight: 0 }}>
           <img src={fileUrl(file.id)} alt="" style={{ width: "100%", maxHeight: "280px", objectFit: "cover" }} />
+        </button>
+      ) : null}
+      {ready && THUMB_KINDS.has(file.kind) && (file.size || 0) <= THUMB_MAX ? (
+        <button type="button" className="fc-thumb" onClick={() => onOpen(file)} aria-label={"Ver " + file.name} tabIndex={-1} style={{ borderRadius: "var(--r-md)", border: "1px solid var(--c-line)" }}>
+          <Suspense fallback={<div className="fv-thumb is-loading" />}><Thumb file={{ id: "peer:" + file.id, name: file.name, size: file.size, src: fileUrl(file.id, true) }} /></Suspense>
         </button>
       ) : null}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "2px 4px 0" }}>

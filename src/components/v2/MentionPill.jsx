@@ -2,12 +2,14 @@ import { forwardRef } from "react";
 import BotFace from "../BotFace.jsx";
 import { useStore } from "../../lib/store.jsx";
 import { withEmoji } from "../../chat/emoji/index.jsx";
+import { familyInk } from "../../lib/personColor.js";
 
-// «@Vera» as a pill (Colmena 4: design/v4 › .mention): the bot's own small face and its name in
-// the accent ink on its soft tint, the same in a message and while you write it, in both themes.
-// Bots never show letters (BotPresence rule).
+// «@Vera» as a pill (Colmena 4: design/v4 › .mention): the bot's own small face and its name on a
+// soft tint of its own colour, in an ink of that colour readable in both themes (the accent when
+// the bot has none), the same in a message and while you write it. Bots never show letters.
 
-const tint = () => "var(--c-accent-soft)";
+const tint = (color) => (color ? `color-mix(in srgb, ${color} 16%, transparent)` : "var(--c-accent-soft)");
+export const mentionInk = (color) => (color ? `color-mix(in oklab, ${familyInk(color)}, var(--c-text) 30%)` : "var(--c-accent-ink)");
 
 function Shape({ bot, size }) {
   return <BotFace bot={bot} size={parseFloat(size) || 14} decorative />;
@@ -16,7 +18,7 @@ function Shape({ bot, size }) {
 /** In a message: a real pill (its padding may take room). */
 export function MentionPill({ bot, name }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", verticalAlign: "baseline", padding: "0 6px 0 3px", borderRadius: "var(--r-xs)", background: tint(bot?.color), color: "var(--c-accent-ink)", fontWeight: 500, lineHeight: "1.45", whiteSpace: "nowrap" }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", verticalAlign: "baseline", padding: "0 6px 0 3px", borderRadius: "var(--r-xs)", background: tint(bot?.color), color: mentionInk(bot?.color), fontWeight: 500, lineHeight: "1.45", whiteSpace: "nowrap" }}>
       <Shape bot={bot} size="0.85em" />
       {name || bot?.name}
     </span>
@@ -51,7 +53,7 @@ export const MentionMirror = forwardRef(function MentionMirror({ value, bots, st
   found.forEach((f, i) => {
     if (f.start > at) parts.push(value.slice(at, f.start));
     parts.push(
-      <span key={i} style={{ position: "relative", borderRadius: "var(--r-pill)", background: tint(f.bot.color), boxShadow: `0 0 0 3px ${tint(f.bot.color)}`, color: "var(--c-accent-ink)" }}>
+      <span key={i} style={{ position: "relative", borderRadius: "var(--r-pill)", background: tint(f.bot.color), boxShadow: `0 0 0 3px ${tint(f.bot.color)}`, color: mentionInk(f.bot.color) }}>
         <span style={{ color: "transparent" }}>{"@"}</span>
         <span aria-hidden="true" style={{ position: "absolute", left: "0.05em", top: "50%", transform: "translateY(-50%)", display: "flex" }}><Shape bot={f.bot} size="0.8em" /></span>
         {value.slice(f.start + 1, f.end)}

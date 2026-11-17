@@ -1,4 +1,5 @@
 import BotFace from "../../BotFace.jsx";
+import { EmptyArt } from "../../Hive.jsx";
 import { AlarmClock, Archive, BellRing, Ellipsis, FileDown, Hash, PencilLine, Pin, PinOff, Plus, Search } from "../../Icon.js";
 import { MenuButton } from "../../Menu.js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -196,7 +197,8 @@ export default function ChatsHome() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
         <section aria-label="Conversaciones" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "18px" }}>
           {ready && !grouped.length ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "22px 24px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "6px", padding: "22px 24px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
+              <EmptyArt seed={tab + q} />
               <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{q.trim() ? "Ningún chat coincide" : tab === "sinleer" ? "Lo tienes todo leído" : "Aún no hay chats aquí"}</strong>
               <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{q.trim() ? "Prueba con otro nombre o con una palabra del mensaje." : "Empieza a hablar con un bot, crea una sala o escribe a una persona."}</span>
             </div>

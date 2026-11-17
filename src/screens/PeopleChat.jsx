@@ -1,4 +1,6 @@
 import Select from "../components/Select.jsx";
+import { TypingPill } from "../components/room/RoomLive.jsx";
+import { EmptyArt } from "../components/Hive.jsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Lock, LogOut, Search } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
@@ -168,7 +170,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
               {chat.more ? <button type="button" onClick={chat.older} style={{ alignSelf: "center", height: "32px", padding: "0 14px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-raised)", color: "var(--c-text)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600 }}>{"Ver mensajes anteriores"}</button> : null}
               {!chat.loading && !chat.messages.length ? (
                 <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", textAlign: "center", animation: "fade .4s ease-out" }}>
-                  {share ? <PeoplePile people={share.members} size={56} /> : null}
+                  {share ? <PeoplePile people={share.members} size={56} /> : <EmptyArt seed={id} />}
                   <strong style={{ font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em" }}>{dm && other?.status === "pending" ? "Invitación aceptada" : "Aún no os habéis escrito"}</strong>
                   <span style={{ fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{dm && other?.status === "pending" ? `En cuanto ${other.name.split(" ")[0]} abra Colmena quedaréis conectados. Lo que escribas ahora le llegará entonces.` : "Cada mensaje sale cerrado con llave desde este ordenador y solo lo abren los de quienes estáis aquí."}</span>
                 </div>
@@ -189,22 +191,11 @@ export default function PeopleChat({ params = {}, query = {} }) {
             </div>
           </div>
           <div className="r-composer" style={{ flex: "none", width: "100%", maxWidth: "1040px", padding: "0 24px 18px", boxSizing: "border-box" }}>
-            <p style={{ margin: "0 0 8px 18px", minHeight: "18px", display: "flex", gap: "16px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
-              {chat.typing.length ? (
-                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ display: "flex", gap: "3px" }}>{[0, 0.15, 0.3].map((d) => <span key={d} style={{ width: "5px", height: "5px", borderRadius: "var(--r-circle)", background: "var(--c-text-3)", animation: `dots 1.2s ${d}s infinite` }} />)}</span>
-                  {names(chat.typing.map((n) => n.split(" ")[0])) + (chat.typing.length > 1 ? " están escribiendo" : " está escribiendo")}
-                </span>
-              ) : null}
-              {chat.thinking.length ? (
-                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "var(--c-text-4)", animation: "breathe 1.4s ease-in-out infinite" }} />
-                  {names(chat.thinking) + (chat.thinking.length > 1 ? " están pensando" : " está pensando")}
-                </span>
-              ) : null}
-              {sending.length ? <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><span aria-hidden="true" style={{ width: "9px", height: "9px", borderRadius: "var(--r-circle)", background: "var(--c-accent)", animation: "breathe 1.4s ease-in-out infinite" }} />{"Cifrando y enviando " + names(sending) + "…"}</span> : null}
-              {error ? <span role="alert" style={{ color: "var(--c-error)" }}>{error}</span> : null}
-            </p>
+            {/* Who is writing or thinking, with their faces (room/RoomLive.jsx › TypingPill). */}
+            <div style={{ minHeight: "26px", margin: "0 0 2px 6px" }}>
+              <TypingPill people={chat.typing.map((n) => (share?.members || []).find((p) => p.name === n) || { name: n })} bots={chat.thinking.map((n) => ({ id: n, name: n }))} extra={sending.length ? "Cifrando y enviando " + names(sending) + "…" : null} />
+              {error ? <p role="alert" style={{ margin: "0 0 8px 12px", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</p> : null}
+            </div>
             <PeopleComposer {...composer} resetKey={id} onError={setError} onAttach={gone ? null : attach} artifacts={artifacts} onArtifact={shareArtifact}
               onSend={(text, bots, people) => { setError(null); return chat.send(text, bots, people); }}
               placeholder={gone ? "Ya no estás en esta conversación" : (dm ? `Mensaje para ${other?.name.split(" ")[0] || ""}` : "Mensaje para todos") + " · @ para que uno de tus bots ayude aquí"}

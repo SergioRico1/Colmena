@@ -43,18 +43,8 @@ export function Avatar({ id, size = 32, presence = true }) {
   return <PersonAvatar person={{ name: p.name, color: p.color || null }} photo={p.ghost ? null : photoUrl(p)} size={size} presence={online === "online" ? "online" : online ? "offline" : null} ring="var(--c-app)" />;
 }
 
-const hm = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : "");
-/**
- * What a company bot is doing, from the runtime's live list (/api/state › bots): {key, word, mood}.
- * key: libre | trabaja | espera | pausa | limite. Never honey: that is only «te necesita».
- */
-export function botNow(live) {
-  if (live?.limited) return { key: "limite", word: "Sin plan" + (live.limited.resumeAt || live.limited.resetsAt ? " hasta las " + hm(live.limited.resumeAt || live.limited.resetsAt) : ""), mood: "pausa" };
-  if (live?.status === "pausado" || live?.enabled === false) return { key: "pausa", word: "En pausa", mood: "pausa" };
-  if (live?.status === "espera") return { key: "espera", word: "Esperando una respuesta", mood: "espera" };
-  if (live?.status === "trabaja" || live?.busy) return { key: "trabaja", word: "Trabajando" + (live.activity?.verb ? " · " + live.activity.verb : ""), mood: "trabajando" };
-  return { key: "libre", word: "Libre", mood: "libre" };
-}
+export { botNow } from "../lib/botNow.js";
+import { botNow } from "../lib/botNow.js";
 /** The runtime's live entry of a company bot ("bot:nora" or "nora"), or null. */
 export function useLiveBot(id) {
   const store = useStore();

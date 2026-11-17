@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AskBotHere, PersonQuickCard, RoomPulse, RoomSearch, TypingPill } from "../components/room/RoomLive.jsx";
+import { OpenPerson } from "../components/room/Author.jsx";
+import { EmptyArt } from "../components/Hive.jsx";
 import { AlarmClock, Archive, CheckSquare, DoorOpen, FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Pencil, Search, SquareTerminal, UserPlus, Users, UsersThree, Ellipsis } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
@@ -230,6 +233,12 @@ function Room({ id, query }) {
   const botOf = useCallback((owner, bot) => mentionable.find((x) => x.owner === owner && x.bot === bot) || null, [mentionable]);
   const sameName = useCallback((name) => mentionable.filter((x) => x.name.toLowerCase() === String(name).toLowerCase()).length > 1, [mentionable]);
   const others = useMemo(() => (view?.people || EMPTY).filter((p) => !p.you).map((p) => ({ id: p.address, name: p.name, initials: initialsOf(p.name), online: p.presence === "online", status: "active" })), [view]);
+  // A person's quick card, from their face or name in a message.
+  const [personCard, setPersonCard] = useState(null);
+  const openPerson = useCallback((author, anchor) => {
+    const p = (view?.people || EMPTY).find((x) => x.address && x.address === author.address) || author;
+    setPersonCard({ person: { ...author, ...p }, anchor });
+  }, [view]);
   const threadId = shared ? query?.hilo || null : null;
   const here = `/sala/${encodeURIComponent(roomId)}`;
   const openThread = useCallback((m) => navigate(here + "?hilo=" + encodeURIComponent(m.id)), [here]);
@@ -435,14 +444,24 @@ function Room({ id, query }) {
   };
 
   // People typing and other people's bots thinking; files on their way; what went wrong.
+  // As a pill with their faces (room/RoomLive.jsx), like the channels of hosted Colmena.
+  const typingPeople = tl.typing.map((name) => (view?.people || EMPTY).find((p) => p.name === name || firstName(p.name) === firstName(name)) || { name });
+  const thinkingBots = thinking.map((name) => mentionable.find((b) => b.name === name) || { id: name, name });
   const above = shared && (tl.typing.length || thinking.length || sending.length || error) ? (
-    <p role="status" style={{ margin: "0 0 8px", minHeight: "18px", display: "flex", flexWrap: "wrap", gap: "4px 16px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
-      {tl.typing.length ? <span>{listNames(tl.typing.map(firstName)) + (tl.typing.length > 1 ? " están escribiendo…" : " está escribiendo…")}</span> : null}
-      {thinking.length ? <span>{listNames(thinking) + (thinking.length > 1 ? " están pensando…" : " está pensando…")}</span> : null}
-      {sending.length ? <span>{"Cifrando y enviando " + listNames(sending) + "…"}</span> : null}
-      {error ? <span role="alert" style={{ color: "var(--c-error)" }}>{error}</span> : null}
-    </p>
+    <>
+      <TypingPill people={typingPeople} bots={thinkingBots} extra={sending.length ? "Cifrando y enviando " + listNames(sending) + "…" : null} />
+      {error ? <p role="alert" style={{ margin: "0 0 8px", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</p> : null}
+    </>
   ) : null;
+  // «Pedir a <bot>»: a message dragged onto one of your bots (or from its menu): «@Bot …» here.
+  const askBots = shared ? myBots : mission ? memberIds.map((b) => findBot(bots, b)).filter((b) => b && b.enabled !== false) : EMPTY;
+  const askBot = async (bot, text) => {
+    const body = "@" + bot.name + " " + text;
+    if (shared) { await post(`${path}/messages`, { text: body, to: [bot.id] }); await tl.reload(); }
+    else await post(`/missions/${missionId}/messages`, { text: body });
+    follow.toEnd();
+  };
+  const nameOfRow = (m) => authorView(authorOf(m, bots)).name;
   const ready2 = !!shown;
   const stackPeople = panel.people.slice(0, 4), stackBots = headerBots(panel);
   const counts = [panel.people.length === 1 ? "1 persona" : `${panel.people.length} personas`, panel.botCount === 1 ? "1 bot" : `${panel.botCount} bots`].join(" · ");
@@ -452,6 +471,7 @@ function Room({ id, query }) {
     <InteractiveContext.Provider value={{ send: mission ? send : null }}>
       <BotNames.Provider value={botNames}>
       <OpenBot.Provider value={openBot}>
+      <OpenPerson.Provider value={shared ? openPerson : null}>
       <Shell active="chats" scroll={false} background="var(--c-app)">
         <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
           <main aria-label={taskTalk ? "Conversación de la tarea " + taskTalk.title : "Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
@@ -489,6 +509,8 @@ function Room({ id, query }) {
                       )}
                     </div>
                     <span style={{ display: "flex", alignItems: "center", gap: "4px", WebkitAppRegion: "no-drag" }}>
+                      {/* The last 24 hours here, as a little comb (components/Hive.jsx › PulseComb). */}
+                      <span style={{ display: "grid", marginRight: "6px" }}><RoomPulse rows={rows} /></span>
                       {/* A debate waiting for your choice is decided from the banner below: one action, one honey element. */}
                       {mission?.mode === "debate" && mission.status !== "awaiting_choice" ? <a href={`/debate/${missionId}`} className="v4-btn" style={{ marginRight: "6px" }}>{"Ver las propuestas"}</a> : null}
                       {/* «Invitar», where a team chat has it: beside who is here. */}
@@ -497,17 +519,18 @@ function Room({ id, query }) {
                       <button type="button" className="v4-stack" aria-label={stackLabel(panel) + ". Ver los miembros"} title="Ver los miembros" onClick={() => showMembers()}>
                         <span aria-hidden="true" style={{ display: "flex" }}>
                           {stackPeople.map((p, i) => <span key={p.address || i} style={{ marginLeft: i ? "-6px" : 0, borderRadius: "var(--r-circle)", boxShadow: "0 0 0 2px var(--c-app)" }}><PersonAvatar person={p} size={24} /></span>)}
-                          {stackBots.slice(0, 3).map((b) => <span key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} style={{ marginLeft: "4px", display: "grid" }}><BotFace bot={b} size={24} owner={b.mine ? null : b.owner} state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} decorative /></span>)}
+                          {stackBots.slice(0, 3).map((b) => <span key={(b.mine ? "" : "o:" + (b.owner?.address || "")) + b.id} style={{ marginLeft: "4px", display: "grid" }}><BotFace bot={b} size={24} owner={b.mine ? null : b.owner} state={b.state === "working" || b.state === "thinking" ? "work" : "rest"} decorative alive /></span>)}
                         </span>
                         <span aria-hidden="true" style={{ whiteSpace: "nowrap" }}>{counts}</span>
                       </button>
-                      {shared ? <button type="button" className="v4-ib" aria-label="Buscar en la sala" title="Buscar en la sala" aria-pressed={searching} onClick={() => setSearching((v) => !v)}><Search size={18} /></button> : null}
+                      {shared || mission ? <button type="button" className="v4-ib" aria-label="Buscar en la sala" title="Buscar en la sala" aria-pressed={searching} onClick={() => setSearching((v) => !v)}><Search size={18} /></button> : null}
                       <button type="button" className="v4-ib" aria-label={panelOpen ? "Ocultar el panel lateral" : "Ver el panel lateral"} title={panelOpen ? "Ocultar el panel lateral" : "Ver el panel lateral"} aria-pressed={panelOpen} aria-controls="sala-miembros"
                         onClick={() => { if (dockShown) { dock.setOpen(false); setMembersOpen(true); } else setMembersOpen(!membersOpen); }}><PanelRight size={18} active={panelOpen} /></button>
                       <MenuButton label={"Más opciones de #" + title} menuLabel="Más opciones de la sala" items={menu} className="v4-ib"><Ellipsis size={18} /></MenuButton>
                     </span>
                   </div>
                   {searching && shared ? <ShareSearch shareId={shareId} onClose={() => setSearching(false)} /> : null}
+                  {searching && !shared && mission ? <RoomSearch rows={rows} nameOf={nameOfRow} onClose={() => setSearching(false)} /> : null}
                 </header>
                 {/* One honey card per thing that waits: the band only says what is not already drawn below (a row of the conversation or the card over the composer). */}
                 {mission ? <BlockerBand mission={mission} pending={pending.filter((a) => a.kind === "question" && !rows.some((m) => m.approvalId === a.id))} bots={bots} /> : null}
@@ -530,6 +553,7 @@ function Room({ id, query }) {
                         const empty = roomEmpty(shown, { teamName: shown?.teamId ? place.text : null });
                         return (
                           <div style={{ alignSelf: "center", maxWidth: "520px", margin: "40px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
+                            <EmptyArt seed={title} />
                             <strong style={{ font: "600 var(--t-heading)/1.2 'Bricolage Grotesque', sans-serif", letterSpacing: "-0.02em", textWrap: "balance" }}>{empty.title}</strong>
                             <span style={{ fontSize: "var(--t-body)", lineHeight: 1.55, color: "var(--c-text-2)" }}>{empty.text}</span>
                             {empty.action === "invite" && !gone && !guest ? <button type="button" onClick={() => setSheet("invitar")} style={{ ...outline, marginTop: "6px", background: "var(--c-btn)", borderColor: "var(--c-text)", color: "var(--c-btn-text)" }}>{empty.actionLabel}</button> : null}
@@ -569,11 +593,14 @@ function Room({ id, query }) {
               onInvite={!gone && !guest ? () => setSheet("invitar") : null} profile={profile} tab={panelTab} onTab={setPanelTab} onOpenBot={(b) => { setProfile(b); setPanelTab("perfil"); }} onClose={() => setMembersOpen(false)} />
           ) : null}
           {viewing ? <FileViewer file={viewing} onClose={closeViewer} /> : null}
+          {personCard ? <PersonQuickCard person={personCard.person} anchor={personCard.anchor} onClose={() => setPersonCard(null)} /> : null}
+          {askBots.length ? <AskBotHere roomKey={roomId || missionId} bots={askBots} send={askBot} /> : null}
           {sheet === "invitar" && shown ? <InviteSheet context={{ kind: "room", room: shown }} onClose={() => setSheet(null)} onChanged={refreshView} /> : null}
           {threadId && view ? <PeopleThread key={threadId} shareId={shareId} rootId={threadId} dm={false} botOf={botOf} shared={sameName} revealId={query?.m || null} onClose={closeThread} onDelete={remove} onError={setError}
             composer={{ others, mentionable: guest ? EMPTY : mentionable, mineEnabled: guest ? EMPTY : bots.filter((b) => b.enabled !== false), me: peers?.me?.address || null, disabled: gone, onTyping: tl.typingNow }} /> : null}
         </div>
       </Shell>
+      </OpenPerson.Provider>
       </OpenBot.Provider>
       </BotNames.Provider>
     </InteractiveContext.Provider>

@@ -8,6 +8,14 @@ import { BotMark } from "../v2/chat/Mark.jsx";
 import { PersonAvatar } from "./Author.jsx";
 import { mentionGroups } from "../../lib/roomView.js";
 import { firstName } from "../../lib/identity.js";
+import { NOW_TONE, botNow } from "../../lib/botNow.js";
+import BotFace from "../BotFace.jsx";
+
+/** What one of your bots is doing, on the right of its row: a dot and a word (lib/botNow.js). */
+function NowTag({ now }) {
+  const tone = NOW_TONE[now.key] || NOW_TONE.libre;
+  return <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: tone.ink, whiteSpace: "nowrap" }}><span aria-hidden="true" style={{ width: "7px", height: "7px", borderRadius: "var(--r-xs)", background: tone.dot }} />{now.word}</span>;
+}
 
 // The tints of the attachment tiles (v2/chat/Parts.jsx, which shows these chips: kept here so
 // neither imports the other).
@@ -194,7 +202,8 @@ export function useMentions({ value, setValue, bots, inputRef, sources = null, r
   const row = (item, selected) => {
     // Someone else's bot carries its owner's chip; the second option for a name you share reads «¿Vera, de Lucía?».
     if (item.type === "peerbot") return [<BotMark key="g" bot={item.bot} size={18} owner={item.owner} />, item.ask || item.bot.name, item.ask ? "bot de " + firstName(item.owner?.name) : item.bot.role || "bot"];
-    if (item.type === "bot") return [<BotMark key="g" bot={item.bot} size={18} />, item.bot.name, item.bot.role || "bot"];
+    // Your bot as it is right now: its face (blinking, or at work) and what it is doing.
+    if (item.type === "bot") { const now = botNow((store?.bots || []).find((b) => b.id === item.bot.id) || item.bot); return [<BotFace key="g" bot={item.bot} size={20} mood={now.mood} decorative alive />, item.bot.name, <NowTag key="k" now={now} />]; }
     if (item.type === "person") return [<PersonAvatar key="g" person={item.person} size={20} ring="var(--c-card)" />, item.person.name, item.person.presence === "online" ? "en línea" : "persona"];
     if (item.type === "file") return [<RefGlyph key="g" kind="file" name={item.name} />, item.name, "archivo"];
     if (item.type === "folder") return [<RefGlyph key="g" kind="folder" />, item.name, <span key="k" style={{ display: "inline-flex", alignItems: "center", gap: "2px" }}>{"carpeta"}<ChevronRight {...I} style={{ opacity: selected ? 1 : 0.6 }} /></span>];

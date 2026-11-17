@@ -117,3 +117,6 @@
 /* Search with nothing found: Colmena's bot. */
 .cs-empty .hv-empty{margin:8px auto 4px}
 .cs-empty p{margin:0;text-align:center}
+
+/* A desktop room's message found by its search (room/RoomLive.jsx › RoomSearch). */
+.msg-row.is-highlight{background:var(--c-accent-soft);transition:background .3s ease}

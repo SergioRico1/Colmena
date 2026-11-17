@@ -1,20 +1,22 @@
 // The message box's formatting (Composer.jsx): the marks the messages already read (format.jsx):
 // *negrita*, _cursiva_, ~tachado~, `código`, ``` bloques ```, «> » quotes, «- » and «1. » lists
-// and [texto](url) links. Pure, so tests read it without a browser.
+// and [texto](url) links. Pure, so tests read it without a browser. The rooms of the desktop app
+// write Markdown instead (`flavor: "md"`: **negrita**, ~~tachado~~), which their bots read as is.
 
 /**
  * One formatting step on the box's text: wraps the selection in a mark (or puts the caret between
  * two), or adds a prefix to each line it covers (and takes it off if they all have it already).
  * Returns {text, start, end}: the new text and what to select.
  */
-export function formatText(text, start, end, kind) {
+export function formatText(text, start, end, kind, { flavor = "slack" } = {}) {
+  const md = flavor === "md";
   const sel = text.slice(start, end);
   const wrap = (a, b = a) => (sel
     ? { text: text.slice(0, start) + a + sel + b + text.slice(end), start: start + a.length, end: end + a.length }
     : { text: text.slice(0, start) + a + b + text.slice(end), start: start + a.length, end: start + a.length });
-  if (kind === "bold") return wrap("*");
+  if (kind === "bold") return wrap(md ? "**" : "*");
   if (kind === "italic") return wrap("_");
-  if (kind === "strike") return wrap("~");
+  if (kind === "strike") return wrap(md ? "~~" : "~");
   if (kind === "code") return sel.includes("\n") ? wrap("```\n", "\n```") : wrap("`");
   if (kind === "block") return wrap("```\n", "\n```");
   if (kind === "link") {

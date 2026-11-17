@@ -13,7 +13,7 @@ import { Dialog, LiveBotFace, botNow, useLiveBot } from "./ui.jsx";
 /** Mounted by the open conversation: shows the dialog when a message is handed to a bot. */
 export function AskBotHost({ channel }) {
   const [ask, setAsk] = useState(null); // {botId, message}
-  useEffect(() => onAskBot((d) => setAsk(d)), []);
+  useEffect(() => onAskBot((d) => { if (d.message.channel) setAsk(d); }), []);
   if (!ask) return null;
   return <AskBotDialog key={ask.message.id + (ask.botId || "")} botId={ask.botId} message={ask.message} here={channel} onClose={() => setAsk(null)} />;
 }

@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { PixelBanner } from "../Hive.jsx";
+import { botNow } from "../../lib/botNow.js";
+import "../../chat/botcard.css";
 import { del, post } from "../../lib/api.js";
 import { isCloud } from "../../lib/cloud.js";
 import { later, useHidden } from "../../lib/undoToast.js";
@@ -11,7 +14,7 @@ import { QUEUE } from "./RoomExtras.jsx";
 import { compactBots, noBotsText } from "../../lib/roomView.js";
 import { firstName } from "../../lib/identity.js";
 import { srOnly } from "../../lib/alt.js";
-import { Brain, ChevronRight, Clock3, FolderOpen, MessageCircleQuestion, Plus, Sliders, Ticket, UserPlus } from "../Icon.js";
+import { ArrowUp, Brain, ChevronRight, Clock3, FolderOpen, MessageCircleQuestion, Plus, Sliders, Ticket, UserPlus } from "../Icon.js";
 import "../../styles/conversation.css";
 import OverlayBack from "../OverlayBack.jsx";
 
@@ -73,7 +76,7 @@ function BotCell({ b, owner = null, onOpen }) {
   return (
     <li style={{ listStyle: "none" }}>
       <button type="button" className="v4-bcell" onClick={() => onOpen?.(b, owner)} aria-label={label} title={[b.shown || b.name, b.role, b.state !== "free" ? b.stateWord : null].filter(Boolean).join(" · ")}>
-        <BotFace bot={b} size={32} owner={owner} state={faceState(b.state)} decorative />
+        <BotFace bot={b} size={32} owner={owner} state={faceState(b.state)} decorative alive />
         <span aria-hidden="true">{b.name}</span>
       </button>
     </li>
@@ -103,6 +106,31 @@ const AUTONOMY = { sugiere: ["Solo sugiere", "Te propone cada paso y espera tu O
 const TOOL_WORD = { correo: "Correo", calendario: "Calendario", carpeta: "Carpeta", hojas: "Hojas", chat: "Chat", erp: "ERP", web: "Web", navegador: "Navegador" };
 const ASK_WORD = { pregunta: "Pregúntame", siempre: "Siempre", nunca: "Nunca" };
 
+/** A line to write to your bot without leaving the room: it opens a chat with it. */
+function QuickMessage({ bot }) {
+  const [text, setText] = useState("");
+  const [sent, setSent] = useState(null);
+  const [error, setError] = useState(null);
+  const send = async () => {
+    const t = text.trim();
+    if (!t) return;
+    setError(null);
+    try { const out = await post("/missions", { prompt: t, mode: "solo", botIds: [bot.id], conversation: true }); setText(""); setSent(out?.id || out?.mission?.id || true); }
+    catch (e) { setError(e.message); }
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingTop: "14px" }}>
+      {sent ? <p style={{ margin: 0, fontSize: "var(--t-meta)", color: "var(--c-text-2)" }}>{"Enviado. "}<a href={`/chat/${encodeURIComponent(bot.id)}`}>{"Ver la respuesta"}</a></p> : (
+        <div className="bc-send">
+          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }} placeholder={"Mensaje para " + bot.name} aria-label={"Mensaje para " + bot.name} />
+          <button type="button" onClick={send} disabled={!text.trim()} aria-label="Enviar"><ArrowUp size={16} weight="bold" /></button>
+        </div>
+      )}
+      {error ? <p role="alert" style={{ margin: 0, fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</p> : null}
+    </div>
+  );
+}
+
 /**
  * The bot's profile (design/v4 › #pp): big face, name, role, whose it is, its state; for your
  * own bot how it thinks, its autonomy, what it can use and who in this room can ask it; then
@@ -118,10 +146,17 @@ export function BotProfile({ bot, owner = null, state = null, stateWord = null, 
   const askers = mine && view && !view.private ? (view.people || []).filter((p) => !p.you) : [];
   const contactOf = (address) => (store.peers?.contacts || []).find((c) => c.id === address) || null;
   const waits = state === "waiting";
+  // The plan's windows (/api/state › planLimits) and a message without leaving the room.
+  const plan = mine ? store.planLimits || null : null;
+  const windows = ["primary", "secondary"].map((k) => plan?.[k]).filter((w) => w && Number.isFinite(w.usedPercent));
+  const windowWord = (min) => (!min ? "" : min >= 10000 ? "semana" : min >= 1440 ? Math.round(min / 1440) + " d" : Math.round(min / 60) + " h");
+  const now = botNow(mine ? full : null);
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px", padding: "8px 0 16px", borderBottom: "1px solid var(--c-line)" }}>
-        <span style={{ marginBottom: "10px" }}><BotFace bot={full} size={96} owner={mine ? null : owner} state={faceState(state)} decorative /></span>
+        {/* Colmena's pixels settling into the comb, in the bot's colour (components/Hive.jsx). */}
+        <div aria-hidden="true" style={{ alignSelf: "stretch", margin: "-8px -4px 0", borderRadius: "var(--r-lg)", overflow: "hidden" }}><PixelBanner color={full.color || "#7c8cff"} seed={full.id} height={72} /></div>
+        <span style={{ margin: "-48px 0 10px 12px", padding: "6px", borderRadius: "var(--r-lg)", background: "var(--c-raised)", display: "grid" }}><BotFace bot={full} size={88} owner={mine ? null : owner} state={faceState(state)} mood={mine && now.key === "limite" ? "pausa" : null} decorative alive /></span>
         <h2 style={{ margin: 0, font: "700 var(--t-heading)/1.1 'Bricolage Grotesque', 'Geist', sans-serif", letterSpacing: "-0.01em", color: "var(--c-text)" }}>{full.name}</h2>
         {full.role ? <span className="v4-tag">{full.role}</span> : null}
         <span style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px", fontSize: "var(--t-meta)", color: "var(--c-text-3)" }}>
@@ -149,6 +184,14 @@ export function BotProfile({ bot, owner = null, state = null, stateWord = null, 
           <div><dt style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)", marginBottom: "3px" }}>{"Dónde trabaja"}</dt><dd style={{ margin: 0, fontSize: "var(--t-ui)", lineHeight: 1.45, color: "var(--c-text)" }}>{`En el ordenador de ${firstName(owner?.name)}, con su cuenta. Aquí ves lo que dice y lo que entrega.`}</dd><dd style={{ margin: "6px 0 0", fontSize: "var(--t-meta)", lineHeight: 1.45, color: "var(--c-text-3)" }}>{`Nómbralo con @ para pedirle algo: decide ${firstName(owner?.name)}.`}</dd></div>
         )}
       </dl>
+      {windows.length || full.limited ? (
+        <div aria-label="Uso de tu plan" style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "12px 0", borderBottom: "1px solid var(--c-line)" }}>
+          {windows.length ? <span style={{ fontSize: "var(--t-caption)", color: "var(--c-text-3)" }}>{"Tu plan · " + windows.map((w) => windowWord(w.windowMinutes) + " " + w.usedPercent + " %").join(" · ")}</span> : null}
+          {windows.length ? <span style={{ display: "flex", gap: "4px" }}>{windows.map((w, i) => <span key={i} style={{ flex: 1, height: "6px", borderRadius: "var(--r-pill)", background: "var(--c-chip)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", transformOrigin: "left", transform: `scaleX(${w.usedPercent / 100})`, background: w.usedPercent >= 90 ? "var(--c-error)" : "var(--c-text-2)" }} /></span>)}</span> : null}
+          {full.limited ? <span style={{ fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-error)" }}>{"⏳ " + now.word}</span> : null}
+        </div>
+      ) : null}
+      {mine ? <QuickMessage bot={full} /> : null}
       {mine ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingTop: "16px" }}>
           <a href={`/chat/${encodeURIComponent(full.id)}`} className="v4-btn primary lg" style={{ width: "100%" }}><MessageCircleQuestion size={16} />{"Abrir chat"}</a>
@@ -218,7 +261,7 @@ export default function MemberPanel({ view, panel, mission = null, addable = [],
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", paddingTop: "8px" }}>
                   {addable.map((b) => (
                     <button key={b.id} type="button" className="v4-btn" disabled={busy} onClick={() => act(() => post(`/missions/${mission.id}/members`, { botId: b.id }))} aria-label={`Añadir a ${b.name} a la sala`} title={[b.name, b.role].filter(Boolean).join(" · ")} style={{ height: "30px", padding: "0 10px 0 6px", fontWeight: 500 }}>
-                      <BotFace bot={b} size={20} decorative /><Plus size={12} weight="bold" />{b.name}
+                      <BotFace bot={b} size={20} decorative alive /><Plus size={12} weight="bold" />{b.name}
                     </button>
                   ))}
                 </div>

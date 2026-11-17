@@ -28,10 +28,10 @@ async function pdfLib() {
   }
   return pdfjs;
 }
-const pdfDoc = (id) => once("pdf:" + id, async () => {
+const pdfDoc = (id, src) => once("pdf:" + id, async () => {
   const lib = await pdfLib();
   // pdf.js keeps (and may detach) the buffer it gets: a copy.
-  const data = new Uint8Array((await readBytes(id)).slice(0));
+  const data = new Uint8Array((await readBytes(id, src)).slice(0));
   return lib.getDocument({ data }).promise;
 });
 
@@ -56,17 +56,17 @@ export function cleanHtml(html) {
   walk(doc.body);
   return doc.body.innerHTML;
 }
-const docx = (id) => once("docx:" + id, async () => {
+const docx = (id, src) => once("docx:" + id, async () => {
   const mammoth = (await import("mammoth/mammoth.browser.js")).default;
-  const out = await mammoth.convertToHtml({ arrayBuffer: await readBytes(id) });
+  const out = await mammoth.convertToHtml({ arrayBuffer: await readBytes(id, src) });
   return cleanHtml(out.value || "");
 });
 
 /** Excel: [{name, rows: [[text]]}], up to 200 rows and 30 columns a sheet. */
 const colIndex = (ref) => { let n = 0; for (const ch of /^[A-Z]+/.exec(ref)?.[0] || "A") n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
 const DATE_IDS = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 45, 46, 47]);
-const xlsx = (id) => once("xlsx:" + id, async () => {
-  const zip = await JSZip.loadAsync(await readBytes(id));
+const xlsx = (id, src) => once("xlsx:" + id, async () => {
+  const zip = await JSZip.loadAsync(await readBytes(id, src));
   const read = async (p) => (zip.file(p) ? zip.file(p).async("string") : null);
   const wb = xml(await read("xl/workbook.xml") || "<w/>");
   const rels = xml(await read("xl/_rels/workbook.xml.rels") || "<r/>");
@@ -112,8 +112,8 @@ const xlsx = (id) => once("xlsx:" + id, async () => {
 });
 
 /** PowerPoint: [{title, lines: [text], image: blob url|null}] in the deck's order. */
-const pptx = (id) => once("pptx:" + id, async () => {
-  const zip = await JSZip.loadAsync(await readBytes(id));
+const pptx = (id, src) => once("pptx:" + id, async () => {
+  const zip = await JSZip.loadAsync(await readBytes(id, src));
   const read = async (p) => (zip.file(p) ? zip.file(p).async("string") : null);
   const pres = xml(await read("ppt/presentation.xml") || "<p/>");
   const rels = xml(await read("ppt/_rels/presentation.xml.rels") || "<r/>");
@@ -148,7 +148,7 @@ const pptx = (id) => once("pptx:" + id, async () => {
   return slides;
 });
 
-const plainText = (id) => once("text:" + id, async () => text(await readBytes(id)));
+const plainText = (id, src) => once("text:" + id, async () => text(await readBytes(id, src)));
 
 // ---- pieces
 function PdfPage({ doc, n, width }) {
@@ -211,7 +211,7 @@ const LOADERS = { pdf: pdfDoc, docx, xlsx, pptx, csv: plainText, md: plainText, 
 /** The small picture on a file's card. */
 export function Thumb({ file }) {
   const kind = kindOf(file);
-  const r = useLoad(() => LOADERS[kind](file.id), file.id);
+  const r = useLoad(() => LOADERS[kind](file.id, file.src || null), file.id);
   if (r.state !== "ready") return <div className={"fv-thumb is-" + r.state} aria-hidden="true" />;
   const d = r.data;
   return (
@@ -235,7 +235,7 @@ export function Thumb({ file }) {
 /** The whole file, in the side panel. */
 export function FileView({ file }) {
   const kind = kindOf(file);
-  const r = useLoad(() => LOADERS[kind](file.id), file.id);
+  const r = useLoad(() => LOADERS[kind](file.id, file.src || null), file.id);
   const [sheet, setSheet] = useState(0);
   const [width, setWidth] = useState(560);
   const box = useRef(null);
@@ -249,7 +249,7 @@ export function FileView({ file }) {
   let body = null;
   if (r.state === "loading") body = <p className="fv-note">Preparando la vista…</p>;
   else if (r.state === "error") body = <p className="ch-error" role="alert">{r.error}</p>;
-  else if (kind === "image") body = <img className="fv-image" src={fileUrl(file.id)} alt={file.name} />;
+  else if (kind === "image") body = <img className="fv-image" src={file.view || fileUrl(file.id)} alt={file.name} />;
   else if (kind === "pdf") body = <div className="fv-pages">{Array.from({ length: Math.min(r.data.numPages, 60) }, (_, i) => <PdfPage key={i} doc={r.data} n={i + 1} width={width} />)}{r.data.numPages > 60 ? <p className="fv-note">Se ven las 60 primeras páginas de {r.data.numPages}. Descárgalo para verlo entero.</p> : null}</div>;
   else if (kind === "docx") body = <div className="fv-doc" dangerouslySetInnerHTML={{ __html: r.data || "<p>El documento está vacío.</p>" }} />;
   else if (kind === "pptx") body = <div className="fv-slides">{r.data.length ? r.data.map((s, i) => <Slide key={i} s={s} n={i + 1} />) : <p className="fv-note">La presentación no tiene diapositivas.</p>}</div>;

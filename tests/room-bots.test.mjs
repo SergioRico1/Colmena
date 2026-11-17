@@ -725,3 +725,22 @@ test("a Colmena from before requests: its mention is answered without tools, and
   assert.deepEqual([marta.store.list("roomStatus").length, marta.store.list("roomLines").length], [0, 0]);
   assert.deepEqual(peerRows(marta, room.id).map((m) => m.text), ["@Vera busca el informe", "Eso pídeselo a Sergio.", "@Vera mira esa página", "Mirado."]);
 });
+
+test("a file shared in the room just before goes to your bot's turn as the file itself, once", async (t) => {
+  const [sergio, marta] = await world(t);
+  await friends(sergio, marta);
+  const room = await sharedRoom(sergio, marta);
+  // Marta shares a file; Sergio's own Vera is asked about it on his computer.
+  await marta.peers.files.send(room.id, { name: "ventas.csv", bytes: Buffer.from("ciudad,importe\nMadrid,48200\n"), caption: "" });
+  await until(() => sergio.store.list("peerFiles").find((f) => f.name === "ventas.csv" && f.status === "ready"), "Sergio recibe el archivo");
+  await sergio.rooms.send(room.id, { text: "@Vera ¿qué ciudad vende más en el archivo?" });
+  const asked = await until(() => sergio.store.list("messages").find((m) => m.role === "user" && /qué ciudad/.test(m.text || "")), "el turno de Vera");
+  assert.deepEqual(asked.attachments.map((a) => a.name), ["ventas.csv"]);
+  const where = path.join(sergio.runtime.root(asked.missionId), asked.attachments[0].path);
+  assert.equal(await readFile(where, "utf8"), "ciudad,importe\nMadrid,48200\n");
+  // The next request does not get it again.
+  await settle(sergio.runtime);
+  await sergio.rooms.send(room.id, { text: "@Vera gracias" });
+  const next = await until(() => sergio.store.list("messages").find((m) => m.role === "user" && m.text === "@Vera gracias"), "el segundo turno");
+  assert.deepEqual(next.attachments || [], []);
+});

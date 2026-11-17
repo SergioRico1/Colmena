@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Copy, Ellipsis, MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "../../Icon.js";
+import { mentionInk } from "../MentionPill.jsx";
+import Emphasis from "../../room/Emphasis.jsx";
+import { askBotAbout } from "../../../chat/askBot.js";
+import { withEmoji } from "../../../chat/emoji/index.jsx";
+import { Bot, Copy, Ellipsis, MessageSquare, Pencil, RotateCw, SmilePlus, Trash2 } from "../../Icon.js";
 import { MenuButton, useContextMenu } from "../../Menu.js";
 import { menuGroups } from "../../../lib/menu.js";
 import { PeerAvatar, PeoplePile } from "./PeerAvatar.jsx";
@@ -29,7 +33,7 @@ const when = (iso) => {
 /** A bot named in a message or about to be: its shape, its name and whose it is. */
 export function MentionPill({ bot, label, title }) {
   return (
-    <span title={title || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "1px 8px 1px 5px", borderRadius: "var(--r-pill)", background: `${bot.color || C.text4}24`, fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "baseline" }}>
+    <span title={title || undefined} style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "1px 8px 1px 5px", borderRadius: "var(--r-pill)", background: `${bot.color || C.text4}24`, color: mentionInk(bot.color), fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "baseline" }}>
       <BotPresence bot={bot} size={12} state="rest" />
       {bot.name}
       {label ? <span style={{ fontWeight: 500, color: "var(--c-text-3)" }}>{"· " + label}</span> : null}
@@ -60,6 +64,7 @@ export function messageMenu({ m, mine, onThread, onReactMore, onEdit, onDelete, 
       full && onThread ? { label: "Responder en un hilo", icon: MessageSquare, onSelect: () => onThread(m) } : null,
       full && onReactMore ? { label: "Reaccionar", icon: SmilePlus, onSelect: onReactMore } : null,
       text ? { label: "Copiar el texto", icon: Copy, onSelect: () => navigator.clipboard?.writeText?.(text) } : null,
+      text && !m.local ? { label: "Pedírselo a un bot…", icon: Bot, onSelect: () => askBotAbout(null, { id: m.id, text, author: m.bot?.name || m.author?.name || null }) } : null,
     ] },
     mine && onEdit && !m.bot && !m.card && !m.local ? { label: "Editar", icon: Pencil, hint: "Lo verán todos como «editado»", onSelect: onEdit } : null,
     mine && onDelete && m.card?.kind !== "meeting" ? { label: "Borrar para todos", icon: Trash2, danger: true, onSelect: () => onDelete(m) } : null,
@@ -139,7 +144,7 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
           </div>
         ) : (m.file && m.text === m.file.name) || m.errand ? null : (
           <p style={{ margin: 0, fontSize: inThread ? "var(--t-body)" : "var(--t-read)", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }} onCopy={copyRealSecrets}>
-            {messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i}><SecretText text={s.text} /></span>
+            {messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i}><SecretText text={s.text} plain={(t) => <Emphasis text={t} render={(y) => withEmoji(y, "pe" + i, 20)} />} /></span>
               : s.mention.kind === "person" ? <PersonPill key={i} person={s.mention.person} text={s.text} />
                 : <MentionPill key={i} bot={s.mention} label={shared(s.mention.name) || !s.mention.mine ? s.mention.note : null} />))}
           </p>

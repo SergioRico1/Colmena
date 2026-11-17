@@ -14,6 +14,8 @@
 // twice changes nothing. Missions and shares are never rewritten: an older Colmena opens the
 // same database and finds its salas and its groups as they were.
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { writeMissionAttachments } from "./files.mjs";
 import { now } from "./store.mjs";
 import { KIND_RULE, goalMissionIds, inferKind, isRoomMission, kindNeedsInference, kindSignals } from "./mission-kind.mjs";
 import { roomSlug } from "./runtime/helpers.mjs";
@@ -822,20 +824,59 @@ export class Rooms {
       if (!ids.length && root.role === "assistant" && root.botId && usable(root.botId)) ids = [root.botId];
     }
     if (!ids.length) return [];
-    try {
-      const mission = this.missionFor(room, ids);
-      const before = new Set(this.store.where("messages", "missionId", mission.id).map((m) => m.id));
-      // What the others said comes as outside content; injection phrases in it flag the turn.
-      const note = this.sharedNoteReport(room, share, message);
-      const row = this.runtime.addMessage(mission.id, message.text, [], { ...(hint?.options || {}), to: ids, peerId: message.id, context: note.text, outsideFound: note.suspicious, ...(replyTo ? { replyTo } : {}) });
-      // A message that stopped the bots or resumed stalled work is written by another path: linked here.
-      const linked = row?.role === "user" && !before.has(row.id) ? (row.peerId ? row : this.store.patch("messages", row.id, { peerId: message.id })) : null;
-      if (linked) this.turns.set(message.id, linked);
-      if (this.turns.size > 200) this.turns.delete(this.turns.keys().next().value);
-    } catch (error) {
-      this.localNote(share, ids[0], "No puedo ponerme con esto ahora: " + (error.message || "error desconocido"));
-    }
+    let mission;
+    try { mission = this.missionFor(room, ids); } catch (error) { this.localNote(share, ids[0], "No puedo ponerme con esto ahora: " + (error.message || "error desconocido")); return ids; }
+    const ask = (attachments = [], extra = "") => {
+      try {
+        const before = new Set(this.store.where("messages", "missionId", mission.id).map((m) => m.id));
+        // What the others said comes as outside content; injection phrases in it flag the turn.
+        const note = this.sharedNoteReport(room, share, message);
+        const row = this.runtime.addMessage(mission.id, message.text, attachments, { ...(hint?.options || {}), to: ids, peerId: message.id, context: note.text + extra, outsideFound: note.suspicious, ...(replyTo ? { replyTo } : {}) });
+        // A message that stopped the bots or resumed stalled work is written by another path: linked here.
+        const linked = row?.role === "user" && !before.has(row.id) ? (row.peerId ? row : this.store.patch("messages", row.id, { peerId: message.id })) : null;
+        if (linked) this.turns.set(message.id, linked);
+        if (this.turns.size > 200) this.turns.delete(this.turns.keys().next().value);
+      } catch (error) {
+        this.localNote(share, ids[0], "No puedo ponerme con esto ahora: " + (error.message || "error desconocido"));
+      }
+    };
+    // The files shared here just before (or in this thread) go with the request, not only their
+    // names: copied into the sala's folder first (as a channel of hosted Colmena does).
+    const files = this.turnFiles(share, message, hint);
+    if (!files.length) ask();
+    else void this.copyTurnFiles(mission.id, files).then(({ attachments, note }) => ask(attachments, note), () => ask());
     return ids;
+  }
+  /**
+   * Files a turn should read: the ready ones of this conversation shared in the 30 minutes before
+   * the message, or in the thread it replies in, not given to the sala before. Up to 3.
+   */
+  turnFiles(share, message, hint = null) {
+    const all = this.store.where("peerFiles", "shareId", share.id).filter((x) => x.status === "ready" && !x.toSala);
+    if (!all.length) return [];
+    const at = Date.parse(message.at || "") || Date.now();
+    const thread = hint?.thread || message.thread || null;
+    const inThread = thread ? new Set(this.store.where("peerMessages", "thread", thread).map((m) => m.id).concat(thread)) : null;
+    return all.filter((x) => {
+      const t = Date.parse(x.at || "") || 0;
+      return (t <= at + 5000 && at - t <= 30 * 60000) || (inThread && x.messageId && inThread.has(x.messageId));
+    }).sort((a, b) => String(a.at).localeCompare(String(b.at))).slice(-3);
+  }
+  /** Copies those files into the sala's folder; {attachments, note} (a note names what could not go). */
+  async copyTurnFiles(missionId, files) {
+    const attachments = [], skipped = [];
+    const root = this.runtime.root?.(missionId);
+    for (const x of files) {
+      try {
+        if (!root || !this.peers?.files || !(x.size <= 10 * 1024 * 1024)) { skipped.push(x.name); continue; }
+        const { path: where } = this.peers.files.pathOf(x.id);
+        const content = (await readFile(where)).toString("base64");
+        attachments.push(...await writeMissionAttachments(root, [{ name: x.name, content, encoding: "base64" }]));
+        this.store.patch("peerFiles", x.id, { toSala: true });
+      } catch { skipped.push(x.name); }
+    }
+    const note = skipped.length ? "\n\n[También se compartió " + skipped.map((n) => "«" + n + "»").join(", ") + ", que no te llega (más de 10 MB o ya no está).]" : "";
+    return { attachments, note };
   }
   /** The room's sala; made the first time one of your bots works there, and joined by the bots named. */
   missionFor(room, botIds) {

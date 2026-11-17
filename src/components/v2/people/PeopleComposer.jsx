@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FormatBar, FormatToggle, useFormatBar } from "../../room/FormatBar.jsx";
 import { ArrowUp, FileText, Paperclip, Upload } from "../../Icon.js";
 import { PeerAvatar } from "./PeerAvatar.jsx";
 import { BotPresence } from "../Presence.jsx";
@@ -26,6 +27,8 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
   const [bots, setBots] = useState([]); // [{owner, bot, name}] picked with «@»
   const [people, setPeople] = useState([]); // [{id, name}] picked with «@»
   const input = useRef(null);
+  // «Aa»: the formatting bar (room/FormatBar.jsx).
+  const fmt = useFormatBar({ text, setText, inputRef: input });
   useEffect(() => { setText(""); setBots([]); setPeople([]); setOpen(false); input.current?.focus(); }, [resetKey]);
   const botOf = (owner, bot) => mentionable.find((x) => x.owner === owner && x.bot === bot) || null;
   const shared = (name) => mentionable.filter((x) => x.name.toLowerCase() === String(name).toLowerCase()).length > 1;
@@ -101,6 +104,7 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
         </div>
       ) : null}
       {above}
+      <FormatBar bar={fmt} />
       {resolved.length || named.length ? (
         <div aria-label="Para" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", margin: "0 0 8px 14px", fontSize: "var(--t-meta)", color: "var(--c-text-3)", animation: "fade .2s ease-out" }}>
           {"Para"}
@@ -116,11 +120,12 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
         </div>
       ) : null}
       <div className="c-ring" style={{ display: "flex", alignItems: "flex-end", gap: "8px", padding: compact ? "6px" : "8px", background: "var(--c-card)", borderRadius: compact ? "var(--r-2xl)" : "var(--r-3xl)", boxShadow: "var(--c-shadow-pop)" }}>
+        <FormatToggle bar={fmt} className="v4-ib" />
         <label style={{ flex: 1, display: "flex" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje"}</span>
           <textarea className="c-bare" ref={input} rows={1} enterKeyHint="send" autoCapitalize="sentences" value={text} disabled={disabled} maxLength={8000}
             onChange={(e) => { const v = e.target.value; setText(v); if (v.trim()) onTyping(); if (/(^|\s)@$/.test(v)) setOpen(true); else if (open && !/@\S*$/.test(v)) setOpen(false); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
-            onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (leaveComposer(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+            onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (fmt.onKey(e)) return; if (leaveComposer(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
             placeholder={placeholder}
             style={{ flex: 1, minWidth: 0, minHeight: compact ? "40px" : "44px", maxHeight: "200px", padding: compact ? "9px 12px" : "11px 14px", border: 0, resize: "none", background: "transparent", font: "inherit", fontSize: compact ? "var(--t-body)" : "var(--t-read)", lineHeight: 1.4 }} />
         </label>

@@ -60,6 +60,9 @@ export function PersonAvatar({ person, size = 40, ring = "var(--c-app)", presenc
  */
 export const OpenBot = createContext(null);
 export const useOpenBot = () => useContext(OpenBot);
+/** The same for a person (a room shows their quick card: room/RoomLive.jsx): `(person, anchor) => void`. */
+export const OpenPerson = createContext(null);
+export const useOpenPerson = () => useContext(OpenPerson);
 
 /**
  * The avatar of a row's author (design/v4 › .msg): round for a person, the bot's pixel face for a
@@ -68,11 +71,13 @@ export const useOpenBot = () => useContext(OpenBot);
  */
 export function AuthorAvatar({ author, size = 32, state = "rest" }) {
   const open = useOpenBot();
+  const openPerson = useOpenPerson();
   if (author?.kind === "bot") {
     const face = <BotFace bot={author} size={size} state={state} owner={author.owner?.you ? null : author.owner} decorative />;
     if (open) return <button type="button" className="v4-face-btn" onClick={() => open(author)} aria-label={`Ver el perfil de ${author.name || "este bot"}`} title={`Ver el perfil de ${author.name || "este bot"}`} style={{ width: size + "px", height: size + "px" }}>{face}</button>;
     return <span aria-hidden="true" style={{ width: size + "px", height: size + "px", flex: "none", display: "block" }}>{face}</span>;
   }
+  if (openPerson && author?.kind === "person" && !author.you) return <button type="button" className="v4-face-btn" onClick={(e) => openPerson(author, e.currentTarget)} aria-label={`Ver la ficha de ${author.name || "esta persona"}`} title={`Ver la ficha de ${author.name || "esta persona"}`} style={{ width: size + "px", height: size + "px", borderRadius: "var(--r-circle)" }}><PersonAvatar person={author} size={size} /></button>;
   return <PersonAvatar person={author} size={size} />;
 }
 
@@ -80,12 +85,14 @@ export function AuthorAvatar({ author, size = 32, state = "rest" }) {
 export function AuthorHead({ author, at = null, to = null, note = null, children = null }) {
   const names = useBotNames();
   const open = useOpenBot();
+  const openPerson = useOpenPerson();
   const v = authorView(author, names);
   const bot = v.kind === "bot";
+  const person = v.kind === "person" && !author?.you && openPerson;
   const tail = [to ? "para " + to : null, note].filter(Boolean);
   return (
     <span className="v4-head">
-      {bot && open ? <button type="button" className="n" onClick={() => open(author)} title={`Ver el perfil de ${v.name}`}>{v.name}</button> : <span className="n">{v.name}</span>}
+      {bot && open ? <button type="button" className="n" onClick={() => open(author)} title={`Ver el perfil de ${v.name}`}>{v.name}</button> : person ? <button type="button" className="n" onClick={(e) => openPerson(author, e.currentTarget)} title={`Ver la ficha de ${v.name}`}>{v.name}</button> : <span className="n">{v.name}</span>}
       {/* A bot of yours shows its role only: «bot» is said to a screen reader (someone else's says «bot de …»). */}
       {bot && v.mine ? <span style={srOnly}>{", bot"}</span> : null}
       {bot && v.role ? <span className="v4-tag">{v.role}</span> : null}

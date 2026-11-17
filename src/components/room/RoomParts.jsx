@@ -35,6 +35,8 @@ import { receiptKey, receiptOf } from "../../lib/receipts.js";
 import { MentionMirror, MentionPill, findMentions } from "../v2/MentionPill.jsx";
 import WorkingDots from "./Dots.jsx";
 import { RefChips, useMentions } from "./Mentions.jsx";
+import { FormatBar, FormatToggle, useFormatBar } from "./FormatBar.jsx";
+import { askBotAbout, dragMessage } from "../../chat/askBot.js";
 import { ACTIVE_STEP, BLOCKED_STEP, DONE_STEP } from "./useRoom.js";
 import { ListenButton, MicButton, appendDictation } from "../interaction/Voice.jsx";
 import UndoChanges from "../v2/chat/UndoChanges.jsx";
@@ -43,7 +45,7 @@ import { workFileUrl } from "../../lib/dragOut.js";
 import ChatBlock from "../blocks/ChatBlock.jsx";
 import { AuthorAvatar, AuthorHead } from "./Author.jsx";
 import { AddressChip, EmojiButton } from "./ComposerBits.jsx";
-import { Eye, PaperPlaneRight, Paperclip } from "../Icon.js";
+import { Bot, Eye, PaperPlaneRight, Paperclip } from "../Icon.js";
 import { authorOf, continues, mentionTargets, requestHint } from "../../lib/roomView.js";
 import { listNames } from "../../lib/identity.js";
 
@@ -205,6 +207,8 @@ function messageMenu({ message, onReply = null, fork = null }) {
       full && onReply ? { label: "Responder en un hilo", icon: MessageSquareReply, onSelect: onReply } : null,
       text ? { label: "Copiar el texto", icon: Copy, onSelect: () => copyText(text) } : null,
       text && message.missionId ? { label: "Citar en tu mensaje", icon: Quote, onSelect: () => quoteInto(message.missionId, text) } : null,
+      // Handed to one of your bots (room/RoomLive.jsx › AskBotHere); also by dragging the face onto it.
+      text && !message.optimistic ? { label: "Pedírselo a un bot…", icon: Bot, onSelect: () => askBotAbout(null, { id: message.id, text }) } : null,
     ] },
     fork ? { label: "Duplicar desde aquí", icon: GitBranch, hint: "Una sala nueva con la conversación hasta este mensaje", onSelect: fork } : null,
   ];
@@ -213,11 +217,11 @@ function messageMenu({ message, onReply = null, fork = null }) {
 /** A row in the conversation (design/v4 › .msg): a 32 px face, the name line and the text; a
  *  hover highlight; a continued message (same author, minutes later) has no avatar or header,
  *  only its time in the gutter on hover. */
-function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, menu = null, entering = false, sending = false, live = false }) {
+function MessageRow({ id, messageId = null, avatar, continued, at, padding, children, actions, menu = null, entering = false, sending = false, live = false, drag = null }) {
   const ctx = useMessageContext(menu);
   return (
     <div id={id} data-message-id={messageId || undefined} data-live-turn={live ? "" : undefined} onContextMenu={ctx.onContextMenu} className={"msg-row v4-row" + (continued ? " is-continued" : "") + (entering ? " c-enter" : "")} aria-busy={sending ? "true" : undefined} style={{ ...(padding ? { padding } : null), opacity: sending ? 0.65 : 1, transition: "opacity .2s ease" }}>
-      {continued ? <span className="msg-gutter-time" aria-hidden="true">{at ? time(at) : ""}</span> : avatar}
+      {continued ? <span className="msg-gutter-time" aria-hidden="true">{at ? time(at) : ""}</span> : drag ? <span draggable onDragStart={(e) => dragMessage(e, drag)} title="Arrastra a un bot de la barra lateral para pedírselo" style={{ cursor: "grab", display: "grid" }}>{avatar}</span> : avatar}
       <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "0" }}>{children}</div>
       {actions ? <Actions menu={menu}>{actions}</Actions> : null}
       {ctx.menu}
@@ -388,7 +392,7 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
     );
   }
   return (
-    <MessageRow messageId={message.optimistic ? null : message.id} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={32} />} continued={continued} at={message.at} padding={padding} actions={actions} menu={menu}>
+    <MessageRow messageId={message.optimistic ? null : message.id} drag={message.optimistic || !message.text ? null : { id: message.id, text: plain(message.text), author: author.name }} sending={!!message.optimistic} entering={entering} avatar={<AuthorAvatar author={author} size={32} />} continued={continued} at={message.at} padding={padding} actions={actions} menu={menu}>
       {continued ? null : <AuthorHead author={author} at={message.at} />}
       <p style={{ margin: 0, fontSize: "var(--t-body)", lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: "var(--c-text-2)", maxWidth: "72ch" }}>{message.text}</p>
       <TravelLine peer={message.peer} />
@@ -606,7 +610,7 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   const fork = useFork(spoken ? placed : null);
   const menu = isQuestion ? null : messageMenu({ message: placed, onReply: spoken ? onReply : null, fork });
   return (
-    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} entering={entering} avatar={<AuthorAvatar author={authorOf(message, bots)} size={32} state={mood === "duda" ? "wait" : "rest"} />} continued={continued} at={message.at} padding={padding} menu={menu} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{spoken ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /></> : null}</>}>
+    <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} drag={isQuestion || !message.text ? null : { id: message.id, text: plain(message.text), author: authorOf(message, bots).name }} entering={entering} avatar={<AuthorAvatar author={authorOf(message, bots)} size={32} state={mood === "duda" ? "wait" : "rest"} />} continued={continued} at={message.at} padding={padding} menu={menu} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{spoken ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /></> : null}</>}>
       {continued ? null : <AuthorHead author={authorOf(message, bots)} at={message.at} to={toLabel(message.to, bots)} />}
         {step?.tools?.length && (!message.part || message.summary) ? <ActivityLog bot={findBot(bots, message.botId)} summary={message.summary} activity={step.activity || []} tools={step.tools} bots={bots} onOpenArtifact={onOpenArtifact} /> : null}
         {isQuestion ? (
@@ -1027,6 +1031,8 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
   const mentions = useMentions({ value: text, setValue: setText, bots: ordered, inputRef, sources: mission?.id ? { missionId: mission.id } : null, room: shared?.view || null });
   const filePicker = useRef(null);
   const room = mission?.room || "sala";
+  // «Aa»: the formatting bar (FormatBar.jsx), Markdown the bots read as is.
+  const fmt = useFormatBar({ text, setText, inputRef });
 
   const [launched, setLaunched] = useState(0);
   // What you were writing in this room comes back; ↑ brings back what you sent before.
@@ -1129,6 +1135,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
   };
   const onKeyDown = (e) => {
     if (mentions.handleKey(e)) return;
+    if (fmt.onKey(e)) return;
     if (historyKey(e)) return;
     if (e.key === "Tab" && !e.shiftKey && !text && suggestions.length) {
       e.preventDefault();
@@ -1201,6 +1208,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       <Suggestions list={suggestions} onPick={pickSuggestion} />
       {shared?.above || null}
       {plusOpen ? <div style={{ position: "relative" }}><PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /></div> : <div style={{ position: "relative" }}>{mentions.menu}</div>}
+      <FormatBar bar={fmt} />
       {mentions.chips.length || chosen.length || files.length ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "0 0 8px" }}>
           {mentions.chips.map((ch) => (
@@ -1232,6 +1240,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
           <Paperclip size={18} />
         </button>
         <EmojiButton onPick={insertAtCaret} />
+        <FormatToggle bar={fmt} />
         <label style={{ flex: "1 1 auto", display: "flex", position: "relative", minWidth: 0, alignSelf: "center" }}>
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{placeholder ? placeholder.split(" · ")[0] : "Mensaje a la sala"}</span>
           {/* «@Vera» as a pill while you write (MentionMirror behind the textarea). */}
@@ -1253,7 +1262,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
         {typing ? (
           <span role="status" style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
             {/* V2Sala: a bot at work is its own small shape, breathing (dots are for people typing). */}
-            {typing.bot ? <BotFace bot={typing.bot} size={16} state="work" decorative /> : <Dots />}
+            {typing.bot ? <BotFace bot={typing.bot} size={16} state="work" decorative alive /> : <Dots />}
             {typing.name ? <span>{typing.name}</span> : null}
             <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{typingLine}</span>
           </span>

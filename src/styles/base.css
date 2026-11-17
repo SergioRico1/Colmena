@@ -383,3 +383,8 @@ aside[role="dialog"][aria-modal="true"]{animation:c-panel 200ms var(--c-ease) bo
 .sub-wait{flex:none;width:8px;height:8px;border-radius:var(--r-circle);background:var(--c-text-4);animation:sb-breathe 2.4s ease-in-out infinite}
 @media (prefers-reduced-motion: reduce){.sub-wait{animation:none}}
 @media (prefers-reduced-motion: reduce){.sb-comb-work{animation:none;opacity:.6}}
+
+/* The empty list's picture (components/Hive.jsx › EmptyArt): a pixel bot blinking on comb cells. */
+.hv-empty{position:relative;width:96px;height:72px;margin:0 auto 14px}
+.hv-empty-comb{position:absolute;inset:auto 0 0 0;width:100%;height:auto}
+.hv-empty-bot{position:absolute;left:50%;top:0;transform:translateX(-50%)}
