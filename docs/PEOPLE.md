@@ -203,6 +203,10 @@ Otra persona de tu equipo decide también las líneas rojas de una rutina tuya. 
 - En Cloudflare es un Durable Object nuevo, `Hook` (migración `v3` en `wrangler.toml`). **Hay que volver a desplegar el Worker** para que el buzón por defecto los acepte; mientras tanto la rutina dice «El buzón que usas todavía no acepta avisos de otras apps». `GET /v1/health` anuncia `hooks` cuando los acepta.
 - Pruebas: `tests/webhooks.test.mjs` (contra `relay/server.mjs`; con `COLMENA_TEST_RELAY=http://127.0.0.1:8787` las que no cambian límites corren contra `wrangler dev --local`).
 
+## Invitar por correo (2026-11-17)
+
+En «Invitar», el código puede salir también por correo: escribes su correo al crearlo (o después, con «Enviar por correo») y tu Colmena se lo pide al buzón (`POST /v1/mail/invite`, firmado como todo lo demás). El buzón de Cloudflare lo manda desde acceso@colmena.team con Cloudflare Email Sending: quién te invita, a qué (hablar contigo, una sala o un equipo), el enlace para instalar Colmena y el código. Solo manda invitaciones tuyas (la tarjeta del código está en el buzón y es tuya), a un correo cada vez, 5 por minuto y 20 al día por Colmena; el correo no se guarda. `relay/server.mjs` hace lo mismo con un `mail` que se le pasa (las pruebas: `tests/peers-mail-invite.test.mjs`).
+
 ## Lo de los canales, en las salas del escritorio (2026-11-17)
 
 Las salas y los chats con personas del modo local tienen lo mismo que los canales de la nube (docs/CLOUD.md › bots en canales), hecho para este ordenador:

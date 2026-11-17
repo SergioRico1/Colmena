@@ -38,5 +38,13 @@ new_sqlite_classes = ["Blob"]
 tag = "v3"
 new_sqlite_classes = ["Hook"]
 
+# Invitations by mail (POST /v1/mail/invite): Cloudflare Email Sending on colmena.team, the
+# sending domain with its DKIM/SPF/DMARC records.
+[vars]
+MAIL_FROM_ADDRESS = "acceso@colmena.team"
+
+[[send_email]]
+name = "SEND_EMAIL"
+
 [observability]
 enabled = false

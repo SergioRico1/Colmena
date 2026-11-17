@@ -55,6 +55,7 @@ export function registerPeerRoutes(app, { getPeers, check, z, HttpError }) {
     const data = check(z.object({ mode: z.enum(["available", "dnd", "away"]), until: z.string().trim().max(40).nullable().optional() }).strict(), req.body);
     return p.setStatus(data.mode, data.until || null);
   }));
+  app.post("/api/peers/invites/:id/mail", run((req, p) => p.mailInvite(req.params.id, check(z.object({ to: z.string().trim().min(3).max(254) }).strict(), req.body).to)));
   app.post("/api/peers/invites", run((req, p) => { const data = check(z.object({ name: z.string().trim().min(1).max(PEER_LIMITS.name), room: id.optional(), role: z.enum(["member", "guest"]).optional() }).strict(), req.body); return p.createInvite(data.name, { room: data.room || null, role: data.role || "member" }); }));
   app.get("/api/peers/invites/:id", run((req, p) => p.inviteView(id.parse(req.params.id))));
   app.delete("/api/peers/invites/:id", run((req, p) => p.cancelInvite(req.params.id)));

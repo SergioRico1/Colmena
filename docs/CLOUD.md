@@ -1,5 +1,12 @@
 # Colmena in the cloud
 
+> **Closed on 2026-11-17.** The Worker `colmena-nube` (app.colmena.team), its Durable Objects, the
+> machine container and its images, and the bucket `colmena-nube-files` were removed: its cost was
+> not worth it (machines left running billed ~8–9 $ a day). Colmena runs on each person's computer
+> and people talk from computer to computer through the mailbox (docs/PEOPLE.md); the desktop
+> always opens the local mode (desktop/mode.cjs; `COLMENA_MODE=cloud` still opens the old cloud
+> mode for development). The code below stays in the repository as it was.
+
 Status: **Phase 5** (the desktop app is a client of the cloud plus a local agent that lends the
 person's cloud bots what only their computer has, deployed). Phase 4: the machine parts in the
 cloud (a container per company for «Código», commands and Office previews; the bots' browser on

@@ -51,6 +51,8 @@ export class RelayClient {
   send(to, env, { ephemeral = false } = {}) {
     return this.request("POST", "/v1/send", { to, env, ...(ephemeral ? { ephemeral: true } : {}) });
   }
+  /** The mailbox mails one of your invitations (its card must be there and yours): {ok}. */
+  mailInvite(body) { return this.request("POST", "/v1/mail/invite", body); }
   putInvite(lookup, blob, expiresAt) { return this.request("PUT", "/v1/invites/" + lookup, { blob, expiresAt }); }
   deleteInvite(lookup) { return this.request("DELETE", "/v1/invites/" + lookup).catch(() => null); }
   async getInvite(lookup) {

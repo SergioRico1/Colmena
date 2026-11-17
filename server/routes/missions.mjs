@@ -90,9 +90,7 @@ export function registerMissionRoutes(app, { rootOf, store, mustGet, need, runti
       // Another person's request to one of your bots (server/room-work.mjs) is kept as the bot read
       // it (`text`, wrapped as outside content); the screen shows what they wrote (`said`).
       id: m.id, role: m.role, botId: m.botId ?? null, text: (m.author?.address && typeof m.said === "string" ? m.said : m.text) || "", at: m.at ?? null,
-      // Brought from Colmena en la nube (server/cloud-import.mjs): who said it there, a person or a bot.
-      ...(m.imported && m.author?.kind ? { imported: true, author: { kind: m.author.kind === "bot" ? "bot" : "person", name: String(m.author.name || "Alguien"), color: m.author.color || null, ...(m.author.kind === "bot" ? { owner: { address: null, name: String(m.author.owner?.name || "la nube"), you: false } } : {}) } }
-        : m.author?.address ? { author: { address: m.author.address, name: m.author.name || "Alguien" } } : m.by?.id ? { author: authorView(m.by) } : {}),
+      ...(m.author?.address ? { author: { address: m.author.address, name: m.author.name || "Alguien" } } : m.by?.id ? { author: authorView(m.by) } : {}),
       kind: m.kind || (m.phase === "plan" ? "plan" : "message"),
       attachments: (m.attachments || []).map((a) => ({ name: a.name, size: a.size ?? null, ...(a.path && a.path !== a.name ? { path: a.path } : {}), ...(a.kind ? { kind: a.kind } : {}), ...(a.width && a.height ? { width: a.width, height: a.height } : {}) })),
       artifactId: m.artifactId ?? null, approvalId: m.approvalId ?? null, plan: m.plan ?? null, summary: m.summary ?? null,

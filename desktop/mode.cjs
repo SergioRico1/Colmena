@@ -33,12 +33,12 @@ function writeMode(userData, mode) {
   return mode;
 }
 /** "local" | "cloud" | "ask" (show the first-run choice). */
-function resolveMode({ userData, env = process.env, packaged = false, exists = fs.existsSync } = {}) {
-  if (MODES.includes(env.COLMENA_MODE)) return env.COLMENA_MODE;
-  const saved = readMode(userData);
-  if (saved) return saved.mode;
-  const hasLocal = exists(path.join(dataDir(env), "colmena.sqlite"));
-  return packaged && !hasLocal ? "ask" : "local";
+// 2026-11-17: hosted Colmena was closed; Colmena runs on each person's computer, and people talk
+// from computer to computer through the mailbox. Every copy opens the local mode, a saved «cloud»
+// choice included (its local data were never touched). COLMENA_MODE=cloud still opens the old
+// cloud mode for development.
+function resolveMode({ env = process.env } = {}) {
+  return env.COLMENA_MODE === "cloud" ? "cloud" : "local";
 }
 /** The cloud site: COLMENA_CLOUD_URL (an https origin, or http on loopback for wrangler dev) or app.colmena.team. */
 function cloudUrl(env = process.env) {

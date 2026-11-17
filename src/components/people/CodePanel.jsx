@@ -80,6 +80,18 @@ export default function CodePanel({ context, role = "member", onRole = null, ini
   const [mine, setMine] = useState("");
   const [name, setName] = useState(initialName);
   const [made, setMade] = useState(null);
+  // Mailed by the mailbox (server/peers › mailInvite) when you give their address.
+  const [email, setEmail] = useState("");
+  const [mailed, setMailed] = useState(null);
+  const [mailing, setMailing] = useState(false);
+  const mail = async (invite, to) => {
+    const address = String(to || "").trim();
+    if (!address || !invite?.id) return;
+    setMailing(true); setError(null);
+    try { const r = await post(`/peers/invites/${encodeURIComponent(invite.id)}/mail`, { to: address }); setMailed(r.to || address); }
+    catch (err) { setError(err.message); }
+    finally { setMailing(false); }
+  };
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [copied, copy] = useCopy(setError);
@@ -101,6 +113,7 @@ export default function CodePanel({ context, role = "member", onRole = null, ini
           : post("/peers/invites", { name: who })));
       setMade(out);
       onMade?.(out);
+      if (email.trim()) await mail(out, email);
     } catch (err) { setError(err.message); } finally { setBusy(false); }
   };
 
@@ -110,8 +123,15 @@ export default function CodePanel({ context, role = "member", onRole = null, ini
         <div className="inv-panel">
           <p className="inv-ok"><Check size={16} weight="bold" />{made.name && made.name !== "Alguien" ? `Código para ${made.name}` : "Código listo"}</p>
           <output className="inv-code" aria-label={`Código: ${made.code}`}>{made.code}</output>
+          {mailed ? <p className="inv-ok" role="status"><Check size={16} weight="bold" />{"Enviado por correo a " + mailed}</p> : null}
           <CopyButtons made={made} copied={copied} copy={copy} />
-          <span className="inv-note">{CODE_RULES + ". Colmena no lo envía: lo mandas tú, por donde quieras."}</span>
+          {!mailed ? (
+            <form onSubmit={(e) => { e.preventDefault(); mail(made, email); }} style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="su@correo.com" aria-label="Su correo" autoComplete="off" style={{ flex: "1 1 220px", minWidth: 0, height: "36px", padding: "0 10px", border: "1px solid var(--c-line-strong)", borderRadius: "var(--r-sm)", background: "var(--c-card)", color: "var(--c-text)" }} />
+              <button type="submit" className="v4-btn" disabled={mailing || !email.trim()}>{mailing ? "Enviando…" : "Enviar por correo"}</button>
+            </form>
+          ) : null}
+          <span className="inv-note">{CODE_RULES + ". Lo mandas tú por donde quieras, o Colmena por correo desde acceso@colmena.team."}</span>
           <details>
             <summary className="inv-note" style={{ cursor: "pointer" }}>{"Ver el mensaje que se copia"}</summary>
             <p className="inv-msg" style={{ marginTop: "8px" }}>{made.text}</p>
@@ -137,6 +157,11 @@ export default function CodePanel({ context, role = "member", onRole = null, ini
         {optional ? "¿Para quién es? (opcional)" : "¿Para quién es?"}
         <input type="text" value={name} maxLength={80} autoComplete="off" onChange={(e) => setName(e.target.value)} placeholder="Su nombre, para reconocer el código" data-autofocus="" aria-label={optional ? "¿Para quién es? (opcional)" : "¿Para quién es?"} aria-describedby="inv-name-hint" />
         <small id="inv-name-hint">{optional ? "Solo para que reconozcas el código en la lista. El mensaje lo saluda por su nombre." : "El mensaje lo saluda por su nombre y así reconoces el código en la lista."}</small>
+      </label>
+      <label className="inv-field">
+        {"Su correo (opcional)"}
+        <input type="email" value={email} maxLength={254} autoComplete="off" onChange={(e) => setEmail(e.target.value)} placeholder="su@correo.com" aria-label="Su correo (opcional)" aria-describedby="inv-mail-hint" />
+        <small id="inv-mail-hint">{"Si lo pones, Colmena le manda la invitación por correo con el código y cómo instalarla."}</small>
       </label>
       {c.kind === "room" && onRole ? <RoomRoles role={role} onRole={onRole} /> : null}
       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>

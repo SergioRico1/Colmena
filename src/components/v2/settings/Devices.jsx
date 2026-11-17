@@ -4,7 +4,6 @@ import { del, get, patch, post } from "../../../lib/api.js";
 import { isCloud } from "../../../lib/cloud.js";
 import { useStore } from "../../../lib/store.jsx";
 import { Alert, Chip, Confirm, anchorOf, btn, danger, mono } from "./v3.jsx";
-import { CloudExport, CloudImport } from "./CloudMove.jsx";
 
 const HONEY = { background: "var(--c-honey-soft, var(--c-chip))", color: "var(--c-honey-text)" };
 const BLUE = { background: "var(--c-accent-soft)", color: "var(--c-accent-ink)" };
@@ -141,7 +140,6 @@ function CloudDevices() {
   const devices = (data?.devices || []).filter((d) => d.status !== "revoked");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <CloudExport />
       <ThisComputer devices={data?.devices || []} workspaceId={data?.workspace?.id} reload={reload} />
       {error ? <Alert>{error}</Alert> : null}
       <section {...anchorOf("dispositivos")} aria-label="Tus dispositivos" style={{ display: "flex", flexDirection: "column", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", overflow: "hidden", scrollMarginTop: "24px" }}>
@@ -157,23 +155,19 @@ function CloudDevices() {
   );
 }
 
-/** The local desktop mode: where this Colmena lives, and the way to the cloud. */
+/** The desktop: where this Colmena lives (hosted Colmena was closed on 2026-11-17). */
 function LocalMode() {
   const { settings = {} } = useStore();
-  const api = typeof window !== "undefined" ? window.colmenaWindow?.mode || null : null;
-  const [error, setError] = useState(null);
   return (
     <section {...anchorOf("modo")} aria-label="Colmena en la nube" style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "20px 22px", borderRadius: "var(--r-md)", background: "var(--c-card)", border: "1px solid var(--c-line)", scrollMarginTop: "24px" }}>
       <span style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", fontSize: "var(--t-read)", fontWeight: 600 }}>Solo en este ordenador<Chip tone="green">Ahora</Chip></span>
       <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-2)", maxWidth: "68ch" }}>
-        {settings.userName ? settings.userName + ", tus" : "Tus"} bots, conversaciones y claves viven en este ordenador. Con «Usar Colmena en la nube» entras en el espacio de tu empresa con tu correo; este ordenador presta a tus bots lo que elijas, y tus datos de aquí se quedan sin tocar (luego puedes llevarlos con «Llevar mis datos a la nube»).
+        {settings.userName ? settings.userName + ", tus" : "Tus"} bots, conversaciones y claves viven en este ordenador. Con las personas de tu equipo os habláis de ordenador a ordenador, cifrado: mensajes directos, grupos y salas. Para invitar a alguien, «Invitar» crea un código y, si quieres, se lo manda por correo.
       </span>
-      {error ? <Alert>{error}</Alert> : null}
-      <span><button type="button" disabled={!api} onClick={() => api.switchToCloud().catch((e) => setError(e.message))} style={btn("dark", 40)}>Usar Colmena en la nube…</button></span>
     </section>
   );
 }
 
 export default function DevicesSection() {
-  return isCloud() ? <CloudDevices /> : <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}><LocalMode /><CloudImport /></div>;
+  return isCloud() ? <CloudDevices /> : <LocalMode />;
 }

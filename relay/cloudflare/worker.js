@@ -9,6 +9,9 @@
 //   PUT|GET|DELETE /v1/invites/:lookup   an encrypted invitation card (25 h at most)
 //   PUT /v1/blobs/:id/:n · GET /v1/blobs/:id/:n · DELETE /v1/blobs/:id
 //                                        sealed parts of a shared file (7 days); see relay/server.mjs
+//   POST /v1/mail/invite {to, code, name?, inviter?, room?, team?}
+//                                        signed: mails an invitation of yours (its card must be
+//                                        here and yours) from MAIL_FROM_ADDRESS; 20 a day per sender
 //   PUT|DELETE /v1/hooks/:id · POST /h/:id
 //                                        a webhook address of one Colmena (hooks.js): what a
 //                                        service posts there is sealed to its owner on arrival
@@ -32,6 +35,34 @@ const limited = (key, max) => {
   return list.length > max;
 };
 const ADDRESS = /^[A-Za-z0-9_-]{43}$/;
+const MAIL = { perMinute: 5, perDay: 20 };
+const EMAIL = /^[^\s@<>()",;:]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}$/;
+const DOWNLOAD = "https://github.com/SergioRico1/Colmena/releases/latest";
+/** A name for a mail: plain words, no addresses or markup, short. */
+const plainName = (s, max = 60) => String(s || "").replace(/[<>\[\]{}`]|https?:\/\/\S*|www\.\S*/gi, "").replace(/\s+/g, " ").trim().slice(0, max);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+/** The invitation mail, in Spanish: what Colmena is, where to get it, the code. */
+export function inviteMail({ name, inviter, code, room, team }) {
+  const first = name.split(" ")[0];
+  const what = team ? `al equipo «${team}»` : room ? `a la sala #${room}` : "a hablar desde Colmena";
+  const subject = `${inviter || "Alguien"} te invita ${what}`;
+  const lines = [
+    `Hola${first ? " " + first : ""}, ${inviter || "alguien"} te invita ${what}.`,
+    "Colmena es una app para el ordenador donde las personas de un equipo y sus bots de IA trabajan en el mismo sitio. Los mensajes van cifrados de ordenador a ordenador.",
+    `1. Si aún no la tienes, instálala. Es gratis, para Windows y Mac: ${DOWNLOAD}`,
+    "2. Ábrela, elige «Unirme con un código» y pega este:",
+    code,
+    "El código sirve una vez y caduca en 24 horas. Si no esperabas este correo, ignóralo.",
+  ];
+  const html = `<div style="font:15px/1.55 system-ui,sans-serif;color:#1b1b1f;max-width:560px">` +
+    `<p>Hola${first ? " " + esc(first) : ""}, <strong>${esc(inviter || "alguien")}</strong> te invita ${esc(what)}.</p>` +
+    `<p style="color:#5b5e69">${esc(lines[1])}</p>` +
+    `<p>1. Si aún no la tienes, <a href="${DOWNLOAD}">instala Colmena</a>. Es gratis, para Windows y Mac.</p>` +
+    `<p>2. Ábrela, elige «Unirme con un código» y pega este:</p>` +
+    `<p style="font:600 22px/1.3 ui-monospace,monospace;letter-spacing:.06em;background:#f3f3f5;border-radius:10px;padding:14px 16px;display:inline-block">${esc(code)}</p>` +
+    `<p style="color:#8a8d97;font-size:13px">${esc(lines[5])}</p></div>`;
+  return { subject, text: lines.join("\n\n"), html };
+}
 const B64 = /^[A-Za-z0-9+/=_-]+$/;
 const enc = new TextEncoder();
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
@@ -140,6 +171,38 @@ export default {
           if (!owner) return fail(401, "Firma no válida.");
           return store.fetch("https://blob/delete", { method: "POST", headers: { "X-Owner": owner } });
         }
+      }
+      // An invitation by mail: only one of your own invitations, to one address, a few a day.
+      if (path === "/v1/mail/invite" && request.method === "POST") {
+        const body = await request.text();
+        if (body.length > 2000) return fail(413, "Demasiado grande.");
+        const owner = await checkAuth(request.headers.get("Authorization"), "POST", path, body);
+        if (!owner) return fail(401, "Firma no válida.");
+        let data;
+        try { data = JSON.parse(body); } catch { return fail(400, "Petición no válida."); }
+        const to = String(data.to || "").trim();
+        const code = String(data.code || "").trim();
+        if (!EMAIL.test(to)) return fail(400, "Ese correo no parece válido.");
+        if (!/^[A-Za-z0-9-]{6,64}$/.test(code)) return fail(400, "Código no válido.");
+        if (!env.SEND_EMAIL?.send || !env.MAIL_FROM_ADDRESS) return fail(503, "El envío de correo no está activado en este buzón.");
+        if (limited("mail:" + owner, MAIL.perMinute)) return fail(429, "Demasiadas invitaciones seguidas. Espera un minuto.");
+        // The card is here and it is yours: nobody mails a code that is not theirs.
+        // As the app shows it («COLMENA-7KQ4-…») or bare: the card is found by the bare code.
+        const raw = code.replace(/^COLMENA-/i, "").replace(/-/g, "").toUpperCase();
+        const lookup = (await sha256("colmena-invitacion-buscar|" + raw)).slice(0, 32);
+        const card = await env.INVITE.get(env.INVITE.idFromName(lookup)).fetch("https://invite/owner");
+        const who = card.ok ? (await card.json()).owner : null;
+        if (who !== owner) return fail(404, "Esa invitación no existe, caducó o no es tuya.");
+        const quota = await env.MAILBOX.get(env.MAILBOX.idFromName(owner)).fetch("https://box/mail-quota", { method: "POST" });
+        if (!quota.ok) return quota;
+        const mail = inviteMail({ name: plainName(data.name), inviter: plainName(data.inviter), code, room: plainName(data.room, 60) || null, team: plainName(data.team, 60) || null });
+        try {
+          await env.SEND_EMAIL.send({ from: { email: env.MAIL_FROM_ADDRESS, name: "Colmena" }, to, subject: mail.subject, html: mail.html, text: mail.text });
+        } catch (error) {
+          console.error("mail invite: " + (error?.message || error));
+          return fail(502, "No se pudo enviar el correo. Prueba otra vez o pasa el código a mano.");
+        }
+        return json({ ok: true });
       }
       if (path === "/v1/send" && request.method === "POST") {
         const body = await request.text();
@@ -267,6 +330,15 @@ export class Mailbox extends DurableObject {
       return json({ ok: true, removed: this.ack(data.ids) });
     }
     // Bytes of files this address left today (asked before each part is kept).
+    if (path === "/mail-quota") {
+      const day = new Date().toISOString().slice(0, 10);
+      this.sql.exec("CREATE TABLE IF NOT EXISTS mail_quota (day TEXT PRIMARY KEY, n INTEGER NOT NULL)");
+      const used = this.sql.exec("SELECT n FROM mail_quota WHERE day = ?", day).toArray()[0]?.n || 0;
+      if (used >= MAIL.perDay) return fail(429, "Has enviado muchas invitaciones hoy. Mañana podrás enviar más, o pasa el código a mano.");
+      this.sql.exec("INSERT INTO mail_quota (day, n) VALUES (?, 1) ON CONFLICT (day) DO UPDATE SET n = n + 1", day);
+      this.sql.exec("DELETE FROM mail_quota WHERE day < ?", new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10));
+      return json({ ok: true });
+    }
     if (path === "/blob-quota") {
       const { bytes = 0 } = await request.json().catch(() => ({}));
       const day = new Date().toISOString().slice(0, 10);
@@ -397,6 +469,8 @@ export class Invite extends DurableObject {
   async fetch(request) {
     const path = new URL(request.url).pathname;
     const card = await this.ctx.storage.get("card");
+    // Who made it (the mail route checks the sender is its owner); nothing of the card itself.
+    if (path === "/owner") return card && card.expires > Date.now() ? json({ owner: card.owner }) : fail(404, "No existe.");
     if (path === "/get") {
       if (!card || card.expires < Date.now()) return fail(404, "Esa invitación no existe o ya caducó.");
       return json({ blob: card.blob, expiresAt: card.expires });

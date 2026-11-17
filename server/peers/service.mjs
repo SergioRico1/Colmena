@@ -458,6 +458,21 @@ export class Peers extends EventEmitter {
   }
 
   // ---------------------------------------------------------------- invitations
+  /**
+   * Mails an open invitation of yours to `to` through the mailbox (relay/cloudflare/worker.js ›
+   * /v1/mail/invite): the same words as the message you would copy, from acceso@colmena.team.
+   */
+  async mailInvite(id, to) {
+    this.requireRelay();
+    const i = this.store.get("peerInvites", String(id || ""));
+    if (!i || i.status !== "open" || Date.parse(i.expiresAt) <= this.clock()) throw new PeerError("Ese código ya no está abierto: crea otro.", 404);
+    const email = String(to || "").trim().toLowerCase();
+    if (!/^[^\s@<>()",;:]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,24}$/.test(email)) throw new PeerError("Ese correo no parece válido.");
+    const team = i.team ? this.store.get("teams", i.team)?.name || null : null;
+    await this.client.mailInvite({ to: email, code: formatInviteCode(i.code), name: i.name || "", inviter: this.myName(), room: i.roomTitle || null, team });
+    this.store.patch("peerInvites", i.id, { mailedTo: email, mailedAt: now() });
+    return { ok: true, to: email };
+  }
   async createInvite(name, { room = null, role = "member", team = null } = {}) {
     this.requireRelay();
     const label = clip(name, PEER_LIMITS.name);

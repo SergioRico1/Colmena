@@ -7,6 +7,8 @@
 //   POST /v1/ack {ids}                     received: delete
 //   PUT|DELETE /v1/invites/:lookup         an encrypted invitation card (24 h)
 //   GET  /v1/invites/:lookup               read a card (whoever has the code)
+//   POST /v1/mail/invite {to, code, …}     signed: one of your invitations by mail, through `mail`
+//                                          (the Worker sends it with Cloudflare Email Sending)
 //   PUT  /v1/blobs/:id/:n                  part n of an encrypted file (signed; part 0 says how
 //                                          many parts and the hash of the read token)
 //   GET  /v1/blobs/:id/:n                  a part, for whoever has the read token (X-Blob-Token)
@@ -22,7 +24,7 @@ import { DatabaseSync } from "node:sqlite";
 import { pathToFileURL } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import express from "express";
-import { checkAuth, checkEnvelope, isAddress, MAX_ENVELOPE, ProtocolError } from "../server/peers/protocol.mjs";
+import { checkAuth, checkEnvelope, inviteLookup, isAddress, MAX_ENVELOPE, ProtocolError } from "../server/peers/protocol.mjs";
 import { HOOK_ID, HOOK_LIMITS, sealRequest, validBox } from "./cloudflare/hooks.js";
 
 export const RELAY_LIMITS = Object.freeze({
@@ -34,7 +36,7 @@ export const RELAY_LIMITS = Object.freeze({
   hookBody: HOOK_LIMITS.body, hookPerMinute: HOOK_LIMITS.perMinute, hookQueue: HOOK_LIMITS.queue, hookKeepHours: HOOK_LIMITS.keepHours, hookRegistrationsPerMinute: HOOK_LIMITS.registrationsPerMinute,
 });
 
-export function createRelay({ directory, now = () => Date.now(), log = () => {}, limits = {} } = {}) {
+export function createRelay({ directory, now = () => Date.now(), log = () => {}, limits = {}, mail = null } = {}) {
   const L = { ...RELAY_LIMITS, ...limits };
   mkdirSync(directory, { recursive: true });
   const db = new DatabaseSync(path.join(directory, "relay.sqlite"));
@@ -60,6 +62,7 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
     old: db.prepare("DELETE FROM mail WHERE at < ?"),
     invitePut: db.prepare("INSERT INTO invites(lookup, owner, blob, expires) VALUES (?,?,?,?) ON CONFLICT(lookup) DO UPDATE SET owner=excluded.owner, blob=excluded.blob, expires=excluded.expires WHERE invites.owner=excluded.owner"),
     inviteGet: db.prepare("SELECT blob, expires FROM invites WHERE lookup=?"),
+    inviteOwner: db.prepare("SELECT owner, expires FROM invites WHERE lookup=?"),
     inviteDel: db.prepare("DELETE FROM invites WHERE lookup=? AND owner=?"),
     invitesOld: db.prepare("DELETE FROM invites WHERE expires < ?"),
     used: db.prepare("SELECT n FROM quota WHERE sender=? AND rcpt=? AND day=?"),
@@ -230,6 +233,25 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
   });
 
   const lookupOk = (s) => /^[A-Za-z0-9_-]{32}$/.test(s);
+  // An invitation by mail, as relay/cloudflare/worker.js does it: only your own card; 20 a day.
+  const mailed = new Map();
+  app.post("/v1/mail/invite", async (req, res) => {
+    const sender = who(req, res);
+    if (!sender) return;
+    const data = json(req) || {};
+    const to = String(data.to || "").trim(), code = String(data.code || "").trim();
+    if (!/^[^\s@<>()",;:]{1,64}@[A-Za-z0-9.-]{1,190}\.[A-Za-z]{2,24}$/.test(to)) return fail(res, 400, "Ese correo no parece válido.");
+    if (!/^[A-Za-z0-9-]{6,64}$/.test(code)) return fail(res, 400, "Código no válido.");
+    if (!mail) return fail(res, 503, "El envío de correo no está activado en este buzón.");
+    const raw = code.replace(/^COLMENA-/i, "").replace(/-/g, "").toUpperCase();
+    const card = q.inviteOwner.get(inviteLookup(raw));
+    if (!card || card.owner !== sender || card.expires <= now()) return fail(res, 404, "Esa invitación no existe, caducó o no es tuya.");
+    const day = new Date(now()).toISOString().slice(0, 10), key = sender + "|" + day;
+    if ((mailed.get(key) || 0) >= 20) return fail(res, 429, "Has enviado muchas invitaciones hoy. Mañana podrás enviar más, o pasa el código a mano.");
+    mailed.set(key, (mailed.get(key) || 0) + 1);
+    await mail({ to, code, name: String(data.name || ""), inviter: String(data.inviter || ""), room: data.room || null, team: data.team || null });
+    res.json({ ok: true });
+  });
   app.put("/v1/invites/:lookup", (req, res) => {
     const owner = who(req, res);
     if (!owner) return;
@@ -314,8 +336,8 @@ export function createRelay({ directory, now = () => Date.now(), log = () => {},
 }
 
 /** Starts the mailbox on `host:port`; resolves to { url, close }. */
-export async function startRelay({ port = 4390, host = "127.0.0.1", directory, limits, now } = {}) {
-  const relay = createRelay({ directory, limits, ...(now ? { now } : {}) });
+export async function startRelay({ port = 4390, host = "127.0.0.1", directory, limits, now, mail } = {}) {
+  const relay = createRelay({ directory, limits, ...(now ? { now } : {}), ...(mail ? { mail } : {}) });
   const server = http.createServer(relay.app);
   server.requestTimeout = 0; // SSE streams stay open
   await new Promise((resolve, reject) => {

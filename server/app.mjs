@@ -68,7 +68,6 @@ import { registerWikiRoutes, wikiImportParser } from "./routes/wiki.mjs";
 import { attachWikiTools } from "./wiki-tools.mjs";
 import { registerBlockRoutes } from "./routes/blocks.mjs";
 import { registerPlusRoutes } from "./routes/plus.mjs";
-import { cloudImportParser, registerCloudImportRoutes } from "./routes/cloud-import.mjs";
 import { attachBlockTools, pinnedBlocksState } from "./blocks.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
@@ -208,7 +207,6 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   app.use(attachmentBodyParser);
   app.use(codeUploadParser); // «Código» attachments (up to 20 MB)
   app.use(peerFileParser); // a file shared with people (up to 25 MB)
-  app.use(cloudImportParser); // «Traer las conversaciones de la nube»: a company's export ZIP (up to ~40 MB)
   app.use(wikiImportParser); // «Notas»: a zip of Markdown files to bring in (up to 25 MB)
   app.use(express.json({ limit: "1400kb" }));
   if (hosted?.afterBody) app.use(hosted.afterBody); // the hosted host's checks that read the body
@@ -462,7 +460,6 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   const { messageView, stepView, enabledBot, sendMessage, messageFields } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued, timers: !hosted });
   // «Para después» around conversations (server/room-plus.mjs): saved messages, reminders, scheduled
   // sends and bots' follow-ups, fired by the scheduler's tick. On this computer only.
-  if (!hosted) registerCloudImportRoutes(app, { store, rooms, runtime });
   if (!hosted && runtime?.addMessage) { app.locals.plus = registerPlusRoutes(app, { store, runtime, rooms, sendMessage, notify: (n) => scheduler?.notifier?.notify(n) }); if (scheduler) scheduler.plus = app.locals.plus; }
   // A bot can note when to come back to something (room_followup): at that time its conversation
   // is resumed. Not in incognito chats or another person's errand.

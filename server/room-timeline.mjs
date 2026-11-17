@@ -140,9 +140,6 @@ export function roomTimeline({ store, room, peers = null, me, cursor = null, lim
   const botAuthor = (bot, owner, botId) => ({ kind: "bot", botId, name: bot?.name || "Bot", role: bot?.role || "", shape: bot?.shape || "circle", color: bot?.color || "#8C8F99", owner });
   const person = (address) => (address === me.address ? you : { address, name: peers?.person(address).name || "Alguien", you: false });
   const missionAuthor = (m) => {
-    // Brought from Colmena en la nube (server/cloud-import.mjs): who said it there.
-    if (m.imported && m.author?.kind === "bot") return { ...botAuthor(m.botId ? bots.get(m.botId) : null, { address: null, name: m.author.owner?.name || "la nube", you: false }, m.botId || null), name: m.author.name || "Bot" };
-    if (m.imported && m.author?.kind === "person") return { kind: "person", address: null, name: m.author.name || "Alguien", color: m.author.color || null, you: false };
     if (m.role === "assistant" && m.botId) return botAuthor(bots.get(m.botId), you, m.botId);
     if (m.role !== "user" || m.origin) return { kind: "system" };
     return { kind: "person", ...(m.author?.address ? person(m.author.address) : you) };
