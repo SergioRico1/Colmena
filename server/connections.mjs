@@ -152,6 +152,11 @@ export function runsWithoutAsking({kind, redLine}, access) {
   return access === 'escribe' || access === undefined;
 }
 
+/** No apps account here at all (Composio): connected in Ajustes › Conexiones. */
+export const NO_APPS = 'No hay apps conectadas (Gmail, Calendar…): falta conectar la cuenta de apps en Ajustes › Conexiones. No es una caída del servicio: reintentar no sirve hasta que se conecte.';
+/** The apps account's key was refused (changed, revoked or expired). */
+export const BAD_KEY = 'La clave de la cuenta de apps (Composio) ya no es válida: hay que ponerla otra vez en Ajustes › Conexiones. No es una caída del servicio: reintentar no sirve hasta que se cambie.';
+
 export class Connections {
   constructor(store, hub) {
     this.store = store;
@@ -174,9 +179,12 @@ export class Connections {
       return result;
     }
     catch (error) {
-      if (/clave|configura|conecta composio/i.test(error.message))
-        throw Error('El servicio de conexiones no está disponible. Contacta con el administrador.');
-      throw Error(error.message.replaceAll('Composio', 'el servicio de conexiones'));
+      // Said as it is: no account, or a key that stopped working, is something to fix in Ajustes,
+      // not an outage. «No está disponible» made bots retry and tell people it was not their account.
+      const said = String(error?.message || '');
+      if (/conecta composio/i.test(said)) throw Error(NO_APPS);
+      if (/clave de composio no es válida/i.test(said)) throw Error(BAD_KEY);
+      throw Error(said.replaceAll('Composio', 'el servicio de conexiones'));
     }
   }
   async manage(op, args) {

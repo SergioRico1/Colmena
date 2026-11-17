@@ -125,3 +125,14 @@ test('public API has no credential configuration or generic commit endpoint, and
     assert.equal(response.status, 404);
   }
 });
+
+test('no apps account, or a key that stopped working, is said as such: not as an outage to retry', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'colmena-conn-'));
+  const store = new Store(dir);
+  try {
+    const failWith = (message) => new Connections(store, {dispatch: async () => { throw Error(message); }});
+    await assert.rejects(failWith('Conecta Composio en Ajustes → Conexiones.').call('status'), /No hay apps conectadas.*Ajustes › Conexiones.*No es una caída/);
+    await assert.rejects(failWith('La clave de Composio no es válida. Configúrala en Conexiones.').call('execute'), /ya no es válida.*No es una caída/);
+    await assert.rejects(failWith('Composio no respondió. No se reintenta la acción automáticamente.').call('execute'), /^Error: el servicio de conexiones no respondió/);
+  } finally { store.close(); await rm(dir, {recursive: true, force: true}); }
+});
