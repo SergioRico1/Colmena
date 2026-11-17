@@ -123,7 +123,6 @@ function onFrame(e) {
     // «Nora está trabajando…» in a thread of a channel (server/cloud/channel-bots.mjs › onStep).
     case "chat.working": setWorking(ev.channel, ev.thread, ev.bot, ev.on); break;
     // How far someone else read (the double check «Visto»).
-    case "chat.seen": { const ch = state.channels.get(ev.channel); if (ch) upsertChannel({ id: ev.channel, reads: { ...(ch.reads || {}), [ev.person]: ev.readSeq } }); break; }
     case "chat.profile": { const p = state.people.get(ev.person); if (p) set({ people: new Map(state.people).set(ev.person, { ...p, ...ev.profile }) }); break; }
     case "chat.presence": { const presence = new Map(state.presence); if (ev.presence === "offline") presence.delete(ev.person); else presence.set(ev.person, ev.presence); set({ presence }); break; }
     case "chat.typing": {

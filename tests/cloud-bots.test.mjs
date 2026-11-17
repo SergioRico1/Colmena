@@ -862,23 +862,20 @@ test("a bot's reactions show on the channel's message; a bot that talks only to 
   assert.equal((await as(ANA)("PUT", "/chat/bots/nora/talk", { people: [] })).status, 200, "back to everyone");
 });
 
-test("«Nora está trabajando…» while its step runs; how far each person read; searching inside one channel", async (t) => {
+test("«Nora está trabajando…» while its step runs; searching inside one channel", async (t) => {
   const { host, as } = await company(t);
   const general = await generalOf(as(ANA));
   const frames = [];
-  t.after(host.openFeed(BETO, (e) => { if (["chat.working", "chat.seen"].includes(e.type)) frames.push(e); }, { watching: () => general.id }));
+  t.after(host.openFeed(BETO, (e) => { if (e.type === "chat.working") frames.push(e); }, { watching: () => general.id }));
   await as(BETO)("POST", "/chat/channels/" + general.id + "/join");
   const sent = (await as(ANA)("POST", "/chat/channels/" + general.id + "/messages", { text: "<@bot:nora> piensa [[slow:300]]" })).data.message;
   await until(() => frames.some((f) => f.type === "chat.working" && f.on));
   assert.deepEqual((await as(BETO)("GET", "/chat/channels/" + general.id)).data.working, [{ thread: sent.id, bot: "bot:nora" }]);
   await settled(host);
   await until(() => frames.some((f) => f.type === "chat.working" && !f.on));
-  // Read receipts: Ana reads, Beto's screen learns it; the channel view says how far each one read.
-  await as(BETO)("POST", "/chat/channels/" + general.id + "/messages", { text: "¿lo habéis visto?" });
+  // No read receipts in channels: nobody learns how far the others read.
   await as(ANA)("POST", "/chat/channels/" + general.id + "/read", {});
-  await until(() => frames.some((f) => f.type === "chat.seen" && f.person === ANA.id));
-  const view = (await as(BETO)("GET", "/chat/channels/" + general.id)).data;
-  assert.ok(view.reads[ANA.id] >= view.lastSeq - 0, "Ana read to the end");
+  assert.equal((await as(BETO)("GET", "/chat/channels/" + general.id)).data.reads, undefined);
   // Search inside the channel only.
   const other = (await as(ANA)("POST", "/chat/channels", { name: "otro" })).data;
   await as(ANA)("POST", "/chat/channels/" + other.id + "/messages", { text: "presupuesto de otro sitio" });

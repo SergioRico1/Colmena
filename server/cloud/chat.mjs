@@ -433,8 +433,6 @@ export class TeamChat {
         unread: this.q("SELECT count(*) AS n FROM (SELECT 1 FROM chat_messages WHERE channel=? AND top=1 AND seq>? AND deleted=0 AND (author IS NULL OR author<>?) LIMIT 100)").get(row.id, mem.read_seq, mem.person)?.n || 0,
         mentions: this.q("SELECT count(*) AS n FROM chat_mentions WHERE person=? AND channel=? AND seen=0").get(mem.person, row.id)?.n || 0,
       });
-      // How far each of the others read (the double check «Visto»), for conversations of up to 50 people.
-      if (view.memberCount <= 50) view.reads = Object.fromEntries(this.q("SELECT person, read_seq FROM chat_members WHERE channel=? AND person<>?").all(row.id, mem.person).map((r) => [r.person, r.read_seq]));
     }
     return view;
   }
@@ -955,8 +953,6 @@ export class TeamChat {
     });
     const view = this.channelView(this.row(id), person);
     this.emit({ type: "chat.read", channel: id, readSeq: target, unread: view.unread, mentions: view.mentions }, { people: [person.id] });
-    // «Visto»: the others in the conversation see how far you read (the double check).
-    if (target > mem.read_seq) this.emit({ type: "chat.seen", channel: id, person: person.id, readSeq: target }, { people: this.memberIds(id).filter((p) => p !== person.id), channel: id });
     return { readSeq: target, unread: view.unread, mentions: view.mentions };
   }
   setDraft(person, id, text) {

@@ -743,9 +743,8 @@ like the rest; every read and write checks the channel first.
   viernes a las 10», «hoy a las 5 de la tarde», «a las 9», «el 25/11», at the start or the end of the
   text, read on the person's time zone (their profile's, else the company's); a day without a time is
   9:00; only times to come (up to a year).
-- **«Visto»** (the double check): a conversation of up to 50 people carries `reads` {person:
-  read_seq} in its view, and `chat.seen` frames update it when someone reads further. Your own
-  messages show ✓ (sent) or ✓✓ (seen, with who) by how far the others read.
+- **No «Visto»** in channels and their direct messages: nobody sees how far the others read (tried
+  as a double check and taken out, 2026-11-17).
 - **Search inside one conversation**: `GET /api/chat/search?channel=` limits it there; the header's
   magnifier opens it beside the conversation with «en #canal» already set.
 - **Bots in text** keep their colour: an @mention of a bot is tinted with it, and their faces in the

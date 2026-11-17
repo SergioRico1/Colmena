@@ -64,9 +64,6 @@
 @media (prefers-reduced-motion:reduce){.ty,.ty-dots i{animation:none}}
 .ty-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* «Visto»: the check on your own messages. */
-.ms-seen{display:inline-flex;vertical-align:-2px;margin-left:6px;color:var(--c-text-4)}
-.ms-seen.is-read{color:var(--c-accent-ink)}
 
 /* The search of one conversation, beside it. */
 .cs{display:flex;flex-direction:column;min-height:0}

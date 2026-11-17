@@ -3,7 +3,7 @@
 // in a thread, edit, pin, copy link, mark unread from here, delete). The actions show on hover, on
 // keyboard focus and, on a touch screen, after a tap.
 import { memo, useEffect, useState } from "react";
-import { Bookmark, Check, Checks, ChatCircleText, Copy, Download, Ellipsis, FileText, ListChecks, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
+import { Bookmark, ChatCircleText, Copy, Download, Ellipsis, FileText, ListChecks, Pencil, Pin, PinOff, RotateCcw, SmilePlus, Trash2 } from "../components/Icon.js";
 import { MenuButton } from "../components/Menu.js";
 import { navigate } from "../lib/router.jsx";
 import { chat, fileUrl } from "./api.js";
@@ -140,9 +140,6 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
   };
   // ⏳ beside a bot's name while it waits for its plan to renew (/api/state › bots[].limited).
   const liveBot = isBot && companyBot(m.author) ? (store.bots || []).find((b) => b.id === String(m.author).slice(4)) : null;
-  // «Visto» (the double check) on your own messages of the channel: who of the others read this far.
-  const ch = s.channels.get(m.channel);
-  const seenBy = m.author === me && !m.pending && (!m.threadId || m.broadcast) && ch?.reads ? Object.entries(ch.reads).filter(([p, seq]) => seq >= m.seq && s.people.has(p)).map(([p]) => p) : null;
   const canOpen = !!personTarget(m.author);
   if (m.deleted) {
     return (
@@ -181,7 +178,6 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
             {liveBot?.limited ? <span title="Esperando a que se renueve el plan" aria-label="Esperando al plan">⏳</span> : null}
             {isBot ? <span className="ch-chip">Bot</span> : m.botName ? <span className="ch-chip">Integración</span> : author?.ghost && !m.botName ? <span className="ch-chip" title="Aún no ha entrado en Colmena">Importado</span> : null}
             <time className="ms-time" dateTime={new Date(m.at).toISOString()} title={new Date(m.at).toLocaleString("es-ES")}>{whenOf(m.at)}</time>
-            {!compact && seenBy ? <span className={"ms-seen" + (seenBy.length ? " is-read" : "")} title={seenBy.length ? "Visto por " + seenBy.map((p) => nameOf(p, s)).join(", ") : "Enviado"} aria-label={seenBy.length ? "Visto por " + seenBy.length : "Enviado"}>{seenBy.length ? <Checks size={15} weight="bold" /> : <Check size={15} weight="bold" />}</span> : null}
             {m.pinned ? <span className="ms-pinned"><Pin size={12} /> Fijado</span> : null}
             {saved ? <span className="ms-pinned"><Bookmark size={12} weight="fill" /> Guardado</span> : null}
           </div>
@@ -193,7 +189,6 @@ function Message({ m, compact = false, inThread = false, onThread = null, onUnre
           <div className="ms-text" data-message-text="" onClick={onMention}>
             {/* A bot writes Markdown (server/cloud/channel-bots.mjs): headings, lists, tables, code. */}
             {m.text ? (m.format === "md" ? <Markdown text={m.text} size={15} /> : <MessageText text={m.text} />) : null}
-            {compact && seenBy ? <span className={"ms-seen" + (seenBy.length ? " is-read" : "")} title={seenBy.length ? "Visto por " + seenBy.map((p) => nameOf(p, s)).join(", ") : "Enviado"} aria-label={seenBy.length ? "Visto por " + seenBy.length : "Enviado"}>{seenBy.length ? <Checks size={15} weight="bold" /> : <Check size={15} weight="bold" />}</span> : null}
             {m.editedAt ? <span className="ms-edited" title={"Editado " + whenOf(m.editedAt)}> (editado)</span> : null}
           </div>
         )}

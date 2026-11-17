@@ -84,8 +84,7 @@ export default function Canal({ params, query }) {
         const view = await viewing;
         if (!live) return;
         setInfo(view);
-        // How far the others read (the double check) and the bots at work in it right now.
-        if (view.reads) upsertChannel({ id, reads: view.reads });
+        // The bots at work in it right now.
         for (const w of view.working || []) setWorking(id, w.thread, w.bot, true);
         const unreadFrom = unreadOf(view);
         const page = early && unreadFrom === guess ? await early : await load(modeFor(unreadFrom));
