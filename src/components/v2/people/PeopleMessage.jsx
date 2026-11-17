@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PollCard, parsePoll, plusItems, usePlusWhere } from "../../room/RoomPlus.jsx";
 import { mentionInk } from "../MentionPill.jsx";
 import Emphasis from "../../room/Emphasis.jsx";
 import { askBotAbout } from "../../../chat/askBot.js";
@@ -56,9 +57,10 @@ export function PersonPill({ person, text }) {
  * todos» last, in red. Deleting has its five-second «Deshacer», so it does not ask first.
  * `full` (the right-click) also lists what the toolbar already shows: reply and react.
  */
-export function messageMenu({ m, mine, onThread, onReactMore, onEdit, onDelete, full = false }) {
+export function messageMenu({ m, mine, onThread, onReactMore, onEdit, onDelete, full = false, where = null }) {
   if (!m || m.deleted) return [];
   const text = m.text && !(m.file && m.text === m.file.name) ? m.text : "";
+  const later = m.local ? [] : plusItems(where, { id: m.id, text, author: m.bot?.name || m.author?.name || "" });
   return [
     { group: null, items: [
       full && onThread ? { label: "Responder en un hilo", icon: MessageSquare, onSelect: () => onThread(m) } : null,
@@ -66,6 +68,7 @@ export function messageMenu({ m, mine, onThread, onReactMore, onEdit, onDelete, 
       text ? { label: "Copiar el texto", icon: Copy, onSelect: () => navigator.clipboard?.writeText?.(text) } : null,
       text && !m.local ? { label: "Pedírselo a un bot…", icon: Bot, onSelect: () => askBotAbout(null, { id: m.id, text, author: m.bot?.name || m.author?.name || null }) } : null,
     ] },
+    later.length ? { group: null, items: later } : null,
     mine && onEdit && !m.bot && !m.card && !m.local ? { label: "Editar", icon: Pencil, hint: "Lo verán todos como «editado»", onSelect: onEdit } : null,
     mine && onDelete && m.card?.kind !== "meeting" ? { label: "Borrar para todos", icon: Trash2, danger: true, onSelect: () => onDelete(m) } : null,
   ];
@@ -91,6 +94,9 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
   const [saving, setSaving] = useState(false);
   const mine = m.from === "me";
   const author = authorOf(m);
+  // A poll (RoomPlus.jsx): its votes are the message's reactions, drawn on the card, not again below.
+  const poll = m.deleted ? null : parsePoll(m.text);
+  const where = usePlusWhere();
   const face = inThread ? 32 : 40;
   const named = (m.people || []).some((p) => p.me);
   const react = (e) => onReact(m.id, e).catch((x) => onError(x.message));
@@ -102,7 +108,7 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
   };
   // The toolbar on hover keeps the one-click things (reactions, reply); the rest is in «…» and
   // on a right-click, the same menu (Slack's model).
-  const actions = (full) => messageMenu({ m, mine, onThread, onReactMore: () => setPicker(true), onEdit: () => setEditing(m.text), onDelete, full });
+  const actions = (full) => messageMenu({ m, mine, onThread, onReactMore: () => setPicker(true), onEdit: () => setEditing(m.text), onDelete, full, where });
   const ctx = useContextMenu((e) => (selectionInside(e) || editing !== null ? null : { label: "Mensaje", items: actions(true) }));
   const [toolsOpen, setToolsOpen] = useState(false);
   // An errand for one of your bots: only its card (it is for you, not a message to anyone).
@@ -142,7 +148,7 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
               {"Intro guarda · Esc cancela · lo verán todos como «editado»"}
             </span>
           </div>
-        ) : (m.file && m.text === m.file.name) || m.errand ? null : (
+        ) : poll ? <PollCard poll={poll} reactions={m.reactions || []} onVote={m.local ? null : (e) => react(e)} /> : (m.file && m.text === m.file.name) || m.errand ? null : (
           <p style={{ margin: 0, fontSize: inThread ? "var(--t-body)" : "var(--t-read)", lineHeight: 1.6, whiteSpace: "pre-wrap", overflowWrap: "anywhere", userSelect: "text" }} onCopy={copyRealSecrets}>
             {messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i}><SecretText text={s.text} plain={(t) => <Emphasis text={t} render={(y) => withEmoji(y, "pe" + i, 20)} />} /></span>
               : s.mention.kind === "person" ? <PersonPill key={i} person={s.mention.person} text={s.text} />
@@ -156,7 +162,7 @@ export default function PeopleMessage({ m, dm, botOf, shared, lastSeen, inThread
             {MORE.map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => { setPicker(false); react(e); }} style={{ width: "36px", height: "36px", border: 0, borderRadius: "var(--r-md)", background: "transparent", cursor: "pointer", fontSize: "var(--t-title)" }}>{e}</button>)}
           </div>
         ) : null}
-        {m.reactions?.length ? (
+        {m.reactions?.length && !poll ? (
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {m.reactions.map((r) => (
               <button key={r.emoji} type="button" aria-pressed={r.mine ? "true" : "false"} title={names(r.who)} onClick={() => react(r.emoji)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "30px", padding: "0 10px 0 8px", border: 0, borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, background: r.mine ? "color-mix(in srgb, var(--c-accent-ink) 10%, transparent)" : "rgb(var(--c-ink-rgb) / .05)", boxShadow: r.mine ? "inset 0 0 0 1.5px color-mix(in srgb, var(--c-accent-ink) 35%, transparent)" : "none", animation: "pop .3s ease-out" }}>

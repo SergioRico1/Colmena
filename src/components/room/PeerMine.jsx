@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { PollCard, parsePoll, usePlusWhere } from "./RoomPlus.jsx";
+import Emphasis from "./Emphasis.jsx";
+import { withEmoji } from "../../chat/emoji/index.jsx";
 import { Check, Checks, Ellipsis, MessageSquare, RotateCw, SmilePlus } from "../Icon.js";
 import { MentionPill, PersonPill, QUICK, hhmm, messageMenu, messageParts, names, selectionInside } from "../v2/people/PeopleMessage.jsx";
 import { MenuButton, useContextMenu } from "../Menu.js";
@@ -30,7 +33,10 @@ export default function PeerMine({ m, botOf, shared, lastSeen = false, dm = fals
   };
   const seen = m.seenBy?.length ? (dm ? "Visto" : "Visto por " + names(m.seenBy)) : null;
   // One-click things on hover; «…» and a right-click open the message's menu (PeopleMessage › messageMenu).
-  const actions = (full) => messageMenu({ m, mine: true, onThread, onReactMore: () => setPicker(true), onEdit: () => setEditing(m.text), onDelete, full });
+  const where = usePlusWhere();
+  // A poll you wrote (/encuesta): its card, voted with reactions (RoomPlus.jsx).
+  const poll = m.deleted ? null : parsePoll(m.text);
+  const actions = (full) => messageMenu({ m, mine: true, onThread, onReactMore: () => setPicker(true), onEdit: () => setEditing(m.text), onDelete, full, where });
   const ctx = useContextMenu((e) => (selectionInside(e) || editing !== null ? null : { label: "Tu mensaje", items: actions(true) }));
   const [toolsOpen, setToolsOpen] = useState(false);
   return (
@@ -57,9 +63,9 @@ export default function PeerMine({ m, botOf, shared, lastSeen = false, dm = fals
             <button type="button" className="v4-btn primary" onClick={save} disabled={saving}>{"Guardar"}</button>
           </span>
         </div>
-      ) : (
+      ) : poll ? <PollCard poll={poll} reactions={m.reactions || []} onVote={m.local ? null : (e) => react(e)} /> : (
         <div className="v4-bubble" onCopy={copyRealSecrets} style={m.deleted ? { fontStyle: "italic", color: "var(--c-text-3)" } : null}>
-          {m.deleted ? "Borraste este mensaje" : messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i} style={{ whiteSpace: "pre-wrap" }}><SecretText text={s.text} /></span>
+          {m.deleted ? "Borraste este mensaje" : messageParts(m, botOf).map((s, i) => (!s.mention ? <span key={i} style={{ whiteSpace: "pre-wrap" }}><SecretText text={s.text} plain={(t) => <Emphasis text={t} render={(y) => withEmoji(y, "pm" + i, 20)} />} /></span>
             : s.mention.kind === "person" ? <PersonPill key={i} person={s.mention.person} text={s.text} />
               : <MentionPill key={i} bot={s.mention} label={shared(s.mention.name) || !s.mention.mine ? s.mention.note : null} />))}
         </div>
@@ -81,7 +87,7 @@ export default function PeerMine({ m, botOf, shared, lastSeen = false, dm = fals
           {MORE.map((e) => <button key={e} type="button" aria-label={"Reaccionar " + e} onClick={() => { setPicker(false); react(e); }} style={{ width: "36px", height: "36px", border: 0, borderRadius: "var(--r-sm)", background: "transparent", cursor: "pointer", fontSize: "var(--t-title)" }}>{e}</button>)}
         </div>
       ) : null}
-      {m.reactions?.length ? (
+      {m.reactions?.length && !poll ? (
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "6px", marginTop: "6px" }}>
           {m.reactions.map((r) => (
             <button key={r.emoji} type="button" aria-pressed={r.mine ? "true" : "false"} title={names(r.who)} onClick={() => react(r.emoji)} style={{ display: "flex", alignItems: "center", gap: "6px", height: "28px", padding: "0 10px 0 8px", border: r.mine ? "1px solid var(--c-accent)" : "1px solid var(--c-line)", borderRadius: "var(--r-pill)", cursor: "pointer", fontSize: "var(--t-meta)", fontWeight: 600, color: "var(--c-text)", background: r.mine ? "var(--c-accent-soft)" : "var(--c-raised)" }}>

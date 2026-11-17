@@ -180,7 +180,7 @@ export default function Tareas({ query = {} }) {
       <main style={trabajoMain()}>
         <TrabajoHeader tab="tareas" action={{ label: "Nueva tarea", onClick: () => setCreating(true) }} />
 
-        {creating ? <NewTask team={team} onClose={() => { setCreating(false); if (query.nueva) navigate("/trabajo", { replace: true }); }} /> : null}
+        {creating ? <NewTask team={team} initial={typeof query.texto === "string" ? query.texto.slice(0, 1000) : ""} onClose={() => { setCreating(false); if (query.nueva) navigate("/trabajo", { replace: true }); }} /> : null}
 
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
           <label className="c-ring" style={{ flex: "1 1 260px", display: "flex", alignItems: "center", gap: "8px", height: "32px", padding: "0 10px", borderRadius: "var(--r-sm)", background: C.card, border: line() }}>
@@ -269,8 +269,9 @@ export default function Tareas({ query = {} }) {
 }
 
 /** «Nueva tarea»: what to do, who (or Atlas decides) and by when. Starts it and opens it. */
-function NewTask({ team, onClose }) {
-  const [text, setText] = useState("");
+function NewTask({ team, onClose, initial = "" }) {
+  // «Crear tarea…» on a message (room/RoomPlus.jsx) brings its words: ?texto=.
+  const [text, setText] = useState(initial);
   const [who, setWho] = useState([]);
   const [due, setDue] = useState("");
   const act = useAction();

@@ -67,6 +67,7 @@ import { teamsList, teamsPending } from "./peers/teams.mjs";
 import { registerWikiRoutes, wikiImportParser } from "./routes/wiki.mjs";
 import { attachWikiTools } from "./wiki-tools.mjs";
 import { registerBlockRoutes } from "./routes/blocks.mjs";
+import { registerPlusRoutes } from "./routes/plus.mjs";
 import { attachBlockTools, pinnedBlocksState } from "./blocks.mjs";
 export { HttpError, zodMessage, critiqueAbout } from "./routes/shared.mjs";
 
@@ -457,6 +458,21 @@ export function createApp({ store, runtime, session, scheduler, connections, get
   registerAiAccountRoutes(app, { hub: () => runtime?.provider, emit, changed: () => { modelCache = { key: null, at: 0, list: [] }; } });
   registerSettingsRoutes(app, { listModels, store, runtime });
   const { messageView, stepView, enabledBot, sendMessage, messageFields } = registerMissionRoutes(app, { rootOf, store, mustGet, need, runtime, connection, connections, sendQueued, timers: !hosted });
+  // «Para después» around conversations (server/room-plus.mjs): saved messages, reminders, scheduled
+  // sends and bots' follow-ups, fired by the scheduler's tick. On this computer only.
+  if (!hosted && runtime?.addMessage) { app.locals.plus = registerPlusRoutes(app, { store, runtime, rooms, sendMessage, notify: (n) => scheduler?.notifier?.notify(n) }); if (scheduler) scheduler.plus = app.locals.plus; }
+  // A bot can note when to come back to something (room_followup): at that time its conversation
+  // is resumed. Not in incognito chats or another person's errand.
+  if (app.locals.plus && !runtime.followupTool) {
+    const plus = app.locals.plus, before = runtime.extraTools;
+    runtime.followupTool = true;
+    runtime.extraTools = (bot, mission) => [...(typeof before === "function" ? before(bot, mission) : []), ...(!bot || !mission || mission.incognito || mission.peerErrand ? [] : [{
+      type: "function", name: "room_followup", strict: true, capability: "siempre",
+      description: "Apunta cuándo volver a algo de esta conversación («mañana a las 9», «en 2 horas», «el viernes a las 10»): a esa hora Colmena te despierta aquí con tu nota. Úsalo cuando digas que lo mirarás más tarde.",
+      parameters: { type: "object", properties: { when: { type: "string", description: "Cuándo, en español: «mañana a las 9», «en 30 minutos»…" }, note: { type: "string", description: "Qué tienes que mirar entonces." } }, required: ["when", "note"], additionalProperties: false },
+      run: async (args) => { const f = plus.followup({ missionId: mission.id, botId: bot.id, when: args.when, note: args.note }); return { ok: true, at: new Date(f.at).toISOString(), said: "Apuntado: volverás " + f.label + "." }; },
+    }])];
+  }
   registerApprovalRoutes(app, { store, runtime, mustGet, connection, need, emailEdit });
   const { ask, parseJson } = registerBotRoutes(app, { store, runtime, optional, mustGet });
   registerSkillRoutes(app, { store, mustGet, runtime, optional });

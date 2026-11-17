@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PlusWhere } from "../components/room/RoomPlus.jsx";
 import { AskBotHere, PersonQuickCard, RoomPulse, RoomSearch, TypingPill } from "../components/room/RoomLive.jsx";
 import { OpenPerson } from "../components/room/Author.jsx";
 import { EmptyArt } from "../components/Hive.jsx";
-import { AlarmClock, Archive, CheckSquare, DoorOpen, FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Pencil, Search, SquareTerminal, UserPlus, Users, UsersThree, Ellipsis } from "../components/Icon.js";
+import { AlarmClock, Archive, Bookmark, CheckSquare, DoorOpen, FileText, FolderOpen, Globe, Hash, ListChecks, Lock, LockSimple, MessageSquareReply, MessagesSquare, PanelRight, Pencil, Search, SquareTerminal, UserPlus, Users, UsersThree, Ellipsis } from "../components/Icon.js";
 import Shell from "../components/v2/Shell.jsx";
 import NowBar from "../components/v2/chat/NowBar.jsx";
 import BotFace from "../components/BotFace.jsx";
@@ -239,6 +240,7 @@ function Room({ id, query }) {
     const p = (view?.people || EMPTY).find((x) => x.address && x.address === author.address) || author;
     setPersonCard({ person: { ...author, ...p }, anchor });
   }, [view]);
+  const plusWhere = useMemo(() => (shared && roomId ? { room: roomId } : missionId ? { mission: missionId } : null), [shared, roomId, missionId]);
   const threadId = shared ? query?.hilo || null : null;
   const here = `/sala/${encodeURIComponent(roomId)}`;
   const openThread = useCallback((m) => navigate(here + "?hilo=" + encodeURIComponent(m.id)), [here]);
@@ -410,6 +412,7 @@ function Room({ id, query }) {
       snoozePath && !gone ? (snoozed
         ? { label: "Mostrar ya en la barra", icon: AlarmClock, hint: "Pospuesta hasta " + new Date(snoozedUntil).toLocaleString("es-ES", { weekday: "short", hour: "2-digit", minute: "2-digit" }), onSelect: wake }
         : { label: "Posponer", icon: AlarmClock, subLabel: "Posponer la sala", items: roomSnoozeChoices().map((c) => ({ label: c.label, meta: c.hint, onSelect: () => snooze(c) })) }) : null,
+      isCloud() ? null : { label: "Guardados y programados", icon: Bookmark, hint: "Lo que guardaste y lo que está por enviarse o recordarte", onSelect: () => navigate("/despues") },
       canMove ? { label: "Mover a Trabajo", icon: CheckSquare, hint: "Pasa a ser una tarea con plan y entrega", onSelect: toWork } : null,
       view ? { label: "Archivar la sala", icon: Archive, onSelect: archive } : null,
     ] },
@@ -462,6 +465,12 @@ function Room({ id, query }) {
     follow.toEnd();
   };
   const nameOfRow = (m) => authorView(authorOf(m, bots)).name;
+  // «/» commands of the box (RoomPlus.jsx): /resumen asks your bots aside, only for you.
+  const commands = plusWhere && !isCloud() ? {
+    where: plusWhere, shared: !!shared, missionId: mission ? missionId : null,
+    send: (text) => (shared ? post(`${path}/messages`, { text }).then(() => tl.reload()) : post(`/missions/${missionId}/messages`, { text })),
+    summary: () => { askAsideAbout(missionId, "Resúmeme lo que se ha dicho en esta sala: lo importante, lo que se ha decidido y lo que queda pendiente."); dock.open(TABS.aparte); },
+  } : null;
   const ready2 = !!shown;
   const stackPeople = panel.people.slice(0, 4), stackBots = headerBots(panel);
   const counts = [panel.people.length === 1 ? "1 persona" : `${panel.people.length} personas`, panel.botCount === 1 ? "1 bot" : `${panel.botCount} bots`].join(" · ");
@@ -472,6 +481,7 @@ function Room({ id, query }) {
       <BotNames.Provider value={botNames}>
       <OpenBot.Provider value={openBot}>
       <OpenPerson.Provider value={shared ? openPerson : null}>
+      <PlusWhere.Provider value={plusWhere}>
       <Shell active="chats" scroll={false} background="var(--c-app)">
         <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
           <main aria-label={taskTalk ? "Conversación de la tarea " + taskTalk.title : "Sala " + title} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
@@ -578,7 +588,7 @@ function Room({ id, query }) {
                     {shared ? <RoomAsks roomId={roomId} asks={asks} onDecided={refreshView} /> : null}
                     <RoomComposer mission={mission} bots={bots} memberIds={shared ? myBots.map((b) => b.id) : memberIds} typing={typing} messages={missionRows} below={follow.below} onJump={follow.toEnd} onSent={follow.toEnd}
                       secrets={pending.filter((a) => a.kind === "secret")} approvals={pending.filter((a) => a.kind !== "secret" && a.kind !== "question" && !rows.some((m) => m.approvalId === a.id))}
-                      aside={audience}
+                      aside={audience} commands={commands}
                       shared={shared ? { roomId, view: guest ? { ...view, bots: [] } : view, onTyping: tl.typingNow, onSent: () => { tl.reload(); follow.toEnd(); }, onFiles: gone ? null : attach, disabled: gone || !view, above } : null}
                       placeholder={gone ? "Ya no estás en esta sala" : shared ? `Mensaje en #${title} · @ para nombrar a una persona o a un bot` : `Mensaje en #${title} · @ para pedir algo a un bot`} />
                     
@@ -600,6 +610,7 @@ function Room({ id, query }) {
             composer={{ others, mentionable: guest ? EMPTY : mentionable, mineEnabled: guest ? EMPTY : bots.filter((b) => b.enabled !== false), me: peers?.me?.address || null, disabled: gone, onTyping: tl.typingNow }} /> : null}
         </div>
       </Shell>
+      </PlusWhere.Provider>
       </OpenPerson.Provider>
       </OpenBot.Provider>
       </BotNames.Provider>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CommandList, roomCommandMatches, runRoomCommand } from "../../room/RoomPlus.jsx";
 import { FormatBar, FormatToggle, useFormatBar } from "../../room/FormatBar.jsx";
 import { ArrowUp, FileText, Paperclip, Upload } from "../../Icon.js";
 import { PeerAvatar } from "./PeerAvatar.jsx";
@@ -16,7 +17,7 @@ const sectionTitle = { padding: "8px 12px 4px", fontSize: "var(--t-caption)", fo
 // «Adjuntar»: a file of this computer (or dropped here) or a deliverable of Colmena (Archivo).
 const SHAREABLE = /\.(png|jpe?g|webp|gif|pdf|docx|xlsx|pptx|txt|md|csv)$/i;
 
-export default function PeopleComposer({ others = [], mentionable = [], mineEnabled = [], me = null, disabled = false, placeholder, onSend, onTyping = () => {}, above = null, compact = false, resetKey = null, onError, onAttach = null, artifacts = [], onArtifact = null }) {
+export default function PeopleComposer({ others = [], mentionable = [], mineEnabled = [], me = null, disabled = false, placeholder, onSend, onTyping = () => {}, above = null, compact = false, resetKey = null, onError, onAttach = null, artifacts = [], onArtifact = null, commands = null }) {
   const [attachOpen, setAttachOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const picker = useRef(null);
@@ -27,6 +28,9 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
   const [bots, setBots] = useState([]); // [{owner, bot, name}] picked with «@»
   const [people, setPeople] = useState([]); // [{id, name}] picked with «@»
   const input = useRef(null);
+  const [cmdIndex, setCmdIndex] = useState(0);
+  const cmdList = commands ? roomCommandMatches(text, { shared: true, mission: false }) : null;
+  const pickCommand = (c) => { const next = "/" + c.name + " "; setText(next); setCmdIndex(0); requestAnimationFrame(() => { input.current?.focus(); input.current?.setSelectionRange(next.length, next.length); }); };
   // «Aa»: the formatting bar (room/FormatBar.jsx).
   const fmt = useFormatBar({ text, setText, inputRef: input });
   useEffect(() => { setText(""); setBots([]); setPeople([]); setOpen(false); input.current?.focus(); }, [resetKey]);
@@ -47,6 +51,11 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
   const send = async () => {
     const value = text.trim();
     if (!value || disabled) return;
+    // «/recordar», «/programar», «/encuesta», «/tarea» (room/RoomPlus.jsx): never sent as text.
+    if (commands && /^\/[a-zñ]+(\s|$)/i.test(value)) {
+      try { if (await runRoomCommand(value, commands)) setText(""); } catch (e) { onError?.(e.message); }
+      return;
+    }
     // Bots always with their owner (a hand-written «@Vera» goes as yours, as the pill showed).
     const toBots = resolved.map(({ owner, bot }) => ({ owner, bot }));
     const toPeople = named.map((p) => p.id);
@@ -105,6 +114,7 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
       ) : null}
       {above}
       <FormatBar bar={fmt} />
+      {cmdList?.length ? <div style={{ position: "relative" }}><CommandList items={cmdList} index={Math.min(cmdIndex, cmdList.length - 1)} onPick={pickCommand} /></div> : null}
       {resolved.length || named.length ? (
         <div aria-label="Para" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", margin: "0 0 8px 14px", fontSize: "var(--t-meta)", color: "var(--c-text-3)", animation: "fade .2s ease-out" }}>
           {"Para"}
@@ -125,7 +135,7 @@ export default function PeopleComposer({ others = [], mentionable = [], mineEnab
           <span style={{ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0 0 0 0)" }}>{"Mensaje"}</span>
           <textarea className="c-bare" ref={input} rows={1} enterKeyHint="send" autoCapitalize="sentences" value={text} disabled={disabled} maxLength={8000}
             onChange={(e) => { const v = e.target.value; setText(v); if (v.trim()) onTyping(); if (/(^|\s)@$/.test(v)) setOpen(true); else if (open && !/@\S*$/.test(v)) setOpen(false); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
-            onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (fmt.onKey(e)) return; if (leaveComposer(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+            onKeyDown={(e) => { if (e.key === "Escape" && open) { e.preventDefault(); setOpen(false); return; } if (cmdList?.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) { e.preventDefault(); setCmdIndex((cmdIndex + (e.key === "ArrowDown" ? 1 : cmdList.length - 1)) % cmdList.length); return; } if (cmdList?.length && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey))) { e.preventDefault(); pickCommand(cmdList[cmdIndex] || cmdList[0]); return; } if (fmt.onKey(e)) return; if (leaveComposer(e)) return; if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
             placeholder={placeholder}
             style={{ flex: 1, minWidth: 0, minHeight: compact ? "40px" : "44px", maxHeight: "200px", padding: compact ? "9px 12px" : "11px 14px", border: 0, resize: "none", background: "transparent", font: "inherit", fontSize: compact ? "var(--t-body)" : "var(--t-read)", lineHeight: 1.4 }} />
         </label>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isCloud } from "../lib/cloud.js";
 import { Activity, ArrowLeft, Bot, ChartColumn, Check, ChevronRight, Clock, CodeXml, Keyboard, ListChecks, MessageCircle, MessageSquareText, NotebookText, Pause, Play, Plus, Settings2, Sparkles, Stethoscope, Target, Undo2, UsersRound, Search } from "../components/Icon.js";
 import { plainLinks } from "../lib/wikiLinks.js";
 import { Highlight, matchBots, mentionAt, mentionedBots } from "../components/home/shared.jsx";
@@ -302,6 +303,7 @@ export default function CommandPalette() {
       // The people sheets live in the sidebar (people/*): the palette asks for them with an event.
       cmd({ key: "new-dm", icon: iconTile(MessageCircle), label: "Nuevo mensaje", hint: "Mensaje directo a alguien de tu equipo o con quien ya hablas", terms: ["Nuevo mensaje", "mensaje directo persona compañero escribir dm"], run: () => { close(); window.dispatchEvent(new CustomEvent("colmena:new-message")); } }),
       cmd({ key: "join", icon: iconTile(Plus), label: "Unirme con un código", hint: "Pega el código que te han mandado", terms: ["Unirme con un código", "código invitación pegar entrar equipo sala aceptar"], run: () => { close(); window.dispatchEvent(new CustomEvent("colmena:join")); } }),
+      ...(isCloud() ? [] : [cmd({ key: "later", icon: iconTile(Clock), label: "Para después", hint: "Mensajes guardados, programados y recordatorios", terms: ["Para después", "guardados programados recordatorios recordar guardar"], run: () => go("/despues") })]),
       cmd({ key: "new-task", icon: iconTile(ListChecks), label: "Nueva tarea", hint: "Un trabajo con plan y entrega", terms: ["Nueva tarea", "encargo trabajo plan"], run: () => go("/trabajo?nueva=1") }),
       cmd({ key: "auto", icon: iconTile(Clock), label: "Nueva rutina", hint: "Algo que se repite solo", terms: ["Nueva rutina", "automatización cada día programar horario"], run: () => go("/trabajo/rutinas?nueva=1") }),
       cmd({ key: "goal", icon: iconTile(Target), label: "Nuevo objetivo", hint: "Una meta a largo plazo", terms: ["Nuevo objetivo", "meta largo plazo"], run: () => go("/trabajo/objetivos?nuevo=1") }),

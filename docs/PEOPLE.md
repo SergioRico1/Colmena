@@ -203,6 +203,23 @@ Otra persona de tu equipo decide también las líneas rojas de una rutina tuya. 
 - En Cloudflare es un Durable Object nuevo, `Hook` (migración `v3` en `wrangler.toml`). **Hay que volver a desplegar el Worker** para que el buzón por defecto los acepte; mientras tanto la rutina dice «El buzón que usas todavía no acepta avisos de otras apps». `GET /v1/health` anuncia `hooks` cuando los acepta.
 - Pruebas: `tests/webhooks.test.mjs` (contra `relay/server.mjs`; con `COLMENA_TEST_RELAY=http://127.0.0.1:8787` las que no cambian límites corren contra `wrangler dev --local`).
 
+## Lo de los canales, en las salas del escritorio (2026-11-17)
+
+Las salas y los chats con personas del modo local tienen lo mismo que los canales de la nube (docs/CLOUD.md › bots en canales), hecho para este ordenador:
+
+- **Formato** («Aa», `room/FormatBar.jsx`): escribe Markdown (`**negrita**`, `_cursiva_`, `~~tachado~~`, código, listas, citas, `[texto](url)`), que los bots leen tal cual; los mensajes de las personas lo dibujan (`room/Emphasis.jsx`, nunca HTML). Ctrl+B, Ctrl+I, Ctrl+Mayús+X/U/7/8/9; la barra lateral cede su Ctrl+B cuando el cuadro ya lo usó.
+- **Menciones** de bots en su propio color; la lista de «@» dice qué hace cada uno de tus bots (`lib/botNow.js`), con su cara viva.
+- **Quién escribe o piensa**, como píldora con caras (`room/RoomLive.jsx › TypingPill`), en salas y chats con personas.
+- **Ficha rápida de una persona** desde su cara o su nombre en una sala con personas («Mensaje» abre vuestro chat); la ficha del bot lleva su banda de píxeles, el uso del plan y un mensaje rápido.
+- **Pulso** de las últimas 24 horas en la cabecera de la sala; **búsqueda** también en las salas privadas (en lo cargado); listas y salas vacías con un bot pixelado.
+- **Pedírselo a un bot**: arrastrar un mensaje (por su cara) a un bot de la barra lateral, o «Pedírselo a un bot…» en su menú, escribe «@Bot …» en la sala con el mensaje citado.
+- **Archivos**: la tarjeta de un archivo compartido lleva una imagen de su primera página (PDF, Word, Excel, PowerPoint; hasta 4 MB). Un archivo compartido en una sala con personas en los 30 minutos antes de pedirle algo a tu bot (o en ese hilo) le llega como archivo a su carpeta, una vez (`Rooms#turnFiles`), no solo por su nombre.
+- **Para después** (`server/room-plus.mjs`, `/api/plus/*`, pantalla `/despues`, también en el «⋯» de la sala y en Ctrl+K): «Guardar para después» y «Recordármelo» en el menú de cada mensaje; «Crear tarea…» abre Trabajo con su texto. En el cuadro, `/tarea`, `/recordar mañana a las 9 …`, `/programar el lunes a las 9 …`, `/encuesta ¿…? | a | b` (con personas) y `/resumen` (tus bots, solo para ti, en «Solo para mí»). El tic del planificador avisa de los recordatorios (aviso «reminder») y envía lo programado como tú.
+- **Encuestas** con personas (`lib/polls.js`): un mensaje «📊 Pregunta» con una línea por opción (1️⃣, 2️⃣…); los votos son reacciones de esos números, así que viajan como cualquier reacción y una Colmena antigua las ve y vota igual.
+- **Seguimientos de los bots** (`room_followup`): un bot apunta cuándo volver a algo y a esa hora su conversación se reanuda con su nota.
+
+No están (todavía): encargos entre personas y las reacciones de los bots vistas por los demás en una sala con personas (las reacciones entre Colmenas van por persona, no por bot).
+
 ## Pruebas
 - `tests/peers.test.mjs`: tres Colmenas reales (Sergio, Marta, Luis) sobre un buzón local: invitación de un solo uso y palabras iguales, extraños ignorados, chat directo con visto y reacciones, mensajes que esperan con la otra Colmena cerrada, grupo de tres con la lista firmada, listas falsas ignoradas, presencia y «escribiendo» sin guardar, quitar un contacto.
 - `tests/teams.test.mjs`: la entrada «solo» y la API; crear, entrar con código, salir y cerrar; «general» sigue al equipo; administradores que piden al creador; varios equipos; bots, presencia y estado de un compañero que no es contacto; directo entre compañeros; listas falsas, repetidas o antiguas, alguien quitado que intenta volver, quien no administra, bots ajenos; una Colmena anterior; un reinicio a medio entrar.

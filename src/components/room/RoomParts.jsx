@@ -36,6 +36,7 @@ import { MentionMirror, MentionPill, findMentions } from "../v2/MentionPill.jsx"
 import WorkingDots from "./Dots.jsx";
 import { RefChips, useMentions } from "./Mentions.jsx";
 import { FormatBar, FormatToggle, useFormatBar } from "./FormatBar.jsx";
+import { CommandList, plusItems, roomCommandMatches, runRoomCommand, usePlusWhere } from "./RoomPlus.jsx";
 import { askBotAbout, dragMessage } from "../../chat/askBot.js";
 import { ACTIVE_STEP, BLOCKED_STEP, DONE_STEP } from "./useRoom.js";
 import { ListenButton, MicButton, appendDictation } from "../interaction/Voice.jsx";
@@ -200,8 +201,9 @@ function useMessageContext(menu) {
  * What can be done with a message of the room, beyond its toolbar: copy or quote its text,
  * duplicate the room from here. `full` (the right-click) adds what the toolbar shows.
  */
-function messageMenu({ message, onReply = null, fork = null }) {
+function messageMenu({ message, onReply = null, fork = null, where = null, author = "" }) {
   const text = message?.text ? plain(message.text).trim() : "";
+  const later = message?.optimistic || !message?.id ? [] : plusItems(where, { id: message.id, text, author });
   return (full) => [
     { group: null, items: [
       full && onReply ? { label: "Responder en un hilo", icon: MessageSquareReply, onSelect: onReply } : null,
@@ -210,6 +212,7 @@ function messageMenu({ message, onReply = null, fork = null }) {
       // Handed to one of your bots (room/RoomLive.jsx › AskBotHere); also by dragging the face onto it.
       text && !message.optimistic ? { label: "Pedírselo a un bot…", icon: Bot, onSelect: () => askBotAbout(null, { id: message.id, text }) } : null,
     ] },
+    later.length ? { group: null, items: later } : null,
     fork ? { label: "Duplicar desde aquí", icon: GitBranch, hint: "Una sala nueva con la conversación hasta este mensaje", onSelect: fork } : null,
   ];
 }
@@ -363,7 +366,8 @@ export function UserMessage({ message, padding = null, replies = null, bots = []
   const mine = author.kind !== "person" || author.you;
   const fork = useFork(mine ? message : null);
   const actions = <><ReactTools list={reactions} toggle={react} /><ReplyButton onClick={onReply} /></>;
-  const menu = message.optimistic ? null : messageMenu({ message, onReply, fork });
+  const where = usePlusWhere();
+  const menu = message.optimistic ? null : messageMenu({ message, onReply, fork, where, author: author.name });
   if (mine) {
     // Yours: on the right, in the bubble; how far it got under it (people: «Visto por …»).
     const peerSeen = message.peer?.seenBy?.length ? "Visto por " + listNames(message.peer.seenBy) : null;
@@ -608,7 +612,8 @@ function BotMessage({ mission, message, bots, approvals, artifacts, steps = [], 
   const spoken = kind !== "plan" && !!message.text;
   const placed = message.missionId || !mission?.id ? message : { ...message, missionId: mission.id };
   const fork = useFork(spoken ? placed : null);
-  const menu = isQuestion ? null : messageMenu({ message: placed, onReply: spoken ? onReply : null, fork });
+  const plusWhere = usePlusWhere();
+  const menu = isQuestion ? null : messageMenu({ message: placed, onReply: spoken ? onReply : null, fork, where: plusWhere, author: authorOf(message, bots).name });
   return (
     <MessageRow id={isQuestion && questionAnchor ? "pregunta" : undefined} messageId={message.id} drag={isQuestion || !message.text ? null : { id: message.id, text: plain(message.text), author: authorOf(message, bots).name }} entering={entering} avatar={<AuthorAvatar author={authorOf(message, bots)} size={32} state={mood === "duda" ? "wait" : "rest"} />} continued={continued} at={message.at} padding={padding} menu={menu} actions={isQuestion ? null : <><ReactTools list={reactions} toggle={react} />{spoken ? <><ReplyButton onClick={onReply} /><ListenButton text={message.text} bot={bot} compact style={{ width: "30px", height: "30px", color: "var(--c-text-2)" }} /></> : null}</>}>
       {continued ? null : <AuthorHead author={authorOf(message, bots)} at={message.at} to={toLabel(message.to, bots)} />}
@@ -1009,8 +1014,12 @@ const SEND_LABEL = { steer: "Reconducir", followup: "En cola", collect: "En cola
 // `shared` ({roomId, view, onTyping, onSent(result), onFiles(FileList), disabled, typingLine}): the room has
 // people. The message goes to `POST /api/rooms/:id/messages` with who «@» named (`to`, `mentions`,
 // `people`); files travel sealed, each on its own (`onFiles`); `mission` may still be null.
-export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [], tools = null, aside = null, placeholder = null, shared = null }) {
+export function RoomComposer({ mission, bots, memberIds, variant = "sala", typing, workingCount, onSent = null, messages = [], below = false, onJump = null, secrets = [], approvals = [], tools = null, aside = null, placeholder = null, shared = null, commands = null }) {
   const [text, setText] = useState("");
+  // «/tarea», «/recordar», «/programar», «/encuesta», «/resumen» (RoomPlus.jsx): never sent as text.
+  const [cmdIndex, setCmdIndex] = useState(0);
+  const cmdList = commands ? roomCommandMatches(text, { shared: !!shared, mission: !!commands.missionId }) : null;
+  const pickCommand = (c) => { const next = "/" + c.name + " "; setText(next); setCmdIndex(0); requestAnimationFrame(() => { inputRef.current?.focus(); inputRef.current?.setSelectionRange(next.length, next.length); }); };
   useWarmOnType(mission?.id, text);
   // «Nora está preparando el contexto» only when it lasts; her own line when she wrote one.
   const phase = useSlowPhase(typing?.verb || null);
@@ -1046,6 +1055,10 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
     e?.preventDefault();
     const body = text.trim();
     if (!body || busy || shared?.disabled) return;
+    if (commands && /^\/[a-zñ]+(\s|$)/i.test(body)) {
+      await act(async () => { if (await runRoomCommand(body, commands)) setText(""); });
+      return;
+    }
     setLaunched((n) => n + 1);
     if (shared) {
       // With people: it leaves through the room (the mailbox), naming who «@» picked.
@@ -1134,6 +1147,11 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
     requestAnimationFrame(() => inputRef.current?.focus());
   };
   const onKeyDown = (e) => {
+    if (cmdList?.length) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setCmdIndex((cmdIndex + 1) % cmdList.length); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setCmdIndex((cmdIndex - 1 + cmdList.length) % cmdList.length); return; }
+      if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) { e.preventDefault(); pickCommand(cmdList[cmdIndex] || cmdList[0]); return; }
+    }
     if (mentions.handleKey(e)) return;
     if (fmt.onKey(e)) return;
     if (historyKey(e)) return;
@@ -1209,6 +1227,7 @@ export function RoomComposer({ mission, bots, memberIds, variant = "sala", typin
       {shared?.above || null}
       {plusOpen ? <div style={{ position: "relative" }}><PlusMenu open onClose={() => { setPlusOpen(false); requestAnimationFrame(() => inputRef.current?.focus()); }} onFiles={shared ? () => filePicker.current?.click() : attach} onCapture={shared ? null : (file) => addFiles([file])} onError={setFileError} chosen={chosen} onToggle={toggleChosen} text={text} botId={memberIds?.length === 1 ? memberIds[0] : null} /></div> : <div style={{ position: "relative" }}>{mentions.menu}</div>}
       <FormatBar bar={fmt} />
+      {cmdList?.length ? <div style={{ position: "relative" }}><CommandList items={cmdList} index={Math.min(cmdIndex, cmdList.length - 1)} onPick={pickCommand} /></div> : null}
       {mentions.chips.length || chosen.length || files.length ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "0 0 8px" }}>
           {mentions.chips.map((ch) => (

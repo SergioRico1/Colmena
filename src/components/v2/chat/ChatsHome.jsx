@@ -1,4 +1,6 @@
 import BotFace from "../../BotFace.jsx";
+import { PlannedList, SavedList } from "../../room/RoomPlus.jsx";
+import { isCloud } from "../../../lib/cloud.js";
 import { EmptyArt } from "../../Hive.jsx";
 import { AlarmClock, Archive, BellRing, Ellipsis, FileDown, Hash, PencilLine, Pin, PinOff, Plus, Search } from "../../Icon.js";
 import { MenuButton } from "../../Menu.js";
@@ -161,7 +163,9 @@ export default function ChatsHome() {
   }); // eslint-disable-line react-hooks/exhaustive-deps
 
   const team = bots.filter((b) => b.enabled !== false);
-  const tabsDef = [["todos", "Todos"], ["bots", "Bots"], ["salas", "Salas"], ["personas", "Personas"], ["sinleer", "Sin leer"]];
+  // «Guardados» and «Programados» (room/RoomPlus.jsx): what you kept and what is planned, on this computer.
+  const tabsDef = [["todos", "Todos"], ["bots", "Bots"], ["salas", "Salas"], ["personas", "Personas"], ["sinleer", "Sin leer"], ...(isCloud() ? [] : [["guardados", "Guardados"], ["programados", "Programados"]])];
+  const listTab = tab === "guardados" || tab === "programados";
   const ghost = { height: "44px", display: "flex", alignItems: "center", gap: "10px", padding: "0 14px", borderRadius: "var(--r-md)", border: "1px solid rgb(var(--c-ink-rgb) / .12)", background: "transparent", color: "var(--c-text)", fontSize: "var(--t-body)", fontWeight: 500, cursor: "pointer", textAlign: "left" };
 
   return (
@@ -196,7 +200,8 @@ export default function ChatsHome() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", alignItems: "flex-start" }}>
         <section aria-label="Conversaciones" style={{ flex: "999 1 520px", minWidth: 0, display: "flex", flexDirection: "column", gap: "18px" }}>
-          {ready && !grouped.length ? (
+          {tab === "guardados" ? <SavedList /> : tab === "programados" ? <PlannedList /> : null}
+          {ready && !grouped.length && !listTab ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "6px", padding: "22px 24px", borderRadius: "var(--r-xl)", background: "var(--c-card)" }}>
               <EmptyArt seed={tab + q} />
               <strong style={{ fontSize: "var(--t-body)", fontWeight: 600 }}>{q.trim() ? "Ningún chat coincide" : tab === "sinleer" ? "Lo tienes todo leído" : "Aún no hay chats aquí"}</strong>

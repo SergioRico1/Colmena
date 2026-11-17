@@ -22,6 +22,7 @@ export const routes = [
   // «Chats» is no longer a place: its address opens the last conversation (src/screens/Chats.jsx).
   { path: "/conversaciones", screen: "Chats" },
   { path: "/chats", screen: "Chats" },
+  { path: "/despues", screen: "Despues" }, // saved messages and what is planned (server/room-plus.mjs)
   { path: "/codigo", screen: "CodigoV2" },
   { path: "/codigo/comparar/:group", screen: "CodigoV2" },
   { path: "/codigo/compartida/:shared", screen: "CodigoV2" },

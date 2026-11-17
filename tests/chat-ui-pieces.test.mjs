@@ -56,3 +56,13 @@ test("a bot's lids cover its eyes only, in the visor's colour", () => {
     for (const l of spec.lids) assert.ok(spec.rects.some((r) => r.y === l.y && r.x <= l.x && l.x < r.x + r.w), `lid ${l.x},${l.y} on the face`);
   }
 });
+
+test("a poll of the desktop's conversations is a message any Colmena reads, voted with keycaps", async () => {
+  const { parsePoll, pollText } = await import("../src/lib/polls.js");
+  const text = pollText("¿Pizza o sushi? | Pizza | Sushi");
+  assert.equal(text, "📊 ¿Pizza o sushi?\n1️⃣ Pizza\n2️⃣ Sushi");
+  assert.deepEqual(parsePoll(text), { question: "¿Pizza o sushi?", options: [{ emoji: "1️⃣", text: "Pizza" }, { emoji: "2️⃣", text: "Sushi" }] });
+  assert.equal(pollText("¿Solo una? | A"), null, "two options at least");
+  assert.equal(parsePoll("📊 hola\nnada"), null);
+  assert.equal(parsePoll("Hola"), null);
+});

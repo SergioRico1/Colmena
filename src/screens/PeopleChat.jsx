@@ -1,4 +1,8 @@
 import Select from "../components/Select.jsx";
+import { PlusWhere } from "../components/room/RoomPlus.jsx";
+import { PixelBanner } from "../components/Hive.jsx";
+import { familyInk } from "../lib/personColor.js";
+import { personTint } from "../lib/identity.js";
 import { TypingPill } from "../components/room/RoomLive.jsx";
 import { EmptyArt } from "../components/Hive.jsx";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -137,7 +141,11 @@ export default function PeopleChat({ params = {}, query = {} }) {
   const guest = share?.members?.find((m) => m.me)?.role === "guest";
   const composer = { others, mentionable: guest ? [] : mentionable, mineEnabled: guest ? [] : mineEnabled, me, disabled: gone || !share, onTyping: chat.typingNow };
   let lastDay = null;
+  // «Para después» here (room/RoomPlus.jsx): saved messages and reminders point to this chat.
+  const plusWhere = { share: id };
+  const commands = { where: plusWhere, shared: true, missionId: null, send: (text) => chat.send(text, [], []) };
   return (
+    <PlusWhere.Provider value={plusWhere}>
     <Shell active="chats" scroll={false} background="var(--c-app)">
       <div style={{ position: "relative", display: "flex", height: "100%", alignItems: "stretch" }}>
         <section aria-label={share ? "Conversación con " + share.title : "Conversación"} style={{ flex: "999 1 520px", minWidth: "0", height: "100%", display: "flex", flexDirection: "column" }}>
@@ -196,7 +204,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
               <TypingPill people={chat.typing.map((n) => (share?.members || []).find((p) => p.name === n) || { name: n })} bots={chat.thinking.map((n) => ({ id: n, name: n }))} extra={sending.length ? "Cifrando y enviando " + names(sending) + "…" : null} />
               {error ? <p role="alert" style={{ margin: "0 0 8px 12px", fontSize: "var(--t-meta)", color: "var(--c-error)" }}>{error}</p> : null}
             </div>
-            <PeopleComposer {...composer} resetKey={id} onError={setError} onAttach={gone ? null : attach} artifacts={artifacts} onArtifact={shareArtifact}
+            <PeopleComposer {...composer} commands={commands} resetKey={id} onError={setError} onAttach={gone ? null : attach} artifacts={artifacts} onArtifact={shareArtifact}
               onSend={(text, bots, people) => { setError(null); return chat.send(text, bots, people); }}
               placeholder={gone ? "Ya no estás en esta conversación" : (dm ? `Mensaje para ${other?.name.split(" ")[0] || ""}` : "Mensaje para todos") + " · @ para que uno de tus bots ayude aquí"}
               above={dm && other?.away && !gone ? (
@@ -214,6 +222,7 @@ export default function PeopleChat({ params = {}, query = {} }) {
         {threadId && share ? <ThreadPanel key={threadId} shareId={id} rootId={threadId} dm={dm} botOf={botOf} shared={shared} composer={composer} revealId={query.m || null} onClose={closeThread} onDelete={remove} onError={setError} /> : null}
       </div>
     </Shell>
+    </PlusWhere.Provider>
   );
 }
 
@@ -233,7 +242,8 @@ function PeopleAside({ share, other, dm, files, onOpenFile }) {
     <aside id="dm-perfil" tabIndex={-1} aria-label={dm && other ? "Sobre " + other.name : "Personas de la conversación"} style={{ flex: "1 1 300px", maxWidth: "360px", minWidth: "280px", height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px", padding: "22px 20px", background: "var(--c-card)", borderLeft: "1px solid rgb(var(--c-ink-rgb) / .07)" }}>
       {dm && other ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", textAlign: "center" }}>
-          <PeerAvatar person={other} size={64} ring="var(--c-app)" />
+          <div aria-hidden="true" style={{ alignSelf: "stretch", margin: "-22px -20px -40px", overflow: "hidden" }}><PixelBanner color={familyInk(other.color || personTint(other.name))} seed={other.id || other.name} height={72} /></div>
+          <span style={{ borderRadius: "var(--r-circle)", boxShadow: "0 0 0 4px var(--c-card)" }}><PeerAvatar person={other} size={64} ring="var(--c-app)" /></span>
           <span style={{ font: "600 var(--t-title)/1 'Bricolage Grotesque', sans-serif" }}>{other.name}</span>
           <span style={{ fontSize: "var(--t-ui)", color: "var(--c-text-3)" }}>{[other.online ? "En línea" : "No está conectada ahora", contact?.addedAt ? "conectada desde el " + since(contact.addedAt) : null].filter(Boolean).join(" · ")}</span>
         </div>

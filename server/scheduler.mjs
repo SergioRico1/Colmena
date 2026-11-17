@@ -139,6 +139,8 @@ export class Scheduler {
           console.warn("Automatización " + rule.id + ": " + error.message);
         }
       }
+      // Reminders, scheduled messages and bots' follow-ups (server/room-plus.mjs).
+      if (this.plus) void this.plus.due(time).catch((error) => console.warn("Para después: " + error.message));
       try {
         wakeDue(this.store, (n) => this.notifier.notify(n), time); // snoozed rooms whose time came
       } catch (error) {

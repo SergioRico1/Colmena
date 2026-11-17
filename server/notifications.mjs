@@ -149,7 +149,7 @@ export function waitingApprovals(store, time = Date.now()) {
 /** Quiet hours: 19:00–9:00 and weekends (local time). */
 export const isQuietTime = (date) => date.getDay() === 0 || date.getDay() === 6 || date.getHours() >= 19 || date.getHours() < 9;
 // What each «Avísame de» level lets through as a Windows notice (it is always kept in Hoy).
-const POPS = { todo: null, importante: new Set(["needs", "failed", "blocked", "permission", "question", "plan", "digest", "limited", "mention"]), tuyo: new Set(["needs", "permission", "question", "plan", "mention"]) };
+const POPS = { todo: null, importante: new Set(["needs", "failed", "blocked", "permission", "question", "plan", "digest", "limited", "mention", "reminder"]), tuyo: new Set(["needs", "permission", "question", "plan", "mention", "reminder"]) };
 
 /**
  * Your status for other people (Ajustes › Personas): «available», «dnd» (No molestar) or
